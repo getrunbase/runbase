@@ -1,9 +1,9 @@
-import { billingService } from "@runbase/core/quotas";
+import { billingService } from "@getrunbase/core/quotas";
 import { ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { Badge } from "@runbase/ui/components/ui/badge";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { getTenant } from "@/lib/tenant";
 import { SettingsPage, SettingsSection } from "../settings-shell";

@@ -11,7 +11,7 @@ export type KitExample = {
 };
 
 const page = (imports: string, body: string) =>
-  `import { ${imports} } from "@runbase/kit";\n\nexport default function Page() {\n  return (\n    ${body}\n  );\n}\n`;
+  `import { ${imports} } from "@getrunbase/kit";\n\nexport default function Page() {\n  return (\n    ${body}\n  );\n}\n`;
 
 const read = { objects: ["deals", "companies"] };
 const COMPANY_1 = "00000000-0000-4000-8000-630000000001";
@@ -102,7 +102,7 @@ export const KIT_EXAMPLES: KitExample[] = [
 // dedicated dashboards).
 export const DASHBOARD_EXAMPLE: KitExample = {
   block: "dashboard",
-  source: `import { ChartCard, KpiCard } from "@runbase/kit";
+  source: `import { ChartCard, KpiCard } from "@getrunbase/kit";
 
 export default function Dashboard() {
   return (

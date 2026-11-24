@@ -3,7 +3,7 @@
 // Requires DATABASE_URL and REDIS_URL.
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
-import { apiKeysService } from "@runbase/core/api-keys";
+import { apiKeysService } from "@getrunbase/core/api-keys";
 import { owner, sql } from "./test-client";
 import { toolBuilds } from "./tools";
 import { POST } from "./route";

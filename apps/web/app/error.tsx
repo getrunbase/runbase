@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { TriangleAlertIcon } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Button } from "@getrunbase/ui/components/ui/button";
 
 export default function Error({
   error,

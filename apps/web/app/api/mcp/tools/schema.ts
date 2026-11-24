@@ -1,14 +1,14 @@
 // MCP tools: databases, objects, templates, catalog and saved views.
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
-import type { TenantContext } from "@runbase/core/tenant";
-import { databasesService } from "@runbase/core/databases";
-import { fieldSchema, objectsService } from "@runbase/core/objects";
-import { filterSchema } from "@runbase/core/filter";
-import { notFound } from "@runbase/core/errors";
-import { catalogService, submissionSchema } from "@runbase/core/catalog";
-import { viewsService } from "@runbase/core/views";
-import { MAX_SAMPLE_RECORDS, templatesService } from "@runbase/core/templates";
+import type { TenantContext } from "@getrunbase/core/tenant";
+import { databasesService } from "@getrunbase/core/databases";
+import { fieldSchema, objectsService } from "@getrunbase/core/objects";
+import { filterSchema } from "@getrunbase/core/filter";
+import { notFound } from "@getrunbase/core/errors";
+import { catalogService, submissionSchema } from "@getrunbase/core/catalog";
+import { viewsService } from "@getrunbase/core/views";
+import { MAX_SAMPLE_RECORDS, templatesService } from "@getrunbase/core/templates";
 import { run, getObject, objectId, slug } from "./shared";
 
 export function defineSchemaTools(server: McpServer, ctx: TenantContext) {

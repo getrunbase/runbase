@@ -1,4 +1,4 @@
-import { filesService, inlineType } from "@runbase/core/files";
+import { filesService, inlineType } from "@getrunbase/core/files";
 import { getTenant } from "@/lib/tenant";
 
 // Download of an attached file, limited to the current workspace.

@@ -18,8 +18,8 @@ import {
 import "@xyflow/react/dist/style.css";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Badge } from "@runbase/ui/components/ui/badge";
-import { Card } from "@runbase/ui/components/ui/card";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
+import { Card } from "@getrunbase/ui/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export type SchemaObject = {

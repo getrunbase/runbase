@@ -1,7 +1,7 @@
 // Entry point of the `sandbox` container: runs functions
 // for web and worker (SANDBOX_URL). Minimal env: SANDBOX_TOKEN, DENO_BIN,
 // DENO_DIR; no DATABASE_URL, no REDIS_URL, no master key.
-import { createSandboxServer } from "@runbase/core/functions/sandbox-server";
+import { createSandboxServer } from "@getrunbase/core/functions/sandbox-server";
 
 const port = Number(process.env.SANDBOX_PORT ?? 7200);
 const server = createSandboxServer(process.env.SANDBOX_TOKEN ?? "");

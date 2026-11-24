@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { AppError } from "@runbase/core/errors";
+import { AppError } from "@getrunbase/core/errors";
 
 // Missing page (null or not_found error): 404. Any other error (database,
 // permissions…) is logged then rethrown: never hidden as a 404.

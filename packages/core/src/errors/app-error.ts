@@ -1,5 +1,5 @@
 // Displayable error, no dependency (importable client-side through
-// `@runbase/core/app-error`).
+// `@getrunbase/core/app-error`).
 // - `code`: stable translation identifier (`records.notFound`). The web
 //   translates it through apps/web/messages/fr/errors/*.json, otherwise shows `message`.
 // - `params`: template values (`{id}`), reused by the translation.

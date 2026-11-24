@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { aiSettingsService } from "@runbase/core/ai-providers";
+import { aiSettingsService } from "@getrunbase/core/ai-providers";
 import { getTenant } from "@/lib/tenant";
 import { actionError, type ActionError } from "@/lib/action-error";
 

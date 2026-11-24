@@ -1,7 +1,7 @@
 // Runtime iframe bridge: origin filter and SDK call cap.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { AppError } from "@runbase/core/app-error";
+import { AppError } from "@getrunbase/core/app-error";
 import {
   acceptOrigin,
   MAX_CALLS_PER_SEC,

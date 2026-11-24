@@ -13,12 +13,12 @@ import {
   revalidationPaths,
   sendRevalidation,
   signRevalidation,
-} from "@runbase/core/catalog";
+} from "@getrunbase/core/catalog";
 import {
   catalogFixture,
   fixtureManifest,
   validDescription,
-} from "@runbase/core/testing";
+} from "@getrunbase/core/testing";
 import * as creator from "../catalog/creators/[username]/route";
 import { owner, raw } from "./test-client";
 

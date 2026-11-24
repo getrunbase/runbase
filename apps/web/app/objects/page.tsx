@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { objectsService } from "@runbase/core/objects";
+import { objectsService } from "@getrunbase/core/objects";
 import { Boxes } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { Badge } from "@runbase/ui/components/ui/badge";
-import { Card } from "@runbase/ui/components/ui/card";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
+import { Card } from "@getrunbase/ui/components/ui/card";
 import { getTenant } from "@/lib/tenant";
 import { NewObjectDialog } from "./new-object-dialog";
 import { relationTargets } from "./targets";

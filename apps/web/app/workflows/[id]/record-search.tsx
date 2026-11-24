@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Check, Search, X } from "lucide-react";
-import { Badge } from "@runbase/ui/components/ui/badge";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   Command,
   CommandEmpty,

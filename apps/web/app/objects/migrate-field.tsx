@@ -3,19 +3,19 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { isComputed, type Field } from "@runbase/core/objects/fields";
+import { isComputed, type Field } from "@getrunbase/core/objects/fields";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@runbase/ui/components/ui/card";
+} from "@getrunbase/ui/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@runbase/ui/components/ui/input";
-import { Label } from "@runbase/ui/components/ui/label";
+import { Input } from "@getrunbase/ui/components/ui/input";
+import { Label } from "@getrunbase/ui/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -27,7 +27,7 @@ import { useErrorText } from "@/lib/error-text";
 import { makeLabels } from "../workflows/labels";
 import { migrateField } from "./actions";
 import { migrationSummary, type MigrationReport } from "./migrate";
-import type { MigrateOp } from "@runbase/core/objects";
+import type { MigrateOp } from "@getrunbase/core/objects";
 
 const TYPES: Field["type"][] = [
   "text",

@@ -5,8 +5,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import { HistoryIcon } from "lucide-react";
-import { Badge } from "@runbase/ui/components/ui/badge";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   Sheet,
   SheetContent,

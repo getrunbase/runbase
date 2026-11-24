@@ -1,8 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Input } from "@runbase/ui/components/ui/input";
-import { Label } from "@runbase/ui/components/ui/label";
+import { Input } from "@getrunbase/ui/components/ui/input";
+import { Label } from "@getrunbase/ui/components/ui/label";
 import { type ObjectInfo } from "../graph";
 import {
   dataToMapping,

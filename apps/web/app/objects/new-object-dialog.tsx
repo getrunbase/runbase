@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   Dialog,
   DialogContent,

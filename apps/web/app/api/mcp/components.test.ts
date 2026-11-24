@@ -55,7 +55,7 @@ test("page.*: test, examples", async () => {
     examples.map((e: { name: string }) => e.name),
     ["crm", "kanban", "dashboard"],
   );
-  assert.match((await call("page.guide")).guide, /@runbase\/kit/);
+  assert.match((await call("page.guide")).guide, /@getrunbase\/kit/);
   const crm = await call("page.examples", { name: "crm" });
   assert.equal(crm.entry, "index.tsx");
   assert.ok(crm.files["components/deal-panel.tsx"]);

@@ -10,8 +10,8 @@ import {
   memoryStorage,
   setFileStorage,
   type FileStorage,
-} from "@runbase/core/files";
-import { render, reviewPage } from "@runbase/core/render";
+} from "@getrunbase/core/files";
+import { render, reviewPage } from "@getrunbase/core/render";
 import { browserAvailable } from "./screenshot";
 import { startRenderWorker } from "./worker";
 

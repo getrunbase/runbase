@@ -1,7 +1,7 @@
 "use client";
 
-import { baseType, type Field } from "@runbase/core/objects/fields";
-import { Input } from "@runbase/ui/components/ui/input";
+import { baseType, type Field } from "@getrunbase/core/objects/fields";
+import { Input } from "@getrunbase/ui/components/ui/input";
 import {
   Select,
   SelectContent,

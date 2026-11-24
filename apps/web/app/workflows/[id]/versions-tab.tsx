@@ -8,8 +8,8 @@ import { useRouter } from "next/navigation";
 import { useFormatter, useNow, useTranslations } from "next-intl";
 import { GitBranch, RotateCcw, SquarePen } from "lucide-react";
 import { cn } from "cn";
-import { Badge } from "@runbase/ui/components/ui/badge";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import { restoreWorkflow } from "../actions";
 
 export type VersionInfo = {

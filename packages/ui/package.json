@@ -1,5 +1,5 @@
 {
-  "name": "@runbase/ui",
+  "name": "@getrunbase/ui",
   "version": "0.1.0",
   "description": "Runbase design system: Tailwind tokens (theme.css), shadcn/ui components and primitives.",
   "license": "MIT",

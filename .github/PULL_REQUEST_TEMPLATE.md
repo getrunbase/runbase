@@ -27,7 +27,7 @@ Closes #
 - [ ] Tests added or updated for the changed behavior
 - [ ] `pnpm lint`, `pnpm typecheck` and `pnpm test` pass locally
 - [ ] Every new visible text is in `apps/web/messages/en` **and** `apps/web/messages/fr`
-- [ ] UI follows [AGENTS.md](https://github.com/getrunbase/runbase/blob/main/AGENTS.md): `@runbase/ui` components and theme tokens only
+- [ ] UI follows [AGENTS.md](https://github.com/getrunbase/runbase/blob/main/AGENTS.md): `@getrunbase/ui` components and theme tokens only
 - [ ] No French text in `packages/core`, `apps/worker` or the MCP server; user-facing errors use `appError`
 - [ ] Database migration, breaking change or docs update called out above, if any
 - [ ] No secrets, personal data or customer data committed

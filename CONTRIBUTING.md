@@ -74,7 +74,7 @@ node --env-file-if-exists=../../.env --import tsx --import ./src/test-setup.ts -
 # add --test-name-pattern="<name>" to run a single test
 ```
 
-End-to-end tests (`pnpm --filter @runbase/web test:e2e`) are slow and optional locally.
+End-to-end tests (`pnpm --filter @getrunbase/web test:e2e`) are slow and optional locally.
 
 CI also runs [gitleaks](https://github.com/gitleaks/gitleaks) to block committed secrets. Never commit a `.env` file or a real key.
 
@@ -84,7 +84,7 @@ CI also runs [gitleaks](https://github.com/gitleaks/gitleaks) to block committed
 - **Core**: no business logic and no templates in the core.
 - **Data access**: the web app (`apps/web`) and the MCP server go through the services of `packages/core`.
 - **i18n**: the whole UI exists in English and French ([next-intl](https://next-intl.dev)). No hard-coded visible text: every new string goes into `apps/web/messages/en/<ns>.json` **and** `apps/web/messages/fr/<ns>.json`, in the same commit. Format dates and numbers with `useFormatter` / `getFormatter`. Full rules: [`docs/i18n.md`](docs/i18n.md). Lint, typecheck and the key-parity test enforce this.
-- **Core and MCP are English only**: no French text in `packages/core`, `apps/web/app/api/mcp/**` or `apps/worker`. French only lives in `apps/web/messages/fr/**`. Every user-facing error is an `appError("domain.camelName", "English template {param}", { param })` (from `@runbase/core/errors`), with its translation in `apps/web/messages/fr/errors/<data|automation|interfaces|platform>.json`. The web app displays it with `useErrorText` / `getErrorText`; server actions return `actionError(e)`. The `lib/error-codes.test.ts` test enforces this.
+- **Core and MCP are English only**: no French text in `packages/core`, `apps/web/app/api/mcp/**` or `apps/worker`. French only lives in `apps/web/messages/fr/**`. Every user-facing error is an `appError("domain.camelName", "English template {param}", { param })` (from `@getrunbase/core/errors`), with its translation in `apps/web/messages/fr/errors/<data|automation|interfaces|platform>.json`. The web app displays it with `useErrorText` / `getErrorText`; server actions return `actionError(e)`. The `lib/error-codes.test.ts` test enforces this.
 
 ## Pull requests
 

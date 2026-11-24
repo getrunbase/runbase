@@ -7,8 +7,8 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Plus, Trash2 } from "lucide-react";
-import type { Field } from "@runbase/core/objects/fields";
-import { Button } from "@runbase/ui/components/ui/button";
+import type { Field } from "@getrunbase/core/objects/fields";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Command,
@@ -18,7 +18,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Input } from "@runbase/ui/components/ui/input";
+import { Input } from "@getrunbase/ui/components/ui/input";
 import {
   Popover,
   PopoverContent,

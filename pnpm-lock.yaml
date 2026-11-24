@@ -243,7 +243,7 @@ importers:
 
   apps/renderer:
     dependencies:
-      '@runbase/core':
+      '@getrunbase/core':
         specifier: workspace:*
         version: link:../../packages/core
       axe-core:
@@ -283,9 +283,18 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.3.1)
+      '@getrunbase/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@getrunbase/kit':
+        specifier: workspace:*
+        version: link:../../packages/kit
       '@getrunbase/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
+      '@getrunbase/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@hookform/resolvers':
         specifier: ^7.0.7
         version: 7.0.7(@standard-schema/spec@1.1.0)(ajv-formats@3.0.1(ajv@8.20.0))(ajv@8.20.0)(react-hook-form@7.92.0(@types/react@19.3.0)(react@19.3.1))(valibot@1.5.0(typescript@5.9.3))(zod@4.6.7)
@@ -295,15 +304,6 @@ importers:
       '@monaco-editor/react':
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.57.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@runbase/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@runbase/kit':
-        specifier: workspace:*
-        version: link:../../packages/kit
-      '@runbase/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@tailwindcss/node':
         specifier: 4.3.5
         version: 4.3.5
@@ -461,12 +461,12 @@ importers:
       '@bull-board/hono':
         specifier: ^9.13.2
         version: 9.13.2(bullmq@6.7.7(ioredis@6.0.0(supports-color@7.2.0)))(hono@4.13.19)(typescript@5.9.3)
+      '@getrunbase/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@hono/node-server':
         specifier: ^2.1.9
         version: 2.1.9(hono@4.13.19)
-      '@runbase/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       bullmq:
         specifier: ^6.7.7
         version: 6.7.7(ioredis@6.0.0(supports-color@7.2.0))

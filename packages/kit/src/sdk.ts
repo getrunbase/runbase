@@ -7,6 +7,6 @@ export const sdk = (): RunbaseSdk => {
   const s = (globalThis as { __vendor?: Record<string, unknown> }).__vendor?.[
     "@getrunbase/sdk"
   ];
-  if (!s) throw new Error("@runbase/kit: @getrunbase/sdk runtime not found");
+  if (!s) throw new Error("@getrunbase/kit: @getrunbase/sdk runtime not found");
   return s as RunbaseSdk;
 };

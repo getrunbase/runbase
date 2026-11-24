@@ -1,6 +1,6 @@
-import { databasesService } from "@runbase/core/databases";
-import { objectsService } from "@runbase/core/objects";
-import type { TenantContext } from "@runbase/core/tenant";
+import { databasesService } from "@getrunbase/core/databases";
+import { objectsService } from "@getrunbase/core/objects";
+import type { TenantContext } from "@getrunbase/core/tenant";
 import type { Target } from "./schema-editor";
 
 // Relation target objects: all those of the workspace, all databases.

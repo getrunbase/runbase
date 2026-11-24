@@ -4,7 +4,7 @@
 import "./harness-env";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server.browser";
-import { mockCall } from "@runbase/core/components/mock";
+import { mockCall } from "@getrunbase/core/components/mock";
 import { format } from "./format";
 import { modules } from "./modules";
 

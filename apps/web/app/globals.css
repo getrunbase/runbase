@@ -1,4 +1,4 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@runbase/ui/theme.css";
+@import "@getrunbase/ui/theme.css";
 @source "../../../packages/ui";

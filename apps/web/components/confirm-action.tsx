@@ -12,7 +12,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useTranslations } from "next-intl";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Button } from "@getrunbase/ui/components/ui/button";
 
 // Irreversible action: asks for confirmation before submitting the form.
 export function ConfirmAction({

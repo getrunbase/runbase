@@ -2,7 +2,7 @@
 // a short-lived PUT URL per file (type and size signed), the browser
 // sends the bytes there without going through the web. The bucket must allow PUT
 // cross-origin from the app (CORS, see .env.example).
-import type { FileMeta } from "@runbase/core/files";
+import type { FileMeta } from "@getrunbase/core/files";
 
 export type FileInfo = { name: string; type: string; size: number };
 export type UploadTarget = { file: FileMeta; url: string };

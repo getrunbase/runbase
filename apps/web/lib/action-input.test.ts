@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { z } from "zod";
-import { AppError } from "@runbase/core/app-error";
+import { AppError } from "@getrunbase/core/app-error";
 import { formInput, list, parseInput } from "./action-input";
 
 test("parseInput returns the parsed value", () => {

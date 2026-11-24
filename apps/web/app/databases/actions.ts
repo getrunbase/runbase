@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
-import { databasesService } from "@runbase/core/databases";
-import { objectsService, type Field } from "@runbase/core/objects";
-import { templatesService } from "@runbase/core/templates";
+import { databasesService } from "@getrunbase/core/databases";
+import { objectsService, type Field } from "@getrunbase/core/objects";
+import { templatesService } from "@getrunbase/core/templates";
 import { actionError, type ActionError } from "@/lib/action-error";
 import { formInput, parseInput } from "@/lib/action-input";
 import { getTenant } from "@/lib/tenant";

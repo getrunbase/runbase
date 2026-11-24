@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { apiKeysService } from "@runbase/core/api-keys";
-import type { Scope } from "@runbase/core/tenant";
+import { apiKeysService } from "@getrunbase/core/api-keys";
+import type { Scope } from "@getrunbase/core/tenant";
 import { z } from "zod";
 import { actionError, type ActionError } from "@/lib/action-error";
 import { formInput, list, parseInput, trimmed, uuid } from "@/lib/action-input";

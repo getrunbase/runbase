@@ -4,8 +4,8 @@
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { NextRequest } from "next/server";
-import { secretsService } from "@runbase/core/secrets";
-import { webhooksService } from "@runbase/core/webhooks";
+import { secretsService } from "@getrunbase/core/secrets";
+import { webhooksService } from "@getrunbase/core/webhooks";
 import { clientIp } from "@/lib/request-limits";
 import { middleware } from "../../../middleware";
 import { POST as ingestOne } from "../ingest/[workspace]/[object]/route";

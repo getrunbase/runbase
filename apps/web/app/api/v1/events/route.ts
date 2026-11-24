@@ -1,4 +1,4 @@
-import { eventsService } from "@runbase/core/events";
+import { eventsService } from "@getrunbase/core/events";
 import { route } from "@/lib/api-v1/http";
 
 export const GET = route("listEvents", async ({ ctx, query }) => {

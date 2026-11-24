@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { AppError } from "@runbase/core/app-error";
-import { workflowsService } from "@runbase/core/workflows";
+import { AppError } from "@getrunbase/core/app-error";
+import { workflowsService } from "@getrunbase/core/workflows";
 import { actionError, type ActionError } from "@/lib/action-error";
 import { formInput, parseInput } from "@/lib/action-input";
 import { getTenant } from "@/lib/tenant";
@@ -105,7 +105,7 @@ export async function setStatus(
 export async function webhookSample(name: string) {
   const { ctx } = await getTenant();
   const input = parseInput(nameInput, { name });
-  const { webhooksService } = await import("@runbase/core/webhooks");
+  const { webhooksService } = await import("@getrunbase/core/webhooks");
   const w = (await webhooksService.list(ctx)).find(
     (x) => x.name === input.name,
   );

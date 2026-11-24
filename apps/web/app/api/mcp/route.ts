@@ -1,14 +1,14 @@
 // MCP server, streamable HTTP transport. Auth: OAuth token (Better Auth
 // mcp) or, as a fallback for scripts and CI, API key `Authorization: Bearer agk_…`.
 import { requireMcpAuth } from "@better-auth/mcp";
-import { auth, mcpResource, MCP_SCOPES } from "@runbase/core/auth";
-import { apiKeyPrincipal } from "@runbase/core/api-keys";
+import { auth, mcpResource, MCP_SCOPES } from "@getrunbase/core/auth";
+import { apiKeyPrincipal } from "@getrunbase/core/api-keys";
 import {
   accessibleWorkspaces,
   type McpPrincipal,
   type Scope,
-} from "@runbase/core/tenant";
-import { appError, authStatus, type AppError } from "@runbase/core/errors";
+} from "@getrunbase/core/tenant";
+import { appError, authStatus, type AppError } from "@getrunbase/core/errors";
 import { serveMcp } from "./server";
 
 const errorResponse = (e: AppError, status: number) =>

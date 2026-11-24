@@ -1,10 +1,10 @@
 // MCP tools: workspaces, members and quotas.
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
-import type { TenantContext } from "@runbase/core/tenant";
-import { workspacesService } from "@runbase/core/workspaces";
-import { ASSIGNABLE_ROLES, membersService } from "@runbase/core/members";
-import { quotasService } from "@runbase/core/quotas";
+import type { TenantContext } from "@getrunbase/core/tenant";
+import { workspacesService } from "@getrunbase/core/workspaces";
+import { ASSIGNABLE_ROLES, membersService } from "@getrunbase/core/members";
+import { quotasService } from "@getrunbase/core/quotas";
 import { run } from "./shared";
 
 export function defineAccountTools(server: McpServer, ctx: TenantContext) {

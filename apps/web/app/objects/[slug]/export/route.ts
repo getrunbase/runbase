@@ -1,4 +1,4 @@
-import { exportStream, objectsService } from "@runbase/core/objects";
+import { exportStream, objectsService } from "@getrunbase/core/objects";
 import { getTranslations } from "next-intl/server";
 import { getTenant } from "@/lib/tenant";
 

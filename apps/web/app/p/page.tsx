@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { LayoutDashboard } from "lucide-react";
-import { pagesService } from "@runbase/core/pages";
+import { pagesService } from "@getrunbase/core/pages";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { IconTile } from "@/components/ds/atoms";

@@ -14,9 +14,9 @@ import {
   Plus,
   Workflow,
 } from "lucide-react";
-import type { Field } from "@runbase/core/objects/fields";
-import { badgeVariants } from "@runbase/ui/components/ui/badge";
-import { Button } from "@runbase/ui/components/ui/button";
+import type { Field } from "@getrunbase/core/objects/fields";
+import { badgeVariants } from "@getrunbase/ui/components/ui/badge";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   Command,
   CommandEmpty,

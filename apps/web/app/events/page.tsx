@@ -1,5 +1,5 @@
 import { getFormatter, getTranslations } from "next-intl/server";
-import { eventsService } from "@runbase/core/events";
+import { eventsService } from "@getrunbase/core/events";
 import { Activity, ChevronDown, ChevronRight } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { FilterBar } from "@/components/filter-bar";

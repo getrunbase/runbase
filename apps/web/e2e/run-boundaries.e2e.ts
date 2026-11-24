@@ -1,7 +1,7 @@
 // E2E segment boundaries on /runs/[id]: not found (uuid and
 // non-uuid), server error (local boundary + retry), local loading.
 // In every case the layout sidebar and header stay visible.
-//   pnpm --filter @runbase/web test:e2e
+//   pnpm --filter @getrunbase/web test:e2e
 // Starts `next dev` on a free port (or uses E2E_BASE_URL, which must
 // share DATABASE_URL and BETTER_AUTH_SECRET). A dedicated test database
 // is recommended: the test briefly renames the function_logs table.
@@ -12,9 +12,9 @@ import { createHmac, randomUUID } from "node:crypto";
 import { createServer } from "node:net";
 import postgres from "postgres";
 import type { Browser, Page } from "playwright-core";
-import { functionsService } from "@runbase/core/functions";
-import { runsService } from "@runbase/core/runs";
-import { workflowsService } from "@runbase/core/workflows";
+import { functionsService } from "@getrunbase/core/functions";
+import { runsService } from "@getrunbase/core/runs";
+import { workflowsService } from "@getrunbase/core/workflows";
 import en from "../messages/en/common.json";
 import enHome from "../messages/en/home.json";
 import enRuns from "../messages/en/runs.json";

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { runsService } from "@runbase/core/runs";
+import { runsService } from "@getrunbase/core/runs";
 import { actionError } from "@/lib/action-error";
 import { formInput, id, parseInput } from "@/lib/action-input";
 import { getTenant } from "@/lib/tenant";

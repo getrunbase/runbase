@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { formInput, id, parseInput } from "@/lib/action-input";
 import { revalidatePath } from "next/cache";
-import { errorsService } from "@runbase/core/errors";
+import { errorsService } from "@getrunbase/core/errors";
 import { getTenant } from "@/lib/tenant";
 
 // Error center: replay and resolution.

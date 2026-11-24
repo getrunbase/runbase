@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { apiKeysService } from "@runbase/core/api-keys";
-import { databasesService } from "@runbase/core/databases";
-import { errorsService } from "@runbase/core/errors";
-import { pagesService } from "@runbase/core/pages";
-import { runsService } from "@runbase/core/runs";
-import { workflowsService } from "@runbase/core/workflows";
+import { apiKeysService } from "@getrunbase/core/api-keys";
+import { databasesService } from "@getrunbase/core/databases";
+import { errorsService } from "@getrunbase/core/errors";
+import { pagesService } from "@getrunbase/core/pages";
+import { runsService } from "@getrunbase/core/runs";
+import { workflowsService } from "@getrunbase/core/workflows";
 import {
   ArrowRight,
   Check,
@@ -24,12 +24,12 @@ import { CopyField } from "@/components/copy-button";
 import { Count, Kpi } from "@/components/ds/atoms";
 import { type Tone, toneFg } from "@/components/ds/tone";
 import { PageHeader } from "@/components/page-header";
-import { Badge } from "@runbase/ui/components/ui/badge";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { onboardingSteps } from "@/lib/onboarding";
 import { getTenant, getSession } from "@/lib/tenant";
-import { appUrl } from "@runbase/core/env";
+import { appUrl } from "@getrunbase/core/env";
 import { decideRun } from "./approvals/actions";
 import { pageTitle } from "@/lib/page-title";
 

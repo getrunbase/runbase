@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { functionsService } from "@runbase/core/functions";
+import { functionsService } from "@getrunbase/core/functions";
 import { actionError, type ActionError } from "@/lib/action-error";
 import { formInput, parseInput } from "@/lib/action-input";
 import { getTenant } from "@/lib/tenant";

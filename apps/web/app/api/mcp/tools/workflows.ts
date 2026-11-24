@@ -1,9 +1,9 @@
 // MCP tools: workflows.
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
-import type { TenantContext } from "@runbase/core/tenant";
-import { definitionSchema, workflowsService } from "@runbase/core/workflows";
-import { requireConfirm } from "@runbase/core/errors";
+import type { TenantContext } from "@getrunbase/core/tenant";
+import { definitionSchema, workflowsService } from "@getrunbase/core/workflows";
+import { requireConfirm } from "@getrunbase/core/errors";
 import { run, must, wfId } from "./shared";
 
 export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {

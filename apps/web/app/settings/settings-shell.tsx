@@ -1,6 +1,6 @@
 // Shared settings template (boards DNCwy, PryyU, KhoiA, qglrI, gJ11a):
 // "Settings" header + tabs, then sections with a top border.
-import { billingService } from "@runbase/core/quotas";
+import { billingService } from "@getrunbase/core/quotas";
 import type { LucideIcon } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { cn } from "cn";

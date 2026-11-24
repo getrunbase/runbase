@@ -4,9 +4,9 @@ import assert from "node:assert/strict";
 import postgres from "postgres";
 
 process.env.SIGNUPS_ENABLED = "true";
-const { auth } = await import("@runbase/core/auth");
+const { auth } = await import("@getrunbase/core/auth");
 const { createBoardApp } = await import("./board");
-const { mockOutbox } = await import("@runbase/core/email");
+const { mockOutbox } = await import("@getrunbase/core/email");
 
 const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
 after(() => setImmediate(() => process.exit(0)));

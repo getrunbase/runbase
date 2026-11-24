@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { runsService } from "@runbase/core/runs";
-import { Button } from "@runbase/ui/components/ui/button";
-import { Badge } from "@runbase/ui/components/ui/badge";
+import { runsService } from "@getrunbase/core/runs";
+import { Button } from "@getrunbase/ui/components/ui/button";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
 import { ArrowUpRight, Check, CircleCheckBig, History, X } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";

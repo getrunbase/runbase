@@ -1,10 +1,10 @@
 // UI / MCP parity test: every method of the service registry
-// of @runbase/core must have its MCP tool registered. No database.
+// of @getrunbase/core must have its MCP tool registered. No database.
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import type { McpServer } from "@modelcontextprotocol/server";
-import type { McpPrincipal } from "@runbase/core/tenant";
-import { services, mcpTools } from "@runbase/core/services";
+import type { McpPrincipal } from "@getrunbase/core/tenant";
+import { services, mcpTools } from "@getrunbase/core/services";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { registerTools, withMcpRequest } from "./tools";
@@ -37,12 +37,12 @@ test("every service has an MCP tool", () => {
   assert.deepEqual(missing, []);
 });
 
-// Completeness: every `*Service` export of the @runbase/core entry points
+// Completeness: every `*Service` export of the @getrunbase/core entry points
 // must be listed in the `services` registry.
 test("every *Service exported by core is in the registry", async () => {
   const pkg = JSON.parse(
     readFileSync(
-      join(dirname(require.resolve("@runbase/core")), "../package.json"),
+      join(dirname(require.resolve("@getrunbase/core")), "../package.json"),
       "utf8",
     ),
   ) as { exports: Record<string, string> };
@@ -52,7 +52,7 @@ test("every *Service exported by core is in the registry", async () => {
   const missing: string[] = [];
   for (const entry of Object.keys(pkg.exports)) {
     const mod = (await import(
-      entry === "." ? "@runbase/core" : `@runbase/core/${entry.slice(2)}`
+      entry === "." ? "@getrunbase/core" : `@getrunbase/core/${entry.slice(2)}`
     )) as Record<string, unknown>;
     for (const name of Object.keys(mod))
       if (name.endsWith("Service") && !registered.has(name))

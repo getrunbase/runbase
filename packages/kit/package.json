@@ -1,5 +1,5 @@
 {
-  "name": "@runbase/kit",
+  "name": "@getrunbase/kit",
   "version": "0.1.0",
   "private": true,
   "description": "Data-bound blocks for Runbase TSX pages (table, kanban, calendar, forms, charts), built on @getrunbase/sdk and shadcn/ui.",

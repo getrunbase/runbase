@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { databasesService } from "@runbase/core/databases";
-import { fieldsSchema } from "@runbase/core/objects";
+import { databasesService } from "@getrunbase/core/databases";
+import { fieldsSchema } from "@getrunbase/core/objects";
 import { ArrowUpRight, Plus, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { IconTile } from "@/components/ds/atoms";
@@ -12,7 +12,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@runbase/ui/components/ui/tabs";
+} from "@getrunbase/ui/components/ui/tabs";
 import { getTenant } from "@/lib/tenant";
 import { SchemaGraph, type SchemaObject } from "./schema-graph-lazy";
 import { NewObjectDialog } from "../../objects/new-object-dialog";

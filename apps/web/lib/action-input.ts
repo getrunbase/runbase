@@ -3,7 +3,7 @@
 // calling the core; a malformed input is a translatable AppError.
 //   const { id } = parseInput(z.object({ id: z.uuid() }), formInput(f));
 import { z } from "zod";
-import { appError } from "@runbase/core/app-error";
+import { appError } from "@getrunbase/core/app-error";
 
 export function parseInput<S extends z.ZodType>(
   schema: S,

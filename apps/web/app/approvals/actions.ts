@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { formInput, id as idSchema, parseInput } from "@/lib/action-input";
 import { revalidatePath } from "next/cache";
-import { runsService } from "@runbase/core/runs";
+import { runsService } from "@getrunbase/core/runs";
 import { getTenant } from "@/lib/tenant";
 
 // human.approve decision: the run resumes on approved / rejected.

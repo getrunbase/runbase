@@ -2,7 +2,7 @@
 // useQuery, opened in two tabs. A creation via useMutation in
 // tab A, then a write through the service, show up in tab B
 // without reload (SSE /api/live, Redis bus).
-//   pnpm --filter @runbase/web test:e2e
+//   pnpm --filter @getrunbase/web test:e2e
 // Starts `next dev` on a free port (or E2E_BASE_URL, which must share
 // DATABASE_URL, REDIS_URL and BETTER_AUTH_SECRET).
 import { test, before, after } from "node:test";
@@ -11,10 +11,10 @@ import { createHmac, randomUUID } from "node:crypto";
 import { createServer } from "node:net";
 import postgres from "postgres";
 import type { Browser, Page } from "playwright-core";
-import { objectsService } from "@runbase/core/objects";
-import { pagesService } from "@runbase/core/pages";
-import { recordsService } from "@runbase/core/records";
-import type { TenantContext } from "@runbase/core/tenant";
+import { objectsService } from "@getrunbase/core/objects";
+import { pagesService } from "@getrunbase/core/pages";
+import { recordsService } from "@getrunbase/core/records";
+import type { TenantContext } from "@getrunbase/core/tenant";
 
 const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
 let base = process.env.E2E_BASE_URL ?? "";

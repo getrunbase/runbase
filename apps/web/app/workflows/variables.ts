@@ -1,8 +1,8 @@
 // Editor variables: storage stays the `{{…}}` template,
 // the editor shows it as readable pills ("Contact › Company › Name").
 // Pure: template <-> segments translation, labels, variable scope.
-import type { Field } from "@runbase/core/objects/fields";
-import { normalizeGraph } from "@runbase/core/workflows/graph";
+import type { Field } from "@getrunbase/core/objects/fields";
+import { normalizeGraph } from "@getrunbase/core/workflows/graph";
 import {
   fieldAt,
   type BlockInfo,
@@ -10,7 +10,7 @@ import {
   type ObjectInfo,
 } from "./graph";
 import { makeLabels, type WorkflowsT } from "./labels";
-import { slugify } from "@runbase/core/slug";
+import { slugify } from "@getrunbase/core/slug";
 
 export type Segment = { text: string } | { path: string };
 

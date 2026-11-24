@@ -3,8 +3,8 @@
 // browser; only opens reading of that page (getTenant flags it,
 // mutation actions refuse it).
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
-import { appError } from "@runbase/core/errors";
-import { env } from "@runbase/core/env";
+import { appError } from "@getrunbase/core/errors";
+import { env } from "@getrunbase/core/env";
 
 export const SHOT_HEADER = "x-screenshot-token";
 // Covers the wait in the renderer queue then the capture (15 s max).

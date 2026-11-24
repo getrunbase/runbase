@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Copy, Radio } from "lucide-react";
-import { Button } from "@runbase/ui/components/ui/button";
-import { Input } from "@runbase/ui/components/ui/input";
-import { Label } from "@runbase/ui/components/ui/label";
+import { Button } from "@getrunbase/ui/components/ui/button";
+import { Input } from "@getrunbase/ui/components/ui/input";
+import { Label } from "@getrunbase/ui/components/ui/label";
 import {
   Select,
   SelectContent,

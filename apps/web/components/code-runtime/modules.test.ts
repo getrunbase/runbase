@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { compileComponent } from "@runbase/core/components";
+import { compileComponent } from "@getrunbase/core/components";
 import { chunkScript, runtimeScript } from "@/lib/code-runtime";
 import { lazyChunks, lazyModules, modules } from "./modules";
 

@@ -1,4 +1,4 @@
-# Design system (@runbase/ui)
+# Design system (@getrunbase/ui)
 
 Source: `agentic-directions.pen`, variables (`GetVariables()`) and the **DS · Components** board (eillb). The board is the source of truth: when other code differs from it, follow the board.
 
@@ -9,13 +9,13 @@ Source: `agentic-directions.pen`, variables (`GetVariables()`) and the **DS · C
 ```css
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@runbase/ui/theme.css";
-@source "../node_modules/@runbase/ui";
+@import "@getrunbase/ui/theme.css";
+@source "../node_modules/@getrunbase/ui";
 ```
 
 ```ts
-import { Button } from "@runbase/ui/components/ui/button";
-import { cn } from "@runbase/ui/lib/utils";
+import { Button } from "@getrunbase/ui/components/ui/button";
+import { cn } from "@getrunbase/ui/lib/utils";
 ```
 
 ## Tokens

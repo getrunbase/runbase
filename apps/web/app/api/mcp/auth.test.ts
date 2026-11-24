@@ -2,7 +2,7 @@
 // protected-resource metadata, via route handlers called directly.
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
-import { mcpResource } from "@runbase/core/auth";
+import { mcpResource } from "@getrunbase/core/auth";
 import { POST } from "./route";
 import { GET as wellKnown } from "../../.well-known/[...path]/route";
 

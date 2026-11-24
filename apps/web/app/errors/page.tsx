@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { errorsService, type ErrorRow } from "@runbase/core/errors";
+import { errorsService, type ErrorRow } from "@getrunbase/core/errors";
 import { FilterBar } from "@/components/filter-bar";
 import { CircleCheck, CircleCheckBig, OctagonAlert } from "lucide-react";
 import { cn } from "cn";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { Badge } from "@runbase/ui/components/ui/badge";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -14,7 +14,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@runbase/ui/components/ui/table";
+} from "@getrunbase/ui/components/ui/table";
 import { Pager } from "@/components/pager";
 import { getTenant } from "@/lib/tenant";
 import { pageTitle } from "@/lib/page-title";

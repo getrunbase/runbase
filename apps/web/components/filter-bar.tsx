@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Input } from "@runbase/ui/components/ui/input";
+import { Input } from "@getrunbase/ui/components/ui/input";
 import {
   Select,
   SelectContent,

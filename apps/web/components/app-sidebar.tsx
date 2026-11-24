@@ -8,9 +8,9 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import type { Role } from "@runbase/core/members";
-import { loadNavData } from "@runbase/core/nav";
-import type { TenantContext } from "@runbase/core/tenant";
+import type { Role } from "@getrunbase/core/members";
+import { loadNavData } from "@getrunbase/core/nav";
+import type { TenantContext } from "@getrunbase/core/tenant";
 import { getTranslations } from "next-intl/server";
 import { buildNav } from "@/lib/nav";
 

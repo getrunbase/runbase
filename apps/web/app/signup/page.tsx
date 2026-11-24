@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { authMethod } from "@runbase/core/env";
+import { authMethod } from "@getrunbase/core/env";
 import { SignupForm } from "./signup-form";
 import { pageTitle } from "@/lib/page-title";
 

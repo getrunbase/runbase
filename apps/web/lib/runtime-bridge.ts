@@ -1,7 +1,7 @@
 // postMessage bridge between the page (parent) and the runtime iframe of
 // code components: dedicated runtime origin, message origin
 // filter and SDK call cap. No server dependency (client and route).
-import { appError } from "@runbase/core/app-error";
+import { appError } from "@getrunbase/core/app-error";
 
 // Dedicated runtime origin (e.g. https://runtime.example.com; in dev
 // http://127.0.0.1:7100 when the app runs on localhost). Empty: same

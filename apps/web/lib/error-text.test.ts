@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { appError, errorItem } from "@runbase/core/app-error";
+import { appError, errorItem } from "@getrunbase/core/app-error";
 import { actionError } from "./action-error";
 import { errorText } from "./error-text";
 

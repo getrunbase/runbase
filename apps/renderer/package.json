@@ -1,5 +1,5 @@
 {
-  "name": "@runbase/renderer",
+  "name": "@getrunbase/renderer",
   "private": true,
   "license": "FSL-1.1-ALv2",
   "type": "module",
@@ -10,7 +10,7 @@
     "test": "node --env-file-if-exists=../../.env --import tsx --import ../../packages/core/src/test-setup.ts --test \"src/**/*.test.ts\""
   },
   "dependencies": {
-    "@runbase/core": "workspace:*",
+    "@getrunbase/core": "workspace:*",
     "axe-core": "4.10.3",
     "bullmq": "^6.7.7",
     "playwright-core": "1.59.1",

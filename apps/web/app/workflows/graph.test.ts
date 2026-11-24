@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { blocksService } from "@runbase/core/blocks";
-import { allowed } from "@runbase/core/filter";
+import { blocksService } from "@getrunbase/core/blocks";
+import { allowed } from "@getrunbase/core/filter";
 import {
   addEntry,
   addStep,

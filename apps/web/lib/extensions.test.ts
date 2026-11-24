@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { getExtensions, resetExtensions } from "@runbase/core/extensions";
+import { getExtensions, resetExtensions } from "@getrunbase/core/extensions";
 
 const fixture = fileURLToPath(
   new URL("../../../packages/core/src/extensions/fixtures/recording.mjs", import.meta.url),

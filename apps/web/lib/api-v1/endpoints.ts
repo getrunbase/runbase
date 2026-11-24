@@ -2,7 +2,7 @@
 // its zod schemas. They are used both to validate requests (lib/api-v1/http)
 // and to generate the OpenAPI spec (lib/api-v1/openapi): nothing written by hand.
 import { z } from "zod";
-import { RUN_STATUSES } from "@runbase/core/runs";
+import { RUN_STATUSES } from "@getrunbase/core/runs";
 
 // Named schemas: exposed as components/schemas in the spec.
 export const registry = z.registry<{ id: string }>();

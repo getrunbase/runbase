@@ -1,4 +1,4 @@
-import { recordsService } from "@runbase/core/records";
+import { recordsService } from "@getrunbase/core/records";
 import { objectOf, route } from "@/lib/api-v1/http";
 
 // Keyset on the id: `after` = `next` of the previous page.

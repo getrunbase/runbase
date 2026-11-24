@@ -6,7 +6,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "@runbase/ui/components/ui/card";
+} from "@getrunbase/ui/components/ui/card";
 import { branchName, showValue, type Definition } from "../graph";
 import { makeLabels, type Labels } from "../labels";
 import type { ActionError } from "@/lib/action-error";

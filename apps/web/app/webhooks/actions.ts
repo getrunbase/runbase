@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { appError } from "@runbase/core/app-error";
-import { webhooksService } from "@runbase/core/webhooks";
+import { appError } from "@getrunbase/core/app-error";
+import { webhooksService } from "@getrunbase/core/webhooks";
 import { actionError, type ActionError } from "@/lib/action-error";
 import { formInput, id, parseInput, trimmed } from "@/lib/action-input";
 import { getTenant } from "@/lib/tenant";

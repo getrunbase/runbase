@@ -4,8 +4,8 @@ import { createContext, useContext, useState } from "react";
 import { KeyRound, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { createSecret } from "@/app/settings/secrets/actions";
-import { Badge } from "@runbase/ui/components/ui/badge";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -14,8 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@runbase/ui/components/ui/input";
-import { Label } from "@runbase/ui/components/ui/label";
+import { Input } from "@getrunbase/ui/components/ui/input";
+import { Label } from "@getrunbase/ui/components/ui/label";
 import {
   Select,
   SelectContent,

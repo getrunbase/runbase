@@ -6,9 +6,9 @@ import { useState } from "react";
 import NextLink from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import { Paperclip, Star, X } from "lucide-react";
-import { baseType, isComputed, type Field } from "@runbase/core/objects/fields";
+import { baseType, isComputed, type Field } from "@getrunbase/core/objects/fields";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@runbase/ui/components/ui/input";
+import { Input } from "@getrunbase/ui/components/ui/input";
 import {
   Select,
   SelectContent,

@@ -2,7 +2,7 @@
 // Requires DATABASE_URL and REDIS_URL.
 import assert from "node:assert/strict";
 import postgres from "postgres";
-import type { McpPrincipal, TenantContext } from "@runbase/core/tenant";
+import type { McpPrincipal, TenantContext } from "@getrunbase/core/tenant";
 import { serveMcp } from "./server";
 
 export const sql = postgres(process.env.DATABASE_URL!, { max: 1 });

@@ -1,7 +1,7 @@
 // Container smoke test: launches Chromium with the production options and
 // screenshots one page. Exits non-zero on failure. Run inside the renderer
 // image (read_only, cap_drop ALL) by .github/workflows/selfhost-smoke.yml.
-import { env } from "@runbase/core/env";
+import { env } from "@getrunbase/core/env";
 import { launchOptions } from "./screenshot";
 
 export const SMOKE_HTML =

@@ -5,14 +5,14 @@ import {
   FEEDBACK_KINDS,
   feedbackService,
   isPlatformAdmin,
-} from "@runbase/core/feedback";
+} from "@getrunbase/core/feedback";
 import { EmptyState } from "@/components/empty-state";
 import { FilterBar } from "@/components/filter-bar";
 import { JsonView } from "@/components/json-view";
 import { PageHeader } from "@/components/page-header";
-import { Badge } from "@runbase/ui/components/ui/badge";
-import { Button } from "@runbase/ui/components/ui/button";
-import { Card } from "@runbase/ui/components/ui/card";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
+import { Button } from "@getrunbase/ui/components/ui/button";
+import { Card } from "@getrunbase/ui/components/ui/card";
 import {
   Table,
   TableBody,
@@ -20,7 +20,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@runbase/ui/components/ui/table";
+} from "@getrunbase/ui/components/ui/table";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { toggleFeedback } from "./actions";
 import { pageTitle } from "@/lib/page-title";

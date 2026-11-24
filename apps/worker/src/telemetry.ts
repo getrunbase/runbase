@@ -4,7 +4,7 @@
 // No PII or tenant content. RUNBASE_TELEMETRY=0 turns everything off. A failure
 // (network, database) is ignored: telemetry never affects the worker.
 import { arch, platform } from "node:os";
-import { instanceCounts, instanceId } from "@runbase/core/instance";
+import { instanceCounts, instanceId } from "@getrunbase/core/instance";
 
 export const TELEMETRY_INTERVAL_MS = 24 * 3_600_000;
 

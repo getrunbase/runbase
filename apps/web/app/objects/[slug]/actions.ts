@@ -1,19 +1,19 @@
 "use server";
 
-import type { Filter } from "@runbase/core/filter";
-import { eventsService } from "@runbase/core/events";
+import type { Filter } from "@getrunbase/core/filter";
+import { eventsService } from "@getrunbase/core/events";
 import {
   fieldsSchema,
   objectsService,
   recordTitle,
-} from "@runbase/core/objects";
-import { recordsService } from "@runbase/core/records";
-import { runsService } from "@runbase/core/runs";
-import { triggersService } from "@runbase/core/triggers";
-import { filesService, type FileMeta } from "@runbase/core/files";
-import { viewsService, type ViewInput } from "@runbase/core/views";
+} from "@getrunbase/core/objects";
+import { recordsService } from "@getrunbase/core/records";
+import { runsService } from "@getrunbase/core/runs";
+import { triggersService } from "@getrunbase/core/triggers";
+import { filesService, type FileMeta } from "@getrunbase/core/files";
+import { viewsService, type ViewInput } from "@getrunbase/core/views";
 import type { FileInfo } from "@/lib/direct-upload";
-import { billingService, isQuotaError } from "@runbase/core/quotas";
+import { billingService, isQuotaError } from "@getrunbase/core/quotas";
 import { z } from "zod";
 import { actionError, type ActionError } from "@/lib/action-error";
 import { id as idSchema, parseInput } from "@/lib/action-input";

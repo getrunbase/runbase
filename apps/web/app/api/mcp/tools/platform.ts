@@ -1,12 +1,12 @@
 // MCP tools: events, API keys, feedback, audit and blocks.
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
-import type { TenantContext } from "@runbase/core/tenant";
-import { eventsService } from "@runbase/core/events";
-import { apiKeysService } from "@runbase/core/api-keys";
-import { auditService } from "@runbase/core/audit";
-import { FEEDBACK_KINDS, feedbackService } from "@runbase/core/feedback";
-import { blocksService } from "@runbase/core/blocks";
+import type { TenantContext } from "@getrunbase/core/tenant";
+import { eventsService } from "@getrunbase/core/events";
+import { apiKeysService } from "@getrunbase/core/api-keys";
+import { auditService } from "@getrunbase/core/audit";
+import { FEEDBACK_KINDS, feedbackService } from "@getrunbase/core/feedback";
+import { blocksService } from "@getrunbase/core/blocks";
 import { run, data, testFlag } from "./shared";
 
 export function definePlatformTools(server: McpServer, ctx: TenantContext) {

@@ -5,7 +5,7 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const nextConfig = {
-  transpilePackages: ["@runbase/core", "@getrunbase/node-sdk", "@runbase/ui"],
+  transpilePackages: ["@getrunbase/core", "@getrunbase/node-sdk", "@getrunbase/ui"],
   // File attachment uploads (10 MB max on the service side).
   experimental: { serverActions: { bodySizeLimit: "11mb" } },
   serverExternalPackages: [

@@ -3,8 +3,8 @@
 import { useActionState } from "react";
 import { Play } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Button } from "@runbase/ui/components/ui/button";
-import { Label } from "@runbase/ui/components/ui/label";
+import { Button } from "@getrunbase/ui/components/ui/button";
+import { Label } from "@getrunbase/ui/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useErrorText } from "@/lib/error-text";
 import { testFunction, type TestResult } from "./actions";

@@ -1,14 +1,14 @@
 import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "@runbase/core/auth";
-import { apiKeyContext } from "@runbase/core/api-keys";
-import { appError } from "@runbase/core/errors";
-import { pendingInvitations } from "@runbase/core/members";
+import { auth } from "@getrunbase/core/auth";
+import { apiKeyContext } from "@getrunbase/core/api-keys";
+import { appError } from "@getrunbase/core/errors";
+import { pendingInvitations } from "@getrunbase/core/members";
 import {
   resolveUserContext,
   resolveUserSessionCached,
-} from "@runbase/core/tenant";
+} from "@getrunbase/core/tenant";
 import {
   SHOT_HEADER,
   verifyShotToken,

@@ -11,10 +11,10 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { Columns3, Plus, X } from "lucide-react";
-import type { Field } from "@runbase/core/objects/fields";
+import type { Field } from "@getrunbase/core/objects/fields";
 import { FIELD_ICONS as ICONS } from "@/lib/field-icons";
 import { QuotaLink } from "@/components/quota-link";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -37,7 +37,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@runbase/ui/components/ui/table";
+} from "@getrunbase/ui/components/ui/table";
 import {
   createRecord,
   deleteRecords,
@@ -58,7 +58,7 @@ import {
   type Op,
   type Pill,
 } from "./table";
-import type { Filter } from "@runbase/core/filter";
+import type { Filter } from "@getrunbase/core/filter";
 import { useRecordColumns } from "./records-columns";
 import { PillValue } from "./pill-value";
 import { ViewMenu } from "./view-menu";

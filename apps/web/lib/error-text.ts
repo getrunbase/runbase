@@ -7,7 +7,7 @@ import {
   renderTemplate,
   toErrorItem,
   type ErrorItem,
-} from "@runbase/core/app-error";
+} from "@getrunbase/core/app-error";
 import type { Locale } from "@/i18n/config";
 import automation from "@/messages/fr/errors/automation.json";
 import data from "@/messages/fr/errors/data.json";

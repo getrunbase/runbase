@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslations } from "next-intl";
 import { ListChecks, Pause, Play, Save, Upload } from "lucide-react";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   addEntry,
   addStep,

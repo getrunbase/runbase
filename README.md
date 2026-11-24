@@ -63,7 +63,7 @@ HTTPS, backups and upgrades: [self-hosting guide](docs/self-hosting.md).
 
 ## Documentation
 
-The docs site lives in [`apps/docs`](apps/docs) (`pnpm --filter @runbase/docs dev`):
+The docs site lives in [`apps/docs`](apps/docs) (`pnpm --filter @getrunbase/docs dev`):
 
 - [Quickstart](apps/docs/content/docs/quickstart.mdx)
 - [Concepts](apps/docs/content/docs/concepts/index.mdx)

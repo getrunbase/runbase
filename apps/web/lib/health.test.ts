@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { readiness } from "@runbase/core/health";
+import { readiness } from "@getrunbase/core/health";
 import { healthHandler, readyHandler } from "./health";
 
 const ok = async () => {};

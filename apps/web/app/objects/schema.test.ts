@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fieldsSchema } from "@runbase/core/objects";
+import { fieldsSchema } from "@getrunbase/core/objects";
 import { slugify, toField, toRow } from "./schema";
 
 test("slugify derives a valid key", () => {

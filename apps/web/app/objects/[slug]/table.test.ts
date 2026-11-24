@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { validateFilter } from "@runbase/core/filter";
-import type { Field } from "@runbase/core/objects";
+import { validateFilter } from "@getrunbase/core/filter";
+import type { Field } from "@getrunbase/core/objects";
 import { opsFor, parseValue, pillsToFilter } from "./table";
 
 const fields: Field[] = [
