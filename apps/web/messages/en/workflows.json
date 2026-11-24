@@ -180,7 +180,7 @@
       "waiting": "Waiting for a human decision or a delay.",
       "succeeded": "All steps completed successfully.",
       "failed": "A step failed: see the details below, then retry.",
-      "paused_budget": "Monthly AI limit reached (€5 free per account, or the workspace budget). Add your DEEPSEEK_API_KEY in Settings › Secrets: the run will resume on its own.",
+      "paused_budget": "Monthly AI budget of the workspace reached. Raise it or add your AI provider key in Settings: the run will resume on its own.",
       "canceled": "The run was canceled before it finished.",
       "paused": "Paused: resume whenever you like."
     }

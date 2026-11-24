@@ -180,7 +180,7 @@
       "waiting": "En attente d'une décision humaine ou d'un délai.",
       "succeeded": "Toutes les étapes se sont bien déroulées.",
       "failed": "Une étape a échoué : voir le détail ci-dessous, puis relancer.",
-      "paused_budget": "Limite IA du mois atteinte (5 € offerts par compte, ou budget du workspace). Ajoutez votre clé DEEPSEEK_API_KEY dans Paramètres › Secrets : l'exécution reprendra toute seule.",
+      "paused_budget": "Budget IA mensuel du workspace atteint. Augmentez-le ou ajoutez la clé de votre fournisseur IA dans Paramètres : l'exécution reprendra toute seule.",
       "canceled": "L'exécution a été annulée avant la fin.",
       "paused": "Mise en pause : reprenez quand vous voulez."
     }

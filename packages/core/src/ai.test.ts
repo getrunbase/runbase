@@ -15,7 +15,10 @@ import type { TenantContext } from "./tenant";
 const keys: string[] = [];
 const realFetch = globalThis.fetch;
 globalThis.fetch = (async (url: string, init: RequestInit) => {
-  if (!String(url).startsWith("https://api.deepseek.com/"))
+  if (
+    !String(url).startsWith("https://api.deepseek.com/") &&
+    !String(url).startsWith("https://api.openai.com/")
+  )
     return realFetch(url, init);
   keys.push(
     String((init.headers as Record<string, string>).authorization).replace(
@@ -165,4 +168,43 @@ test("pageAi: no provider chosen -> ai.providerNotConfigured", async () => {
   await assert.rejects(pageAi(ctx, page(), { prompt: "x" }), {
     code: "ai.providerNotConfigured",
   });
+});
+
+// Provider-agnostic budget: not tied to DeepSeek.
+test("useAI: non-DeepSeek provider spend is counted in the budget", async () => {
+  const ctx = await owner();
+  await aiSettingsService.set(ctx, { provider: "openai", key: "cle-openai" });
+  await pageAi(ctx, page(), { prompt: "hi" });
+  assert.equal(keys.at(-1), "cle-openai");
+  const [w] =
+    await sql`select ai_spent_usd from workspaces where id = ${ctx.workspaceId}`;
+  assert.ok(Number(w!.ai_spent_usd) > 0);
+});
+
+async function pausedRun(ctx: TenantContext) {
+  const [wf] =
+    await sql`insert into workflows (organization_id, workspace_id, name) values (${ctx.organizationId}, ${ctx.workspaceId}, 'F') returning id`;
+  const [run] = await sql`insert into workflow_runs (organization_id, workspace_id,
+      workflow_id, version, actor, input, status, paths)
+    values (${ctx.organizationId}, ${ctx.workspaceId}, ${wf!.id}, 1, '{}', '{}',
+      'paused_budget', ${sql.json({ main: { status: "paused_budget", n: 0 } })})
+    returning id`;
+  return run!.id as string;
+}
+const runStatus = async (id: string) =>
+  (await sql`select status from workflow_runs where id = ${id}`)[0]!.status;
+
+test("budget resume: OPENAI_API_KEY secret resumes runs (not only DeepSeek)", async () => {
+  const ctx = await owner();
+  await aiSettingsService.set(ctx, { provider: "openai" });
+  const id = await pausedRun(ctx);
+  await secretsService.set(ctx, "OPENAI_API_KEY", "cle-openai");
+  assert.equal(await runStatus(id), "running");
+});
+
+test("budget resume: key given in AI settings resumes runs for any provider", async () => {
+  const ctx = await owner();
+  const id = await pausedRun(ctx);
+  await aiSettingsService.set(ctx, { provider: "anthropic", key: "cle-claude" });
+  assert.equal(await runStatus(id), "running");
 });
