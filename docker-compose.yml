@@ -171,6 +171,8 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       RENDERER_APP_URL: http://web:3000
       HOME: /tmp
+      # Chromium's sandbox cannot start here (see docker-compose.selfhost.yml).
+      CHROMIUM_SANDBOX: "false"
       LOG_LEVEL: ${LOG_LEVEL:-}
       RENDER_CONCURRENCY: ${RENDER_CONCURRENCY:-}
       FILES_DRIVER: ${FILES_DRIVER:-}
