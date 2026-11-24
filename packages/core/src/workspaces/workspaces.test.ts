@@ -6,7 +6,7 @@ import postgres from "postgres";
 import { invalidateEntitlements } from "../entitlements";
 import { registerExtensions, resetExtensions } from "../extensions";
 import type { TenantContext } from "../tenant";
-import { workspaceSettings, workspacesService } from "./index";
+import { mergeSettings, workspaceSettings, workspacesService } from "./index";
 
 const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
 after(() => setImmediate(() => process.exit(0)));
@@ -86,4 +86,32 @@ test("settings: secrets go to the vault, not to the settings column", async () =
   const s = await workspaceSettings(a);
   assert.deepEqual(s.allowedDomains, ["api.example.com"]);
   assert.equal(s.secrets.TOKEN, "s3cret");
+});
+
+test("settings: partial update keeps the AI provider and other keys", async () => {
+  const a = await owner("ws merge");
+  await sql`update workspaces set settings = ${sql.json({
+    ai: { provider: "openai", model: "gpt-6-luna" },
+    allowedDomains: ["a.example.com"],
+    mcpServers: { one: { url: "https://one.example.com" } },
+  })} where id = ${a.workspaceId}`;
+  await workspacesService.setSettings(a, {
+    mcpServers: { two: { url: "https://two.example.com" } },
+  });
+  const [row] =
+    await sql`select settings from workspaces where id = ${a.workspaceId}`;
+  const s = row!.settings as Record<string, unknown>;
+  assert.deepEqual(s.ai, { provider: "openai", model: "gpt-6-luna" });
+  assert.deepEqual(s.allowedDomains, ["a.example.com"]);
+  assert.deepEqual(Object.keys(s.mcpServers as object).sort(), ["one", "two"]);
+});
+
+test("mergeSettings: deep merge of objects, arrays replaced", () => {
+  assert.deepEqual(
+    mergeSettings(
+      { ai: { provider: "openai", model: "m" }, list: [1, 2] },
+      { ai: { model: "n" }, list: [3] },
+    ),
+    { ai: { provider: "openai", model: "n" }, list: [3] },
+  );
 });

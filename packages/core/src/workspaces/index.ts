@@ -31,6 +31,27 @@ export const settingsSchema = z.object({
 });
 export type WorkspaceSettings = z.infer<typeof settingsSchema>;
 
+// Partial update: absent keys keep their stored value (no defaults here).
+const settingsPatchSchema = z.object({
+  allowedDomains: settingsSchema.shape.allowedDomains.removeDefault().optional(),
+  secrets: settingsSchema.shape.secrets.removeDefault().optional(),
+  mcpServers: settingsSchema.shape.mcpServers.removeDefault().optional(),
+});
+
+type Json = Record<string, unknown>;
+const isObject = (v: unknown): v is Json =>
+  typeof v === "object" && v !== null && !Array.isArray(v);
+
+// Deep merge of plain objects; arrays and scalars from `patch` replace.
+export function mergeSettings(base: Json, patch: Json): Json {
+  const out: Json = { ...base };
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === undefined) continue;
+    out[k] = isObject(v) && isObject(base[k]) ? mergeSettings(base[k], v) : v;
+  }
+  return out;
+}
+
 // Internal read (workflow engine): never exposed as is to the UI.
 // `secrets`: decrypted vault values.
 export async function workspaceSettings(ctx: TenantContext) {
@@ -48,19 +69,26 @@ export const workspacesService = {
   // Settings: owners/admins; the audit only keeps secret names.
   setSettings: async (ctx: TenantContext, input: unknown) => {
     await requireScope(ctx, "admin");
-    const settings = settingsSchema.parse(input);
+    const { secrets = {}, ...patch } = settingsPatchSchema.parse(input);
     return withTenant(ctx, async (tx) => {
       // Secrets: encrypted in the vault, never in `settings`.
-      for (const [name, value] of Object.entries(settings.secrets))
+      for (const [name, value] of Object.entries(secrets))
         await putSecret(tx, ctx, name, value);
+      // Merge with the stored settings: other keys (e.g. `ai`) are kept.
+      const [row] = await tx
+        .select({ settings: workspaces.settings })
+        .from(workspaces)
+        .where(eq(workspaces.id, ctx.workspaceId))
+        .for("update");
+      const current = isObject(row?.settings) ? row.settings : {};
       await tx
         .update(workspaces)
-        .set({ settings: { ...settings, secrets: {} } })
+        .set({ settings: { ...mergeSettings(current, patch), secrets: {} } })
         .where(eq(workspaces.id, ctx.workspaceId));
       await audit(tx, ctx, "workspace.settings", ws(ctx.workspaceId), {
-        allowedDomains: settings.allowedDomains,
-        secrets: Object.keys(settings.secrets),
-        mcpServers: Object.keys(settings.mcpServers),
+        ...(patch.allowedDomains && { allowedDomains: patch.allowedDomains }),
+        secrets: Object.keys(secrets),
+        ...(patch.mcpServers && { mcpServers: Object.keys(patch.mcpServers) }),
       });
     });
   },

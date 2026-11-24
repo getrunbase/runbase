@@ -155,10 +155,9 @@ export const secretsService = {
       await putSecret(tx, ctx, name, z.string().min(1).parse(value));
       await audit(tx, ctx, "secret.set", ref(name), { name });
     });
-    // Own AI key added: runs paused on budget resume.
-    if (name === "DEEPSEEK_API_KEY") {
-      await resumeBudgetRuns(ctx);
-    }
+    // Any secret may hold the AI provider key (whatever the provider):
+    // runs paused on budget resume if the budget gate allows it again.
+    await resumeBudgetRuns(ctx);
   },
   remove: async (ctx: TenantContext, name: string) => {
     await requireScope(ctx, "admin");
