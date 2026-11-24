@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -13,8 +13,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@runbase/ui/components/ui/input";
-import { Label } from "@runbase/ui/components/ui/label";
+import { Input } from "@getrunbase/ui/components/ui/input";
+import { Label } from "@getrunbase/ui/components/ui/label";
 import { setSecret } from "./actions";
 
 // Add / replace a secret in a dialog.

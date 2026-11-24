@@ -4,8 +4,8 @@ import { KeyRound } from "lucide-react";
 import { useSecretNames } from "@/components/secret-select";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Button } from "@runbase/ui/components/ui/button";
-import { Label } from "@runbase/ui/components/ui/label";
+import { Button } from "@getrunbase/ui/components/ui/button";
+import { Label } from "@getrunbase/ui/components/ui/label";
 import {
   Select,
   SelectContent,

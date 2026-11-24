@@ -2,11 +2,11 @@
 // status filter, runs table.
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { runsService } from "@runbase/core/runs";
+import { runsService } from "@getrunbase/core/runs";
 import { History } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { FilterBar } from "@/components/filter-bar";
-import { Badge } from "@runbase/ui/components/ui/badge";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -14,8 +14,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@runbase/ui/components/ui/table";
-import type { TenantContext } from "@runbase/core/tenant";
+} from "@getrunbase/ui/components/ui/table";
+import type { TenantContext } from "@getrunbase/core/tenant";
 import { makeLabels } from "../labels";
 
 const STATUSES = [

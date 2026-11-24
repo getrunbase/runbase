@@ -1,4 +1,4 @@
-import { liveStream, pageReadable } from "@runbase/core/components/live";
+import { liveStream, pageReadable } from "@getrunbase/core/components/live";
 import { getTenant } from "@/lib/tenant";
 
 // SDK live (useQuery): SSE of changed objects readable by the page

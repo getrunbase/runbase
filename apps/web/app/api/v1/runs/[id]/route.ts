@@ -1,5 +1,5 @@
-import { notFound } from "@runbase/core/errors";
-import { runsService } from "@runbase/core/runs";
+import { notFound } from "@getrunbase/core/errors";
+import { runsService } from "@getrunbase/core/runs";
 import { route } from "@/lib/api-v1/http";
 
 export const GET = route("getRun", async ({ ctx, params }) => {

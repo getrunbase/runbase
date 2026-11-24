@@ -1,10 +1,10 @@
 // MCP tools: secrets, signed incoming webhooks and SQL queries.
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
-import type { TenantContext } from "@runbase/core/tenant";
-import { webhooksService } from "@runbase/core/webhooks";
-import { secretsService } from "@runbase/core/secrets";
-import { queryService } from "@runbase/core/query";
+import type { TenantContext } from "@getrunbase/core/tenant";
+import { webhooksService } from "@getrunbase/core/webhooks";
+import { secretsService } from "@getrunbase/core/secrets";
+import { queryService } from "@getrunbase/core/query";
 import { run, must } from "./shared";
 
 export function defineIntegrationTools(server: McpServer, ctx: TenantContext) {

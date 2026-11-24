@@ -1,5 +1,5 @@
-import { secretsService } from "@runbase/core/secrets";
-import { secretUsageService } from "@runbase/core/secrets/usage";
+import { secretsService } from "@getrunbase/core/secrets";
+import { secretUsageService } from "@getrunbase/core/secrets/usage";
 import { Lock } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import {
@@ -9,7 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@runbase/ui/components/ui/table";
+} from "@getrunbase/ui/components/ui/table";
 import { ConfirmAction } from "@/components/confirm-action";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { getTenant } from "@/lib/tenant";

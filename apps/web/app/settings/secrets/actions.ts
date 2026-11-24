@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { secretsService } from "@runbase/core/secrets";
+import { secretsService } from "@getrunbase/core/secrets";
 import { actionError, type ActionError } from "@/lib/action-error";
 import { formInput, parseInput } from "@/lib/action-input";
 import { getTenant } from "@/lib/tenant";

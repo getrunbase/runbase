@@ -1,7 +1,7 @@
 // Single service registry. Each public method of a service
 // is mapped to its MCP tool. `null` = explicit exclusion: the method is
 // deliberately not exposed over MCP, with its reason in a comment.
-// Every `*Service` export of @runbase/core must appear here (exhaustiveness test).
+// Every `*Service` export of @getrunbase/core must appear here (exhaustiveness test).
 // The typing requires one entry per method, the parity test (apps/web) checks
 // that each named tool is registered on the MCP server.
 import { workspacesService } from "../workspaces";

@@ -3,7 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { Languages } from "lucide-react";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import { locales } from "@/i18n/config";
 import { setLocale } from "@/i18n/actions";
 

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { pagesService } from "@runbase/core/pages";
+import { pagesService } from "@getrunbase/core/pages";
 import { getTenant } from "@/lib/tenant";
 import { BuilderBar } from "./builder-bar";
 import { LivePage } from "./live";

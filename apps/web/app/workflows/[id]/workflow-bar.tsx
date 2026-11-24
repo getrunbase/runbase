@@ -3,8 +3,8 @@
 // No "use client": rendered on the server (tabs) as in the editor.
 import Link from "next/link";
 import { useFormatter, useNow, useTranslations } from "next-intl";
-import { Badge } from "@runbase/ui/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@runbase/ui/components/ui/tabs";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@getrunbase/ui/components/ui/tabs";
 import { makeLabels } from "../labels";
 
 export type WorkflowTab = "editor" | "runs" | "versions";

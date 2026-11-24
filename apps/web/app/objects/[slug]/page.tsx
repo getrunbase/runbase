@@ -1,13 +1,13 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { objectsService, type Field } from "@runbase/core/objects";
-import { workflowsService } from "@runbase/core/workflows";
+import { objectsService, type Field } from "@getrunbase/core/objects";
+import { workflowsService } from "@getrunbase/core/workflows";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@runbase/ui/components/ui/tabs";
+} from "@getrunbase/ui/components/ui/tabs";
 import { PageHeader } from "@/components/page-header";
 import { getTenant } from "@/lib/tenant";
 import { MigrateField } from "../migrate-field";

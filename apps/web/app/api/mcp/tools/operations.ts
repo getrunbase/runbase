@@ -1,10 +1,10 @@
 // MCP tools: AI budget, overview and error center.
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
-import type { TenantContext } from "@runbase/core/tenant";
-import { runsService } from "@runbase/core/runs";
-import { errorsService } from "@runbase/core/errors";
-import { overviewService } from "@runbase/core/overview";
+import type { TenantContext } from "@getrunbase/core/tenant";
+import { runsService } from "@getrunbase/core/runs";
+import { errorsService } from "@getrunbase/core/errors";
+import { overviewService } from "@getrunbase/core/overview";
 import { run } from "./shared";
 
 export function defineOperationTools(server: McpServer, ctx: TenantContext) {

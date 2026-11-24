@@ -2,14 +2,14 @@
 // authentication (sliding window in Redis), maximum body size.
 // Used by middleware.ts and by the hooks/ingest routes (capped read).
 import Redis from "ioredis";
-import { env } from "@runbase/core/env";
-import { logger } from "@runbase/core/logger";
+import { env } from "@getrunbase/core/env";
+import { logger } from "@getrunbase/core/logger";
 
 // Maximum body size (bytes), 1 MB by default (BODY_MAX_BYTES).
 export const bodyMaxBytes = () => env().BODY_MAX_BYTES;
 
 // Calls per minute and per IP, per route family (IP_RATE_<FAMILY>).
-// Defaults in the env schema (@runbase/core/env).
+// Defaults in the env schema (@getrunbase/core/env).
 const IP_KEYS = {
   hooks: "IP_RATE_HOOKS",
   ingest: "IP_RATE_INGEST",

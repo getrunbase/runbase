@@ -2,9 +2,9 @@
 
 import { Plus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Button } from "@runbase/ui/components/ui/button";
-import { Input } from "@runbase/ui/components/ui/input";
-import { Label } from "@runbase/ui/components/ui/label";
+import { Button } from "@getrunbase/ui/components/ui/button";
+import { Input } from "@getrunbase/ui/components/ui/input";
+import { Label } from "@getrunbase/ui/components/ui/label";
 import { showValue, type ObjectInfo } from "../graph";
 import { type VarScope } from "../variables";
 import { condRows, ConditionRows } from "./condition-form";

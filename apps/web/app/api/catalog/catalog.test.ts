@@ -2,8 +2,8 @@
 // the Next handlers, on a fixture repository. Requires REDIS_URL (limiter).
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { resetCatalog } from "@runbase/core/catalog";
-import { catalogFixture } from "@runbase/core/testing";
+import { resetCatalog } from "@getrunbase/core/catalog";
+import { catalogFixture } from "@getrunbase/core/testing";
 import * as templates from "./templates/route";
 import * as template from "./templates/[id]/route";
 import * as connectors from "./connectors/route";

@@ -3,8 +3,8 @@
 import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
-import { auth } from "@runbase/core/auth";
-import { feedbackService, isPlatformAdmin } from "@runbase/core/feedback";
+import { auth } from "@getrunbase/core/auth";
+import { feedbackService, isPlatformAdmin } from "@getrunbase/core/feedback";
 import { formInput, parseInput } from "@/lib/action-input";
 import { toggleInput } from "./inputs";
 

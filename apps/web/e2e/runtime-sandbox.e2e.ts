@@ -6,7 +6,7 @@
 // refused with sdk.rateLimited. Finally, a page that throws an error
 // on render makes it readable through the page.errors MCP tool (HTTP, API key) in
 // under 5 s, located at file:line in the package.
-//   pnpm --filter @runbase/web test:e2e
+//   pnpm --filter @getrunbase/web test:e2e
 // NEXT_PUBLIC_RUNTIME_ORIGIN is frozen at build time: this test therefore starts its own
 // `next dev` (E2E_BASE_URL not supported).
 import { test, before, after } from "node:test";
@@ -16,10 +16,10 @@ import { createHmac, randomUUID } from "node:crypto";
 import { createServer } from "node:net";
 import postgres from "postgres";
 import type { Browser } from "playwright-core";
-import { apiKeysService } from "@runbase/core/api-keys";
-import { objectsService } from "@runbase/core/objects";
-import { pagesService } from "@runbase/core/pages";
-import type { TenantContext } from "@runbase/core/tenant";
+import { apiKeysService } from "@getrunbase/core/api-keys";
+import { objectsService } from "@getrunbase/core/objects";
+import { pagesService } from "@getrunbase/core/pages";
+import type { TenantContext } from "@getrunbase/core/tenant";
 
 const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
 let port = 0;

@@ -1,6 +1,6 @@
 // Modules provided to code components (imports allowed by compilation):
 // React, recharts, date-fns, headless libs (dnd-kit, tanstack, react-hook-form,
-// zod, motion, xyflow, react-markdown, react-day-picker), @runbase/kit and all the
+// zod, motion, xyflow, react-markdown, react-day-picker), @getrunbase/kit and all the
 // app's shadcn components, exposed as `@ui/<name>` (modules.test.ts
 // checks that none is missing). tiptap and maplibre are lazy: separate
 // chunks, loaded only if the bundle imports them (lazyChunks).
@@ -21,18 +21,18 @@ import * as motion from "motion/react";
 import * as xyflow from "@xyflow/react";
 import * as reactMarkdown from "react-markdown";
 import * as dayPicker from "react-day-picker";
-import * as kit from "@runbase/kit";
+import * as kit from "@getrunbase/kit";
 import * as accordion from "@/components/ui/accordion";
 import * as alert from "@/components/ui/alert";
 import * as alertDialog from "@/components/ui/alert-dialog";
 import * as aspectRatio from "@/components/ui/aspect-ratio";
 import * as avatar from "@/components/ui/avatar";
-import * as badge from "@runbase/ui/components/ui/badge";
-import * as breadcrumb from "@runbase/ui/components/ui/breadcrumb";
-import * as button from "@runbase/ui/components/ui/button";
+import * as badge from "@getrunbase/ui/components/ui/badge";
+import * as breadcrumb from "@getrunbase/ui/components/ui/breadcrumb";
+import * as button from "@getrunbase/ui/components/ui/button";
 import * as buttonGroup from "@/components/ui/button-group";
 import * as calendar from "@/components/ui/calendar";
-import * as card from "@runbase/ui/components/ui/card";
+import * as card from "@getrunbase/ui/components/ui/card";
 import * as carousel from "@/components/ui/carousel";
 import * as chart from "@/components/ui/chart";
 import * as checkbox from "@/components/ui/checkbox";
@@ -45,11 +45,11 @@ import * as empty from "@/components/ui/empty";
 import * as field from "@/components/ui/field";
 import * as form from "@/components/ui/form";
 import * as hoverCard from "@/components/ui/hover-card";
-import * as input from "@runbase/ui/components/ui/input";
+import * as input from "@getrunbase/ui/components/ui/input";
 import * as inputOtp from "@/components/ui/input-otp";
 import * as item from "@/components/ui/item";
 import * as kbd from "@/components/ui/kbd";
-import * as label from "@runbase/ui/components/ui/label";
+import * as label from "@getrunbase/ui/components/ui/label";
 import * as menubar from "@/components/ui/menubar";
 import * as navigationMenu from "@/components/ui/navigation-menu";
 import * as pagination from "@/components/ui/pagination";
@@ -67,8 +67,8 @@ import * as slider from "@/components/ui/slider";
 import * as sonner from "@/components/ui/sonner";
 import * as spinner from "@/components/ui/spinner";
 import * as switchUi from "@/components/ui/switch";
-import * as table from "@runbase/ui/components/ui/table";
-import * as tabs from "@runbase/ui/components/ui/tabs";
+import * as table from "@getrunbase/ui/components/ui/table";
+import * as tabs from "@getrunbase/ui/components/ui/tabs";
 import * as textarea from "@/components/ui/textarea";
 import * as toggle from "@/components/ui/toggle";
 import * as toggleGroup from "@/components/ui/toggle-group";
@@ -93,7 +93,7 @@ export const modules: Record<string, unknown> = {
   "react-markdown": reactMarkdown,
   "react-day-picker": dayPicker,
   // Data-bound blocks (hooks read from __vendor["@getrunbase/sdk"]).
-  "@runbase/kit": kit,
+  "@getrunbase/kit": kit,
   "@ui/accordion": accordion,
   "@ui/alert": alert,
   "@ui/alert-dialog": alertDialog,

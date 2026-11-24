@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useFieldArray, useForm } from "react-hook-form";
 import { SlidersHorizontal, Star, Trash2 } from "lucide-react";
-import { baseType, isComputed, type Field } from "@runbase/core/objects/fields";
+import { baseType, isComputed, type Field } from "@getrunbase/core/objects/fields";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@runbase/ui/components/ui/badge";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   Form,
   FormControl,
@@ -16,7 +16,7 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form";
-import { Input } from "@runbase/ui/components/ui/input";
+import { Input } from "@getrunbase/ui/components/ui/input";
 import {
   Select,
   SelectContent,

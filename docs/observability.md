@@ -2,7 +2,7 @@
 
 ## Logs
 
-- Shared logger: `@runbase/core/logger` (pino, one JSON line per event on stdout).
+- Shared logger: `@getrunbase/core/logger` (pino, one JSON line per event on stdout).
   Fields: `time` (ISO), `level`, `service` (`web`, `worker`), `msg`, and the correlation context
   `workspaceId`, `runId`, `requestId` through `withContext({...})`. Secrets are masked (`password`, `token`,
   `secret`, `authorization`, `cookie`). Level: `LOG_LEVEL` (default `info`, `silent` under `NODE_ENV=test`).

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import type { Field } from "@runbase/core/objects/fields";
+import type { Field } from "@getrunbase/core/objects/fields";
 import { branchesOf, branchName, type ObjectInfo } from "./graph";
 import {
   casesFromOptions,

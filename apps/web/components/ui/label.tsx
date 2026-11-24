@@ -1,2 +1,2 @@
-// Shared design system component (@runbase/ui).
-export * from "@runbase/ui/components/ui/label";
+// Shared design system component (@getrunbase/ui).
+export * from "@getrunbase/ui/components/ui/label";

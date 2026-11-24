@@ -2,7 +2,7 @@
 // error is logged and rethrown.
 import { test, mock } from "node:test";
 import assert from "node:assert/strict";
-import { notFound as notFoundError } from "@runbase/core/errors";
+import { notFound as notFoundError } from "@getrunbase/core/errors";
 import { pageOr404 } from "./load";
 
 const is404 = (e: unknown) =>

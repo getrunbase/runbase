@@ -1,6 +1,6 @@
 // Webhook test URL: signature checked, sample stored for the
 // mapping, no event pushed (no workflow started). Capped read.
-import { receiveWebhook } from "@runbase/core/webhooks";
+import { receiveWebhook } from "@getrunbase/core/webhooks";
 import { BodyTooLarge, readBounded, tooLarge } from "@/lib/request-limits";
 
 export async function POST(

@@ -5,7 +5,7 @@ import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Download } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import { useErrorText } from "@/lib/error-text";
 import type { ImportTemplateResult } from "../../databases/actions";
 import { importCatalogTemplate } from "./actions";

@@ -1,13 +1,13 @@
 // MCP tools: files and records.
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
-import type { TenantContext } from "@runbase/core/tenant";
-import { fieldSchema, objectsService } from "@runbase/core/objects";
-import { recordsService } from "@runbase/core/records";
-import { filterSchema } from "@runbase/core/filter";
-import { requireConfirm } from "@runbase/core/errors";
-import { viewsService } from "@runbase/core/views";
-import { filesService } from "@runbase/core/files";
+import type { TenantContext } from "@getrunbase/core/tenant";
+import { fieldSchema, objectsService } from "@getrunbase/core/objects";
+import { recordsService } from "@getrunbase/core/records";
+import { filterSchema } from "@getrunbase/core/filter";
+import { requireConfirm } from "@getrunbase/core/errors";
+import { viewsService } from "@getrunbase/core/views";
+import { filesService } from "@getrunbase/core/files";
 import { run, must, objectId, slug, data, mode, upsertItem } from "./shared";
 
 export function defineRecordTools(server: McpServer, ctx: TenantContext) {

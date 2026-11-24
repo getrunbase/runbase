@@ -8,8 +8,8 @@ import { useTranslations } from "next-intl";
 import { Slot } from "radix-ui";
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Button } from "@runbase/ui/components/ui/button";
-import { Input } from "@runbase/ui/components/ui/input";
+import { Button } from "@getrunbase/ui/components/ui/button";
+import { Input } from "@getrunbase/ui/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
   Sheet,

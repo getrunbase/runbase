@@ -2,7 +2,7 @@
 // only through MCP. Requires DATABASE_URL and REDIS_URL.
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
-import { pagesService } from "@runbase/core/pages";
+import { pagesService } from "@getrunbase/core/pages";
 import { client, owner, raw } from "./test-client";
 
 after(() => setImmediate(() => process.exit(0)));

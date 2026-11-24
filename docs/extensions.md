@@ -8,7 +8,7 @@ that makes no network call.
 
 ## Interfaces
 
-`@runbase/core/extensions` exposes four extension points:
+`@getrunbase/core/extensions` exposes four extension points:
 
 | Point         | Interface            | Purpose                                                          |
 | ------------- | -------------------- | ---------------------------------------------------------------- |
@@ -18,7 +18,7 @@ that makes no network call.
 | `client`      | `ClientExtension`    | `headScripts()`: scripts injected in the `<head>` of `apps/web`. |
 
 `TelemetrySink` is product analytics (who uses which feature). It is distinct
-from the OpenTelemetry metrics of `@runbase/core/telemetry`, which describe
+from the OpenTelemetry metrics of `@getrunbase/core/telemetry`, which describe
 technical health (see `observability.md`).
 
 A `null` answer from `billing` or `credentials` means "no opinion": the core
@@ -35,7 +35,7 @@ loading GA4) is the script's responsibility.
 The core knows no offer names. `billing.entitlements(organizationId)` returns
 `{ features: string[], quotas: Record<string, number> }`: features are
 `feat:…` keys, checked with `can(ctx, "feat:…")`; quotas are `quota:…` caps,
-enforced with `checkQuota(ctx, "quota:…", next)` (`@runbase/core/entitlements`).
+enforced with `checkQuota(ctx, "quota:…", next)` (`@getrunbase/core/entitlements`).
 A quota left out falls back to the environment, then to unlimited. Changing
 an offer only changes the extension, never this repository.
 

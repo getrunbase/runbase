@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { workflowsService } from "@runbase/core/workflows";
+import { workflowsService } from "@getrunbase/core/workflows";
 import { Plus, Workflow } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { Badge } from "@runbase/ui/components/ui/badge";
-import { Button } from "@runbase/ui/components/ui/button";
-import { Input } from "@runbase/ui/components/ui/input";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
+import { Button } from "@getrunbase/ui/components/ui/button";
+import { Input } from "@getrunbase/ui/components/ui/input";
 import {
   Table,
   TableBody,
@@ -14,8 +14,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@runbase/ui/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@runbase/ui/components/ui/tabs";
+} from "@getrunbase/ui/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@getrunbase/ui/components/ui/tabs";
 import { getTenant } from "@/lib/tenant";
 import { createWorkflow } from "./actions";
 import { makeLabels } from "./labels";

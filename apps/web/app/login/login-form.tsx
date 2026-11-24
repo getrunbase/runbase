@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { z } from "zod";
-import type { AuthMethod } from "@runbase/core/env";
+import type { AuthMethod } from "@getrunbase/core/env";
 import { AuthForm } from "@/components/auth-form";
 import { AuthFooter } from "@/components/auth-shell";
 import { sendMagicLink, signInWithPassword } from "@/lib/auth-client";

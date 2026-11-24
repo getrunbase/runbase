@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/tenant";
 import { getTranslations } from "next-intl/server";
 import { Table2, Workflow, type LucideIcon } from "lucide-react";
-import { catalogService } from "@runbase/core/catalog";
+import { catalogService } from "@getrunbase/core/catalog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PageHeader } from "@/components/page-header";
 import { IconTile } from "@/components/ds/atoms";

@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { functionsService } from "@runbase/core/functions";
-import { secretsService } from "@runbase/core/secrets";
+import { functionsService } from "@getrunbase/core/functions";
+import { secretsService } from "@getrunbase/core/secrets";
 import { FileCode } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   Table,
   TableBody,
@@ -12,13 +12,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@runbase/ui/components/ui/table";
+} from "@getrunbase/ui/components/ui/table";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@runbase/ui/components/ui/tabs";
+} from "@getrunbase/ui/components/ui/tabs";
 import { getTenant } from "@/lib/tenant";
 import { restoreFunction } from "../actions";
 import { FunctionForm } from "../function-form";

@@ -1,9 +1,9 @@
-import { membersService } from "@runbase/core/members";
+import { membersService } from "@getrunbase/core/members";
 import { UserPlus } from "lucide-react";
 import { ConfirmAction } from "@/components/confirm-action";
-import { Badge } from "@runbase/ui/components/ui/badge";
-import { Button } from "@runbase/ui/components/ui/button";
-import { Input } from "@runbase/ui/components/ui/input";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
+import { Button } from "@getrunbase/ui/components/ui/button";
+import { Input } from "@getrunbase/ui/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -18,7 +18,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@runbase/ui/components/ui/table";
+} from "@getrunbase/ui/components/ui/table";
 import type { Tone } from "@/components/ds/tone";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { ROLE_HINTS } from "@/lib/roles";

@@ -4,8 +4,8 @@ import { useErrorText } from "@/lib/error-text";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
-import { recordTitle, type Field } from "@runbase/core/objects/fields";
-import { Badge } from "@runbase/ui/components/ui/badge";
+import { recordTitle, type Field } from "@getrunbase/core/objects/fields";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
 import {
   Sheet,
   SheetContent,
@@ -18,8 +18,8 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@runbase/ui/components/ui/tabs";
-import { Button } from "@runbase/ui/components/ui/button";
+} from "@getrunbase/ui/components/ui/tabs";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import { loadRecord, recordHistory, revertRecord, updateCell } from "./actions";
 import { ExportMenu, ImportDialog } from "./data-tools";
 import { RefSelect } from "./ref-select";

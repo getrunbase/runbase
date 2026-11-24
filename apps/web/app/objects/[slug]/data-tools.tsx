@@ -4,8 +4,8 @@ import { useErrorText } from "@/lib/error-text";
 import { useEffect, useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Download, Info, RotateCcw, Trash2, Upload } from "lucide-react";
-import { recordTitle, type Field } from "@runbase/core/objects/fields";
-import { parseCsv } from "@runbase/core/records/csv";
+import { recordTitle, type Field } from "@getrunbase/core/objects/fields";
+import { parseCsv } from "@getrunbase/core/records/csv";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -33,8 +33,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@runbase/ui/components/ui/input";
-import { Label } from "@runbase/ui/components/ui/label";
+import { Input } from "@getrunbase/ui/components/ui/input";
+import { Label } from "@getrunbase/ui/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -49,7 +49,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@runbase/ui/components/ui/table";
+} from "@getrunbase/ui/components/ui/table";
 import { emptyTrash, importRecords, listTrash, restoreRecord } from "./actions";
 
 // Download of all records (streamed route, no limit).

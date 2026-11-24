@@ -34,7 +34,7 @@ const monaco = {
   group: ["@monaco-editor/*", "monaco-editor", "monaco-editor/*"],
   message: "Monaco is only allowed in the functions code editor.",
 };
-// Components provided by the design system: import directly from @runbase/ui,
+// Components provided by the design system: import directly from @getrunbase/ui,
 // not through the re-exports of apps/web/components/ui.
 const dsComponents = [
   "badge",
@@ -48,7 +48,7 @@ const dsComponents = [
 ];
 const ds = {
   group: dsComponents.map((c) => `@/components/ui/${c}`),
-  message: "UI: import this component from @runbase/ui/components/ui/*.",
+  message: "UI: import this component from @getrunbase/ui/components/ui/*.",
 };
 const restrict = (...patterns) => ({
   rules: {
@@ -62,7 +62,7 @@ const restrict = (...patterns) => ({
 const colorRe =
   "/(^|[^&\\w])#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})(?![\\w-])|\\b(rgba?|hsla?|oklch|oklab|lab|lch)\\(\\s*[\\d.]|-\\[(#|rgb|hsl|oklch|color:)/";
 const colorMsg =
-  "Hard-coded color: use a design system token (@runbase/ui/theme.css).";
+  "Hard-coded color: use a design system token (@getrunbase/ui/theme.css).";
 const colorSelectors = [
   { selector: `Literal[value=${colorRe}]`, message: colorMsg },
   { selector: `TemplateElement[value.raw=${colorRe}]`, message: colorMsg },
@@ -77,7 +77,7 @@ const colors = {
 // template, translated in apps/web/messages/fr/errors). A bare Error is
 // only for internal invariants, marked with an eslint-disable comment.
 const errorMsg =
-  "core: throw appError(\"domain.camelName\", \"English template\") (@runbase/core/errors), not Error.";
+  "core: throw appError(\"domain.camelName\", \"English template\") (@getrunbase/core/errors), not Error.";
 const coreErrors = {
   files: ["packages/core/src/**/*.ts"],
   ignores: ["**/*.test.*", "**/test-*.ts"],

@@ -2,9 +2,9 @@
 // query and body (schemas from endpoints.ts), errors as stable JSON
 // `{ code, message, params }`. The logic stays in the core services.
 import { z } from "zod";
-import { appError, AppError, notFound } from "@runbase/core/errors";
-import { objectsService } from "@runbase/core/objects";
-import type { TenantContext } from "@runbase/core/tenant";
+import { appError, AppError, notFound } from "@getrunbase/core/errors";
+import { objectsService } from "@getrunbase/core/objects";
+import type { TenantContext } from "@getrunbase/core/tenant";
 import { authenticate, limitKey, type RateHeaders } from "./auth";
 import { endpoints, type Endpoint, type Endpoints } from "./endpoints";
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm, type DefaultValues, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import { AuthHeading, AuthShell } from "@/components/auth-shell";
 import {
   Form,
@@ -14,7 +14,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@runbase/ui/components/ui/input";
+import { Input } from "@getrunbase/ui/components/ui/input";
 
 type Field = {
   name: string;

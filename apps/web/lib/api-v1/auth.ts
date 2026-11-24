@@ -1,11 +1,11 @@
 // API v1: API key authentication (`Authorization: Bearer agk_…`,
 // optional workspace in `x-workspace-id`) and per-key rate limit.
 import type { Redis } from "ioredis";
-import { authenticateApiKey } from "@runbase/core/api-keys";
-import { busConnection } from "@runbase/core/bus";
-import { appError } from "@runbase/core/errors";
-import { rateLimit } from "@runbase/core/quotas";
-import type { TenantContext } from "@runbase/core/tenant";
+import { authenticateApiKey } from "@getrunbase/core/api-keys";
+import { busConnection } from "@getrunbase/core/bus";
+import { appError } from "@getrunbase/core/errors";
+import { rateLimit } from "@getrunbase/core/quotas";
+import type { TenantContext } from "@getrunbase/core/tenant";
 
 // Requests per minute per key (fixed Redis window, shared between instances).
 const perMinute = () => Number(process.env.API_V1_RATE_LIMIT ?? 600);

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Button } from "@getrunbase/ui/components/ui/button";
 
 // Read-only field + copy button (URL, key, command).
 export function CopyField({ value, label }: { value: string; label?: string }) {

@@ -2,7 +2,7 @@
 // read-only FS (tmpfs /tmp), outside the postgres and redis network.
 // Opt-in (Docker required):
 //   docker build --target sandbox -t runbase-sandbox .
-//   SANDBOX_IMAGE=runbase-sandbox pnpm --filter @runbase/core test
+//   SANDBOX_IMAGE=runbase-sandbox pnpm --filter @getrunbase/core test
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";

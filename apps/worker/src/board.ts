@@ -7,12 +7,12 @@ import { HonoAdapter } from "@bull-board/hono";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
-import { auth } from "@runbase/core/auth";
-import { busQueue } from "@runbase/core/bus";
-import { runsQueue } from "@runbase/core/runs";
-import { scheduleQueue } from "@runbase/core/triggers";
-import { env } from "@runbase/core/env";
-import { logger } from "@runbase/core/logger";
+import { auth } from "@getrunbase/core/auth";
+import { busQueue } from "@getrunbase/core/bus";
+import { runsQueue } from "@getrunbase/core/runs";
+import { scheduleQueue } from "@getrunbase/core/triggers";
+import { env } from "@getrunbase/core/env";
+import { logger } from "@getrunbase/core/logger";
 
 const BASE = "/admin/queues";
 

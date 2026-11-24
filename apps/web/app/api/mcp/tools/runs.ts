@@ -1,14 +1,14 @@
 // MCP tools: runs.
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
-import type { TenantContext } from "@runbase/core/tenant";
+import type { TenantContext } from "@getrunbase/core/tenant";
 import {
   ACTIVE_RUN_STATUSES,
   RUN_STATUSES,
   runsService,
-} from "@runbase/core/runs";
-import { appError, notFound, requireConfirm } from "@runbase/core/errors";
-import { triggersService } from "@runbase/core/triggers";
+} from "@getrunbase/core/runs";
+import { appError, notFound, requireConfirm } from "@getrunbase/core/errors";
+import { triggersService } from "@getrunbase/core/triggers";
 import { run, must, testFlag, wfId } from "./shared";
 
 export function defineRunTools(server: McpServer, ctx: TenantContext) {

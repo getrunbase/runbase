@@ -1,12 +1,12 @@
-import { workspacesService } from "@runbase/core/workspaces";
-import { runsService } from "@runbase/core/runs";
-import { quotasService } from "@runbase/core/quotas";
+import { workspacesService } from "@getrunbase/core/workspaces";
+import { runsService } from "@getrunbase/core/runs";
+import { quotasService } from "@getrunbase/core/quotas";
 import { Check } from "lucide-react";
-import { Label } from "@runbase/ui/components/ui/label";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Label } from "@getrunbase/ui/components/ui/label";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { Input } from "@runbase/ui/components/ui/input";
+import { Input } from "@getrunbase/ui/components/ui/input";
 import { getTenant } from "@/lib/tenant";
 import { ConfirmAction } from "@/components/confirm-action";
 import {
@@ -17,10 +17,10 @@ import {
   setAiBudget,
   switchWorkspace,
 } from "../../actions";
-import { appUrl } from "@runbase/core/env";
+import { appUrl } from "@getrunbase/core/env";
 import { SettingsPage, SettingsSection } from "../settings-shell";
-import { aiSettingsService } from "@runbase/core/ai-providers";
-import { secretsService } from "@runbase/core/secrets";
+import { aiSettingsService } from "@getrunbase/core/ai-providers";
+import { secretsService } from "@getrunbase/core/secrets";
 import { AiProviderForm } from "./ai-provider-form";
 import { pageTitle } from "@/lib/page-title";
 

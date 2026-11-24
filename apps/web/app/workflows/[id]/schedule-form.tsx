@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Badge } from "@runbase/ui/components/ui/badge";
-import { Input } from "@runbase/ui/components/ui/input";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
+import { Input } from "@getrunbase/ui/components/ui/input";
 import {
   Select,
   SelectContent,

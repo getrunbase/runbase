@@ -1,6 +1,6 @@
 // Input schemas of the databases server actions.
 import { z } from "zod";
-import type { Field } from "@runbase/core/objects";
+import type { Field } from "@getrunbase/core/objects";
 import { trimmed } from "@/lib/action-input";
 
 // Shape check only: the core validates field definitions.

@@ -1,6 +1,6 @@
 // Handlers of the /api/health (liveness) and /api/ready (readiness) probes, separate
 // from the route files so they can be tested with simulated dependencies.
-import { readiness, type ReadinessReport } from "@runbase/core/health";
+import { readiness, type ReadinessReport } from "@getrunbase/core/health";
 
 const NO_STORE = { "cache-control": "no-store" };
 

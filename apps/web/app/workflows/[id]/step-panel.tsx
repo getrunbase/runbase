@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { ArrowRight, Trash2, X } from "lucide-react";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,

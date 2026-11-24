@@ -2,9 +2,9 @@
 
 import { SecretSelect } from "@/components/secret-select";
 import { useTranslations } from "next-intl";
-import { Badge } from "@runbase/ui/components/ui/badge";
-import { Input } from "@runbase/ui/components/ui/input";
-import { Label } from "@runbase/ui/components/ui/label";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
+import { Input } from "@getrunbase/ui/components/ui/input";
+import { Label } from "@getrunbase/ui/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { formFields, showValue, type ObjectInfo } from "../graph";
 import { makeLabels } from "../labels";

@@ -1,9 +1,9 @@
-import type { Filter } from "@runbase/core/filter";
+import type { Filter } from "@getrunbase/core/filter";
 import {
   baseType,
   type BaseType,
   type Field,
-} from "@runbase/core/objects/fields";
+} from "@getrunbase/core/objects/fields";
 
 // Records table view: "pill" filters translated to the core filter
 // DSL (same operators as workflow conditions).

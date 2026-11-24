@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { functionsService } from "@runbase/core/functions";
+import { functionsService } from "@getrunbase/core/functions";
 import { Sparkles, SquareFunction } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { Badge } from "@runbase/ui/components/ui/badge";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -12,7 +12,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@runbase/ui/components/ui/table";
+} from "@getrunbase/ui/components/ui/table";
 import { getTenant } from "@/lib/tenant";
 import { pageTitle } from "@/lib/page-title";
 

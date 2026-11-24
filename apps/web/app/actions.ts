@@ -3,11 +3,11 @@
 import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { auth } from "@runbase/core/auth";
-import { answerInvitation, membersService } from "@runbase/core/members";
-import { quotasService } from "@runbase/core/quotas";
-import { workspacesService } from "@runbase/core/workspaces";
-import { runsService } from "@runbase/core/runs";
+import { auth } from "@getrunbase/core/auth";
+import { answerInvitation, membersService } from "@getrunbase/core/members";
+import { quotasService } from "@getrunbase/core/quotas";
+import { workspacesService } from "@getrunbase/core/workspaces";
+import { runsService } from "@getrunbase/core/runs";
 import { formInput, parseInput } from "@/lib/action-input";
 import { getTenant, WORKSPACE_COOKIE } from "@/lib/tenant";
 import {

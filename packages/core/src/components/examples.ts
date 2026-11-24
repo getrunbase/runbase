@@ -1,10 +1,10 @@
 // Reference examples served by page.examples: multi-file TSX page
-// packages built on the @runbase/kit blocks. Each one provides `files`,
+// packages built on the @getrunbase/kit blocks. Each one provides `files`,
 // `entry`, `permissions` and mock `data` (fictional CRM from example-data).
 import { seed } from "./example-data";
 
 const crmIndex = String.raw`import { useState } from "react";
-import { DataTable } from "@runbase/kit";
+import { DataTable } from "@getrunbase/kit";
 import { DealPanel } from "./components/deal-panel";
 
 // Slug of the mock data. Live: the object uuid (objects.get).
@@ -34,7 +34,7 @@ export default function Deals() {
 }
 `;
 
-const crmPanel = String.raw`import { RecordDetail, RecordForm } from "@runbase/kit";
+const crmPanel = String.raw`import { RecordDetail, RecordForm } from "@getrunbase/kit";
 import { Button } from "@ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
 import { X } from "lucide-react";
@@ -73,7 +73,7 @@ export function DealPanel({
 `;
 
 const kanbanIndex = String.raw`import { useState } from "react";
-import { FilterBar, Kanban, type FilterValue } from "@runbase/kit";
+import { FilterBar, Kanban, type FilterValue } from "@getrunbase/kit";
 import { PageHeader } from "./components/page-header";
 
 const DEALS = "deals";
@@ -121,7 +121,7 @@ export default function SalesDashboard() {
 }
 `;
 
-const dashKpis = String.raw`import { KpiCard } from "@runbase/kit";
+const dashKpis = String.raw`import { KpiCard } from "@getrunbase/kit";
 
 const OPEN = { field: "stage", op: "in", value: ["lead", "qualified", "proposal", "negotiation"] };
 const WON = { field: "stage", op: "eq", value: "won" };
@@ -138,7 +138,7 @@ export function Kpis({ object }: { object: string }) {
 }
 `;
 
-const dashCharts = String.raw`import { ChartCard } from "@runbase/kit";
+const dashCharts = String.raw`import { ChartCard } from "@getrunbase/kit";
 
 export function Charts({ object }: { object: string }) {
   return (

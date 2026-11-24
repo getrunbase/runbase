@@ -29,7 +29,7 @@ import {
   Webhook,
   type LucideIcon,
 } from "lucide-react";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   CommandDialog,
   CommandEmpty,

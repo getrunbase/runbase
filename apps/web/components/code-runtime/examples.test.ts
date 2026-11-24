@@ -9,7 +9,7 @@ import {
   componentsGuide,
   EXAMPLES,
   parseCall,
-} from "@runbase/core/components";
+} from "@getrunbase/core/components";
 import render from "./harness";
 
 test("three examples: crm, kanban, dashboard", () => {
@@ -29,7 +29,7 @@ for (const ex of EXAMPLES)
     assert.ok(Object.keys(ex.files).length > 1, "paquet multi-fichiers");
     const r = await compilePackage(ex.files, ex.entry);
     assert.deepEqual(r.errors, []);
-    assert.match(r.bundle!, /__vendor\["@runbase\/kit"\]/);
+    assert.match(r.bundle!, /__vendor\["@getrunbase\/kit"\]/);
     const out = render({ bundle: r.bundle!, props: {}, data: ex.data });
     assert.deepEqual(out.errors, []);
     const html = out.html;

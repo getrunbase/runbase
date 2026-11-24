@@ -1,11 +1,11 @@
-import { auditService } from "@runbase/core/audit";
-import { membersService } from "@runbase/core/members";
+import { auditService } from "@getrunbase/core/audit";
+import { membersService } from "@getrunbase/core/members";
 import { ScrollText, Sparkles, User } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { FilterBar } from "@/components/filter-bar";
 import { JsonView } from "@/components/json-view";
 import { Pager } from "@/components/pager";
-import { Badge } from "@runbase/ui/components/ui/badge";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -13,7 +13,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@runbase/ui/components/ui/table";
+} from "@getrunbase/ui/components/ui/table";
 import type { Tone } from "@/components/ds/tone";
 import { auditLabel } from "@/lib/audit-labels";
 import { getFormatter, getTranslations } from "next-intl/server";

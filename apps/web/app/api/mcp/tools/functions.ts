@@ -3,19 +3,19 @@ import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
-import type { TenantContext } from "@runbase/core/tenant";
-import { notFound, requireConfirm } from "@runbase/core/errors";
-import { functionInputSchema, functionsService } from "@runbase/core/functions";
+import type { TenantContext } from "@getrunbase/core/tenant";
+import { notFound, requireConfirm } from "@getrunbase/core/errors";
+import { functionInputSchema, functionsService } from "@getrunbase/core/functions";
 import {
   editsSchema,
   componentsGuide,
   componentsService,
   EXAMPLES,
   permissionsSchema,
-} from "@runbase/core/components";
+} from "@getrunbase/core/components";
 import { runtimeCsp, runtimeHtml, testHarness } from "@/lib/code-runtime";
 import { componentCss } from "@/lib/component-css";
-import { render } from "@runbase/core/render";
+import { render } from "@getrunbase/core/render";
 import { run, must, runImage, viewports, themes } from "./shared";
 
 export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
@@ -230,7 +230,7 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
     "page.guide",
     {
       description:
-        "Page guide, to read before writing a page: package structure (entry, files, relative imports), @getrunbase/sdk hooks, @runbase/kit blocks, permissions, strict design rules (spacing, hierarchy, empty/loading/error states, responsive, accessibility) and the @ui modules.",
+        "Page guide, to read before writing a page: package structure (entry, files, relative imports), @getrunbase/sdk hooks, @getrunbase/kit blocks, permissions, strict design rules (spacing, hierarchy, empty/loading/error states, responsive, accessibility) and the @ui modules.",
     },
     () =>
       run(async () => ({
@@ -245,7 +245,7 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
     "page.examples",
     {
       description:
-        "Reference page packages built on @runbase/kit (crm, kanban, dashboard). Without `name`: summarized list {name, description}, paginated (offset, limit). With `name`: the full example (files, entry, permissions, mock `data`), ready for page.create. Adapt object ids and field names to the workspace.",
+        "Reference page packages built on @getrunbase/kit (crm, kanban, dashboard). Without `name`: summarized list {name, description}, paginated (offset, limit). With `name`: the full example (files, entry, permissions, mock `data`), ready for page.create. Adapt object ids and field names to the workspace.",
       inputSchema: z.object({
         name: z.string().optional(),
         offset: z.number().int().min(0).default(0),

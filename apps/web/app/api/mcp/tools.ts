@@ -1,4 +1,4 @@
-// MCP tools: thin adapters, the logic lives in @runbase/core.
+// MCP tools: thin adapters, the logic lives in @getrunbase/core.
 // This file holds the request context, the definition cache and the
 // registration; the tools themselves live in ./tools/, one file per domain.
 import { AsyncLocalStorage } from "node:async_hooks";
@@ -10,9 +10,9 @@ import {
   setMcpDefault,
   type McpPrincipal,
   type TenantContext,
-} from "@runbase/core/tenant";
-import { rateLimit } from "@runbase/core/quotas";
-import { recordError } from "@runbase/core/errors";
+} from "@getrunbase/core/tenant";
+import { rateLimit } from "@getrunbase/core/quotas";
+import { recordError } from "@getrunbase/core/errors";
 import { run, SILENT, type ToolConfig } from "./tools/shared";
 import { defineAccountTools } from "./tools/account";
 import { defineSchemaTools } from "./tools/schema";

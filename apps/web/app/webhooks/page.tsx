@@ -1,15 +1,15 @@
 import { headers } from "next/headers";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { secretsService } from "@runbase/core/secrets";
-import { webhooksService } from "@runbase/core/webhooks";
+import { secretsService } from "@getrunbase/core/secrets";
+import { webhooksService } from "@getrunbase/core/webhooks";
 import { Webhook } from "lucide-react";
 import { ConfirmAction } from "@/components/confirm-action";
 import { CopyField } from "@/components/copy-button";
 import { EmptyState } from "@/components/empty-state";
 import { JsonView } from "@/components/json-view";
 import { PageHeader } from "@/components/page-header";
-import { Badge } from "@runbase/ui/components/ui/badge";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   Table,
   TableBody,
@@ -17,11 +17,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@runbase/ui/components/ui/table";
+} from "@getrunbase/ui/components/ui/table";
 import { getTenant } from "@/lib/tenant";
 import { clearWebhookSample, deleteWebhook } from "./actions";
 import { CreateWebhookDialog, TestWebhookForm } from "./forms";
-import { env } from "@runbase/core/env";
+import { env } from "@getrunbase/core/env";
 import { pageTitle } from "@/lib/page-title";
 
 export const generateMetadata = pageTitle("webhooks");

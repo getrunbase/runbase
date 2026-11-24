@@ -1,6 +1,6 @@
 // Input schemas of the root server actions (app/actions.ts).
 import { z } from "zod";
-import { ASSIGNABLE_ROLES } from "@runbase/core/members";
+import { ASSIGNABLE_ROLES } from "@getrunbase/core/members";
 import { id, trimmed } from "@/lib/action-input";
 
 // Unknown or missing role falls back to "member".

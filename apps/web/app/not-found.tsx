@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { SearchXIcon } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Button } from "@getrunbase/ui/components/ui/button";
 
 export default async function NotFound() {
   const t = await getTranslations("home.notFound");

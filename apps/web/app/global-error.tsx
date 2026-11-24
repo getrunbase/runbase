@@ -10,7 +10,7 @@ import enHome from "@/messages/en/home.json";
 import frHome from "@/messages/fr/home.json";
 import enCommon from "@/messages/en/common.json";
 import frCommon from "@/messages/fr/common.json";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Button } from "@getrunbase/ui/components/ui/button";
 
 const MESSAGES = {
   en: { home: enHome, common: enCommon },

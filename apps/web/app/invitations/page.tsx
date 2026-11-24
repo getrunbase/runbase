@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/tenant";
 import { MailOpen } from "lucide-react";
-import { pendingInvitations } from "@runbase/core/members";
+import { pendingInvitations } from "@getrunbase/core/members";
 import { AuthFooter, AuthHeading, AuthShell } from "@/components/auth-shell";
 import { EmptyState } from "@/components/empty-state";
-import { Badge } from "@runbase/ui/components/ui/badge";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import { getTranslations } from "next-intl/server";
 import { ROLE_HINTS } from "@/lib/roles";
 import { answerInvite } from "../actions";

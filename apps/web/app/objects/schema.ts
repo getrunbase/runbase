@@ -1,5 +1,5 @@
-import type { Field } from "@runbase/core/objects";
-import { slugify as slugifyText } from "@runbase/core/slug";
+import type { Field } from "@getrunbase/core/objects";
+import { slugify as slugifyText } from "@getrunbase/core/slug";
 
 // Field edit row: options entered as text (comma-separated).
 export type FieldRow = {

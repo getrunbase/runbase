@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Check, ChevronsUpDown, X } from "lucide-react";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   Command,
   CommandEmpty,

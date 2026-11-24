@@ -1,11 +1,11 @@
 // BullMQ worker for the `render` queue: runs the capture in Chromium and
 // stores the PNGs through the file driver; the job returns only their keys.
 import { Worker, type Job } from "bullmq";
-import { queueOptions } from "@runbase/core/bus";
-import { env } from "@runbase/core/env";
-import { componentsService } from "@runbase/core/components";
-import { mockCall } from "@runbase/core/components/mock";
-import { fileStorage } from "@runbase/core/files";
+import { queueOptions } from "@getrunbase/core/bus";
+import { env } from "@getrunbase/core/env";
+import { componentsService } from "@getrunbase/core/components";
+import { mockCall } from "@getrunbase/core/components/mock";
+import { fileStorage } from "@getrunbase/core/files";
 import {
   RENDER_QUEUE,
   jobWorkspace,
@@ -13,7 +13,7 @@ import {
   type RenderJob,
   type RenderResult,
   type ShotReport,
-} from "@runbase/core/render";
+} from "@getrunbase/core/render";
 import { componentScreenshot, pageScreenshot } from "./screenshot";
 
 function run(job: RenderJob): Promise<ShotReport> {

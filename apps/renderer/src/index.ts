@@ -3,9 +3,9 @@
 // Health: GET /health on RENDERER_HEALTH_PORT (default 7102) returns 200 as long
 // as the worker runs and Redis responds.
 import { createServer } from "node:http";
-import { APP_NAME } from "@runbase/core";
-import { busConnection } from "@runbase/core/bus";
-import { env } from "@runbase/core/env";
+import { APP_NAME } from "@getrunbase/core";
+import { busConnection } from "@getrunbase/core/bus";
+import { env } from "@getrunbase/core/env";
 import { startRenderWorker } from "./worker";
 
 const worker = startRenderWorker();

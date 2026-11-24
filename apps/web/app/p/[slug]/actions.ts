@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { READ_METHODS } from "@runbase/core/components";
-import { pagesService } from "@runbase/core/pages";
+import { READ_METHODS } from "@getrunbase/core/components";
+import { pagesService } from "@getrunbase/core/pages";
 import { componentCss } from "@/lib/component-css";
 import { z } from "zod";
 import { actionError } from "@/lib/action-error";

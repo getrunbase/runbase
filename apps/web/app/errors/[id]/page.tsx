@@ -1,16 +1,16 @@
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { errorsService } from "@runbase/core/errors";
+import { errorsService } from "@getrunbase/core/errors";
 import { CheckCheck, RotateCcw } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { Badge } from "@runbase/ui/components/ui/badge";
-import { Button } from "@runbase/ui/components/ui/button";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
+import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@runbase/ui/components/ui/tabs";
+} from "@getrunbase/ui/components/ui/tabs";
 import { getTenant } from "@/lib/tenant";
 import { resolveError, retryError } from "../actions";
 import { pageTitle } from "@/lib/page-title";

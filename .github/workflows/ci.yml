@@ -167,7 +167,7 @@ jobs:
       - run: pnpm gen:docs
       - run: git diff --exit-code -- apps/docs/content
       # Build: dead internal links are checked before `next build`.
-      - run: pnpm --filter @runbase/docs build
+      - run: pnpm --filter @getrunbase/docs build
       - run: npx playwright-core install --with-deps chromium
         working-directory: apps/docs
-      - run: pnpm --filter @runbase/docs test:e2e
+      - run: pnpm --filter @getrunbase/docs test:e2e

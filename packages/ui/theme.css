@@ -1,6 +1,6 @@
-/* @runbase/ui: design system tokens (agentic-directions.pen, GetVariables()).
+/* @getrunbase/ui: design system tokens (agentic-directions.pen, GetVariables()).
    Names taken as is from the .pen. Do not change a value without the board.
-   Import: @import "tailwindcss"; @import "@runbase/ui/theme.css";
+   Import: @import "tailwindcss"; @import "@getrunbase/ui/theme.css";
    Remember to add @source pointing to this package so Tailwind scans its components. */
 
 /* Dark mode (mode axis of the .pen): active only under a .dark class. */

@@ -1,9 +1,9 @@
-import { apiKeysService } from "@runbase/core/api-keys";
-import { objectsService } from "@runbase/core/objects";
-import { workspacesService } from "@runbase/core/workspaces";
+import { apiKeysService } from "@getrunbase/core/api-keys";
+import { objectsService } from "@getrunbase/core/objects";
+import { workspacesService } from "@getrunbase/core/workspaces";
 import { KeyRound, ShieldCheck } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
-import { Badge } from "@runbase/ui/components/ui/badge";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -11,7 +11,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@runbase/ui/components/ui/table";
+} from "@getrunbase/ui/components/ui/table";
 import { ConfirmAction } from "@/components/confirm-action";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { getTenant } from "@/lib/tenant";

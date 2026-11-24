@@ -5,7 +5,7 @@ import {
   objectsService,
   type Field,
   type MigrateOp,
-} from "@runbase/core/objects";
+} from "@getrunbase/core/objects";
 import type { MigrationReport } from "./migrate";
 import { z } from "zod";
 import { actionError, type ActionError } from "@/lib/action-error";

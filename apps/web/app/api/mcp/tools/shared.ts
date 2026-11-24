@@ -1,9 +1,9 @@
 // Shared helpers of the MCP tools: results, errors and common schemas.
 import { z } from "zod";
-import { type TenantContext } from "@runbase/core/tenant";
-import { objectsService } from "@runbase/core/objects";
-import { AppError, notFound } from "@runbase/core/errors";
-import { type ShotReport } from "@runbase/core/render";
+import { type TenantContext } from "@getrunbase/core/tenant";
+import { objectsService } from "@getrunbase/core/objects";
+import { AppError, notFound } from "@getrunbase/core/errors";
+import { type ShotReport } from "@getrunbase/core/render";
 
 // Machine code of an error: stable, message prefix (`[not_found] …`).
 export function errorCode(e: unknown): string {

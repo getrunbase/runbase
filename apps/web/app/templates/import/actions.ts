@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { catalogService } from "@runbase/core/catalog";
-import { templatesService } from "@runbase/core/templates";
+import { catalogService } from "@getrunbase/core/catalog";
+import { templatesService } from "@getrunbase/core/templates";
 import { actionError } from "@/lib/action-error";
 import { formInput, parseInput } from "@/lib/action-input";
 import { getTenant } from "@/lib/tenant";

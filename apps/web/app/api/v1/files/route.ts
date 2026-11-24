@@ -1,4 +1,4 @@
-import { filesService } from "@runbase/core/files";
+import { filesService } from "@getrunbase/core/files";
 import { route } from "@/lib/api-v1/http";
 
 export const POST = route("uploadFile", async ({ ctx, body }) =>

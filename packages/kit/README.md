@@ -1,10 +1,10 @@
-# @runbase/kit
+# @getrunbase/kit
 
 Ready-made, data-bound blocks for Runbase TSX pages, built on the
 `@getrunbase/sdk` hooks and the host's shadcn/ui components (`@ui/<name>`).
 
 ```tsx
-import { DataTable, KpiCard } from "@runbase/kit";
+import { DataTable, KpiCard } from "@getrunbase/kit";
 
 export default function Deals() {
   return (

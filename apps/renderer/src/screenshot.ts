@@ -12,8 +12,8 @@ import type {
   ShotReport,
   Theme,
   Viewport,
-} from "@runbase/core/render";
-import { env } from "@runbase/core/env";
+} from "@getrunbase/core/render";
+import { env } from "@getrunbase/core/env";
 
 const SIZES = {
   desktop: { width: 1280, height: 800 },

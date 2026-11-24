@@ -2,7 +2,7 @@
 // (principal, x-workspace-id header) goes through AsyncLocalStorage: no state
 // shared between users, tool definitions are built once.
 import { createMcpHandler } from "mcp-handler";
-import type { McpPrincipal } from "@runbase/core/tenant";
+import type { McpPrincipal } from "@getrunbase/core/tenant";
 import { registerTools, withMcpRequest } from "./tools";
 import { MCP_INSTRUCTIONS } from "./instructions";
 

@@ -1,5 +1,5 @@
 // Tailwind (v4) CSS for code components, compiled on the server with the
-// app theme (@runbase/ui/theme.css: design system tokens). Candidates are extracted
+// app theme (@getrunbase/ui/theme.css: design system tokens). Candidates are extracted
 // by the oxide scanner (the same as the app): arbitrary classes and variants
 // included. `baseCss` (preflight, theme, @ui component classes) is
 // built into the iframe runtime; `componentCss` only produces the
@@ -11,7 +11,7 @@ import { join } from "node:path";
 
 const appDir = () => join(process.cwd(), "app");
 // Components scanned for the base CSS: the app's (components/ui) and
-// those of the @runbase/ui package they re-export.
+// those of the @getrunbase/ui package they re-export.
 const uiDirs = () => {
   const pkg = join(process.cwd(), "../../packages/ui");
   return [
@@ -27,13 +27,13 @@ const uiDirs = () => {
 const IFRAME_ROOT =
   ':root{--font-inter:"Inter";--font-plex-mono:"IBM Plex Mono"}';
 
-const ENTRY_BASE = `@import "tailwindcss";\n@import "tw-animate-css";\n@import "@runbase/ui/theme.css";`;
+const ENTRY_BASE = `@import "tailwindcss";\n@import "tw-animate-css";\n@import "@getrunbase/ui/theme.css";`;
 const ENTRY_UTILS = [
   "@layer theme, base, components, utilities;",
   '@import "tailwindcss/theme.css" layer(theme);',
   '@import "tailwindcss/utilities.css" layer(utilities);',
   '@import "tw-animate-css";',
-  '@import "@runbase/ui/theme.css";',
+  '@import "@getrunbase/ui/theme.css";',
 ].join("\n");
 
 type Compiler = Awaited<ReturnType<typeof compile>>;

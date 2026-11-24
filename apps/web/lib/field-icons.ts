@@ -25,7 +25,7 @@ import {
   UserPlus,
   type LucideIcon,
 } from "lucide-react";
-import type { Field } from "@runbase/core/objects/fields";
+import type { Field } from "@getrunbase/core/objects/fields";
 
 // Icon of each field type (table, schema, workflows).
 export const FIELD_ICONS: Record<Field["type"], LucideIcon> = {

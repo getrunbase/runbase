@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Tabs, TabsList, TabsTrigger } from "@runbase/ui/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@getrunbase/ui/components/ui/tabs";
 
 const TABS = [
   { href: "/settings/general", label: "general" },

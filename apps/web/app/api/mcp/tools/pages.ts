@@ -1,12 +1,12 @@
 // MCP tools: pages.
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
-import type { TenantContext } from "@runbase/core/tenant";
-import { notFound } from "@runbase/core/errors";
-import { compilePackage } from "@runbase/core/components";
-import { render, reviewPage } from "@runbase/core/render";
+import type { TenantContext } from "@getrunbase/core/tenant";
+import { notFound } from "@getrunbase/core/errors";
+import { compilePackage } from "@getrunbase/core/components";
+import { render, reviewPage } from "@getrunbase/core/render";
 import { appUrl, shotToken } from "@/lib/screenshot-token";
-import { pagesService } from "@runbase/core/pages";
+import { pagesService } from "@getrunbase/core/pages";
 import { run, runImage } from "./shared";
 
 export function definePageTools(server: McpServer, ctx: TenantContext) {

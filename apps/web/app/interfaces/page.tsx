@@ -1,18 +1,18 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
-import { pagesService } from "@runbase/core/pages";
-import { queryService } from "@runbase/core/query";
+import { pagesService } from "@getrunbase/core/pages";
+import { queryService } from "@getrunbase/core/query";
 import { AppWindow, Database } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { PageIcon } from "@/components/page-icon";
-import { Badge } from "@runbase/ui/components/ui/badge";
+import { Badge } from "@getrunbase/ui/components/ui/badge";
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@runbase/ui/components/ui/card";
+} from "@getrunbase/ui/components/ui/card";
 import { getTenant } from "@/lib/tenant";
 import { pageTitle } from "@/lib/page-title";
 

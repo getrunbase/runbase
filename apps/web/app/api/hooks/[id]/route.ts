@@ -1,7 +1,7 @@
 // Signed incoming webhooks: HTTP adapter, the logic lives in
-// @runbase/core/webhooks. Raw body: the signature covers the received bytes.
+// @getrunbase/core/webhooks. Raw body: the signature covers the received bytes.
 // Capped read: beyond BODY_MAX_BYTES, 413.
-import { receiveWebhook } from "@runbase/core/webhooks";
+import { receiveWebhook } from "@getrunbase/core/webhooks";
 import { BodyTooLarge, readBounded, tooLarge } from "@/lib/request-limits";
 
 export async function POST(

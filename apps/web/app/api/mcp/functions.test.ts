@@ -3,7 +3,7 @@
 // Requires DATABASE_URL, QUERY_DATABASE_URL and REDIS_URL.
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
-import type { TenantContext } from "@runbase/core/tenant";
+import type { TenantContext } from "@getrunbase/core/tenant";
 import { client, owner, raw, sql } from "./test-client";
 
 after(() => setImmediate(() => process.exit(0)));

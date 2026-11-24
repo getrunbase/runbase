@@ -1,8 +1,8 @@
-import type { FunctionRow } from "@runbase/core/functions";
+import type { FunctionRow } from "@getrunbase/core/functions";
 import { useTranslations } from "next-intl";
-import { Button } from "@runbase/ui/components/ui/button";
-import { Input } from "@runbase/ui/components/ui/input";
-import { Label } from "@runbase/ui/components/ui/label";
+import { Button } from "@getrunbase/ui/components/ui/button";
+import { Input } from "@getrunbase/ui/components/ui/input";
+import { Label } from "@getrunbase/ui/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SecretMultiSelect } from "@/components/secret-select";
 import { saveFunction } from "./actions";

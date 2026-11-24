@@ -1,5 +1,5 @@
 // Design guide served by page.guide: structure of a TSX page package,
-// @getrunbase/sdk hooks, @runbase/kit blocks, permissions and strict rules.
+// @getrunbase/sdk hooks, @getrunbase/kit blocks, permissions and strict rules.
 export function componentsGuide(ui: string[]) {
   return `# Pages: package and design guide
 
@@ -9,7 +9,7 @@ Goal: an interface a product designer would sign off on. Dense, readable, live d
 1. Read the real data: objects.get (field keys, select options, uuids), records.search (a few rows).
 2. Start from an example: page.examples (crm, kanban, dashboard). Each one is a full package with mock \`data\`.
    Slugs (\`deals\`), ids and values only apply to the mock. Live, objects and records are referenced by **uuid** (objects.get, records.search); field keys and option values come from objects.get.
-3. Prefer a @runbase/kit block over custom code. Write custom components only for what no block covers.
+3. Prefer a @getrunbase/kit block over custom code. Write custom components only for what no block covers.
 4. page.create with the package, then page.screenshot (desktop and mobile) and page.errors. Fix and repeat until the render is clean and the console is empty.
 5. page.update writes a draft: check it with page.screenshot \`{draft: true}\`, then page.publish.
 
@@ -17,7 +17,7 @@ Goal: an interface a product designer would sign off on. Dense, readable, live d
 - A page is a package of TSX files: \`{"<relative path>": "<source>"}\`, entry \`index.tsx\` by default. The entry default-exports the page component.
 - Split by responsibility: \`index.tsx\` (layout and page state), \`components/<name>.tsx\` (one component per file, named export).
 - Import package files with relative paths (\`./components/deal-panel\`), never \`..\` outside the package and never a URL.
-- Allowed modules: \`react\`, \`@getrunbase/sdk\`, \`@runbase/kit\`, \`lucide-react\`, \`recharts\`, \`date-fns\`, \`@ui/<name>\`.
+- Allowed modules: \`react\`, \`@getrunbase/sdk\`, \`@getrunbase/kit\`, \`lucide-react\`, \`recharts\`, \`date-fns\`, \`@ui/<name>\`.
 - \`@ui/<name>\` (shadcn): ${ui.join(", ")}.
 - No hard-coded schema: object ids and field keys live in constants at the top of the entry, or come from \`useObject\`.
 
@@ -26,7 +26,7 @@ The page declares \`permissions\`; every SDK call is checked server-side against
 - \`objects\`: readable objects (uuids). \`write\`: objects the page may create, update or delete in. \`workflows\`: workflows it may start. \`files\`: upload allowed.
 - Grant the minimum: a dashboard only reads. A call outside the permissions fails and is reported by page.errors.
 
-## Blocks (@runbase/kit)
+## Blocks (@getrunbase/kit)
 Data-bound blocks, built on the SDK and @ui. Each one handles its own loading, empty and error states. Texts default to English; pass \`labels\` to translate.
 - \`DataTable {object, fields?, filter?, searchable?, onRowClick?}\`: server-side sort and search, virtualized rows.
 - \`Kanban {object, groupBy, titleField?, subtitleField?, filter?, onCardClick?}\`: columns = select options; drag and drop writes \`groupBy\` (needs \`write\`).

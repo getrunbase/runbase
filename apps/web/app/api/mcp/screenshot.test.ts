@@ -13,7 +13,7 @@ import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { localStorage, setFileStorage } from "@runbase/core/files";
+import { localStorage, setFileStorage } from "@getrunbase/core/files";
 import { SHOT_HEADER, verifyShotToken } from "@/lib/screenshot-token";
 import { client, owner, raw } from "./test-client";
 

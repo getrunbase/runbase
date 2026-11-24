@@ -30,19 +30,19 @@ COPY connectors /app/connectors
 COPY templates /app/templates
 COPY authors /app/authors
 
-# Worker and sandbox: production dependencies of @runbase/worker and its
+# Worker and sandbox: production dependencies of @getrunbase/worker and its
 # workspace packages only (tsx is a production dependency: the apps run from source).
 FROM manifests AS worker-deps
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store,sharing=locked pnpm install --frozen-lockfile --prod --store-dir /pnpm/store --filter "@runbase/worker..." --filter "./connectors/*"
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store,sharing=locked pnpm install --frozen-lockfile --prod --store-dir /pnpm/store --filter "@getrunbase/worker..." --filter "./connectors/*"
 COPY --from=app-source /app ./
 COPY apps/worker apps/worker
 # Chromium and playwright live in the renderer only.
 RUN if ls node_modules/.pnpm | grep -qE '^(playwright|@playwright)'; then \
       echo "playwright must not be in the worker image" && exit 1; fi
 
-# Renderer: production dependencies of @runbase/renderer only.
+# Renderer: production dependencies of @getrunbase/renderer only.
 FROM manifests AS renderer-deps
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store,sharing=locked pnpm install --frozen-lockfile --prod --store-dir /pnpm/store --filter "@runbase/renderer..."
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store,sharing=locked pnpm install --frozen-lockfile --prod --store-dir /pnpm/store --filter "@getrunbase/renderer..."
 COPY --from=app-source /app ./
 COPY apps/renderer apps/renderer
 
@@ -50,7 +50,7 @@ COPY apps/renderer apps/renderer
 # playwright live in the renderer; the build fails if they come back
 # into the web image. playwright-core (E2E devDependency, no browser) is tolerated.
 FROM manifests AS web-build
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store,sharing=locked pnpm install --frozen-lockfile --store-dir /pnpm/store --filter "@runbase/web..."
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store,sharing=locked pnpm install --frozen-lockfile --store-dir /pnpm/store --filter "@getrunbase/web..."
 COPY . .
 RUN if ls node_modules/.pnpm | grep -qE '^(playwright@|@playwright)'; then \
       echo "playwright must not be in the web image" && exit 1; fi
@@ -58,7 +58,7 @@ RUN if ls node_modules/.pnpm | grep -qE '^(playwright@|@playwright)'; then \
 # origin as the app, still in a sandboxed iframe).
 ARG NEXT_PUBLIC_RUNTIME_ORIGIN=""
 ENV NEXT_PUBLIC_RUNTIME_ORIGIN=$NEXT_PUBLIC_RUNTIME_ORIGIN
-RUN pnpm --filter @runbase/web build
+RUN pnpm --filter @getrunbase/web build
 # Public catalog index, read by /api/v1/catalog through CATALOG_INDEX;
 # the build fails if the catalog is invalid.
 RUN pnpm catalog:validate --out /app/catalog-index.json
@@ -67,7 +67,7 @@ RUN pnpm catalog:validate --out /app/catalog-index.json
 # devDependencies; an in-place prune leaves orphans in node_modules/.pnpm),
 # the sources and the build output without .next/cache.
 FROM manifests AS web-runtime
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store,sharing=locked pnpm install --frozen-lockfile --prod --store-dir /pnpm/store --filter "@runbase/web..." --filter "./connectors/*"
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store,sharing=locked pnpm install --frozen-lockfile --prod --store-dir /pnpm/store --filter "@getrunbase/web..." --filter "./connectors/*"
 # Stricter than the build stage: not even playwright-core in the web image.
 RUN if ls node_modules/.pnpm | grep -qE '^(playwright|@playwright)'; then \
       echo "playwright must not be in the web image" && exit 1; fi
@@ -106,7 +106,7 @@ USER node
 EXPOSE 3000
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
   CMD wget -q --spider http://127.0.0.1:3000/api/health || exit 1
-CMD ["pnpm", "--filter", "@runbase/web", "start"]
+CMD ["pnpm", "--filter", "@getrunbase/web", "start"]
 
 FROM base-deno AS worker
 ENV NODE_ENV=production
@@ -119,7 +119,7 @@ USER node
 HEALTHCHECK --interval=10s --timeout=5s --start-period=60s --retries=5 \
   CMD wget -q --spider "http://127.0.0.1:${BOARD_PORT:-7101}/healthz" || exit 1
 # Migrations: `migrate` service (same image), run before the rollout, never at startup.
-CMD ["pnpm", "--filter", "@runbase/worker", "start"]
+CMD ["pnpm", "--filter", "@getrunbase/worker", "start"]
 
 # Sandbox service: runs functions for web and worker (SANDBOX_URL).
 # Non-root `node` user, read-only FS in compose (tmpfs /tmp), no infra
@@ -147,17 +147,17 @@ USER node
 EXPOSE 7102
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
   CMD wget -qO- http://127.0.0.1:7102/health > /dev/null || exit 1
-CMD ["pnpm", "--filter", "@runbase/renderer", "start"]
+CMD ["pnpm", "--filter", "@getrunbase/renderer", "start"]
 
 # Public documentation site (apps/docs), served under /docs of the main domain:
 # assets requested at /docs/_next, the reverse proxy strips /docs before forwarding them.
 FROM manifests AS docs-build
 COPY apps/docs/package.json apps/docs/
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store,sharing=locked pnpm install --frozen-lockfile --store-dir /pnpm/store --filter "@runbase/docs..."
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store,sharing=locked pnpm install --frozen-lockfile --store-dir /pnpm/store --filter "@getrunbase/docs..."
 COPY apps/docs apps/docs
 ARG DOCS_ASSET_PREFIX=/docs
 ENV DOCS_ASSET_PREFIX=$DOCS_ASSET_PREFIX
-RUN pnpm --filter @runbase/docs build
+RUN pnpm --filter @getrunbase/docs build
 
 FROM base AS docs
 ENV NODE_ENV=production
@@ -165,4 +165,4 @@ COPY --chown=node:node --from=docs-build /app ./
 USER node
 EXPOSE 7300
 # DOCS_SITE_URL (canonical URLs, sitemap) is read at runtime.
-CMD ["pnpm", "--filter", "@runbase/docs", "start"]
+CMD ["pnpm", "--filter", "@getrunbase/docs", "start"]

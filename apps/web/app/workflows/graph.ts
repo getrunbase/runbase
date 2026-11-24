@@ -1,6 +1,6 @@
 // Workflow editor: pure manipulations of the definition.
-import type { Field } from "@runbase/core/objects";
-import { normalizeGraph, targetsOf } from "@runbase/core/workflows/graph";
+import type { Field } from "@getrunbase/core/objects";
+import { normalizeGraph, targetsOf } from "@getrunbase/core/workflows/graph";
 
 export type Step = {
   id: string;

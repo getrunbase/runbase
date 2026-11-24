@@ -6,13 +6,13 @@ import type { Instrumentation } from "next";
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { validateEnv } = await import("@runbase/core/env");
+    const { validateEnv } = await import("@getrunbase/core/env");
     validateEnv("web");
     // Extension points: RUNBASE_EXTENSIONS, otherwise no-op.
-    const { loadExtensions, track } = await import("@runbase/core/extensions");
+    const { loadExtensions, track } = await import("@getrunbase/core/extensions");
     await loadExtensions();
     await track("web.started");
-    const { startMetrics } = await import("@runbase/core/telemetry");
+    const { startMetrics } = await import("@getrunbase/core/telemetry");
     startMetrics("runbase-web", { routes: true });
   }
 }
@@ -23,7 +23,7 @@ export const onRequestError: Instrumentation.onRequestError = async (
   context,
 ) => {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { logger } = await import("@runbase/core/logger");
+    const { logger } = await import("@getrunbase/core/logger");
     const headers = request.headers as Record<string, string | undefined>;
     logger.error(
       {
