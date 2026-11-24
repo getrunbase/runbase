@@ -151,6 +151,10 @@ services:
       RENDERER_APP_URL: http://web:3000
       # Chromium and pnpm write their profile/cache under HOME.
       HOME: /tmp
+      # no-new-privileges and the default seccomp profile block Chromium's
+      # setuid sandbox and user namespaces: the hardened container
+      # (read_only, cap_drop ALL, internal network) is the boundary.
+      CHROMIUM_SANDBOX: "false"
       LOG_LEVEL: ${LOG_LEVEL:-}
       RENDER_CONCURRENCY: ${RENDER_CONCURRENCY:-}
       # Same file driver as web/worker (captures read back by the web app).

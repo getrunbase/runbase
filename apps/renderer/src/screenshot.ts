@@ -26,14 +26,20 @@ const RUNTIME_URL = "http://runtime.invalid/";
 let browser: Promise<Browser> | undefined;
 // Untrusted code: Chromium OS sandbox enabled (disabled by default
 // by Playwright) and WebRTC without direct UDP (bypasses CSP and routing).
-// As root (production container), Chromium refuses its sandbox: --no-sandbox.
+// As root, Chromium refuses its sandbox: --no-sandbox. Same with
+// CHROMIUM_SANDBOX=false (hardened self-host container: no-new-privileges and
+// seccomp block the setuid sandbox and user namespaces; the container,
+// read_only with cap_drop ALL, is then the boundary).
 // /dev/shm is tiny in a container: --disable-dev-shm-usage.
-export function launchOptions(uid = process.getuid?.()) {
-  const root = uid === 0;
+export function launchOptions(
+  uid = process.getuid?.(),
+  sandbox = env().CHROMIUM_SANDBOX,
+) {
+  const off = uid === 0 || !sandbox;
   return {
-    chromiumSandbox: !root,
+    chromiumSandbox: !off,
     args: [
-      ...(root ? ["--no-sandbox"] : []),
+      ...(off ? ["--no-sandbox"] : []),
       "--disable-dev-shm-usage",
       "--force-webrtc-ip-handling-policy=disable_non_proxied_udp",
       "--webrtc-ip-handling-policy=disable_non_proxied_udp",
