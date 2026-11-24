@@ -230,7 +230,7 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
     "page.guide",
     {
       description:
-        "Page guide, to read before writing a page: package structure (entry, files, relative imports), @runbase/sdk hooks, @runbase/kit blocks, permissions, strict design rules (spacing, hierarchy, empty/loading/error states, responsive, accessibility) and the @ui modules.",
+        "Page guide, to read before writing a page: package structure (entry, files, relative imports), @getrunbase/sdk hooks, @runbase/kit blocks, permissions, strict design rules (spacing, hierarchy, empty/loading/error states, responsive, accessibility) and the @ui modules.",
     },
     () =>
       run(async () => ({

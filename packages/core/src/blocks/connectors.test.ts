@@ -9,7 +9,7 @@ import { delimiter, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import postgres from "postgres";
 import { Worker } from "bullmq";
-import { init } from "@runbase/node-sdk/cli";
+import { init } from "@getrunbase/node-sdk/cli";
 import { blocksService, getBlock, blockContext } from "./index";
 import type { TenantContext } from "../tenant";
 

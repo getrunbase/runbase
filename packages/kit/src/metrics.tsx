@@ -2,7 +2,7 @@
 // Metrics: KpiCard (one aggregation) and ChartCard (grouped aggregation,
 // recharts). Computed server side by useAggregate.
 import { Bar, BarChart, CartesianGrid, Line, LineChart, Pie, PieChart, XAxis, YAxis } from "recharts";
-import type { Aggregation, Filter } from "@runbase/sdk";
+import type { Aggregation, Filter } from "@getrunbase/sdk";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@ui/chart";
 import { sdk } from "./sdk";

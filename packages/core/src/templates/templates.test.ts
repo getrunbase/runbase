@@ -35,7 +35,7 @@ async function owner(name: string): Promise<TenantContext> {
   };
 }
 
-const SRC = `import { useQuery } from "@runbase/sdk";
+const SRC = `import { useQuery } from "@getrunbase/sdk";
 export default function List({ object }: { object: string }) {
   const { data } = useQuery({ object });
   return <ul>{data.map((r: any) => <li key={r.id}>{r.data.name}</li>)}</ul>;

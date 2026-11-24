@@ -1,4 +1,4 @@
-// Public API of `@runbase/sdk` as seen by a code component (hooks
+// Public API of `@getrunbase/sdk` as seen by a code component (hooks
 // provided by the iframe runtime).
 export type Row = {
   id: string;

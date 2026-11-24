@@ -1,6 +1,6 @@
 // Slack connector: posts messages through the Web API (bot token).
 import { z } from "zod";
-import { defineNode } from "@runbase/node-sdk";
+import { defineNode } from "@getrunbase/node-sdk";
 
 export const postMessage = defineNode({
   id: "slack.post_message",

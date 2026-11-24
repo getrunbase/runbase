@@ -40,6 +40,6 @@ jobs:
       - run: npm install -g npm@11
       - run: pnpm install --frozen-lockfile
       # Build before test and publish: the packages publish dist/.
-      - run: pnpm --filter @runbase/sdk --filter @runbase/node-sdk run build
-      - run: pnpm --filter @runbase/sdk --filter @runbase/node-sdk --if-present run test
-      - run: pnpm --filter @runbase/sdk --filter @runbase/node-sdk -r publish --access public --no-git-checks --provenance
+      - run: pnpm --filter @getrunbase/sdk --filter @getrunbase/node-sdk run build
+      - run: pnpm --filter @getrunbase/sdk --filter @getrunbase/node-sdk --if-present run test
+      - run: pnpm --filter @getrunbase/sdk --filter @getrunbase/node-sdk -r publish --access public --no-git-checks --provenance

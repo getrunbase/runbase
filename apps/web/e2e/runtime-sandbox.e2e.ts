@@ -116,7 +116,7 @@ async function seed() {
     name: "Sandbox",
     files: {
       "index.tsx": `import { useState } from "react";
-import { useMutation } from "@runbase/sdk";
+import { useMutation } from "@getrunbase/sdk";
 export default function Sandbox() {
   const m = useMutation(${JSON.stringify(o.id)});
   const [errors, setErrors] = useState<string[]>([]);

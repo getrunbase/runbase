@@ -25,7 +25,7 @@ Call **workspace.describe** first: databases, objects and fields, workflows (tri
 - **Audit**: audit.list without filter = workspace feed (who did what, when); filters type/id, action (prefix \`record.\`), actor, dates.
 - **Queries**: query.sql (read-only), reusable saved queries.
 - **Pages**: TSX packages of files ({path: source}, entry index.tsx), draft then published; shared components are files of the package.
-- **Code components**: React + Tailwind + shadcn, written by the agent, data through @runbase/sdk, bounded by their permissions. Read page.guide before writing one; they live as files of a page package.
+- **Code components**: React + Tailwind + shadcn, written by the agent, data through @getrunbase/sdk, bounded by their permissions. Read page.guide before writing one; they live as files of a page package.
 
 ## How blocks connect
 - A function is used in three places: a workflow block, a page query \`type: "fn"\` (data source), a page action \`type: "fn"\` (button, form; with \`record\`, the output is merged into that record).

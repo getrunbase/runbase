@@ -7,7 +7,7 @@ import { client, owner, raw } from "./test-client";
 after(() => setImmediate(() => process.exit(0)));
 
 const SRC = `import { Badge } from "@ui/badge";
-import { useQuery } from "@runbase/sdk";
+import { useQuery } from "@getrunbase/sdk";
 export default function Count({ object, label }: { object: string; label: string }) {
   const { data } = useQuery({ object });
   return <Badge>{label} : {data.length}</Badge>;

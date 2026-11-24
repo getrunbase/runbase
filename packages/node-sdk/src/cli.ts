@@ -54,12 +54,12 @@ export async function init(name: string, base: string): Promise<string> {
     license: "MIT",
     type: "module",
     runbase: { entry: "index.ts", label: name },
-    dependencies: { "@runbase/node-sdk": "*", zod: "^4.6.7" },
+    dependencies: { "@getrunbase/node-sdk": "*", zod: "^4.6.7" },
   };
   const files: Record<string, string> = {
     "package.json": JSON.stringify(pkg, null, 2) + "\n",
     "index.ts": `import { z } from "zod";
-import { defineNode } from "@runbase/node-sdk";
+import { defineNode } from "@getrunbase/node-sdk";
 
 export default defineNode({
   id: "${id}.hello",

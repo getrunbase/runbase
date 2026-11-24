@@ -1,4 +1,4 @@
-// @runbase/kit: data-bound blocks for TSX pages (@runbase/sdk
+// @runbase/kit: data-bound blocks for TSX pages (@getrunbase/sdk
 // hooks + host shadcn components `@ui/<name>`).
 export { DataTable, Kanban, Calendar, Timeline, Gallery, useFields } from "./views";
 export type { DataTableProps, KanbanProps, CalendarProps, TimelineProps, GalleryProps } from "./views";

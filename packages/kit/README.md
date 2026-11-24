@@ -1,7 +1,7 @@
 # @runbase/kit
 
 Ready-made, data-bound blocks for Runbase TSX pages, built on the
-`@runbase/sdk` hooks and the host's shadcn/ui components (`@ui/<name>`).
+`@getrunbase/sdk` hooks and the host's shadcn/ui components (`@ui/<name>`).
 
 ```tsx
 import { DataTable, KpiCard } from "@runbase/kit";

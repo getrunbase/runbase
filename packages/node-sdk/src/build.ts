@@ -79,12 +79,12 @@ export async function listConnectors(root: string): Promise<ConnectorInfo[]> {
 // resolution from the connector).
 const HERE = import.meta.dirname as string | undefined;
 
-// `@runbase/node-sdk[/runtime]` always resolved to this package: the connector
+// `@getrunbase/node-sdk[/runtime]` always resolved to this package: the connector
 // does not need to install it to be bundled.
 const sdkPlugin = (here: string): Plugin => ({
   name: "runbase-node-sdk",
   setup(b) {
-    b.onResolve({ filter: /^@runbase\/node-sdk(\/runtime)?$/ }, (a) => ({
+    b.onResolve({ filter: /^@getrunbase\/node-sdk(\/runtime)?$/ }, (a) => ({
       path: join(here, a.path.endsWith("/runtime") ? "runtime.ts" : "index.ts"),
     }));
   },
@@ -126,7 +126,7 @@ export const bundleConnector = (c: ConnectorInfo) =>
   bundle(
     c,
     `import * as mod from ${JSON.stringify(c.entry)};
-import { connectorRuntime } from "@runbase/node-sdk/runtime";
+import { connectorRuntime } from "@getrunbase/node-sdk/runtime";
 export default connectorRuntime(mod);`,
   );
 

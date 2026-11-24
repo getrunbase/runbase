@@ -84,7 +84,7 @@ export default function render({ bundle, props, data }: Input) {
   };
   (globalThis as Record<string, unknown>).__vendor = {
     ...modules,
-    "@runbase/sdk": sdk,
+    "@getrunbase/sdk": sdk,
   };
   try {
     const C = (new Function(`${bundle};return __C`)() as { default?: unknown })

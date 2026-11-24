@@ -1,6 +1,6 @@
 // Compilation of a code component (TSX) when saving: IIFE bundle
 // (`__C.default` = component). Allowed imports: vendor modules read from
-// `globalThis.__vendor`, provided by the runtime (react, @runbase/sdk, @runbase/kit, @ui/<name>,
+// `globalThis.__vendor`, provided by the runtime (react, @getrunbase/sdk, @runbase/kit, @ui/<name>,
 // recharts, date-fns, headless libs from ALLOWED), bundled lucide-react (only the icons used) and
 // @components/<name> (another workspace component, compiled into the bundle).
 // Any other import (relative, package, http) is refused. Size (dependencies
@@ -43,10 +43,10 @@ export type ComponentResolver = (
 
 const MAX_DEPTH = 5;
 const ALLOWED =
-  /^(react|react\/jsx-runtime|react-dom|@runbase\/(sdk|kit)|@ui\/[a-z-]+|lucide-react|recharts|date-fns|@dnd-kit\/(core|sortable|utilities)|@tanstack\/react-(table|virtual)|react-hook-form|zod|motion|motion\/react|@xyflow\/react|react-markdown|react-day-picker|@tiptap\/(react|starter-kit)|maplibre-gl)$/;
+  /^(react|react\/jsx-runtime|react-dom|@getrunbase\/sdk|@runbase\/kit|@ui\/[a-z-]+|lucide-react|recharts|date-fns|@dnd-kit\/(core|sortable|utilities)|@tanstack\/react-(table|virtual)|react-hook-form|zod|motion|motion\/react|@xyflow\/react|react-markdown|react-day-picker|@tiptap\/(react|starter-kit)|maplibre-gl)$/;
 const COMPONENT = /^@components\/([a-z0-9_.-]+?)(?:@(\d+))?$/;
 const PERMIS =
-  "react, react-dom, @runbase/sdk, @runbase/kit, @ui/<component>, @components/<name>[@version], lucide-react, recharts, date-fns, @dnd-kit/{core,sortable,utilities}, @tanstack/react-{table,virtual}, react-hook-form, zod, motion[/react], @xyflow/react, react-markdown, react-day-picker, @tiptap/{react,starter-kit} (lazy), maplibre-gl (lazy)";
+  "react, react-dom, @getrunbase/sdk, @runbase/kit, @ui/<component>, @components/<name>[@version], lucide-react, recharts, date-fns, @dnd-kit/{core,sortable,utilities}, @tanstack/react-{table,virtual}, react-hook-form, zod, motion[/react], @xyflow/react, react-markdown, react-day-picker, @tiptap/{react,starter-kit} (lazy), maplibre-gl (lazy)";
 // lucide-react is a runtime dependency of @runbase/core even though no core
 // module imports it: esbuild resolves it from here to bundle the icons used by
 // user components. Do not remove it from package.json.

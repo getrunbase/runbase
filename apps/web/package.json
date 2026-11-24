@@ -13,7 +13,7 @@
   "dependencies": {
     "@runbase/core": "workspace:*",
     "@runbase/kit": "workspace:*",
-    "@runbase/sdk": "workspace:*",
+    "@getrunbase/sdk": "workspace:*",
     "@runbase/ui": "workspace:*",
     "@better-auth/mcp": "1.7.26",
     "@better-auth/oauth-provider": "1.7.26",

@@ -1,11 +1,11 @@
-# @runbase/sdk
+# @getrunbase/sdk
 
 Hooks for Runbase code components (React, rendered in a sandboxed iframe).
 Every call goes through the host and is checked against the permissions the
 component declares.
 
 ```tsx
-import { useQuery, useMutation } from "@runbase/sdk";
+import { useQuery, useMutation } from "@getrunbase/sdk";
 
 export default function Deals() {
   const { data } = useQuery({ object: "deals", sort: [{ field: "amount", dir: "desc" }] });
@@ -32,7 +32,7 @@ An undeclared call is refused.
 ## Build
 
 ```sh
-pnpm --filter @runbase/sdk build   # dist/*.js + dist/*.d.ts
+pnpm --filter @getrunbase/sdk build   # dist/*.js + dist/*.d.ts
 ```
 
 ## License

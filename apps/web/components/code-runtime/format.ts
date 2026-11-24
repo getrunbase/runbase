@@ -1,4 +1,4 @@
-// Formatting exposed to code components (`format` from @runbase/sdk), in the
+// Formatting exposed to code components (`format` from @getrunbase/sdk), in the
 // user's locale passed at iframe init (default: en).
 let locale = "en";
 export function setFormatLocale(l: unknown) {

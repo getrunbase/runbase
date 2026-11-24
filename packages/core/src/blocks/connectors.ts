@@ -1,4 +1,4 @@
-// External connectors: `defineNode` nodes (@runbase/node-sdk) seen
+// External connectors: `defineNode` nodes (@getrunbase/node-sdk) seen
 // as `node.<id>` blocks. Discovered in root folders (connectors/
 // of the repo, node_modules/@runbase-connectors), bundled (esbuild) then
 // run in the functions Deno sandbox: the core only knows the
@@ -11,8 +11,8 @@ import {
   listConnectors,
   type ConnectorInfo,
   type Registry,
-} from "@runbase/node-sdk/build";
-import type { NodeManifest } from "@runbase/node-sdk";
+} from "@getrunbase/node-sdk/build";
+import type { NodeManifest } from "@getrunbase/node-sdk";
 import type { Block } from "./block";
 import { execFunction } from "../functions/sandbox";
 import { decryptAll } from "../secrets";

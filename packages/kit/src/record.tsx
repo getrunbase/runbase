@@ -2,7 +2,7 @@
 // Record sheet: RecordForm (generated from the object schema,
 // react-hook-form + zod) and RecordDetail (read-only).
 import { Controller, useForm, type Resolver } from "react-hook-form";
-import type { Row } from "@runbase/sdk";
+import type { Row } from "@getrunbase/sdk";
 import { Button } from "@ui/button";
 import { Checkbox } from "@ui/checkbox";
 import { Field as FieldUi, FieldError, FieldGroup, FieldLabel } from "@ui/field";
