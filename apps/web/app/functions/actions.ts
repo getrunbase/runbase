@@ -4,27 +4,17 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { functionsService } from "@runbase/core/functions";
 import { actionError, type ActionError } from "@/lib/action-error";
+import { formInput, parseInput } from "@/lib/action-input";
 import { getTenant } from "@/lib/tenant";
-
-const list = (v: FormDataEntryValue | null) =>
-  String(v ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-const json = (v: FormDataEntryValue | null) => JSON.parse(String(v || "{}"));
+import { restoreInput, saveInput, testInput } from "./inputs";
 
 // Functions: saving creates a version, so does restoring.
 export async function saveFunction(f: FormData) {
   const { ctx } = await getTenant();
+  const { domains, secrets, ...input } = parseInput(saveInput, formInput(f));
   const row = await functionsService.save(ctx, {
-    name: String(f.get("name")),
-    code: String(f.get("code")),
-    inputSchema: json(f.get("inputSchema")),
-    outputSchema: json(f.get("outputSchema")),
-    permissions: {
-      domains: list(f.get("domains")),
-      secrets: list(f.get("secrets")),
-    },
+    ...input,
+    permissions: { domains, secrets },
   });
   revalidatePath("/functions", "layout");
   redirect(`/functions/${row.name}`);
@@ -32,8 +22,8 @@ export async function saveFunction(f: FormData) {
 
 export async function restoreFunction(f: FormData) {
   const { ctx } = await getTenant();
-  const name = String(f.get("name"));
-  await functionsService.restore(ctx, name, Number(f.get("version")));
+  const { name, version } = parseInput(restoreInput, formInput(f));
+  await functionsService.restore(ctx, name, version);
   revalidatePath(`/functions/${name}`);
 }
 
@@ -50,12 +40,8 @@ export async function testFunction(
 ): Promise<TestResult> {
   const { ctx } = await getTenant();
   try {
-    return await functionsService.test(
-      ctx,
-      String(f.get("name")),
-      json(f.get("input")),
-      Number(f.get("version")) || undefined,
-    );
+    const { name, input, version } = parseInput(testInput, formInput(f));
+    return await functionsService.test(ctx, name, input, version);
   } catch (e) {
     return { error: actionError(e) };
   }

@@ -3,12 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { secretsService } from "@runbase/core/secrets";
 import { actionError, type ActionError } from "@/lib/action-error";
+import { formInput, parseInput } from "@/lib/action-input";
 import { getTenant } from "@/lib/tenant";
+import { nameInput, setInput } from "./inputs";
 
 // Secrets: add / delete, values never read back.
 export async function setSecret(f: FormData) {
   const { ctx } = await getTenant();
-  await secretsService.set(ctx, String(f.get("name")), String(f.get("value")));
+  const { name, value } = parseInput(setInput, formInput(f));
+  await secretsService.set(ctx, name, value);
   revalidatePath("/settings/secrets");
 }
 
@@ -18,8 +21,8 @@ export async function createSecret(
 ): Promise<{ name: string } | { error: ActionError }> {
   try {
     const { ctx } = await getTenant();
-    const name = String(f.get("name") ?? "");
-    await secretsService.set(ctx, name, String(f.get("value") ?? ""));
+    const { name, value } = parseInput(setInput, formInput(f));
+    await secretsService.set(ctx, name, value);
     revalidatePath("/settings/secrets");
     return { name };
   } catch (e) {
@@ -29,6 +32,7 @@ export async function createSecret(
 
 export async function removeSecret(f: FormData) {
   const { ctx } = await getTenant();
-  await secretsService.remove(ctx, String(f.get("name")));
+  const { name } = parseInput(nameInput, formInput(f));
+  await secretsService.remove(ctx, name);
   revalidatePath("/settings/secrets");
 }

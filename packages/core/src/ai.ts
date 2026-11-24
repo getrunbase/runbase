@@ -1,10 +1,9 @@
-// useAI for pages: DeepSeek text completion for a component
+// useAI for pages: text completion with the workspace AI provider for a component
 // that declares the `ai` permission, with a strict cost guard:
 // - workspace AI budget (min(preference, quota:aiBudgetUsd from entitlements)): exhausted = refused;
 // - rate limited per workspace and per page;
 // - tenant key only: no platform AI key.
-// Provider and model: workspace AI settings, DeepSeek by
-// default.
+// Provider and model: workspace AI settings (no default provider).
 import { appError } from "./errors/app-error";
 import {
   aiCost,
@@ -53,8 +52,8 @@ export async function pageAi(
     return out;
   } finally {
     const usd = aiCost(preset, model, tokens);
-    // Same counter as runs: deducted from the budget (except own key;
-    // outside DeepSeek, the key is necessarily the customer's).
-    if (preset.id === "deepseek") await chargeAi(ctx, usd);
+    // Same counter as runs, whatever the provider: every key is the
+    // workspace's own, and the budget tracks its spending.
+    await chargeAi(ctx, usd);
   }
 }

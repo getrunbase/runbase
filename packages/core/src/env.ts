@@ -120,6 +120,9 @@ export const envSchema = z.object({
   // Worker and web
   BOARD_PORT: int(7101),
   PLAYWRIGHT_CHROMIUM_PATH: z.string().optional(),
+  // Chromium OS sandbox. Off only where the container is the boundary
+  // (no-new-privileges and seccomp forbid its setuid/user namespaces).
+  CHROMIUM_SANDBOX: flag(true),
 
   // BullMQ queues: key prefix (isolates a test run on a shared Redis).
   QUEUE_PREFIX: z.string().default("bull"),

@@ -5,8 +5,18 @@ import { redirect } from "next/navigation";
 import { AppError } from "@runbase/core/app-error";
 import { workflowsService } from "@runbase/core/workflows";
 import { actionError, type ActionError } from "@/lib/action-error";
+import { formInput, parseInput } from "@/lib/action-input";
 import { getTenant } from "@/lib/tenant";
 import type { Definition } from "./graph";
+import {
+  createInput,
+  definition as definitionInput,
+  dryRunInput,
+  nameInput,
+  restoreInput,
+  saveInput,
+  statusInput,
+} from "./inputs";
 
 // Error -> translatable items; invalid workflow: one line per error.
 const errorsOf = (e: unknown): ActionError[] =>
@@ -15,8 +25,9 @@ const errorsOf = (e: unknown): ActionError[] =>
 // Workflow editor: creation, save, validation, dry run, activation.
 export async function createWorkflow(f: FormData) {
   const { ctx } = await getTenant();
+  const { name } = parseInput(createInput, formInput(f));
   const wf = await workflowsService.create(ctx, {
-    name: String(f.get("name")),
+    name,
     definition: { trigger: { type: "trigger.manual" }, steps: [] },
   });
   revalidatePath("/", "layout");
@@ -30,7 +41,11 @@ export async function saveWorkflow(
 ): Promise<{ errors?: ActionError[] }> {
   const { ctx } = await getTenant();
   try {
-    await workflowsService.update(ctx, id, { name, definition });
+    const input = parseInput(saveInput, { id, name, definition });
+    await workflowsService.update(ctx, input.id, {
+      name: input.name,
+      definition: input.definition,
+    });
     revalidatePath("/", "layout");
     return {};
   } catch (e) {
@@ -43,7 +58,10 @@ export async function validateWorkflow(
 ): Promise<ActionError[]> {
   const { ctx } = await getTenant();
   try {
-    return await workflowsService.validateItems(ctx, definition);
+    return await workflowsService.validateItems(
+      ctx,
+      parseInput(definitionInput, definition),
+    );
   } catch (e) {
     return errorsOf(e);
   }
@@ -55,8 +73,13 @@ export async function dryRunWorkflow(
 ) {
   const { ctx } = await getTenant();
   try {
+    const input = parseInput(dryRunInput, { definition, recordIds });
     return {
-      results: await workflowsService.dryRun(ctx, definition, recordIds),
+      results: await workflowsService.dryRun(
+        ctx,
+        input.definition,
+        input.recordIds,
+      ),
     };
   } catch (e) {
     return { error: actionError(e) };
@@ -69,8 +92,9 @@ export async function setStatus(
 ): Promise<{ errors?: ActionError[] }> {
   const { ctx } = await getTenant();
   try {
-    await workflowsService.update(ctx, id, { status });
-    revalidatePath(`/workflows/${id}`);
+    const input = parseInput(statusInput, { id, status });
+    await workflowsService.update(ctx, input.id, { status: input.status });
+    revalidatePath(`/workflows/${input.id}`);
     return {};
   } catch (e) {
     return { errors: errorsOf(e) };
@@ -80,21 +104,26 @@ export async function setStatus(
 // Last payload received by a webhook (listening for a provider test).
 export async function webhookSample(name: string) {
   const { ctx } = await getTenant();
+  const input = parseInput(nameInput, { name });
   const { webhooksService } = await import("@runbase/core/webhooks");
-  const w = (await webhooksService.list(ctx)).find((x) => x.name === name);
+  const w = (await webhooksService.list(ctx)).find(
+    (x) => x.name === input.name,
+  );
   return w ? { sample: w.sample, at: w.sampleAt?.toISOString() ?? null } : null;
 }
 
 // History and restore (new version copying the old one).
 export async function workflowHistory(id: string) {
   const { ctx } = await getTenant();
-  return (await workflowsService.versions(ctx, id)).map((v) => ({
+  const input = parseInput(restoreInput.pick({ id: true }), { id });
+  return (await workflowsService.versions(ctx, input.id)).map((v) => ({
     version: v.version,
     createdAt: v.createdAt,
   }));
 }
 export async function restoreWorkflow(id: string, version: number) {
   const { ctx } = await getTenant();
-  await workflowsService.restore(ctx, id, version);
-  revalidatePath(`/workflows/${id}`);
+  const input = parseInput(restoreInput, { id, version });
+  await workflowsService.restore(ctx, input.id, input.version);
+  revalidatePath(`/workflows/${input.id}`);
 }

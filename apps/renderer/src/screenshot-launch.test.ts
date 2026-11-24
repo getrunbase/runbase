@@ -10,8 +10,14 @@ test("root: sandbox disabled, --no-sandbox and --disable-dev-shm-usage", () => {
   assert.ok(o.args.includes("--disable-dev-shm-usage"));
 });
 
+test("CHROMIUM_SANDBOX=false: --no-sandbox even as non-root", () => {
+  const o = launchOptions(1000, false);
+  assert.equal(o.chromiumSandbox, false);
+  assert.ok(o.args.includes("--no-sandbox"));
+});
+
 test("non-root: OS sandbox kept", () => {
-  const o = launchOptions(1000);
+  const o = launchOptions(1000, true);
   assert.equal(o.chromiumSandbox, true);
   assert.ok(!o.args.includes("--no-sandbox"));
 });

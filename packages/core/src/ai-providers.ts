@@ -250,9 +250,7 @@ export const aiSettingsService = {
         key: !!input.key?.trim(),
       });
     });
-    // Own DeepSeek key added: runs paused on budget resume.
-    if (input.key?.trim() && p.id === "deepseek") {
-      await resumeBudgetRuns(ctx);
-    }
+    // Provider key added (any provider): runs paused on budget resume.
+    if (input.key?.trim()) await resumeBudgetRuns(ctx);
   },
 };
