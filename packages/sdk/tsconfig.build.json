@@ -5,7 +5,8 @@
     "declaration": true,
     "outDir": "dist",
     "rootDir": "src",
-    "isolatedModules": false
+    "isolatedModules": false,
+    "rewriteRelativeImportExtensions": true
   },
   "include": ["src"],
   "exclude": ["src/**/*.test.ts"]
