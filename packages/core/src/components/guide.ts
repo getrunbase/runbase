@@ -1,5 +1,5 @@
 // Design guide served by page.guide: structure of a TSX page package,
-// @runbase/sdk hooks, @runbase/kit blocks, permissions and strict rules.
+// @getrunbase/sdk hooks, @runbase/kit blocks, permissions and strict rules.
 export function componentsGuide(ui: string[]) {
   return `# Pages: package and design guide
 
@@ -17,7 +17,7 @@ Goal: an interface a product designer would sign off on. Dense, readable, live d
 - A page is a package of TSX files: \`{"<relative path>": "<source>"}\`, entry \`index.tsx\` by default. The entry default-exports the page component.
 - Split by responsibility: \`index.tsx\` (layout and page state), \`components/<name>.tsx\` (one component per file, named export).
 - Import package files with relative paths (\`./components/deal-panel\`), never \`..\` outside the package and never a URL.
-- Allowed modules: \`react\`, \`@runbase/sdk\`, \`@runbase/kit\`, \`lucide-react\`, \`recharts\`, \`date-fns\`, \`@ui/<name>\`.
+- Allowed modules: \`react\`, \`@getrunbase/sdk\`, \`@runbase/kit\`, \`lucide-react\`, \`recharts\`, \`date-fns\`, \`@ui/<name>\`.
 - \`@ui/<name>\` (shadcn): ${ui.join(", ")}.
 - No hard-coded schema: object ids and field keys live in constants at the top of the entry, or come from \`useObject\`.
 
@@ -38,7 +38,7 @@ Data-bound blocks, built on the SDK and @ui. Each one handles its own loading, e
 - \`FileDrop {onUploaded}\` (needs \`files\`), \`CommandPalette {object?, commands?}\`.
 - A dashboard is a page made of KpiCard and ChartCard in a grid.
 
-## SDK (@runbase/sdk)
+## SDK (@getrunbase/sdk)
 - \`useQuery({object, filter?, sort?, q?, limit?, after?, groupBy?, aggregate?, enabled?})\` returns \`{data, total, loading, error, reload, hasMore, fetchMore}\`.
   - \`limit\`: 50 by default, 1000 max. \`after\`: keyset pagination. \`enabled: false\`: no request.
   - KPIs and charts: \`groupBy\` and \`aggregate: [{op: "count"|"sum"|"avg"|"min"|"max", field?, as}]\`, never by loading every row.

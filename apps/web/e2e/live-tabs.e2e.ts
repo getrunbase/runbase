@@ -101,7 +101,7 @@ async function seed() {
   const page = await pagesService.create(ctx, {
     name: "Live",
     files: {
-      "index.tsx": `import { useQuery, useMutation } from "@runbase/sdk";
+      "index.tsx": `import { useQuery, useMutation } from "@getrunbase/sdk";
 export default function Live() {
   const q = useQuery({ object: ${JSON.stringify(o.id)} });
   const m = useMutation(${JSON.stringify(o.id)});

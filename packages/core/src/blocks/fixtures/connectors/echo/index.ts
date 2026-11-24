@@ -1,6 +1,6 @@
 // Test connector: loaded from a folder, no network.
 import { z } from "zod";
-import { defineNode } from "@runbase/node-sdk";
+import { defineNode } from "@getrunbase/node-sdk";
 
 export default defineNode({
   id: "echo.shout",

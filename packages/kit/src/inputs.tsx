@@ -2,7 +2,7 @@
 // Data-bound inputs: FilterBar (search + select fields of
 // the object), FileDrop (useUpload), CommandPalette (cmdk via @ui/command).
 import { useRef, useState } from "react";
-import type { FileValue, Filter, Row } from "@runbase/sdk";
+import type { FileValue, Filter, Row } from "@getrunbase/sdk";
 import { Button } from "@ui/button";
 import {
   Command,

@@ -16,7 +16,7 @@ import {
   useDroppable,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import type { Filter, Row } from "@runbase/sdk";
+import type { Filter, Row } from "@getrunbase/sdk";
 import { Badge } from "@ui/badge";
 import { Button } from "@ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@ui/card";

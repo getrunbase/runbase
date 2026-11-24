@@ -92,7 +92,7 @@ export const modules: Record<string, unknown> = {
   "@xyflow/react": xyflow,
   "react-markdown": reactMarkdown,
   "react-day-picker": dayPicker,
-  // Data-bound blocks (hooks read from __vendor["@runbase/sdk"]).
+  // Data-bound blocks (hooks read from __vendor["@getrunbase/sdk"]).
   "@runbase/kit": kit,
   "@ui/accordion": accordion,
   "@ui/alert": alert,

@@ -1,6 +1,6 @@
 ---
 title: Writing a connector
-description: Build workflow nodes with @runbase/node-sdk and defineNode.
+description: Build workflow nodes with @getrunbase/node-sdk and defineNode.
 ---
 
 A **connector** is a package that exports one or more nodes. Each node becomes
@@ -18,7 +18,7 @@ limited to the declared names.
   "license": "MIT",
   "type": "module",
   "runbase": { "entry": "index.ts", "label": "Acme" },
-  "dependencies": { "@runbase/node-sdk": "workspace:*", "zod": "^4.6.7" }
+  "dependencies": { "@getrunbase/node-sdk": "workspace:*", "zod": "^4.6.7" }
 }
 ```
 
@@ -30,7 +30,7 @@ Connectors are discovered in `connectors/` and in
 
 ```ts title="connectors/acme/index.ts"
 import { z } from "zod";
-import { defineNode } from "@runbase/node-sdk";
+import { defineNode } from "@getrunbase/node-sdk";
 
 export default defineNode({
   id: "acme.create_ticket",

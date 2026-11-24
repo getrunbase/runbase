@@ -14,7 +14,7 @@ import {
 import { createRoot, type Root } from "react-dom/client";
 import { format, setFormatLocale } from "./format";
 import { lazyChunks, modules } from "./modules";
-import { createStore, keyOf, type RunbaseSdk, type Snap } from "@runbase/sdk";
+import { createStore, keyOf, type RunbaseSdk, type Snap } from "@getrunbase/sdk";
 
 // WebRTC removed before any bundle: the connect-src CSP does not cover
 // RTCPeerConnection (UDP/STUN to the network, exfiltration).
@@ -298,7 +298,7 @@ const sdk = {
   startWorkflow: (id: string, opts?: { recordId?: string }) =>
     call("workflow", { id, ...opts }),
 } as unknown as RunbaseSdk;
-(globalThis as Msg).__vendor = { ...modules, "@runbase/sdk": sdk };
+(globalThis as Msg).__vendor = { ...modules, "@getrunbase/sdk": sdk };
 
 class Boundary extends Component<{ children: ReactNode }, { error?: string }> {
   state: { error?: string } = {};

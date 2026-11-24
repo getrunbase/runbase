@@ -6,7 +6,7 @@ import { compileComponent, MAX_SOURCE } from "./compile";
 test("compiles a TSX: allowed imports read from __vendor", async () => {
   const r = await compileComponent(
     `import { Button } from "@ui/button";
-     import { useQuery } from "@runbase/sdk";
+     import { useQuery } from "@getrunbase/sdk";
      export default function C() { const q = useQuery({ object: "o" }); return <Button>{q.data.length}</Button>; }`,
   );
   assert.deepEqual(r.errors, []);

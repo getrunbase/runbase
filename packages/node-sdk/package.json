@@ -1,5 +1,5 @@
 {
-  "name": "@runbase/node-sdk",
+  "name": "@getrunbase/node-sdk",
   "version": "0.1.0",
   "description": "SDK and CLI to build Runbase workflow connectors (defineNode).",
   "license": "MIT",
