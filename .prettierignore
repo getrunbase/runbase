@@ -1,0 +1,7 @@
+pnpm-lock.yaml
+.next
+.claude
+**/*.gen.ts
+apps/web/lib/api-v1/openapi.snapshot.json
+# Généré par `pnpm runbase node registry connectors`.
+connectors/registry.json

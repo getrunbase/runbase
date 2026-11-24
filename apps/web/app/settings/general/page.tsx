@@ -1,0 +1,283 @@
+import { workspacesService } from "@runbase/core/workspaces";
+import { runsService } from "@runbase/core/runs";
+import { quotasService } from "@runbase/core/quotas";
+import { Check } from "lucide-react";
+import { Label } from "@runbase/ui/components/ui/label";
+import { Button } from "@runbase/ui/components/ui/button";
+import Link from "next/link";
+import { getFormatter, getTranslations } from "next-intl/server";
+import { Input } from "@runbase/ui/components/ui/input";
+import { getTenant } from "@/lib/tenant";
+import { ConfirmAction } from "@/components/confirm-action";
+import {
+  createWorkspace,
+  deleteWorkspace,
+  renameWorkspace,
+  setLimits,
+  setAiBudget,
+  switchWorkspace,
+} from "../../actions";
+import { appUrl } from "@runbase/core/env";
+import { SettingsPage, SettingsSection } from "../settings-shell";
+import { aiSettingsService } from "@runbase/core/ai-providers";
+import { secretsService } from "@runbase/core/secrets";
+import { AiProviderForm } from "./ai-provider-form";
+import { pageTitle } from "@/lib/page-title";
+
+export const generateMetadata = pageTitle("general");
+
+const LIMITS = [
+  "records",
+  "runsPerMinute",
+  "apiPerMinute",
+  "concurrency",
+] as const;
+
+// Code block (MCP command): secondary background, radius 6, mono 13.
+function Code({ children }: { children: React.ReactNode }) {
+  return (
+    <pre className="bg-secondary text-foreground rounded-md px-3 py-2 font-mono text-sm break-all whitespace-pre-wrap">
+      {children}
+    </pre>
+  );
+}
+
+// Workspace settings (DNCwy board): workspaces, AI budget, limits, MCP, danger zone.
+export default async function Settings() {
+  const { ctx, role } = await getTenant();
+  const t = await getTranslations("settings.general");
+  const tc = await getTranslations("common");
+  const format = await getFormatter();
+  const usd = (n: number, max = 2) =>
+    format.number(n, {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: max,
+    });
+  // Member and limit management: admins only.
+  const isAdmin = role === "owner" || role === "admin";
+  const mcpUrl = `${appUrl()}/api/mcp`;
+  const list = await workspacesService.list(ctx);
+  const [budget, quotas, ai, secrets] = await Promise.all([
+    runsService.budget(ctx),
+    quotasService.get(ctx),
+    aiSettingsService.get(ctx),
+    secretsService.list(ctx),
+  ]);
+  return (
+    <SettingsPage isAdmin={isAdmin}>
+      <div id="workspaces" className="scroll-mt-20">
+        <SettingsSection
+          title={t("workspaces.title")}
+          description={t("workspaces.description")}
+        >
+          {list.map((w) => (
+            <div key={w.id} className="flex flex-wrap items-center gap-2">
+              <form
+                action={renameWorkspace}
+                className="flex min-w-full flex-1 gap-2 sm:min-w-0"
+              >
+                <input type="hidden" name="id" value={w.id} />
+                <Input
+                  name="name"
+                  defaultValue={w.name}
+                  aria-label={tc("name")}
+                />
+                <Button type="submit" variant="secondary">
+                  {t("workspaces.rename")}
+                </Button>
+              </form>
+              <form action={switchWorkspace}>
+                <input type="hidden" name="id" value={w.id} />
+                <Button
+                  type="submit"
+                  variant={w.id === ctx.workspaceId ? "default" : "secondary"}
+                  disabled={w.id === ctx.workspaceId}
+                >
+                  {w.id === ctx.workspaceId && <Check />}
+                  {w.id === ctx.workspaceId
+                    ? t("workspaces.active")
+                    : t("workspaces.select")}
+                </Button>
+              </form>
+            </div>
+          ))}
+          <form action={createWorkspace} className="flex gap-2">
+            <Input
+              name="name"
+              placeholder={t("workspaces.newPlaceholder")}
+              required
+            />
+            <Button type="submit">{tc("create")}</Button>
+          </form>
+        </SettingsSection>
+      </div>
+
+      <SettingsSection
+        title={t("budget.title")}
+        description={t("budget.description")}
+      >
+        <p className="text-foreground text-sm">
+          {t("budget.spent", { spent: usd(budget.spentUsd, 4) })}
+          {budget.budgetUsd != null &&
+            t("budget.ofBudget", { budget: usd(budget.budgetUsd) })}
+          {budget.exhausted && t("budget.exhausted")}
+        </p>
+        <form action={setAiBudget} className="flex gap-2">
+          <Input
+            name="budget"
+            type="number"
+            min="0.01"
+            step="0.01"
+            placeholder={t("budget.unlimited")}
+            defaultValue={budget.budgetUsd ?? ""}
+            aria-label={t("budget.ariaLabel")}
+          />
+          <Button type="submit">
+            <Check />
+            {tc("save")}
+          </Button>
+        </form>
+      </SettingsSection>
+
+      <SettingsSection title={t("ai.title")} description={t("ai.description")}>
+        <AiProviderForm
+          presets={aiSettingsService.presets().map((p) => ({
+            id: p.id,
+            label: p.label,
+            models: p.models.map((m) => ({ id: m.id, label: m.label })),
+            keySecret: p.keySecret,
+          }))}
+          provider={ai.provider}
+          model={ai.model}
+          keySecret={ai.keySecret}
+          keys={secrets.map((s) => s.name)}
+          disabled={!isAdmin}
+        />
+      </SettingsSection>
+
+      <SettingsSection
+        title={t("limits.title")}
+        description={t("limits.description")}
+      >
+        <form action={setLimits} className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {LIMITS.map((key) => (
+              <div key={key} className="flex flex-col gap-1.5">
+                <Label htmlFor={`limit-${key}`}>{t(`limits.${key}`)}</Label>
+                <Input
+                  id={`limit-${key}`}
+                  name={key}
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder={format.number(quotas.defaults[key])}
+                  defaultValue={
+                    quotas.limits[key] !== quotas.defaults[key]
+                      ? quotas.limits[key]
+                      : ""
+                  }
+                />
+              </div>
+            ))}
+          </div>
+          <p className="text-muted-foreground text-sm">
+            {t("limits.usage", {
+              used: format.number(quotas.usage.records),
+              limit: format.number(quotas.limits.records),
+            })}
+          </p>
+          {isAdmin && (
+            <div className="flex justify-end gap-2">
+              <Button type="submit">
+                <Check />
+                {tc("save")}
+              </Button>
+            </div>
+          )}
+        </form>
+      </SettingsSection>
+
+      <SettingsSection
+        title={t("mcp.title")}
+        description={t("mcp.description")}
+      >
+        <div className="flex flex-col gap-1.5">
+          <p className="text-foreground text-sm font-medium">
+            {t("mcp.serverUrl")}
+          </p>
+          <Code>{mcpUrl}</Code>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          {/* eslint-disable-next-line no-restricted-syntax -- product name, not translated */}
+          <p className="text-foreground text-sm font-medium">{"Claude Code"}</p>
+          <Code>{`claude mcp add --transport http runbase ${mcpUrl}`}</Code>
+          <p className="text-muted-foreground text-sm">
+            {t.rich("mcp.claudeCodeHint", {
+              code: (c) => <code className="font-mono">{c}</code>,
+            })}
+          </p>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <p className="text-foreground text-sm font-medium">
+            {/* eslint-disable-next-line no-restricted-syntax -- product names, not translated */}
+            {"Claude Desktop / claude.ai"}
+          </p>
+          <p className="text-muted-foreground text-sm">
+            {t("mcp.desktopHint")}
+          </p>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <p className="text-foreground text-sm font-medium">
+            {t("mcp.scripts")}
+          </p>
+          <Code>
+            {`claude mcp add --transport http runbase ${mcpUrl} \\\n  --header "Authorization: Bearer agk_…"`}
+          </Code>
+          <p className="text-muted-foreground text-sm">
+            {t.rich("mcp.scriptsHint", {
+              link: (c) => (
+                <Link href="/settings/api-keys" className="text-link underline">
+                  {c}
+                </Link>
+              ),
+            })}
+          </p>
+        </div>
+      </SettingsSection>
+
+      <SettingsSection
+        title={t("danger.title")}
+        description={t("danger.description")}
+        danger
+      >
+        <div className="outline-tag-red-bg flex flex-col rounded-lg outline -outline-offset-1">
+          {list.map((w) => (
+            <div
+              key={w.id}
+              className="border-tag-red-bg flex items-center gap-4 border-b p-4 last:border-b-0"
+            >
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <p className="text-foreground text-sm font-medium">
+                  {t("danger.deleteTitle", { name: w.name })}
+                </p>
+                <p className="text-muted-foreground text-sm">
+                  {t("danger.deleteHint")}
+                </p>
+              </div>
+              <ConfirmAction
+                action={deleteWorkspace}
+                fields={{ id: w.id }}
+                label={t("danger.delete")}
+                title={t("workspaces.deleteTitle", { name: w.name })}
+                description={t("workspaces.deleteDescription")}
+                confirmLabel={t("workspaces.deleteConfirm")}
+                disabled={list.length <= 1}
+              />
+            </div>
+          ))}
+        </div>
+      </SettingsSection>
+    </SettingsPage>
+  );
+}

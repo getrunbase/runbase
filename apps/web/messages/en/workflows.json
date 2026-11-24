@@ -1,0 +1,623 @@
+{
+  "list": {
+    "title": "Workflows",
+    "description": "The workspace's automations, suggested by Claude or built by hand.",
+    "namePlaceholder": "Workflow name",
+    "emptyTitle": "No workflows yet",
+    "emptyDescription": "Name your first workflow above to create it.",
+    "create": "New workflow",
+    "search": "Search a workflow…",
+    "filters": {
+      "all": "All · {count}",
+      "active": "Active",
+      "paused": "Paused",
+      "draft": "Drafts"
+    },
+    "table": {
+      "name": "Name",
+      "status": "Status",
+      "trigger": "Trigger",
+      "updated": "Updated"
+    },
+    "count": "{shown} of {total} workflows"
+  },
+  "labels": {
+    "branch": {
+      "true": "Yes",
+      "false": "No",
+      "ok": "Next",
+      "done": "Done",
+      "error": "Error",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "expired": "Timed out",
+      "found": "Found",
+      "not_found": "Not found",
+      "empty": "No results",
+      "else": "Otherwise"
+    },
+    "output": {
+      "branch": "branch",
+      "reason": "reason",
+      "confidence": "confidence",
+      "record": "record",
+      "records": "records",
+      "changed": "changed fields",
+      "result": "result",
+      "output": "result",
+      "case": "case",
+      "label": "label",
+      "status": "status",
+      "body": "response",
+      "items": "items"
+    },
+    "input": {
+      "object": "Object",
+      "objects": "Accessible objects",
+      "recordId": "Record",
+      "id": "Record",
+      "condition": "Conditions",
+      "data": "Values",
+      "filter": "Filter",
+      "limit": "Limit",
+      "prompt": "Instructions",
+      "context": "Context",
+      "branches": "Branches",
+      "schema": "Output schema",
+      "text": "Text",
+      "html": "HTML",
+      "body": "Body",
+      "type": "Type",
+      "payload": "Payload",
+      "method": "Method",
+      "url": "URL",
+      "headers": "Headers",
+      "message": "Message",
+      "items": "Items",
+      "include": "Linked records to load",
+      "do": "Repeated steps",
+      "server": "Server",
+      "tool": "Tool",
+      "arguments": "Arguments",
+      "channel": "Channel",
+      "duration": "Duration",
+      "timeout": "Timeout",
+      "secret": "Secret",
+      "event": "Event",
+      "cron": "Schedule (cron)",
+      "values": "Values",
+      "source": "Source",
+      "mapping": "Mapping",
+      "op": "Operation",
+      "path": "Field",
+      "groupBy": "Group by",
+      "order": "Order",
+      "offset": "Offset",
+      "until": "Until",
+      "workflow": "Workflow",
+      "wait": "Wait for completion",
+      "to": "To",
+      "subject": "Subject",
+      "replyTo": "Reply to",
+      "date": "Date",
+      "amount": "Amount",
+      "unit": "Unit",
+      "format": "Format",
+      "timezone": "Time zone",
+      "occurredAt": "Event date",
+      "idempotencyKey": "Unique ID"
+    },
+    "operator": {
+      "eq": "equals",
+      "neq": "does not equal",
+      "gt": ">",
+      "gte": "≥",
+      "lt": "<",
+      "lte": "≤",
+      "in": "is one of",
+      "not_in": "is not one of",
+      "ends_with": "ends with",
+      "regex": "matches pattern",
+      "contains": "contains",
+      "starts_with": "starts with",
+      "between": "is between",
+      "before": "before",
+      "after": "after",
+      "older_than": "more than (days) ago",
+      "within": "within the last (days)",
+      "is": "is",
+      "is_empty": "is empty",
+      "is_not_empty": "is not empty"
+    },
+    "fieldType": {
+      "text": "text",
+      "number": "number",
+      "bool": "yes/no",
+      "date": "date",
+      "select": "select",
+      "multi_select": "multi-select",
+      "email": "email",
+      "url": "URL",
+      "json": "JSON",
+      "ref": "relation",
+      "refs": "relations",
+      "currency": "currency",
+      "percent": "percent",
+      "phone": "phone",
+      "rating": "rating (stars)",
+      "user": "person",
+      "file": "files",
+      "formula": "formula",
+      "lookup": "lookup",
+      "rollup": "rollup",
+      "created_at": "created at",
+      "updated_at": "updated at",
+      "created_by": "created by",
+      "autonumber": "auto number"
+    },
+    "trigger": {
+      "manual": "Manual",
+      "record_created": "Record created",
+      "record_updated": "Record updated",
+      "event": "Event",
+      "schedule": "Scheduled",
+      "webhook": "Webhook received",
+      "run_failed": "Another workflow failed"
+    },
+    "status": {
+      "running": "Running",
+      "waiting": "Waiting",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "paused_budget": "Budget reached",
+      "canceled": "Canceled",
+      "paused": "Paused",
+      "draft": "Draft",
+      "active": "Active"
+    },
+    "statusHint": {
+      "running": "The automation is running.",
+      "waiting": "Waiting for a human decision or a delay.",
+      "succeeded": "All steps completed successfully.",
+      "failed": "A step failed: see the details below, then retry.",
+      "paused_budget": "Monthly AI limit reached (€5 free per account, or the workspace budget). Add your DEEPSEEK_API_KEY in Settings › Secrets: the run will resume on its own.",
+      "canceled": "The run was canceled before it finished.",
+      "paused": "Paused: resume whenever you like."
+    }
+  },
+  "vars": {
+    "current": "Current {name}",
+    "currentRecord": "Current record",
+    "source": "Source record",
+    "step": "Step {label}"
+  },
+  "schedule": {
+    "freq": {
+      "daily": "Specific days of the week",
+      "monthly": "Once a month",
+      "hourly": "Every hour",
+      "custom": "Advanced (cron expression)"
+    },
+    "days": {
+      "d0": "Sunday",
+      "d1": "Monday",
+      "d2": "Tuesday",
+      "d3": "Wednesday",
+      "d4": "Thursday",
+      "d5": "Friday",
+      "d6": "Saturday"
+    },
+    "short": {
+      "d0": "S",
+      "d1": "M",
+      "d2": "T",
+      "d3": "W",
+      "d4": "T",
+      "d5": "F",
+      "d6": "S"
+    },
+    "time": "{hour}:{minute}",
+    "and": " and ",
+    "describe": {
+      "custom": "Cron expression: {cron}",
+      "hourly": "Every hour, at minute {minute}",
+      "monthly": "On the {day, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} of every month at {time}",
+      "everyDay": "Every day at {time}",
+      "weekdays": "Monday to Friday at {time}",
+      "days": "Every {days} at {time}"
+    },
+    "form": {
+      "monthlyBefore": "On day",
+      "monthlyAfter": "of the month",
+      "dayOfMonth": "Day of the month",
+      "at": "at",
+      "hour": "Time",
+      "atMinute": "at minute",
+      "minute": "Minute",
+      "cron": "Cron expression"
+    }
+  },
+  "blocks": {
+    "add": "Add step",
+    "description": "Search for a block to add to the workflow.",
+    "search": "Search blocks…",
+    "empty": "No blocks.",
+    "category": {
+      "data": "Data",
+      "logic": "Logic",
+      "ai": "AI",
+      "communication": "Communication",
+      "connectors": "Connectors",
+      "code": "Code",
+      "other": "Other"
+    },
+    "ai": {
+      "decide": {
+        "label": "AI decision",
+        "description": "The AI picks one of the declared branches and explains why."
+      },
+      "run": {
+        "label": "AI agent",
+        "description": "The AI follows an instruction and can read or update objects."
+      },
+      "extract": {
+        "label": "AI extraction",
+        "description": "The AI extracts structured fields (text, number, date, list…) from a text."
+      }
+    },
+    "condition": {
+      "label": "Condition (yes / no)",
+      "description": "Checks one or more rules on the record (relations included): continues on Yes if they are true, otherwise on No."
+    },
+    "data": {
+      "set": {
+        "label": "Set values",
+        "description": "Creates named values (text, number, variables) to reuse in the following steps."
+      },
+      "transform": {
+        "label": "Reshape data",
+        "description": "Extracts fields from an object (e.g. an event's content) under new names."
+      }
+    },
+    "formatter": {
+      "label": "Format a value",
+      "description": "Transforms text, numbers or dates without AI (case, extraction, rounding, date format, lookup table…)."
+    },
+    "date": {
+      "label": "Compute a date",
+      "description": "Formats a date, adds a duration or computes the gap between two dates."
+    },
+    "event": {
+      "emit": {
+        "label": "Emit an event",
+        "description": "Publishes an event that can trigger other workflows."
+      }
+    },
+    "http": {
+      "request": {
+        "label": "HTTP request",
+        "description": "Calls an external URL and returns the response."
+      }
+    },
+    "human": {
+      "approve": {
+        "label": "Human approval",
+        "description": "Pauses the run until it is approved or rejected, with an optional timeout."
+      }
+    },
+    "list": {
+      "aggregate": {
+        "label": "Compute on a list",
+        "description": "Counts items or computes a sum, average, minimum or maximum, overall or per group."
+      },
+      "dedupe": {
+        "label": "Remove duplicates",
+        "description": "Removes duplicate items from a list (by a field or the whole item)."
+      },
+      "filter": {
+        "label": "Filter a list",
+        "description": "Keeps the records of a list that match a condition."
+      },
+      "limit": {
+        "label": "Keep the first items",
+        "description": "Keeps a limited number of items from a list."
+      },
+      "map": {
+        "label": "Transform a list",
+        "description": "Turns each item of a list into an object."
+      },
+      "sort": {
+        "label": "Sort a list",
+        "description": "Sorts the items of a list by a field."
+      }
+    },
+    "loop": {
+      "label": "Loop",
+      "description": "Repeats a sequence of steps for each item of a list."
+    },
+    "mcp": {
+      "call": {
+        "label": "MCP call",
+        "description": "Calls a tool on a configured MCP server."
+      }
+    },
+    "record": {
+      "create": {
+        "label": "Create a record",
+        "description": "Creates a record in an object of a database."
+      },
+      "delete": {
+        "label": "Delete a record",
+        "description": "Permanently deletes a record."
+      },
+      "get": {
+        "label": "Read a record",
+        "description": "Reads a record by its id."
+      },
+      "map": {
+        "label": "Copy a record",
+        "description": "Copies a record to an object in any database, field by field."
+      },
+      "merge": {
+        "label": "Merge records",
+        "description": "Merges duplicates into one record: fields, relations and timeline, all or nothing."
+      },
+      "search": {
+        "label": "Search records",
+        "description": "Searches the records of an object with a filter."
+      },
+      "transact": {
+        "label": "Batch writes",
+        "description": "Applies several creates, updates and deletes in one transaction."
+      },
+      "update": {
+        "label": "Update a record",
+        "description": "Updates one or more fields of a record."
+      },
+      "upsert": {
+        "label": "Create or update a record",
+        "description": "Upsert by unique field (email, domain…) or external id, without duplicates."
+      }
+    },
+    "slack": {
+      "send": {
+        "label": "Slack message",
+        "description": "Sends a message to Slack through an Incoming Webhook URL."
+      }
+    },
+    "stop": {
+      "error": {
+        "label": "Stop with an error",
+        "description": "Stops the workflow with an error message; the error shows up in the error center."
+      }
+    },
+    "switch": {
+      "label": "Switch",
+      "description": "Routes to a branch based on a field's value: one case per value, then Otherwise."
+    },
+    "wait": {
+      "label": "Wait",
+      "description": "Pauses the run for a duration.",
+      "until": {
+        "label": "Wait until a date",
+        "description": "Pauses the run until a specific date and time."
+      }
+    },
+    "webhook": {
+      "emit": {
+        "label": "Send a webhook",
+        "description": "Sends a signed payload to a URL."
+      }
+    },
+    "workflow": {
+      "run": {
+        "label": "Run another workflow",
+        "description": "Runs another workflow and waits for its result, or continues without waiting."
+      }
+    },
+    "workspaceFunction": "Workspace function."
+  },
+  "canvas": {
+    "trigger": "Trigger",
+    "unlinked": "Not linked",
+    "triggerEdge": "Link from trigger to {target}",
+    "edge": "{branch} link from {source} to {target}",
+    "a11y": {
+      "nodeDefault": "Press Enter or Space to select a node, then the arrow keys to move it. Escape to cancel.",
+      "nodeKeyboardDisabled": "Press Enter or Space to select a node.",
+      "nodeMoved": "Node moved {direction}, position x {x}, y {y}",
+      "edgeDefault": "Press Enter or Space to select a link.",
+      "controls": "Canvas controls",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "fitView": "Fit view",
+      "interactive": "Lock canvas",
+      "minimap": "Mini map",
+      "handle": "Handle"
+    },
+    "kind": {
+      "condition": "Condition",
+      "approval": "Approval",
+      "action": "Action"
+    }
+  },
+  "editor": {
+    "nameLabel": "Workflow name",
+    "validate": "Validate",
+    "test": "Test",
+    "pause": "Pause",
+    "activate": "Activate",
+    "nextStep": "Next step",
+    "nextStepFor": "Next step: {branch}",
+    "end": "End of workflow",
+    "help": "Click a step to configure it. A new step is linked to the selected step. To link manually, drag from the dot under the trigger or a branch to the dot at the top of a step, or use “Next step”. To remove a link, click it and press Delete.",
+    "errors": "Errors",
+    "valid": "Workflow is valid",
+    "testTitle": "Test",
+    "path": "Path {id}",
+    "branchRef": "branch “{label}”",
+    "removeItem": "Remove {label}",
+    "testRecords": {
+      "button": "Test records",
+      "selected": "Records",
+      "search": "Search records…",
+      "empty": "No records."
+    },
+    "outputs": "Outputs",
+    "unlinked": "Not linked",
+    "deleteStep": "Delete step"
+  },
+  "trigger": {
+    "label": "Trigger",
+    "watchedWorkflow": "Watched workflow",
+    "allWorkflows": "All workflows",
+    "runFailedHelp": "This workflow starts when a run of the watched workflow fails: handy for alerts or automatic fixes. The workflow name and error message are available in the steps.",
+    "object": "Workflow object",
+    "scheduleWithObject": "At each scheduled time, the workflow runs once for every record of this object.",
+    "scheduleWithoutObject": "Without an object, the workflow runs once at each scheduled time.",
+    "objectHelp": "The workflow runs for a record of this object: its data is available in every step.",
+    "runOnce": "Run once, without an object",
+    "watchedFields": "Watched fields (empty = all)",
+    "eventName": "Event name",
+    "eventPlaceholder": "e.g. signup, payment_received",
+    "eventsSeen": "Already received in this workspace:",
+    "eventHelp": "An event is a named signal sent by your app (API), by the “Emit event” step of another workflow, or by the MCP. The workflow starts every time this name is received.",
+    "when": "When?",
+    "timezone": "Time zone",
+    "utc": "UTC (universal time)"
+  },
+  "stepForm": {
+    "record": "Record",
+    "appliesTo": "Applies to:",
+    "change": "Change",
+    "recordPlaceholder": "/ to pick a record",
+    "includeHelp": "Checked linked records become a list usable by “Filter list” or “Transform list”.",
+    "listPlaceholder": "comma-separated values",
+    "object": "Object",
+    "conditionTitle": "Continue on “Yes” if all these conditions are true",
+    "removeCondition": "Remove condition",
+    "operator": "operator",
+    "days": "days",
+    "value": "value",
+    "addCondition": "Condition",
+    "sourceObject": "Source object",
+    "sourceRecord": "Source record",
+    "targetObject": "Target object",
+    "mode": "Mode",
+    "modes": {
+      "create": "Create",
+      "update": "Update",
+      "upsert": "Create or update"
+    },
+    "targetRecord": "Target record",
+    "matchKey": "Match key",
+    "externalId": "External ID",
+    "externalIdPlaceholder": "external ID",
+    "targetFields": "Target record fields",
+    "testedField": "Field to test",
+    "cases": "Cases (first match wins)",
+    "caseLabel": "Case label",
+    "removeCase": "Remove case",
+    "caseValue": "Case value",
+    "addCase": "Case",
+    "onePerOption": "One case per option",
+    "elseHelp": "Otherwise: no rule matches.",
+    "list": "Record list",
+    "chooseList": "Choose a list",
+    "noList": "No upstream list. Add “Search records” before this step, or “Get record” with an included relation.",
+    "keepWhere": "Keep records where all these conditions are true",
+    "columns": "Columns for each item",
+    "columnsHelp": "Each record becomes an object with these columns (e.g. for an email, a table, an AI).",
+    "columnName": "Column name",
+    "removeColumn": "Remove column",
+    "addColumn": "Column",
+    "columnDefault": "column{n}",
+    "limit": "Maximum records processed",
+    "limitHelp": "Anything beyond is ignored (“truncated” output)."
+  },
+  "pickers": {
+    "chooseObject": "Choose an object",
+    "searchObject": "Search objects…",
+    "noObject": "No objects.",
+    "searchField": "Search fields…",
+    "noField": "No fields.",
+    "theRecord": "{label} (the record)",
+    "sourceHeading": "Source record · {name}",
+    "variable": "Variable",
+    "variableTitle": "variable",
+    "pillPlaceholder": "Text or / for a variable",
+    "chooseField": "Choose a field"
+  },
+  "recordFields": {
+    "choose": "Choose",
+    "chooseFirst": "Choose the record or object first.",
+    "addField": "Field"
+  },
+  "webhook": {
+    "label": "Webhook",
+    "choose": "Choose a webhook",
+    "none": "No webhooks: create one via the MCP ({tool}).",
+    "copyUrl": "Copy URL",
+    "sample": "Sample payload",
+    "listening": "Listening…",
+    "listen": "Listen for a test",
+    "copyTestUrl": "Copy test URL",
+    "help": "Send a test from the provider (e.g. Cal.com): the received payload shows up here. To avoid triggering anything during the test, use the test URL above: it saves the sample without running the workflow. Or paste a JSON sample.",
+    "detected": "{count, plural, one {# field} other {# fields}} detected in the sample.",
+    "upsert": "Create or update a record (optional)",
+    "dedupKey": "Deduplication key",
+    "noDedup": "None (always create)",
+    "mapping": "Field mapping",
+    "runsOn": "The workflow runs on the resulting record; the full payload stays available in every step via {code}."
+  },
+  "boundary": {
+    "error": "Couldn't load this workflow.",
+    "loading": "Loading the workflow…"
+  },
+  "bar": {
+    "meta": "v{version} · updated {when}",
+    "tabs": {
+      "editor": "Editor",
+      "runs": "Runs",
+      "versions": "Versions"
+    }
+  },
+  "versions": {
+    "title": "Version history",
+    "count": "{count, plural, one {# version} other {# versions}}",
+    "live": "Published",
+    "restore": "Restore",
+    "changes": "Changes v{from} → v{to}",
+    "initial": "Initial version v{version}",
+    "createdAt": "Created on {date}.",
+    "definition": "Workflow definition",
+    "noChanges": "No changes.",
+    "openEditor": "Open in editor"
+  },
+  "runs": {
+    "stats": {
+      "runs": "Runs · 30 d",
+      "runsSub": "{count, plural, one {# finished} other {# finished}}",
+      "success": "Success rate",
+      "failures": "{count, plural, one {# failure} other {# failures}}",
+      "median": "Median duration",
+      "p95": "p95 · {value}"
+    },
+    "filters": {
+      "status": "Status"
+    },
+    "empty": {
+      "title": "No runs",
+      "description": "Runs of this workflow will show up here."
+    },
+    "table": {
+      "run": "Run",
+      "status": "Status",
+      "summary": "Summary",
+      "version": "Version",
+      "duration": "Duration",
+      "started": "Started"
+    },
+    "summary": "{count, plural, one {# step run} other {# steps run}}"
+  }
+}

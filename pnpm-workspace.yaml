@@ -1,0 +1,17 @@
+packages:
+  - apps/*
+  - packages/*
+  - connectors/*
+allowBuilds:
+  esbuild: true
+  sharp: true
+  msgpackr-extract: true
+  # Pulled in by next-intl (extractor), not needed at runtime.
+  "@swc/core": false
+  "@parcel/watcher": false
+# Docker images run `pnpm db:migrate` without network: no reinstall before scripts.
+verifyDepsBeforeRun: false
+# Force patched versions of transitive dependencies flagged by pnpm audit.
+overrides:
+  postcss: ^8.5.18
+  dompurify: ^3.4.17

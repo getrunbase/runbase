@@ -1,0 +1,19 @@
+{
+  "list": {
+    "title": "Pages",
+    "description": "Pages shared with you.",
+    "empty": "No pages yet",
+    "emptyDescription": "Pages published in this workspace will appear here."
+  },
+  "builder": {
+    "unpublishedDraft": "Unpublished draft",
+    "viewDraft": "View draft",
+    "viewLive": "View live version",
+    "discard": "Discard",
+    "publish": "Publish"
+  },
+  "code": {
+    "leftRuntime": "The component left its runtime: rendering stopped.",
+    "previewUnavailable": "Code component: preview unavailable here."
+  }
+}

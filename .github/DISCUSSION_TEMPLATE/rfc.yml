@@ -1,0 +1,46 @@
+title: "RFC: "
+labels: ["type: rfc"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        RFCs are for large changes: data model, public API (HTTP, MCP, SDK), breaking changes, license or governance.
+        An RFC stays open for at least 7 days. A maintainer then posts the decision. See [GOVERNANCE.md](https://github.com/getrunbase/runbase/blob/main/GOVERNANCE.md).
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One paragraph that explains the change.
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: The problem, who has it, and why it matters now.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Detailed proposal
+      description: Data model, API shapes, user experience. Code samples welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact and migration
+      description: Breaking changes, data migration, self-hosted upgrades, security and performance.
+    validations:
+      required: true
+  - type: textarea
+    id: questions
+    attributes:
+      label: Open questions

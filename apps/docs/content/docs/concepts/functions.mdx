@@ -1,0 +1,27 @@
+---
+title: Functions
+description: Versioned JavaScript run in a server-side sandbox, with explicit permissions.
+---
+
+A **function** is versioned JavaScript code run in a sandbox (Deno, no disk,
+no environment, no process). It declares:
+
+- `inputSchema` and `outputSchema` (JSON Schema), validated on every call;
+- `permissions`: reachable network `domains`, readable `secrets`, and access to
+  `records` and `events` (`read` or `write`);
+- `limits`: `timeoutMs` and `memoryMb`.
+
+## Lifecycle
+
+`functions.save` creates a new version; `functions.versions` and
+`functions.restore` roll back. `functions.test` runs a call, and with
+`{ "dryRun": true }` returns the planned writes without making them.
+`functions.logs` shows past runs.
+
+## In workflows
+
+Every function is a workflow node named `fn.<name>` (latest version) or
+`fn.<name>@<version>`. Return `{ "branch": "…" }` to route; return
+`{ "ok": false, "error": "…" }` to fail the step.
+
+Secrets are stored encrypted with `secrets.set` and never returned.

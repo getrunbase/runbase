@@ -1,0 +1,36 @@
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share an idea for Runbase. Maintainers review ideas regularly and turn accepted ones into issues labelled `status: accepted`.
+        Upvote existing ideas with a thumbs-up instead of posting duplicates.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what gets in the way?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: How could Runbase solve it?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Web app (UI)
+        - MCP server
+        - Workflows / worker
+        - Functions
+        - Data (databases, objects, records)
+        - Connectors
+        - Templates
+        - Self-hosting / deployment
+        - Other
+    validations:
+      required: true

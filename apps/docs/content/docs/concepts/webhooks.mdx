@@ -1,0 +1,22 @@
+---
+title: Webhooks
+description: Inbound webhooks with signature checks, deduplication and mapping.
+---
+
+`webhooks.create` returns a public URL, `/api/hooks/<id>`. Each call:
+
+1. is verified against its signature (Stripe, Standard Webhooks/Svix, or a
+   configurable HMAC);
+2. is deduplicated;
+3. becomes an event, and optionally creates or updates a record.
+
+A workflow with a `trigger.webhook` trigger runs on each call. Its `mapping`
+copies payload paths (such as `payload.data.email`) into record fields; the
+full payload stays available as `{{event.…}}`.
+
+## Writing a mapping
+
+`webhooks.list` returns the last payload received (the sample). Call the test
+URL (`testPath`) from the sender, or simulate a signed call with
+`webhooks.test`, then read the sample to write the mapping. `config.splitPath`
+splits a batch payload into one event per item.

@@ -1,0 +1,17 @@
+{
+  "list": {
+    "title": "Interfaces",
+    "description": "Les vues pour consulter et agir sur vos données : pages et leurs briques.",
+    "pages": {
+      "title": "Pages",
+      "empty": "Aucune page",
+      "emptyDescription": "Une page affiche des listes, fiches et formulaires. Demandez à votre agent IA connecté (MCP) de la créer, par exemple : « crée une page pour suivre mes contacts »."
+    },
+    "queries": {
+      "title": "Requêtes enregistrées",
+      "hint": "Les questions posées à vos données, réutilisées par les pages.",
+      "empty": "Aucune requête",
+      "emptyDescription": "Une requête enregistrée calcule un chiffre ou une liste (ex. « chiffre d'affaires par mois ») pour l'afficher ensuite."
+    }
+  }
+}

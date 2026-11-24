@@ -1,0 +1,15 @@
+---
+title: Events
+description: Timestamped facts used as timeline, funnel and workflow trigger.
+---
+
+An **event** is a timestamped fact with a `type` (such as `email.opened`) and a
+JSON `payload`. It can be linked to a record, and then appears in that record's
+timeline. Records changes produce `record.*` events automatically.
+
+- Push with `events.push`. Pass an `idempotencyKey` (an external id) to make
+  replays safe: the same key never creates a duplicate.
+- Read with `events.list` (filters by type, record and dates) and
+  `events.types`. SQL users get an `events` view in `query.sql`.
+- Analyze conversion with `events.funnel`.
+- Start workflows with an event trigger.

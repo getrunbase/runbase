@@ -1,0 +1,247 @@
+# Logs: json-file driver with rotation (10 MB x 5 files per container).
+# Logs of a container replaced during a deploy are archived by
+# the operator's deploy script, see docs/observability.md.
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "5" }
+
+# Dev: `docker compose up -d` starts only the infrastructure (postgres, redis);
+# `docker compose --profile app up -d --build` starts the whole stack (built images).
+services:
+  postgres:
+    logging: *logging
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # Exposed locally only, for tests and drizzle-kit (removed in production).
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    logging: *logging
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Password required: no connection without AUTH.
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is required}"]
+    # Exposed locally only, for tests (removed in production).
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6380}:6379"
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=$${REDIS_PASSWORD} redis-cli ping | grep -q PONG"]
+      interval: 5s
+      retries: 10
+
+  web:
+    profiles: [app]
+    build: { context: ., target: web }
+    # Image named by SHA: RUNBASE_IMAGE (registry) and RUNBASE_TAG (commit), see docs/self-hosting.md.
+    image: ${RUNBASE_IMAGE:-runbase}-web:${RUNBASE_TAG:-local}
+    init: true  # tini: SIGTERM forwarded to Next for a graceful shutdown
+    stop_grace_period: 30s
+    restart: unless-stopped
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      QUERY_DATABASE_URL: postgres://runbase_query:${QUERY_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      SANDBOX_URL: http://sandbox:7200
+      # Local stack only: accepts the change-me values of .env.example.
+      RUNBASE_ALLOW_PLACEHOLDER_SECRETS: "1"
+      SANDBOX_TOKEN: ${SANDBOX_TOKEN:?SANDBOX_TOKEN is required}
+      # Origin of the app as seen by the renderer (page.screenshot).
+      RENDERER_APP_URL: http://web:3000
+      FILES_DIR: /data/files
+      SERVICE_NAME: web
+    networks: [default, sandbox]
+    volumes:
+      - files-data:/data/files
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    logging: *logging
+    # Liveness: /api/health (no dependency). Readiness (/api/ready) is
+    # awaited by the deploy before switching traffic.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      files-perms: { condition: service_completed_successfully }
+
+  worker:
+    profiles: [app]
+    build: { context: ., target: worker }
+    image: ${RUNBASE_IMAGE:-runbase}-worker:${RUNBASE_TAG:-local}
+    init: true
+    stop_grace_period: 60s  # running jobs finish before shutdown
+    restart: unless-stopped
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      QUERY_DATABASE_URL: postgres://runbase_query:${QUERY_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      SANDBOX_URL: http://sandbox:7200
+      # Local stack only: accepts the change-me values of .env.example.
+      RUNBASE_ALLOW_PLACEHOLDER_SECRETS: "1"
+      SANDBOX_TOKEN: ${SANDBOX_TOKEN:?SANDBOX_TOKEN is required}
+      SERVICE_NAME: worker
+    networks: [default, sandbox]
+    logging: *logging
+    # Liveness: /healthz of the Bull Board server (active BullMQ workers).
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:$${BOARD_PORT:-7101}/healthz"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+      files-perms: { condition: service_completed_successfully }
+
+  # Images run as `node`: gives back to `node` the files of a volume
+  # files-data created when they ran as root (idempotent one-shot, worker image).
+  files-perms:
+    profiles: [app]
+    image: ${RUNBASE_IMAGE:-runbase}-worker:${RUNBASE_TAG:-local}
+    # build: otherwise compose tries to pull the local image before building the worker
+    build: { context: ., target: worker }
+    restart: "no"
+    user: root
+    command: ["sh", "-c", "find /data/files ! -user node -exec chown node:node {} +"]
+    volumes:
+      - files-data:/data/files
+    logging: *logging
+
+  # Migrations (one-shot, worker image). Locally, run before the worker; in production,
+  # in a dedicated deploy step before the rollout (migrate service).
+  migrate:
+    profiles: [app]
+    image: ${RUNBASE_IMAGE:-runbase}-worker:${RUNBASE_TAG:-local}
+    # build: otherwise compose tries to pull the local image before building the worker
+    build: { context: ., target: worker }
+    restart: "no"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      QUERY_DATABASE_URL: postgres://runbase_query:${QUERY_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    command: ["pnpm", "db:migrate"]
+    logging: *logging
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  # Headless Chromium outside the web app: consumes the `render` queue.
+  # Stores captures through the file driver, read back by the web app: same
+  # FILES_* on both sides (local driver: shared files-data volume).
+  renderer:
+    profiles: [app]
+    build: { context: ., target: renderer }
+    image: ${RUNBASE_IMAGE:-runbase}-renderer:${RUNBASE_TAG:-local}
+    init: true
+    restart: unless-stopped
+    # Dedicated environment, no env file: never the master key, the auth
+    # secret or the sandbox token (it renders user-controlled pages).
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      RENDERER_APP_URL: http://web:3000
+      HOME: /tmp
+      LOG_LEVEL: ${LOG_LEVEL:-}
+      RENDER_CONCURRENCY: ${RENDER_CONCURRENCY:-}
+      FILES_DRIVER: ${FILES_DRIVER:-}
+      FILES_DIR: /data/files
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_REGION: ${S3_REGION:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      SERVICE_NAME: renderer
+    logging: *logging
+    volumes:
+      - files-data:/data/files
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:7102/health"]
+      interval: 10s
+      retries: 5
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      files-perms: { condition: service_completed_successfully }
+
+  # S3-compatible storage for the s3 file driver, dev and
+  # tests only (`files` profile, never started in production: R2 there).
+  #   docker compose --profile files up -d minio minio-init
+  minio:
+    image: cgr.dev/chainguard/minio:latest
+    profiles: [files]
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio-secret
+    ports:
+      - "127.0.0.1:${MINIO_PORT:-9000}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+  # Creates the private `runbase-files` bucket (idempotent).
+  minio-init:
+    image: cgr.dev/chainguard/minio-client:latest
+    profiles: [files]
+    environment:
+      MC_HOST_local: http://minio:minio-secret@minio:9000
+    command: ["mb", "--ignore-existing", "local/runbase-files"]
+    depends_on: [minio]
+    restart: on-failure
+  # Function execution: non-root, read-only FS (tmpfs
+  # /tmp), no env_file (no DATABASE_URL, no REDIS_URL, no master key).
+  # Networks: `sandbox` (internal, joined by web and worker) and `sandbox-egress`
+  # (internet); never the postgres and redis network.
+  sandbox:
+    profiles: [app]
+    build: { context: ., target: sandbox }
+    image: ${RUNBASE_IMAGE:-runbase}-sandbox:${RUNBASE_TAG:-local}
+    restart: unless-stopped
+    user: node
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    environment:
+      SANDBOX_TOKEN: ${SANDBOX_TOKEN:?SANDBOX_TOKEN is required}
+    networks: [sandbox, sandbox-egress]
+
+networks:
+  sandbox: { internal: true }
+  sandbox-egress: {}
+
+volumes:
+  postgres-data:
+  redis-data:
+  files-data:
+  minio-data:

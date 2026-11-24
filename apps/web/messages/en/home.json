@@ -1,0 +1,137 @@
+{
+  "title": "Home",
+  "onboarding": {
+    "title": "Get started in 10 minutes",
+    "progress": "{done} of {total} steps: store your data, automate, build a view, then let an AI agent run it all.",
+    "steps": {
+      "database": {
+        "title": "Create a database",
+        "description": "A place for your records: contacts, orders…",
+        "cta": "Create a database"
+      },
+      "workflow": {
+        "title": "Automate a task",
+        "description": "A workflow runs on its own: new record, schedule, webhook.",
+        "cta": "Create a workflow"
+      },
+      "interface": {
+        "title": "Create a view",
+        "description": "A page to view and act on your data.",
+        "cta": "View interfaces"
+      },
+      "agent": {
+        "title": "Connect an AI agent",
+        "description": "Your agent (Claude…) drives everything over MCP with the URL below.",
+        "cta": "Create a key"
+      }
+    },
+    "connect": {
+      "title": "Connect your agent",
+      "copyUrl": "Copy the MCP server URL",
+      "copyCommand": "Copy the Claude Code command",
+      "help": "Claude Desktop or claude.ai: Settings, Connectors, add the URL. Scripts: send an API key in a header. Details in <link>Settings</link>."
+    }
+  },
+  "audit": {
+    "label": "{resource} {verb}",
+    "resources": {
+      "record": "Record",
+      "object": "Object",
+      "database": "Database",
+      "workflow": "Workflow",
+      "run": "Run",
+      "function": "Function",
+      "page": "Page",
+      "component": "Component",
+      "query": "Query",
+      "view": "View",
+      "webhook": "Webhook",
+      "secret": "Secret",
+      "api_key": "API key",
+      "member": "Member",
+      "workspace": "Workspace",
+      "file": "File"
+    },
+    "verbs": {
+      "create": "created",
+      "save": "saved",
+      "update": "updated",
+      "rename": "renamed",
+      "delete": "deleted",
+      "restore": "restored",
+      "merge": "merged",
+      "purge": "permanently erased",
+      "migrate": "schema changed",
+      "publish": "published",
+      "pause": "paused",
+      "resume": "resumed",
+      "cancel": "canceled",
+      "replay": "replayed",
+      "retry_from": "replayed from a step",
+      "revoke": "revoked",
+      "invite": "invited",
+      "upload": "uploaded",
+      "index": "index added",
+      "clear_sample": "sample cleared"
+    },
+    "special": {
+      "memberRole": "Member role changed",
+      "workspaceSettings": "Workspace settings changed",
+      "workspacePurgeTest": "Test data erased"
+    }
+  },
+  "error": {
+    "title": "This page couldn't load",
+    "description": "Something went wrong on our side. Try again in a moment; if it keeps happening, send this code to your administrator: <code>{digest}</code>.",
+    "unknown": "unknown"
+  },
+  "globalError": {
+    "title": "The app ran into a problem",
+    "description": "Nothing is lost. Try again in a moment; if it keeps happening, contact your administrator."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "This link leads nowhere: the page may have been deleted, moved, or isn't available to your account."
+  },
+  "loading": "Loading",
+  "greeting": "Hello {name}",
+  "subtitle": "{date} · {count, plural, =0 {no approvals waiting} one {# approval awaits your decision} other {# approvals await your decision}}.",
+  "newWorkflow": "New workflow",
+  "kpi": {
+    "runs": "Runs 24 h",
+    "runsDelta": "{delta, number, ::percent sign-always} vs yesterday",
+    "success": "Success rate",
+    "successValue": "{rate, number, ::percent .0}",
+    "successDelta": "{delta, number, ::.0 sign-always} pt",
+    "errors": "Open errors",
+    "errorsHint": "to handle",
+    "noErrors": "none",
+    "waiting": "Waiting",
+    "waitingHint": "{count, plural, one {approval} other {approvals}}",
+    "noData": "no runs yet"
+  },
+  "activity": {
+    "title": "Recent activity",
+    "all": "See all",
+    "empty": "No runs yet.",
+    "started": "Started {date}",
+    "status": {
+      "running": "Running",
+      "waiting": "Waiting",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "paused_budget": "Paused",
+      "paused": "Paused",
+      "canceled": "Canceled"
+    },
+    "yesterday": "yesterday"
+  },
+  "approvals": {
+    "title": "Pending approvals",
+    "step": "Step {step}",
+    "started": "Run {id} · started {date}",
+    "approve": "Approve",
+    "reject": "Reject",
+    "empty": "Nothing to approve."
+  }
+}

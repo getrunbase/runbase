@@ -1,0 +1,623 @@
+{
+  "list": {
+    "title": "Workflows",
+    "description": "Les automatisations de l'espace, proposées par Claude ou créées à la main.",
+    "namePlaceholder": "Nom du workflow",
+    "emptyTitle": "Aucun workflow",
+    "emptyDescription": "Donnez un nom à votre premier workflow ci-dessus pour le créer.",
+    "create": "Nouveau workflow",
+    "search": "Rechercher un workflow…",
+    "filters": {
+      "all": "Tous · {count}",
+      "active": "Actifs",
+      "paused": "En pause",
+      "draft": "Brouillons"
+    },
+    "table": {
+      "name": "Nom",
+      "status": "Statut",
+      "trigger": "Déclencheur",
+      "updated": "Mis à jour"
+    },
+    "count": "{shown} sur {total} workflows"
+  },
+  "labels": {
+    "branch": {
+      "true": "Oui",
+      "false": "Non",
+      "ok": "Suite",
+      "done": "Terminé",
+      "error": "Erreur",
+      "approved": "Approuvé",
+      "rejected": "Rejeté",
+      "expired": "Délai expiré",
+      "found": "Trouvé",
+      "not_found": "Introuvable",
+      "empty": "Aucun résultat",
+      "else": "Sinon"
+    },
+    "output": {
+      "branch": "branche",
+      "reason": "raison",
+      "confidence": "confiance",
+      "record": "fiche",
+      "records": "fiches",
+      "changed": "champs modifiés",
+      "result": "résultat",
+      "output": "résultat",
+      "case": "cas",
+      "label": "libellé",
+      "status": "statut",
+      "body": "réponse",
+      "items": "éléments"
+    },
+    "input": {
+      "object": "Objet",
+      "objects": "Objets accessibles",
+      "recordId": "Fiche",
+      "id": "Fiche",
+      "condition": "Conditions",
+      "data": "Valeurs",
+      "filter": "Filtre",
+      "limit": "Limite",
+      "prompt": "Consigne",
+      "context": "Contexte",
+      "branches": "Branches",
+      "schema": "Schéma de sortie",
+      "text": "Texte",
+      "html": "HTML",
+      "body": "Corps",
+      "type": "Type",
+      "payload": "Charge utile",
+      "method": "Méthode",
+      "url": "URL",
+      "headers": "En-têtes",
+      "message": "Message",
+      "items": "Éléments",
+      "include": "Fiches liées à charger",
+      "do": "Étapes répétées",
+      "server": "Serveur",
+      "tool": "Outil",
+      "arguments": "Arguments",
+      "channel": "Canal",
+      "duration": "Durée",
+      "timeout": "Délai maximal",
+      "secret": "Secret",
+      "event": "Événement",
+      "cron": "Planification (cron)",
+      "values": "Valeurs",
+      "source": "Source",
+      "mapping": "Correspondances",
+      "op": "Opération",
+      "path": "Champ",
+      "groupBy": "Regrouper par",
+      "order": "Ordre",
+      "offset": "À partir de",
+      "until": "Jusqu'au",
+      "workflow": "Workflow",
+      "wait": "Attendre la fin",
+      "to": "Destinataire",
+      "subject": "Objet du message",
+      "replyTo": "Répondre à",
+      "date": "Date",
+      "amount": "Quantité",
+      "unit": "Unité",
+      "format": "Format",
+      "timezone": "Fuseau horaire",
+      "occurredAt": "Date de l'événement",
+      "idempotencyKey": "Identifiant unique"
+    },
+    "operator": {
+      "eq": "est égal à",
+      "neq": "est différent de",
+      "gt": ">",
+      "gte": "≥",
+      "lt": "<",
+      "lte": "≤",
+      "in": "est parmi",
+      "not_in": "n'est pas parmi",
+      "ends_with": "finit par",
+      "regex": "correspond au motif",
+      "contains": "contient",
+      "starts_with": "commence par",
+      "between": "est entre",
+      "before": "avant le",
+      "after": "après le",
+      "older_than": "il y a plus de (jours)",
+      "within": "dans les derniers (jours)",
+      "is": "est",
+      "is_empty": "est vide",
+      "is_not_empty": "n'est pas vide"
+    },
+    "fieldType": {
+      "text": "texte",
+      "number": "nombre",
+      "bool": "oui/non",
+      "date": "date",
+      "select": "choix",
+      "multi_select": "choix multiples",
+      "email": "e-mail",
+      "url": "URL",
+      "json": "JSON",
+      "ref": "relation",
+      "refs": "relations",
+      "currency": "montant",
+      "percent": "pourcentage",
+      "phone": "téléphone",
+      "rating": "note (étoiles)",
+      "user": "personne",
+      "file": "fichiers",
+      "formula": "formule",
+      "lookup": "valeur liée",
+      "rollup": "calcul sur les liés",
+      "created_at": "date de création",
+      "updated_at": "date de modification",
+      "created_by": "créé par",
+      "autonumber": "numéro auto"
+    },
+    "trigger": {
+      "manual": "Manuel",
+      "record_created": "Fiche créée",
+      "record_updated": "Fiche modifiée",
+      "event": "Événement",
+      "schedule": "Planifié",
+      "webhook": "Webhook reçu",
+      "run_failed": "Échec d'un autre workflow"
+    },
+    "status": {
+      "running": "En cours",
+      "waiting": "En attente",
+      "succeeded": "Réussi",
+      "failed": "Échoué",
+      "paused_budget": "Budget atteint",
+      "canceled": "Annulé",
+      "paused": "En pause",
+      "draft": "Brouillon",
+      "active": "Actif"
+    },
+    "statusHint": {
+      "running": "L'automatisation est en train de s'exécuter.",
+      "waiting": "En attente d'une décision humaine ou d'un délai.",
+      "succeeded": "Toutes les étapes se sont bien déroulées.",
+      "failed": "Une étape a échoué : voir le détail ci-dessous, puis relancer.",
+      "paused_budget": "Limite IA du mois atteinte (5 € offerts par compte, ou budget du workspace). Ajoutez votre clé DEEPSEEK_API_KEY dans Paramètres › Secrets : l'exécution reprendra toute seule.",
+      "canceled": "L'exécution a été annulée avant la fin.",
+      "paused": "Mise en pause : reprenez quand vous voulez."
+    }
+  },
+  "vars": {
+    "current": "{name} en cours",
+    "currentRecord": "Fiche en cours",
+    "source": "Fiche source",
+    "step": "Étape {label}"
+  },
+  "schedule": {
+    "freq": {
+      "daily": "Certains jours de la semaine",
+      "monthly": "Une fois par mois",
+      "hourly": "Toutes les heures",
+      "custom": "Avancé (expression cron)"
+    },
+    "days": {
+      "d0": "dimanche",
+      "d1": "lundi",
+      "d2": "mardi",
+      "d3": "mercredi",
+      "d4": "jeudi",
+      "d5": "vendredi",
+      "d6": "samedi"
+    },
+    "short": {
+      "d0": "D",
+      "d1": "L",
+      "d2": "M",
+      "d3": "M",
+      "d4": "J",
+      "d5": "V",
+      "d6": "S"
+    },
+    "time": "{hour} h {minute}",
+    "and": " et ",
+    "describe": {
+      "custom": "Expression cron : {cron}",
+      "hourly": "Toutes les heures, à la minute {minute}",
+      "monthly": "Le {day, selectordinal, one {#er} other {#}} de chaque mois à {time}",
+      "everyDay": "Tous les jours à {time}",
+      "weekdays": "Du lundi au vendredi à {time}",
+      "days": "Chaque {days} à {time}"
+    },
+    "form": {
+      "monthlyBefore": "Le",
+      "monthlyAfter": "du mois",
+      "dayOfMonth": "Jour du mois",
+      "at": "à",
+      "hour": "Heure",
+      "atMinute": "à la minute",
+      "minute": "Minute",
+      "cron": "Expression cron"
+    }
+  },
+  "blocks": {
+    "add": "Ajouter une étape",
+    "description": "Recherchez une brique à ajouter au workflow.",
+    "search": "Rechercher une brique…",
+    "empty": "Aucune brique.",
+    "category": {
+      "data": "Données",
+      "logic": "Logique",
+      "ai": "IA",
+      "communication": "Communication",
+      "connectors": "Connecteurs",
+      "code": "Code",
+      "other": "Autres"
+    },
+    "ai": {
+      "decide": {
+        "label": "Décision IA",
+        "description": "L’IA choisit une branche parmi celles déclarées, avec justification."
+      },
+      "run": {
+        "label": "Agent IA",
+        "description": "L’IA exécute une consigne et peut lire ou modifier des objets."
+      },
+      "extract": {
+        "label": "Extraction IA",
+        "description": "L’IA extrait des champs structurés (texte, nombre, date, liste…) d’un texte."
+      }
+    },
+    "condition": {
+      "label": "Condition (oui / non)",
+      "description": "Vérifie une ou plusieurs règles sur la fiche (relations comprises) : continue sur Oui si elles sont vraies, sinon sur Non."
+    },
+    "data": {
+      "set": {
+        "label": "Définir des valeurs",
+        "description": "Crée des valeurs nommées (texte, nombre, variables) à réutiliser dans les étapes suivantes."
+      },
+      "transform": {
+        "label": "Remettre en forme des données",
+        "description": "Extrait des champs d’un objet (ex. le contenu d’un événement) sous de nouveaux noms."
+      }
+    },
+    "formatter": {
+      "label": "Formater une valeur",
+      "description": "Transforme un texte, un nombre ou une date sans IA (casse, extraction, arrondi, format de date, table de correspondance…)."
+    },
+    "date": {
+      "label": "Calculer une date",
+      "description": "Formate une date, ajoute une durée ou calcule l’écart entre deux dates."
+    },
+    "event": {
+      "emit": {
+        "label": "Émettre un événement",
+        "description": "Publie un événement qui peut déclencher d’autres workflows."
+      }
+    },
+    "http": {
+      "request": {
+        "label": "Requête HTTP",
+        "description": "Appelle une URL externe et récupère la réponse."
+      }
+    },
+    "human": {
+      "approve": {
+        "label": "Validation humaine",
+        "description": "Met le run en attente d’une approbation ou d’un rejet, avec un délai optionnel."
+      }
+    },
+    "list": {
+      "aggregate": {
+        "label": "Calculer sur une liste",
+        "description": "Compte les éléments ou calcule une somme, une moyenne, un minimum ou un maximum, au total ou par groupe."
+      },
+      "dedupe": {
+        "label": "Retirer les doublons",
+        "description": "Retire les éléments en double d’une liste (selon un champ ou l’élément entier)."
+      },
+      "filter": {
+        "label": "Filtrer une liste",
+        "description": "Garde les fiches d’une liste qui vérifient une condition."
+      },
+      "limit": {
+        "label": "Garder les premiers éléments",
+        "description": "Garde un nombre limité d’éléments d’une liste."
+      },
+      "map": {
+        "label": "Transformer une liste",
+        "description": "Transforme chaque élément d’une liste en objet."
+      },
+      "sort": {
+        "label": "Trier une liste",
+        "description": "Trie les éléments d’une liste selon un champ."
+      }
+    },
+    "loop": {
+      "label": "Boucle",
+      "description": "Répète une suite d’étapes pour chaque élément d’une liste."
+    },
+    "mcp": {
+      "call": {
+        "label": "Appel MCP",
+        "description": "Appelle un outil d’un serveur MCP configuré."
+      }
+    },
+    "record": {
+      "create": {
+        "label": "Créer une fiche",
+        "description": "Crée une fiche dans un objet d’une database."
+      },
+      "delete": {
+        "label": "Supprimer une fiche",
+        "description": "Supprime définitivement une fiche."
+      },
+      "get": {
+        "label": "Lire une fiche",
+        "description": "Lit une fiche par son identifiant."
+      },
+      "map": {
+        "label": "Copier une fiche",
+        "description": "Copie une fiche vers un objet de n’importe quelle database, champ par champ."
+      },
+      "merge": {
+        "label": "Fusionner des fiches",
+        "description": "Fusionne des doublons dans une fiche : champs, relations et timeline, tout ou rien."
+      },
+      "search": {
+        "label": "Rechercher des fiches",
+        "description": "Recherche les fiches d’un objet selon un filtre."
+      },
+      "transact": {
+        "label": "Écritures groupées",
+        "description": "Applique plusieurs créations, modifications et suppressions en une transaction."
+      },
+      "update": {
+        "label": "Modifier une fiche",
+        "description": "Met à jour un ou plusieurs champs d’une fiche."
+      },
+      "upsert": {
+        "label": "Créer ou mettre à jour une fiche",
+        "description": "Upsert par champ unique (email, domaine…) ou id externe, sans doublon."
+      }
+    },
+    "slack": {
+      "send": {
+        "label": "Message Slack",
+        "description": "Envoie un message dans Slack via une URL d’Incoming Webhook."
+      }
+    },
+    "stop": {
+      "error": {
+        "label": "Arrêter en erreur",
+        "description": "Arrête le workflow en erreur avec un message ; l’erreur apparaît dans le centre d’erreurs."
+      }
+    },
+    "switch": {
+      "label": "Aiguillage",
+      "description": "Oriente vers une branche selon la valeur d'un champ : un cas par valeur, puis Sinon."
+    },
+    "wait": {
+      "label": "Attendre",
+      "description": "Met le run en pause pendant une durée.",
+      "until": {
+        "label": "Attendre une date",
+        "description": "Met le run en pause jusqu’à une date et une heure précises."
+      }
+    },
+    "webhook": {
+      "emit": {
+        "label": "Envoyer un webhook",
+        "description": "Envoie une charge utile signée à une URL."
+      }
+    },
+    "workflow": {
+      "run": {
+        "label": "Lancer un autre workflow",
+        "description": "Lance un autre workflow, attend son résultat ou continue sans attendre."
+      }
+    },
+    "workspaceFunction": "Fonction du workspace."
+  },
+  "canvas": {
+    "trigger": "Déclencheur",
+    "unlinked": "Non reliée",
+    "triggerEdge": "Lien du déclencheur vers {target}",
+    "edge": "Lien {branch} de {source} vers {target}",
+    "a11y": {
+      "nodeDefault": "Entrée ou espace pour sélectionner un nœud, puis les flèches pour le déplacer. Échap pour annuler.",
+      "nodeKeyboardDisabled": "Entrée ou espace pour sélectionner un nœud.",
+      "nodeMoved": "Nœud déplacé vers {direction}, position x {x}, y {y}",
+      "edgeDefault": "Entrée ou espace pour sélectionner un lien.",
+      "controls": "Contrôles du canevas",
+      "zoomIn": "Zoom avant",
+      "zoomOut": "Zoom arrière",
+      "fitView": "Ajuster la vue",
+      "interactive": "Verrouiller le canevas",
+      "minimap": "Mini-carte",
+      "handle": "Poignée"
+    },
+    "kind": {
+      "condition": "Condition",
+      "approval": "Validation",
+      "action": "Action"
+    }
+  },
+  "editor": {
+    "nameLabel": "Nom du workflow",
+    "validate": "Valider",
+    "test": "Tester",
+    "pause": "Mettre en pause",
+    "activate": "Activer",
+    "nextStep": "Étape suivante",
+    "nextStepFor": "Étape suivante : {branch}",
+    "end": "Fin du workflow",
+    "help": "Cliquez sur une étape pour la configurer. Une étape ajoutée est reliée à l'étape sélectionnée. Pour relier à la main, tirez depuis le point sous le déclencheur ou sous une branche jusqu'au point en haut d'une étape, ou utilisez « Étape suivante ». Pour supprimer un lien, cliquez dessus puis Suppr.",
+    "errors": "Erreurs",
+    "valid": "Workflow valide",
+    "testTitle": "Test",
+    "path": "Chemin {id}",
+    "branchRef": "branche « {label} »",
+    "removeItem": "Retirer {label}",
+    "testRecords": {
+      "button": "Fiches de test",
+      "selected": "Fiches",
+      "search": "Rechercher une fiche…",
+      "empty": "Aucune fiche."
+    },
+    "outputs": "Sorties",
+    "unlinked": "Non reliée",
+    "deleteStep": "Supprimer l'étape"
+  },
+  "trigger": {
+    "label": "Déclencheur",
+    "watchedWorkflow": "Workflow surveillé",
+    "allWorkflows": "Tous les workflows",
+    "runFailedHelp": "Ce workflow démarre quand une exécution du workflow surveillé échoue : pratique pour être alerté ou corriger automatiquement. Le nom du workflow et le message d'erreur sont disponibles dans les étapes.",
+    "object": "Objet du workflow",
+    "scheduleWithObject": "À chaque échéance, le workflow est lancé une fois pour chaque fiche de cet objet.",
+    "scheduleWithoutObject": "Sans objet, le workflow est lancé une seule fois à chaque échéance.",
+    "objectHelp": "Le workflow s'exécute pour une fiche de cet objet : ses informations sont utilisables dans chaque étape.",
+    "runOnce": "Lancer une seule fois, sans objet",
+    "watchedFields": "Champs surveillés (vide = tous)",
+    "eventName": "Nom de l'événement",
+    "eventPlaceholder": "ex. inscription, paiement_recu",
+    "eventsSeen": "Déjà reçus dans ce workspace :",
+    "eventHelp": "Un événement est un signal nommé envoyé par votre application (API), par l'étape « Émettre un événement » d'un autre workflow ou par le MCP. Le workflow démarre à chaque réception de ce nom.",
+    "when": "Quand ?",
+    "timezone": "Fuseau horaire",
+    "utc": "UTC (temps universel)"
+  },
+  "stepForm": {
+    "record": "Fiche",
+    "appliesTo": "Porte sur :",
+    "change": "Changer",
+    "recordPlaceholder": "/ pour choisir une fiche",
+    "includeHelp": "Les fiches liées cochées deviennent une liste utilisable par « Filtrer une liste » ou « Transformer une liste ».",
+    "listPlaceholder": "valeurs séparées par des virgules",
+    "object": "Objet",
+    "conditionTitle": "Continuer sur « Oui » si toutes ces conditions sont vraies",
+    "removeCondition": "Supprimer la condition",
+    "operator": "opérateur",
+    "days": "jours",
+    "value": "valeur",
+    "addCondition": "Condition",
+    "sourceObject": "Objet source",
+    "sourceRecord": "Fiche source",
+    "targetObject": "Objet cible",
+    "mode": "Mode",
+    "modes": {
+      "create": "Créer",
+      "update": "Mettre à jour",
+      "upsert": "Créer ou mettre à jour"
+    },
+    "targetRecord": "Fiche cible",
+    "matchKey": "Clé de rapprochement",
+    "externalId": "Identifiant externe",
+    "externalIdPlaceholder": "identifiant externe",
+    "targetFields": "Champs de la fiche cible",
+    "testedField": "Champ testé",
+    "cases": "Cas (le premier qui correspond gagne)",
+    "caseLabel": "Libellé du cas",
+    "removeCase": "Supprimer le cas",
+    "caseValue": "Valeur du cas",
+    "addCase": "Cas",
+    "onePerOption": "Un cas par option",
+    "elseHelp": "Sinon : aucune règle ne correspond.",
+    "list": "Liste de fiches",
+    "chooseList": "Choisir une liste",
+    "noList": "Aucune liste en amont. Ajoutez avant cette étape « Rechercher des fiches », ou « Lire une fiche » avec une relation incluse.",
+    "keepWhere": "Garder les fiches où toutes ces conditions sont vraies",
+    "columns": "Colonnes de chaque élément",
+    "columnsHelp": "Chaque fiche devient un objet avec ces colonnes (ex. pour un e-mail, un tableau, une IA).",
+    "columnName": "Nom de la colonne",
+    "removeColumn": "Supprimer la colonne",
+    "addColumn": "Colonne",
+    "columnDefault": "colonne{n}",
+    "limit": "Nombre maximum de fiches traitées",
+    "limitHelp": "Au-delà, le reste est ignoré (sortie « tronquée »)."
+  },
+  "pickers": {
+    "chooseObject": "Choisir un objet",
+    "searchObject": "Rechercher un objet…",
+    "noObject": "Aucun objet.",
+    "searchField": "Rechercher un champ…",
+    "noField": "Aucun champ.",
+    "theRecord": "{label} (la fiche)",
+    "sourceHeading": "Fiche source · {name}",
+    "variable": "Variable",
+    "variableTitle": "variable",
+    "pillPlaceholder": "Texte ou / pour une variable",
+    "chooseField": "Choisir un champ"
+  },
+  "recordFields": {
+    "choose": "Choisir",
+    "chooseFirst": "Choisissez d'abord la fiche ou l'objet.",
+    "addField": "Champ"
+  },
+  "webhook": {
+    "label": "Webhook",
+    "choose": "Choisir un webhook",
+    "none": "Aucun webhook : créez-en un via le MCP ({tool}).",
+    "copyUrl": "Copier l'URL",
+    "sample": "Exemple de payload",
+    "listening": "En écoute…",
+    "listen": "Écouter un test",
+    "copyTestUrl": "Copier l'adresse de test",
+    "help": "Lancez l'envoi de test depuis le fournisseur (ex. Cal.com) : le payload reçu s'affiche ici. Pour ne rien déclencher pendant le test, utilisez l'adresse de test ci-dessus : elle enregistre l'exemple sans lancer le workflow. Ou collez un exemple JSON.",
+    "detected": "{count, plural, one {# champ détecté} other {# champs détectés}} dans l'exemple.",
+    "upsert": "Créer ou mettre à jour une fiche (optionnel)",
+    "dedupKey": "Clé de dédoublonnage",
+    "noDedup": "Aucune (crée toujours)",
+    "mapping": "Correspondance des champs",
+    "runsOn": "Le workflow s'exécute sur la fiche obtenue ; le payload complet reste disponible dans chaque étape via {code}."
+  },
+  "boundary": {
+    "error": "Impossible de charger ce workflow.",
+    "loading": "Chargement du workflow…"
+  },
+  "bar": {
+    "meta": "v{version} · modifié {when}",
+    "tabs": {
+      "editor": "Éditeur",
+      "runs": "Exécutions",
+      "versions": "Versions"
+    }
+  },
+  "versions": {
+    "title": "Historique des versions",
+    "count": "{count, plural, one {# version} other {# versions}}",
+    "live": "Publiée",
+    "restore": "Restaurer",
+    "changes": "Modifications v{from} → v{to}",
+    "initial": "Version initiale v{version}",
+    "createdAt": "Créée le {date}.",
+    "definition": "Définition du workflow",
+    "noChanges": "Aucune modification.",
+    "openEditor": "Voir dans l'éditeur"
+  },
+  "runs": {
+    "stats": {
+      "runs": "Exécutions · 30 j",
+      "runsSub": "{count, plural, one {# terminée} other {# terminées}}",
+      "success": "Taux de succès",
+      "failures": "{count, plural, one {# échec} other {# échecs}}",
+      "median": "Durée médiane",
+      "p95": "p95 · {value}"
+    },
+    "filters": {
+      "status": "Statut"
+    },
+    "empty": {
+      "title": "Aucune exécution",
+      "description": "Les exécutions de ce workflow apparaîtront ici."
+    },
+    "table": {
+      "run": "Exécution",
+      "status": "Statut",
+      "summary": "Résumé",
+      "version": "Version",
+      "duration": "Durée",
+      "started": "Démarrée"
+    },
+    "summary": "{count, plural, one {# étape exécutée} other {# étapes exécutées}}"
+  }
+}

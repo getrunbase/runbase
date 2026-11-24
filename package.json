@@ -1,0 +1,39 @@
+{
+  "name": "runbase",
+  "private": true,
+  "version": "0.1.0",
+  "license": "FSL-1.1-ALv2",
+  "packageManager": "pnpm@12.18.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/*\" --filter \"!@runbase/docs\" run dev",
+    "dev:docs": "pnpm --filter @runbase/docs dev",
+    "bootstrap": "node scripts/bootstrap.mjs",
+    "build": "pnpm -r build",
+    "lint": "eslint . && node scripts/check-placeholders.mjs && node scripts/check-cycles.mjs",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r --if-present test && pnpm test:licenses",
+    "format": "prettier --write .",
+    "runbase": "node packages/node-sdk/bin/runbase.mjs",
+    "db:generate": "pnpm --filter @runbase/core db:generate",
+    "db:migrate": "pnpm --filter @runbase/core db:migrate",
+    "admin:create": "pnpm --filter @runbase/core admin:create",
+    "files:migrate": "pnpm --filter @runbase/core files:migrate",
+    "test:licenses": "node --test scripts/*.test.mjs",
+    "check:licenses": "node scripts/check-licenses.mjs",
+    "catalog:validate": "cd packages/core && node --import tsx ../../scripts/validate-catalog.mts",
+    "catalog:revalidate": "cd packages/core && node --import tsx ../../scripts/catalog-revalidate.mts",
+    "gen:docs": "cd apps/web && TSX_TSCONFIG_PATH=tsconfig.json node --import tsx ../../scripts/gen-docs.mts && cd ../.. && prettier --log-level warn --write apps/docs/content/docs/reference apps/docs/content/docs/self-hosting.mdx",
+    "check:readme": "node scripts/check-readme-links.mjs --external README.md"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "eslint": "^9.17.0",
+    "madge": "8.0.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.0"
+  }
+}

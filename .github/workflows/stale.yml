@@ -1,0 +1,37 @@
+# Conservative cleanup: only inactive issues and pull requests waiting on their
+# author. Accepted, roadmap and security items are never marked stale.
+name: Stale
+
+on:
+  schedule:
+    - cron: "30 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    name: Mark stale issues and pull requests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93 # v11.0.0
+        with:
+          days-before-issue-stale: 60
+          days-before-issue-close: 14
+          days-before-pr-stale: 60
+          days-before-pr-close: 14
+          stale-issue-label: stale
+          stale-pr-label: stale
+          exempt-issue-labels: "status: accepted,roadmap,security,good first issue,help wanted"
+          exempt-pr-labels: "status: accepted,roadmap,security"
+          exempt-all-milestones: true
+          exempt-draft-pr: true
+          stale-issue-message: >
+            This issue has had no activity for 60 days. It will be closed in 14 days
+            unless someone comments. Comment if it still matters to you.
+          stale-pr-message: >
+            This pull request has had no activity for 60 days. It will be closed in
+            14 days unless someone comments or pushes a change.
+          operations-per-run: 100

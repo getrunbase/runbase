@@ -1,0 +1,137 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Light CRM",
+  "description": "Companies, contacts and deals with a pipeline view, and a Slack message for every new deal.",
+  "databases": [{ "slug": "crm", "name": "CRM" }],
+  "objects": [
+    {
+      "slug": "companies",
+      "name": "Companies",
+      "icon": "building",
+      "database": "crm",
+      "fields": [
+        { "key": "name", "label": "Name", "type": "text", "title": true },
+        { "key": "domain", "label": "Domain", "type": "text", "unique": true },
+        {
+          "key": "size",
+          "label": "Size",
+          "type": "select",
+          "options": ["1-10", "11-50", "51-200", "200+"]
+        }
+      ]
+    },
+    {
+      "slug": "contacts",
+      "name": "Contacts",
+      "icon": "user",
+      "database": "crm",
+      "fields": [
+        { "key": "name", "label": "Name", "type": "text", "title": true },
+        { "key": "email", "label": "Email", "type": "email", "unique": true },
+        { "key": "phone", "label": "Phone", "type": "phone" },
+        {
+          "key": "company",
+          "label": "Company",
+          "type": "ref",
+          "object": "companies"
+        }
+      ]
+    },
+    {
+      "slug": "deals",
+      "name": "Deals",
+      "icon": "handshake",
+      "database": "crm",
+      "fields": [
+        { "key": "title", "label": "Title", "type": "text", "title": true },
+        { "key": "amount", "label": "Amount", "type": "number" },
+        {
+          "key": "stage",
+          "label": "Stage",
+          "type": "select",
+          "options": ["lead", "qualified", "proposal", "won", "lost"]
+        },
+        {
+          "key": "company",
+          "label": "Company",
+          "type": "ref",
+          "object": "companies"
+        },
+        {
+          "key": "contact",
+          "label": "Contact",
+          "type": "ref",
+          "object": "contacts"
+        },
+        { "key": "close_date", "label": "Close date", "type": "date" }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "deals",
+      "name": "Open pipeline",
+      "filter": {
+        "all": [{ "field": "stage", "op": "not_in", "value": ["won", "lost"] }]
+      },
+      "sort": [{ "field": "amount", "dir": "desc" }]
+    },
+    {
+      "object": "deals",
+      "name": "Won deals",
+      "filter": { "field": "stage", "op": "eq", "value": "won" },
+      "sort": [{ "field": "close_date", "dir": "desc" }]
+    }
+  ],
+  "workflows": [
+    {
+      "key": "new-deal-alert",
+      "name": "Announce new deals in Slack",
+      "definition": {
+        "trigger": {
+          "type": "trigger.record_created",
+          "object": "$object:deals"
+        },
+        "steps": [
+          {
+            "id": "notify",
+            "type": "node.slack.post_message",
+            "input": {
+              "channel": "#sales",
+              "text": "New deal: {{record.title}} ({{record.amount}}), stage {{record.stage}}"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "secrets": ["SLACK_BOT_TOKEN"],
+  "records": [
+    {
+      "key": "acme",
+      "object": "companies",
+      "data": { "name": "Acme", "domain": "acme.example", "size": "11-50" }
+    },
+    {
+      "key": "ada",
+      "object": "contacts",
+      "data": {
+        "name": "Ada Lovelace",
+        "email": "ada@acme.example",
+        "company": "$record:acme"
+      }
+    },
+    {
+      "key": "deal",
+      "object": "deals",
+      "data": {
+        "title": "Acme annual plan",
+        "amount": 12000,
+        "stage": "proposal",
+        "company": "$record:acme",
+        "contact": "$record:ada"
+      }
+    }
+  ]
+}

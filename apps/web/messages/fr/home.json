@@ -1,0 +1,137 @@
+{
+  "title": "Accueil",
+  "onboarding": {
+    "title": "Démarrer en 10 minutes",
+    "progress": "{done, plural, one {# étape} other {# étapes}} sur {total} : stockez vos données, automatisez, créez une vue, puis laissez un agent IA piloter le tout.",
+    "steps": {
+      "database": {
+        "title": "Créer une base de données",
+        "description": "Un endroit pour ranger vos fiches : contacts, commandes…",
+        "cta": "Créer une base"
+      },
+      "workflow": {
+        "title": "Automatiser une tâche",
+        "description": "Un workflow réagit seul : nouvelle fiche, horaire, webhook.",
+        "cta": "Créer un workflow"
+      },
+      "interface": {
+        "title": "Créer une vue",
+        "description": "Une page pour consulter et agir sur vos données.",
+        "cta": "Voir les interfaces"
+      },
+      "agent": {
+        "title": "Connecter un agent IA",
+        "description": "Votre agent (Claude…) pilote tout via MCP avec l'URL ci-dessous.",
+        "cta": "Créer une clé"
+      }
+    },
+    "connect": {
+      "title": "Connecter votre agent",
+      "copyUrl": "Copier l'URL du serveur MCP",
+      "copyCommand": "Copier la commande Claude Code",
+      "help": "Claude Desktop ou claude.ai : Paramètres, Connecteurs, ajoutez l'URL. Scripts : ajoutez une clé API en en-tête. Détails dans <link>Paramètres</link>."
+    }
+  },
+  "audit": {
+    "label": "{resource} {verb}",
+    "resources": {
+      "record": "Fiche",
+      "object": "Objet",
+      "database": "Base",
+      "workflow": "Workflow",
+      "run": "Exécution",
+      "function": "Fonction",
+      "page": "Page",
+      "component": "Composant",
+      "query": "Requête",
+      "view": "Vue",
+      "webhook": "Webhook",
+      "secret": "Secret",
+      "api_key": "Clé API",
+      "member": "Membre",
+      "workspace": "Workspace",
+      "file": "Fichier"
+    },
+    "verbs": {
+      "create": "{feminine, select, true {créée} other {créé}}",
+      "save": "{feminine, select, true {enregistrée} other {enregistré}}",
+      "update": "{feminine, select, true {modifiée} other {modifié}}",
+      "rename": "{feminine, select, true {renommée} other {renommé}}",
+      "delete": "{feminine, select, true {supprimée} other {supprimé}}",
+      "restore": "{feminine, select, true {restaurée} other {restauré}}",
+      "merge": "{feminine, select, true {fusionnée} other {fusionné}}",
+      "purge": "{feminine, select, true {effacée définitivement} other {effacé définitivement}}",
+      "migrate": "schéma modifié",
+      "publish": "{feminine, select, true {publiée} other {publié}}",
+      "pause": "{feminine, select, true {mise en pause} other {mis en pause}}",
+      "resume": "{feminine, select, true {reprise} other {repris}}",
+      "cancel": "{feminine, select, true {annulée} other {annulé}}",
+      "replay": "{feminine, select, true {relancée} other {relancé}}",
+      "retry_from": "{feminine, select, true {relancée depuis une étape} other {relancé depuis une étape}}",
+      "revoke": "{feminine, select, true {révoquée} other {révoqué}}",
+      "invite": "{feminine, select, true {invitée} other {invité}}",
+      "upload": "{feminine, select, true {déposée} other {déposé}}",
+      "index": "index ajouté",
+      "clear_sample": "exemple effacé"
+    },
+    "special": {
+      "memberRole": "Rôle d'un membre modifié",
+      "workspaceSettings": "Réglages du workspace modifiés",
+      "workspacePurgeTest": "Données de test effacées"
+    }
+  },
+  "error": {
+    "title": "Cette page n'a pas pu s'afficher",
+    "description": "Un problème est survenu de notre côté. Réessayez dans un instant ; si cela continue, transmettez ce code à votre administrateur : <code>{digest}</code>.",
+    "unknown": "inconnu"
+  },
+  "globalError": {
+    "title": "L'application a rencontré un problème",
+    "description": "Rien n'est perdu. Réessayez dans un instant ; si cela continue, contactez votre administrateur."
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "description": "Ce lien ne mène nulle part : la page a peut-être été supprimée, déplacée, ou n'est pas accessible avec votre compte."
+  },
+  "loading": "Chargement",
+  "greeting": "Bonjour {name}",
+  "subtitle": "{date} · {count, plural, =0 {aucune approbation en attente} one {# approbation attend votre validation} other {# approbations attendent votre validation}}.",
+  "newWorkflow": "Nouveau workflow",
+  "kpi": {
+    "runs": "Exécutions 24 h",
+    "runsDelta": "{delta, number, ::percent sign-always} vs hier",
+    "success": "Taux de succès",
+    "successValue": "{rate, number, ::percent .0}",
+    "successDelta": "{delta, number, ::.0 sign-always} pt",
+    "errors": "Erreurs ouvertes",
+    "errorsHint": "à traiter",
+    "noErrors": "aucune",
+    "waiting": "En attente",
+    "waitingHint": "{count, plural, one {approbation} other {approbations}}",
+    "noData": "aucune exécution"
+  },
+  "activity": {
+    "title": "Activité récente",
+    "all": "Tout voir",
+    "empty": "Aucune exécution pour l'instant.",
+    "started": "Démarrée {date}",
+    "status": {
+      "running": "En cours",
+      "waiting": "En attente",
+      "succeeded": "Réussi",
+      "failed": "Échec",
+      "paused_budget": "En pause",
+      "paused": "En pause",
+      "canceled": "Annulé"
+    },
+    "yesterday": "hier"
+  },
+  "approvals": {
+    "title": "Approbations en attente",
+    "step": "Étape {step}",
+    "started": "Run {id} · démarré {date}",
+    "approve": "Approuver",
+    "reject": "Refuser",
+    "empty": "Rien à valider."
+  }
+}

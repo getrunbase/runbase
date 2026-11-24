@@ -1,0 +1,280 @@
+/* @runbase/ui: design system tokens (agentic-directions.pen, GetVariables()).
+   Names taken as is from the .pen. Do not change a value without the board.
+   Import: @import "tailwindcss"; @import "@runbase/ui/theme.css";
+   Remember to add @source pointing to this package so Tailwind scans its components. */
+
+/* Dark mode (mode axis of the .pen): active only under a .dark class. */
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #2F3037;
+  --card: #FFFFFF;
+  --primary: #2F3037;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F7F7F8;
+  --muted: #F7F7F8;
+  --muted-foreground: #787A85;
+  --subtle-foreground: #A3A5AE;
+  --accent: #EEEFF1;
+  --border: #EDEDEF;
+  --input: #E3E3E6;
+  --ring: #2F6FEB;
+  --link: #2F6FEB;
+  --destructive: #D44C47;
+  --sidebar: #F7F7F8;
+  --sidebar-foreground: #5F616B;
+  --sidebar-accent: #ECECEF;
+  --sidebar-border: #EDEDEF;
+  --tag-blue-bg: #D6E2FF;
+  --tag-blue-fg: #2450B8;
+  --tag-green-bg: #DDF1E7;
+  --tag-green-fg: #1F7A4D;
+  --tag-orange-bg: #FFDCCB;
+  --tag-orange-fg: #B4501F;
+  --tag-purple-bg: #E6E0FA;
+  --tag-purple-fg: #5B3FB8;
+  --tag-yellow-bg: #FFF0B3;
+  --tag-yellow-fg: #8A6A00;
+  --tag-red-bg: #FFE0DE;
+  --tag-red-fg: #B53A35;
+  --canvas-bg: #F7F7F8;
+  --canvas-dot: #DCDCE0;
+  --edge: #C4C5CC;
+  --surface-accent: #F2F6FF;
+  --surface-strong: #F1F2F5;
+  --tag-lilac-bg: #F4F1FE;
+  --shadow-sm: 0 1px 3px #0000000F;
+  --shadow-card: 0 16px 20px #2F303714;
+  /* Values from the screen boards (outside the .pen variables). */
+  --overlay: oklch(0 0 0 / 0.5);
+  --chart-1: var(--tag-blue-fg);
+  --chart-2: var(--tag-green-fg);
+  --chart-3: var(--tag-orange-fg);
+  --chart-4: var(--tag-purple-fg);
+  --chart-5: var(--tag-yellow-fg);
+  /* shadcn mapping (variables with no equivalent in the .pen). */
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --secondary-foreground: var(--foreground);
+  --accent-foreground: var(--foreground);
+  --destructive-foreground: var(--primary-foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-ring: var(--ring);
+  --radius: 6px;
+
+  /* Exact names of the .pen variables (spacing, layout); Tailwind
+     exposes them as --spacing-* in @theme. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --sidebar-width: 248px;
+  --topbar-height: 44px;
+  --row-height: 36px;
+}
+
+.dark {
+  --background: #191919;
+  --foreground: #EDEDEF;
+  --card: #202020;
+  --primary: #EDEDEF;
+  --primary-foreground: #191919;
+  --secondary: #262626;
+  --muted: #262626;
+  --muted-foreground: #9B9BA3;
+  --subtle-foreground: #6E6E76;
+  --accent: #2C2C2C;
+  --border: #2E2E2E;
+  --input: #353535;
+  --ring: #5B8EF0;
+  --link: #7AA5F5;
+  --destructive: #E5736E;
+  --sidebar: #202020;
+  --sidebar-foreground: #B8B8BE;
+  --sidebar-accent: #2C2C2C;
+  --sidebar-border: #2A2A2A;
+  --tag-blue-bg: #1F2E4D;
+  --tag-blue-fg: #9CB8F5;
+  --tag-green-bg: #1C3528;
+  --tag-green-fg: #7FD3A8;
+  --tag-orange-bg: #4A2A1C;
+  --tag-orange-fg: #F2A57E;
+  --tag-purple-bg: #2F2747;
+  --tag-purple-fg: #B8A6F2;
+  --tag-yellow-bg: #43391A;
+  --tag-yellow-fg: #E8CC6A;
+  --tag-red-bg: #4A2220;
+  --tag-red-fg: #F09A95;
+  --canvas-bg: #141414;
+  --canvas-dot: #2E2E2E;
+  --edge: #4A4A4F;
+  --surface-accent: #1A2233;
+  --surface-strong: #232323;
+  --tag-lilac-bg: #24203A;
+  --shadow-sm: 0 1px 3px #00000066;
+  --shadow-card: 0 16px 20px #00000080;
+}
+
+@theme inline {
+  --font-sans: var(--font-inter, "Inter"), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono, "IBM Plex Mono"), ui-monospace, monospace;
+
+  /* Type scale. "normal" line height = Pencil auto. */
+  --text-xs: 12px;
+  --text-xs--line-height: normal;
+  --text-sm: 13px;
+  --text-sm--line-height: normal;
+  --text-base: 14px;
+  --text-base--line-height: normal;
+  --text-lg: 16px;
+  --text-lg--line-height: normal;
+  --text-xl: 20px;
+  --text-xl--line-height: normal;
+  --text-2xl: 28px;
+  --text-2xl--line-height: normal;
+  --text-3xl: 34px;
+  --text-3xl--line-height: normal;
+  --text-lead: 18px;
+  --text-lead--line-height: normal;
+  --text-h3: 18px;
+  --text-h3--line-height: normal;
+  --text-h2: 28px;
+  --text-h2--line-height: normal;
+  --text-h1: 44px;
+  --text-h1--line-height: normal;
+  --text-display: 72px;
+  --text-display--line-height: normal;
+  --text-h1--letter-spacing: -1.4px;
+  --text-h2--letter-spacing: -0.6px;
+  --text-h3--letter-spacing: -0.2px;
+  --text-display--letter-spacing: -2.8px;
+
+  /* Spacing: identical to the Tailwind scale (4px), named as in the .pen. */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-12: 48px;
+
+  /* Templates: w-sidebar, h-topbar, h-row. */
+  --spacing-sidebar: 248px;
+  --spacing-topbar: 44px;
+  --spacing-row: 36px;
+
+  /* Radii. */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-full: 999px;
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-card: var(--shadow-card);
+
+  /* Raw values from the screen boards (project 19), outside the .pen variables. */
+  --radius-2xs: 2px;
+  --radius-xs: 3px;
+  --radius-tile: 5px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --text-micro: 10px;
+  --text-micro--line-height: normal;
+  --text-tiny: 11px;
+  --text-tiny--line-height: normal;
+  --text-md: 15px;
+  --text-md--line-height: normal;
+  --text-brand: 17px;
+  --text-brand--line-height: normal;
+  --leading-node: 17px;
+  --tracking-page: -0.6px;
+  --tracking-brand: -0.3px;
+  --spacing-nav: 28px;
+  --shadow-modal: 0 24px 60px #2f30371a, 0 2px 6px #2f30370d;
+  --shadow-panel: -8px 0 24px #2f30370d;
+  --shadow-float: 0 16px 40px #2f303714;
+  --shadow-light: 0 8px 24px #2f30370f;
+  --color-overlay: var(--overlay);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-accent: var(--accent);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-link: var(--link);
+  --color-destructive: var(--destructive);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-tag-blue-bg: var(--tag-blue-bg);
+  --color-tag-blue-fg: var(--tag-blue-fg);
+  --color-tag-green-bg: var(--tag-green-bg);
+  --color-tag-green-fg: var(--tag-green-fg);
+  --color-tag-orange-bg: var(--tag-orange-bg);
+  --color-tag-orange-fg: var(--tag-orange-fg);
+  --color-tag-purple-bg: var(--tag-purple-bg);
+  --color-tag-purple-fg: var(--tag-purple-fg);
+  --color-tag-yellow-bg: var(--tag-yellow-bg);
+  --color-tag-yellow-fg: var(--tag-yellow-fg);
+  --color-tag-red-bg: var(--tag-red-bg);
+  --color-tag-red-fg: var(--tag-red-fg);
+  --color-canvas-bg: var(--canvas-bg);
+  --color-canvas-dot: var(--canvas-dot);
+  --color-edge: var(--edge);
+  --color-surface-accent: var(--surface-accent);
+  --color-surface-strong: var(--surface-strong);
+  --color-tag-lilac-bg: var(--tag-lilac-bg);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+/* Unconnected workflow node (board Fj8lH): dashed 1.5px outline. */
+@utility outline-unlinked {
+  outline: 1.5px dashed var(--subtle-foreground);
+  outline-offset: -0.75px;
+}
+
+/* Canvas background: canvas-bg dotted with canvas-dot. */
+@utility bg-canvas {
+  background-color: var(--canvas-bg);
+  background-image: radial-gradient(var(--canvas-dot) 1px, transparent 1px);
+  background-size: 16px 16px;
+}

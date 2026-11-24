@@ -1,0 +1,141 @@
+{
+  "list": {
+    "title": "Exécutions",
+    "description": "Chaque lancement de workflow, avec son statut, sa durée et son coût IA.",
+    "filters": {
+      "status": "Statut",
+      "workflow": "Workflow",
+      "record": "ID de fiche…",
+      "all": "Toutes"
+    },
+    "empty": {
+      "title": "Aucun run",
+      "description": "Aucune exécution ne correspond à ces filtres.",
+      "cta": "Voir les workflows"
+    },
+    "table": {
+      "run": "ID",
+      "workflow": "Workflow",
+      "status": "Statut",
+      "steps": "Étapes",
+      "cost": "Coût IA",
+      "started": "Date",
+      "duration": "Durée"
+    },
+    "kpi": {
+      "runs": "Exécutions 24 h",
+      "successRate": "Taux de réussite",
+      "failed": "Échouées",
+      "waiting": "En attente",
+      "vsYesterday": "{delta} vs hier",
+      "ptsVsYesterday": "{delta} pt vs hier",
+      "last24h": "dernières 24 h"
+    }
+  },
+  "detail": {
+    "title": "Exécution {id}",
+    "test": "Essai",
+    "totalCost": "Coût total {cost}",
+    "replay": "Relancer",
+    "resume": "Reprendre",
+    "pause": "Mettre en pause",
+    "cancel": {
+      "label": "Annuler l'exécution",
+      "title": "Annuler cette exécution ?",
+      "description": "Les étapes restantes ne seront pas exécutées. Vous pourrez la relancer depuis le début ou depuis une étape."
+    },
+    "path": "Chemin {id} · {steps}",
+    "step": "Étape {seq} · {id}",
+    "attempts": "{count} tentatives",
+    "retryFrom": "Relancer depuis cette étape",
+    "input": "Entrée",
+    "output": "Résultat",
+    "logs": "Messages de la fonction",
+    "errors": {
+      "alreadyActive": "Une autre exécution est déjà en cours sur cette fiche. Annulez-la puis réessayez.",
+      "failed": "Action impossible"
+    },
+    "kpi": {
+      "status": "Statut",
+      "stepsDone": "{count, plural, one {# étape} other {# étapes}}",
+      "duration": "Durée",
+      "cost": "Coût IA",
+      "tokens": "Tokens",
+      "tokensHint": "entrée + sortie"
+    },
+    "description": "{workflow} · v{version} · déclenchée {date}"
+  },
+  "approvals": {
+    "title": "Approbations",
+    "description": "Les automatisations qui attendent votre accord pour continuer.",
+    "empty": {
+      "title": "Rien à approuver",
+      "description": "Quand un workflow contient une étape « Approbation humaine », il s'arrête et attend votre décision ici.",
+      "cta": "Voir les exécutions"
+    },
+    "item": "{workflow} · run {id} · étape {step}",
+    "approve": "Approuver",
+    "reject": "Rejeter",
+    "history": "Historique",
+    "pending": "En attente",
+    "kind": "Approbation humaine",
+    "details": "Voir le détail"
+  },
+  "errors": {
+    "title": "Erreurs",
+    "description": "Échecs d'ingestion, de workflows, de fonctions et du MCP.",
+    "filters": {
+      "source": "Source",
+      "status": "Statut"
+    },
+    "status": {
+      "open": "Ouverte",
+      "resolved": "Résolue"
+    },
+    "empty": {
+      "title": "Aucune erreur",
+      "description": "Rien à signaler pour ces filtres."
+    },
+    "detail": {
+      "title": "Erreur {source} · {status}",
+      "runRef": "run {run} · étape {step}",
+      "ingestionRef": "ingestion {request}",
+      "retry": "Rejouer",
+      "resolve": "Résoudre",
+      "message": "Message",
+      "stack": "Stack",
+      "payload": "Payload"
+    },
+    "table": {
+      "error": "Erreur",
+      "source": "Source",
+      "status": "Statut",
+      "date": "Dernière"
+    }
+  },
+  "events": {
+    "title": "Événements",
+    "description": "Les faits reçus par la plateforme, du plus récent au plus ancien. Ils alimentent la timeline des fiches et déclenchent des workflows.",
+    "filters": {
+      "type": "Type",
+      "record": "ID de fiche…"
+    },
+    "empty": {
+      "title": "Aucun événement",
+      "description": "Un événement est un fait daté : « paiement reçu », « inscription ». Il arrive par un webhook, par votre agent (events.push) ou par l'API."
+    },
+    "via": "via {source}",
+    "payload": "Contenu",
+    "table": {
+      "type": "Type",
+      "record": "Objet",
+      "source": "Source",
+      "date": "Horodatage"
+    },
+    "copy": "Copier"
+  },
+  "boundary": {
+    "error": "Impossible de charger ce run.",
+    "loading": "Chargement du run…"
+  }
+}

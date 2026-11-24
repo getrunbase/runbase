@@ -1,0 +1,30 @@
+---
+title: Workflows
+description: Triggers and node graphs, run durably with retries, waits and approvals.
+---
+
+A **workflow** is a trigger plus a graph of nodes. Triggers include record
+changes, events, webhooks, schedules and manual runs. Nodes read and write
+records, call HTTP APIs, use AI, wait, loop, ask a human for approval, or run a
+[function](/docs/concepts/functions). The full list is in the
+[nodes reference](/docs/reference/nodes).
+
+## Templating
+
+Node inputs can reference run variables: `{{record.email}}`,
+`{{event.payload.id}}`, `{{steps.<id>.output}}`, `{{now}}`.
+
+## Building safely
+
+1. `workflows.create` saves a draft.
+2. `workflows.validate` checks the graph and input schemas.
+3. `workflows.dry_run` runs it with side effects simulated.
+4. `workflows.activate` turns the trigger on.
+
+## Runs
+
+Each execution is a **run**: durable, retried per step, resumable after a
+crash. `runs.get` shows every step, function logs included. Failed runs go to
+the error center (`errors.list`, `errors.retry`). `runs.replay` and
+`runs.retry_from` restart a run. Runs started with `test: true` are cleaned by
+`workspace.purge_test`.

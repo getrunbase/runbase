@@ -1,0 +1,5 @@
+// Liveness: the Next process responds (Docker healthcheck).
+import { healthHandler } from "@/lib/health";
+
+export const dynamic = "force-dynamic";
+export const GET = healthHandler();

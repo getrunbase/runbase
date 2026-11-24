@@ -1,0 +1,173 @@
+# Public CI: runs on every push to main and on every pull request. Production deployment lives outside this repo.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gitleaks:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      # gitleaks-action needs a paid license for organisation repos, so run the CLI image directly.
+      - run: >-
+          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.18.4
+          detect --source /repo --config /repo/.gitleaks.toml --redact --verbose
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+
+  # Public catalog (connectors/, templates/, authors/): author profile,
+  # description >= 300 words with its sections, valid manifest.
+  catalog:
+    name: Catalog
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm catalog:validate
+
+  # Publication: on merge to main, signed ISR revalidation webhook
+  # to the website. Skipped when the secrets are not configured.
+  catalog-publish:
+    name: Catalog publish
+    needs: catalog
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    env:
+      CATALOG_REVALIDATE_URL: ${{ secrets.CATALOG_REVALIDATE_URL }}
+      CATALOG_REVALIDATE_SECRET: ${{ secrets.CATALOG_REVALIDATE_SECRET }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm catalog:revalidate "${{ github.event.before }}" "${{ github.sha }}"
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+
+  test:
+    name: Test
+    runs-on: ubuntu-24.04
+    # Integration tests: real Postgres and real Redis, as in local development.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: runbase
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: runbase
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U runbase -d runbase"
+          --health-interval 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-retries 10
+    # Throwaway CI-only values (no real secret).
+    env:
+      DATABASE_URL: postgres://runbase:ci-only-password@localhost:5432/runbase
+      QUERY_DB_PASSWORD: ci-only-query-password
+      QUERY_DATABASE_URL: postgres://runbase_query:ci-only-query-password@localhost:5432/runbase
+      REDIS_URL: redis://localhost:6379
+      BETTER_AUTH_SECRET: ci-only-better-auth-secret-32-chars
+      BETTER_AUTH_URL: http://localhost:7100
+      # 32 zero bytes in base64: test key, never used outside CI.
+      SECRETS_MASTER_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      SANDBOX_TOKEN: ci-only-sandbox-token
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+      # User function runtime (Deno sandbox), same version as the Docker image (Dockerfile).
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.9.8
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate
+      - run: pnpm test
+
+  readme-links:
+    name: README links
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      # README relative links and external URLs (two attempts per URL).
+      - run: node scripts/check-readme-links.mjs --external README.md
+
+  docs:
+    name: Docs
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Generated references (API, MCP, nodes, self-hosting): fails if they
+      # differ from the committed files. Fix with `pnpm gen:docs`.
+      - run: pnpm gen:docs
+      - run: git diff --exit-code -- apps/docs/content
+      # Build: dead internal links are checked before `next build`.
+      - run: pnpm --filter @runbase/docs build
+      - run: npx playwright-core install --with-deps chromium
+        working-directory: apps/docs
+      - run: pnpm --filter @runbase/docs test:e2e

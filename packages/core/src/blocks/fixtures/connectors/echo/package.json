@@ -1,0 +1,12 @@
+{
+  "name": "@runbase-connectors/echo",
+  "version": "1.0.0",
+  "description": "Test fixture connector.",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "runbase": {
+    "entry": "index.ts",
+    "label": "Echo"
+  }
+}

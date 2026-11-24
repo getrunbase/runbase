@@ -1,0 +1,28 @@
+---
+title: Workspaces
+description: Organizations, workspaces, members and API keys.
+---
+
+An **organization** groups people and billing. It contains any number of
+**workspaces**: each one has its own data, workflows, functions, secrets and
+pages. Nothing is shared between workspaces, so one per client or per project is
+the normal setup. Creating workspaces is free and unlimited.
+
+## Access
+
+- **Members** have a role in the organization (`owner`, `admin`, `member`…).
+  Manage them with `members.invite`, `members.set_role` and `members.remove`.
+- **API keys** belong to the organization and only see the workspaces listed in
+  `workspaceIds`. A key can also be limited to some MCP tools (`tools`) and some
+  objects (`objects`).
+
+## Workspace selection
+
+MCP clients have an active workspace (`workspaces.use`). Every other tool takes
+an optional `workspace` parameter (id or name). The REST API takes the
+`x-workspace-id` header.
+
+## Quotas
+
+Each workspace has quotas (records, runs, AI budget). Read them with
+`quotas.get`; self-hosted admins change them with `quotas.set`.

@@ -1,0 +1,42 @@
+{
+  "sections": {
+    "home": "Accueil",
+    "interfaces": "Interfaces",
+    "data": "Données",
+    "automations": "Automatisations",
+    "settings": "Paramètres"
+  },
+  "items": {
+    "myPages": "Mes pages",
+    "workflows": "Workflows",
+    "runs": "Exécutions",
+    "approvals": "Approbations",
+    "errors": "Erreurs",
+    "functions": "Fonctions",
+    "webhooks": "Webhooks",
+    "events": "Événements",
+    "settings": "Paramètres"
+  },
+  "crumbs": {
+    "allInterfaces": "Toutes les interfaces",
+    "databases": "Bases",
+    "queries": "Requêtes",
+    "detail": "Détail"
+  },
+  "settingsTabs": {
+    "general": "Général",
+    "members": "Membres",
+    "apiKeys": "Clés API",
+    "secrets": "Secrets",
+    "audit": "Audit",
+    "billing": "Plan et usage"
+  },
+  "user": {
+    "signOut": "Se déconnecter"
+  },
+  "workspace": {
+    "label": "Workspace",
+    "list": "Workspaces",
+    "manage": "Gérer les workspaces"
+  }
+}

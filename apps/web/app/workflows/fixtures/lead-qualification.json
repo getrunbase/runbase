@@ -1,0 +1,37 @@
+{
+  "name": "Lead qualification",
+  "definition": {
+    "trigger": {
+      "type": "trigger.record_updated",
+      "object": "users",
+      "fields": ["role", "company_size", "use_case"]
+    },
+    "steps": [
+      {
+        "id": "qualify",
+        "type": "ai.decide",
+        "input": {
+          "prompt": "ICP: company with 10 or more employees, marketing or leadership role. Does this account match the ICP? Answer qualified or not qualified.",
+          "context": "{{record.data}}",
+          "branches": ["qualified", "not qualified"]
+        }
+      },
+      {
+        "id": "mark_qualified",
+        "type": "event.emit",
+        "input": { "type": "qualified", "recordId": "{{record.id}}" }
+      },
+      {
+        "id": "mark_self_serve",
+        "type": "event.emit",
+        "input": { "type": "self_serve", "recordId": "{{record.id}}" }
+      }
+    ],
+    "next": {
+      "qualify": {
+        "qualified": ["mark_qualified"],
+        "not qualified": ["mark_self_serve"]
+      }
+    }
+  }
+}

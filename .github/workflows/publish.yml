@@ -1,0 +1,45 @@
+# npm publication of the public SDKs on v* tags.
+# OIDC trusted publishing: no NPM_TOKEN, each package declares this workflow
+# as a trusted publisher on npmjs.com.
+name: Publish
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish npm packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      # The tag must match the version of every published package.
+      - name: Check tag matches package versions
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          status=0
+          for pkg in packages/sdk packages/node-sdk; do
+            version=$(node -p "require('./$pkg/package.json').version")
+            if [ "$version" != "$tag" ]; then
+              echo "::error::$pkg/package.json is $version, tag is v$tag"
+              status=1
+            fi
+          done
+          exit $status
+      # Trusted publishing requires npm >= 11.5.
+      - run: npm install -g npm@11
+      - run: pnpm install --frozen-lockfile
+      # Build before test and publish: the packages publish dist/.
+      - run: pnpm --filter @runbase/sdk --filter @runbase/node-sdk run build
+      - run: pnpm --filter @runbase/sdk --filter @runbase/node-sdk --if-present run test
+      - run: pnpm --filter @runbase/sdk --filter @runbase/node-sdk -r publish --access public --no-git-checks --provenance

@@ -1,0 +1,17 @@
+{
+  "list": {
+    "title": "Interfaces",
+    "description": "Views to explore and act on your data: pages and their building blocks.",
+    "pages": {
+      "title": "Pages",
+      "empty": "No pages",
+      "emptyDescription": "A page shows lists, records and forms. Ask your connected AI agent (MCP) to create one, for example: “create a page to track my contacts”."
+    },
+    "queries": {
+      "title": "Saved queries",
+      "hint": "Questions asked of your data, reused by pages.",
+      "empty": "No queries",
+      "emptyDescription": "A saved query computes a number or a list (e.g. “revenue per month”) so it can be displayed."
+    }
+  }
+}

@@ -1,0 +1,34 @@
+---
+title: Databases, objects and records
+description: Typed data, relations, computed fields, views and safety nets.
+---
+
+Data lives in three levels:
+
+1. A **database** groups related objects (for example, "CRM").
+2. An **object** is a schema of typed fields: text, number, email, select,
+   date, relation, file, formula, lookup, rollup, autonumber and more. A field
+   marked `unique` (such as an email) is enforced by the database and used as
+   the upsert key.
+3. A **record** is one row of an object.
+
+## Writing
+
+- `records.upsert` and `records.upsert_batch` create or update by unique field
+  or `externalId`.
+- `records.transact` writes linked records all or nothing.
+- `records.merge` merges duplicates, relations and timeline included.
+- `records.import_csv` imports a CSV, with deduplication.
+
+## Reading
+
+`records.search` filters, sorts and paginates (keyset pagination with `after`).
+`query.sql` runs read-only SQL over the workspace. **Saved views** (filter,
+sort, columns) are shared by the table, `records.search` and pages.
+
+## Safety
+
+Deleting moves records to the trash for 30 days (`records.restore`).
+`records.history` and `records.revert` undo a change. Bulk operations by filter
+require a `dryRun` preview first. Changing a schema that already has data goes
+through `objects.migrate`.

@@ -1,0 +1,141 @@
+{
+  "list": {
+    "title": "Runs",
+    "description": "Every workflow run, with its status, duration and AI cost.",
+    "filters": {
+      "status": "Status",
+      "workflow": "Workflow",
+      "record": "Record ID…",
+      "all": "All"
+    },
+    "empty": {
+      "title": "No runs",
+      "description": "No runs match these filters.",
+      "cta": "View workflows"
+    },
+    "table": {
+      "run": "ID",
+      "workflow": "Workflow",
+      "status": "Status",
+      "steps": "Steps",
+      "cost": "AI cost",
+      "started": "Date",
+      "duration": "Duration"
+    },
+    "kpi": {
+      "runs": "Runs 24 h",
+      "successRate": "Success rate",
+      "failed": "Failed",
+      "waiting": "Waiting",
+      "vsYesterday": "{delta} vs yesterday",
+      "ptsVsYesterday": "{delta} pt vs yesterday",
+      "last24h": "last 24 h"
+    }
+  },
+  "detail": {
+    "title": "Run {id}",
+    "test": "Test",
+    "totalCost": "Total cost {cost}",
+    "replay": "Run again",
+    "resume": "Resume",
+    "pause": "Pause",
+    "cancel": {
+      "label": "Cancel run",
+      "title": "Cancel this run?",
+      "description": "The remaining steps won't run. You can run it again from the start or from a step."
+    },
+    "path": "Path {id} · {steps}",
+    "step": "Step {seq} · {id}",
+    "attempts": "{count} attempts",
+    "retryFrom": "Run again from this step",
+    "input": "Input",
+    "output": "Result",
+    "logs": "Function messages",
+    "errors": {
+      "alreadyActive": "Another run is already in progress on this record. Cancel it and try again.",
+      "failed": "Action failed"
+    },
+    "kpi": {
+      "status": "Status",
+      "stepsDone": "{count, plural, one {# step} other {# steps}}",
+      "duration": "Duration",
+      "cost": "AI cost",
+      "tokens": "Tokens",
+      "tokensHint": "input + output"
+    },
+    "description": "{workflow} · v{version} · started {date}"
+  },
+  "approvals": {
+    "title": "Approvals",
+    "description": "Automations waiting for your go-ahead to continue.",
+    "empty": {
+      "title": "Nothing to approve",
+      "description": "When a workflow has a “Human approval” step, it stops and waits for your decision here.",
+      "cta": "View runs"
+    },
+    "item": "{workflow} · run {id} · step {step}",
+    "approve": "Approve",
+    "reject": "Reject",
+    "history": "History",
+    "pending": "Pending",
+    "kind": "Human approval",
+    "details": "View details"
+  },
+  "errors": {
+    "title": "Errors",
+    "description": "Ingestion, workflow, function and MCP failures.",
+    "filters": {
+      "source": "Source",
+      "status": "Status"
+    },
+    "status": {
+      "open": "Open",
+      "resolved": "Resolved"
+    },
+    "empty": {
+      "title": "No errors",
+      "description": "Nothing to report for these filters."
+    },
+    "detail": {
+      "title": "Error {source} · {status}",
+      "runRef": "run {run} · step {step}",
+      "ingestionRef": "ingestion {request}",
+      "retry": "Replay",
+      "resolve": "Resolve",
+      "message": "Message",
+      "stack": "Stack",
+      "payload": "Payload"
+    },
+    "table": {
+      "error": "Error",
+      "source": "Source",
+      "status": "Status",
+      "date": "Last"
+    }
+  },
+  "events": {
+    "title": "Events",
+    "description": "Facts received by the platform, newest first. They feed record timelines and trigger workflows.",
+    "filters": {
+      "type": "Type",
+      "record": "Record ID…"
+    },
+    "empty": {
+      "title": "No events",
+      "description": "An event is a dated fact: “payment received”, “sign-up”. It arrives through a webhook, your agent (events.push) or the API."
+    },
+    "via": "via {source}",
+    "payload": "Payload",
+    "table": {
+      "type": "Type",
+      "record": "Record",
+      "source": "Source",
+      "date": "Timestamp"
+    },
+    "copy": "Copy"
+  },
+  "boundary": {
+    "error": "Couldn't load this run.",
+    "loading": "Loading the run…"
+  }
+}

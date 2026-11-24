@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    // Blocs bâtis sur les composants shadcn de l'hôte (`@ui/<nom>`), fournis
+    // par le vendor de l'iframe ; ici, ceux de apps/web pour le typage.
+    "paths": {
+      "@ui/*": ["../../apps/web/components/ui/*"],
+      "@/*": ["../../apps/web/*"]
+    }
+  },
+  "include": ["src"]
+}

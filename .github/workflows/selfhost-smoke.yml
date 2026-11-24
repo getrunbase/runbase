@@ -1,0 +1,89 @@
+# Self-host smoke test: setup.sh + docker-compose.selfhost.yml with images
+# built from this commit, healthchecks, account (with its default workspace)
+# and a sign-in email delivered in console mode.
+name: Self-host smoke
+
+on:
+  pull_request:
+    paths:
+      - Dockerfile
+      - docker-compose.selfhost.yml
+      - setup.sh
+      - .env.example
+      - packages/core/src/email/**
+      - .github/workflows/selfhost-smoke.yml
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      RUNBASE_IMAGE_REPO: local/runbase
+      RUNBASE_VERSION: ci
+      COMPOSE: docker compose -f docker-compose.selfhost.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      # The four images do not fit in the runner's default free space
+      # ("No space left on device"): drop preinstalled toolchains we never use.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/share/swift
+          docker system prune -af
+          df -h /
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - name: Build images
+        run: |
+          for t in web worker renderer sandbox; do
+            docker buildx build --load --target $t -t local/runbase-$t:ci \
+              --cache-from type=gha,scope=$t .
+            # Loaded images stay; the intermediate build cache does not need to.
+            docker buildx prune -af
+          done
+          df -h /
+      - name: Compose file is valid
+        run: |
+          # `! cmd` does not fail a step under `set -e`: explicit checks.
+          if $COMPOSE config -q 2>/dev/null; then
+            echo "compose must refuse to start without secrets"; exit 1
+          fi
+          ./setup.sh
+          $COMPOSE config -q
+          if ./setup.sh 2>/dev/null; then
+            echo "setup.sh must not overwrite .env"; exit 1
+          fi
+          if grep -qE '^[A-Z_]+=.*change-me' .env; then
+            echo "weak default secret left in .env"; exit 1
+          fi
+      - name: Start the stack
+        run: $COMPOSE up -d --wait --wait-timeout 300
+      - name: Redis refuses clients without the password
+        run: |
+          out=$($COMPOSE exec -T -e REDISCLI_AUTH= redis redis-cli ping 2>&1 || true)
+          grep -q NOAUTH <<<"$out"
+      - name: Create an account and its workspace
+        run: |
+          $COMPOSE exec -T worker pnpm admin:create smoke@example.com Smoke
+          # shellcheck disable=SC2016 # expanded inside the container
+          n=$($COMPOSE exec -T postgres sh -c \
+            'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "select count(*) from workspaces w join memberships m on m.organization_id = w.organization_id join \"user\" u on u.id = m.user_id where u.email = '"'"'smoke@example.com'"'"'"')
+          test "$n" -ge 1
+      - name: Sign-in link printed in console mode
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H 'content-type: application/json' -H 'origin: http://localhost:3000' \
+            -d '{"email":"smoke@example.com","callbackURL":"/"}' \
+            http://localhost:3000/api/auth/sign-in/magic-link)
+          test "$code" = 200
+          sleep 2
+          logs=$($COMPOSE logs web)
+          grep -q '\[email:console\].*to=smoke@example.com' <<<"$logs"
+      - name: Logs
+        if: failure()
+        run: $COMPOSE logs

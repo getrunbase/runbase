@@ -1,0 +1,42 @@
+{
+  "sections": {
+    "home": "Home",
+    "interfaces": "Interfaces",
+    "data": "Data",
+    "automations": "Automations",
+    "settings": "Settings"
+  },
+  "items": {
+    "myPages": "My pages",
+    "workflows": "Workflows",
+    "runs": "Runs",
+    "approvals": "Approvals",
+    "errors": "Errors",
+    "functions": "Functions",
+    "webhooks": "Webhooks",
+    "events": "Events",
+    "settings": "Settings"
+  },
+  "crumbs": {
+    "allInterfaces": "All interfaces",
+    "databases": "Databases",
+    "queries": "Queries",
+    "detail": "Detail"
+  },
+  "settingsTabs": {
+    "general": "General",
+    "members": "Members",
+    "apiKeys": "API keys",
+    "secrets": "Secrets",
+    "audit": "Audit",
+    "billing": "Plan & usage"
+  },
+  "user": {
+    "signOut": "Sign out"
+  },
+  "workspace": {
+    "label": "Workspace",
+    "list": "Workspaces",
+    "manage": "Manage workspaces"
+  }
+}

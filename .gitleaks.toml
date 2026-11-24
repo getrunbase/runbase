@@ -1,0 +1,16 @@
+# gitleaks configuration: default rules + minimal allowlist.
+# Used locally (`gitleaks git .`, `gitleaks dir .`) and by the `gitleaks` CI job.
+# No global path allowlist: each entry targets one specific dummy value.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Documented placeholders, never real secrets"
+regexTarget = "match"
+regexes = [
+  # `change-me…` values from .env.example (commits fb8abce8, 4322d408, 35fe4f08, d07a2b14).
+  '''change-me[\w!-]*''',
+  # Truncated Slack token example in the docs ("xoxb-…"), with no secret part.
+  '''xoxb-…''',
+]

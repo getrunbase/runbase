@@ -1,0 +1,48 @@
+{
+  "new": "Nouvelle database",
+  "list": {
+    "title": "Bases de données",
+    "description": "Chaque database regroupe des objets et leurs relations.",
+    "empty": "Aucune database",
+    "emptyDescription": "Créez une database et son premier objet.",
+    "objects": "{count, plural, one {# objet} other {# objets}}"
+  },
+  "detail": {
+    "objectsTab": "Objets",
+    "schemaTab": "Schéma",
+    "attributes": "{count, plural, one {# attribut} other {# attributs}}",
+    "records": "{count, plural, one {# fiche} other {# fiches}}",
+    "empty": "Aucun objet.",
+    "claudeHint": "« Ajoute un objet Chantiers relié aux Devis » — Claude crée l’objet, ses champs et la relation."
+  },
+  "graph": {
+    "noAttributes": "Aucun attribut"
+  },
+  "import": {
+    "open": "Importer un template",
+    "title": "Importer un template",
+    "description": "Chargez un fichier runbase-template.json ou collez son contenu. Objets, vues, fonctions, workflows (en brouillon) et pages sont créés dans ce workspace.",
+    "file": "Fichier",
+    "json": "JSON du template",
+    "submit": "Importer",
+    "importing": "Import en cours…",
+    "failed": "Échec de l'import",
+    "done": "« {name} » importé : {count, plural, one {# objet} other {# objets}}",
+    "missingSecrets": "Secrets à renseigner avant d'activer les workflows : {names}"
+  },
+  "catalogImport": {
+    "title": "Importer « {name} »",
+    "description": "Ce template du catalogue sera importé dans votre workspace courant. Les workflows sont créés en brouillon.",
+    "notFound": "Ce template n'est pas dans le catalogue.",
+    "open": "Ouvrir les databases",
+    "created": "Sera créé dans l’espace",
+    "panel": "Vérifiez ce que le template ajoute avant de l’installer.",
+    "info": "Les workflows sont installés en brouillon. Vous pourrez les tester avant de les activer.",
+    "workflowDetail": "Workflow · brouillon à l’installation",
+    "objectDetail": "{count, plural, one {# champ} other {# champs}}",
+    "types": {
+      "workflow": "Workflow",
+      "object": "Objet"
+    }
+  }
+}

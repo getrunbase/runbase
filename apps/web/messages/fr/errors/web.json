@@ -1,0 +1,7 @@
+{
+  "web.shotDenied": "Jeton de capture : accès refusé",
+  "web.shotInvalid": "Jeton de capture invalide",
+  "web.shotReadOnly": "Capture : lecture seule de la page demandée",
+  "web.noOrganization": "Aucune organisation",
+  "web.invalidInput": "Saisie invalide : {detail}"
+}

@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question
+    url: https://github.com/getrunbase/runbase/discussions/categories/q-a
+    about: Questions and help with setup or usage go to Discussions, not issues.
+  - name: Suggest an idea
+    url: https://github.com/getrunbase/runbase/discussions/categories/ideas
+    about: New ideas start in Discussions. Accepted ideas become issues.
+  - name: Propose a large change (RFC)
+    url: https://github.com/getrunbase/runbase/discussions/categories/rfc
+    about: Data model, public API, breaking changes. See GOVERNANCE.md.
+  - name: Documentation
+    url: https://getrunbase.com/docs
+    about: Installation, self-hosting, MCP server and connectors.
+  - name: Report a security vulnerability
+    url: https://github.com/getrunbase/runbase/security/advisories/new
+    about: Please report security issues privately (see SECURITY.md), never in a public issue.

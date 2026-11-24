@@ -1,0 +1,232 @@
+{
+  "general": {
+    "title": "Paramètres",
+    "description": "Workspaces, budget IA, limites et connexion des agents.",
+    "workspaces": {
+      "title": "Workspaces",
+      "rename": "Renommer",
+      "active": "Actif",
+      "select": "Choisir",
+      "deleteTitle": "Supprimer le workspace « {name} » ?",
+      "deleteDescription": "Toutes ses données, workflows et interfaces seront définitivement effacés. Cette action est irréversible.",
+      "deleteConfirm": "Supprimer définitivement",
+      "newPlaceholder": "Nouveau workspace",
+      "description": "Nom des espaces de travail de l'organisation. Visibles par tous les membres."
+    },
+    "budget": {
+      "title": "Budget IA mensuel",
+      "spent": "Dépensé ce mois : {spent}",
+      "ofBudget": " / {budget}",
+      "exhausted": " (atteint : blocs IA en pause)",
+      "unlimited": "Illimité",
+      "ariaLabel": "Budget USD",
+      "description": "Plafond de dépense mensuel des blocs IA. Au-delà, ils sont mis en pause."
+    },
+    "ai": {
+      "title": "Fournisseur IA",
+      "description": "Choisissez le fournisseur IA utilisé par les briques et les pages IA, puis collez votre clé API.",
+      "provider": "Fournisseur",
+      "providerPlaceholder": "Choisir un fournisseur",
+      "model": "Modèle",
+      "key": "Clé API",
+      "keyPlaceholder": "Collez votre clé API",
+      "keySet": "Clé enregistrée (laisser vide pour la conserver)",
+      "keyHint": "Stockée chiffrée dans le secret {secret}. Elle n'est plus jamais affichée.",
+      "noKeyHint": "Aucune clé pour l'instant. Elle sera stockée chiffrée dans le secret {secret}.",
+      "save": "Enregistrer",
+      "keySecret": "Secret qui porte la clé"
+    },
+    "limits": {
+      "title": "Limites du workspace",
+      "description": "Au-delà, les ajouts sont refusés avec un message clair. Champ vide : valeur par défaut.",
+      "records": "Nombre maximum de records",
+      "runsPerMinute": "Lancements de workflow par minute",
+      "apiPerMinute": "Appels API par minute",
+      "concurrency": "Steps de workflow exécutés en même temps",
+      "usage": "Records utilisés : {used} / {limit}"
+    },
+    "mcp": {
+      "title": "Connecter le MCP",
+      "description": "Donne à votre agent (Claude Code, Claude Desktop, claude.ai…) l'accès aux databases, workflows, fonctions et interfaces.",
+      "serverUrl": "URL du serveur",
+      "claudeCodeHint": "Puis <code>/mcp</code> dans Claude Code pour se connecter (OAuth : choix du workspace et des droits).",
+      "desktopHint": "Paramètres → Connecteurs → Ajouter un connecteur personnalisé, coller l'URL ci-dessus, puis se connecter.",
+      "scripts": "Scripts et CI (clé API)",
+      "scriptsHint": "Clé à créer dans <link>Clés API</link>."
+    },
+    "danger": {
+      "title": "Zone de danger",
+      "description": "Actions irréversibles. Seul un administrateur peut les effectuer.",
+      "deleteTitle": "Supprimer « {name} »",
+      "deleteHint": "Workflows, objets, exécutions et secrets seront définitivement supprimés.",
+      "delete": "Supprimer l'espace"
+    }
+  },
+  "roles": {
+    "label": "Rôle",
+    "owner": "Propriétaire",
+    "admin": "Administrateur",
+    "member": "Membre",
+    "viewer": "Lecteur",
+    "end_user": "Utilisateur final"
+  },
+  "roleHints": {
+    "admin": "Gère tout : membres, clés API, réglages",
+    "member": "Crée et modifie données, workflows et pages",
+    "viewer": "Consulte tout, ne modifie rien",
+    "end_user": "Ouvre seulement les pages qui lui sont destinées"
+  },
+  "members": {
+    "title": "Membres",
+    "description": "Qui accède à l'organisation, et ce que chacun peut faire.",
+    "invitationSent": "Invitation envoyée",
+    "change": "Changer",
+    "cancelInvite": "Annuler l'invitation",
+    "remove": "Retirer",
+    "cancelInviteTitle": "Annuler l'invitation de {email} ?",
+    "removeTitle": "Retirer {name} ?",
+    "removeDescription": "Cette personne perdra immédiatement l'accès à l'organisation. Vous pourrez l'inviter à nouveau.",
+    "emailPlaceholder": "email@exemple.com",
+    "emailLabel": "E-mail",
+    "invite": "Inviter",
+    "inviteHint": "La personne reçoit un email et accède à l'organisation une fois l'invitation acceptée.",
+    "colMember": "Membre",
+    "colInvitee": "Invité",
+    "colAdded": "Ajouté le",
+    "colSent": "Envoyée",
+    "pendingTitle": "Invitations en attente",
+    "inviteTitle": "Inviter"
+  },
+  "secrets": {
+    "title": "Secrets",
+    "description": "Variables chiffrées injectées dans les workflows et les fonctions au moment de l'exécution. Les valeurs ne sont jamais renvoyées à Claude.",
+    "new": "Nouveau secret",
+    "newDescription": "La valeur est chiffrée et ne sera plus jamais affichée. Un nom existant est remplacé.",
+    "value": "Valeur",
+    "modified": "Modifié",
+    "emptyTitle": "Aucun secret",
+    "emptyDescription": "Ajoutez une clé d'API ou un token pour vos connecteurs.",
+    "deleteTitle": "Supprimer le secret « {name} » ?",
+    "deleteDescription": "Les fonctions qui l'utilisent échoueront tant qu'il n'est pas recréé. La valeur ne peut pas être récupérée.",
+    "note": "Lisez un secret dans une fonction avec <code>secrets.NOM</code>. Toute modification est consignée dans l'audit.",
+    "usedBy": "Utilisé par {list}",
+    "deleteUsed": "Ce secret est utilisé par {list}. Ils échoueront tant qu'un secret de ce nom n'est pas recréé. La valeur est irrécupérable.",
+    "usage": {
+      "workflow": "le workflow « {name} »",
+      "function": "la fonction « {name} »",
+      "webhook": "le webhook « {name} »",
+      "ai": "le fournisseur IA {name}"
+    }
+  },
+  "apiKeys": {
+    "title": "Clés API",
+    "description": "Les clés permettent à vos outils d'appeler l'API Runbase. Elles ne sont affichées qu'une seule fois à la création.",
+    "new": "Nouvelle clé",
+    "newTitle": "Nouvelle clé API",
+    "newDescription": "Pour le MCP, les scripts et les intégrations externes.",
+    "copyWarning": "Copiez cette clé : elle ne sera plus affichée.",
+    "namePlaceholder": "MCP Claude",
+    "scopesLabel": "Droits",
+    "scopes": {
+      "read": "Lecture",
+      "write": "Écriture",
+      "admin": "Admin"
+    },
+    "workspaces": "Workspaces",
+    "restrict": "Limiter l'accès (facultatif)",
+    "objects": "Objets visibles",
+    "objectsHint": "Aucune case cochée : tous les objets. Sinon, la clé ne voit que les objets cochés et leurs records.",
+    "tools": "Outils MCP autorisés",
+    "toolsHint": "Vide : tous les outils. Sinon, noms séparés par des virgules.",
+    "submit": "Créer la clé",
+    "lastUsed": "Dernière utilisation",
+    "never": "Jamais",
+    "objectsBadge": "Objets : {list}",
+    "toolsCount": "{count, plural, one {# outil} other {# outils}}",
+    "revoked": "Révoquée",
+    "revoke": "Révoquer",
+    "revokeTitle": "Révoquer la clé « {name} » ?",
+    "revokeDescription": "Les agents et scripts qui l'utilisent perdront l'accès immédiatement. Une clé révoquée ne peut pas être réactivée.",
+    "emptyTitle": "Aucune clé",
+    "emptyDescription": "Créez une clé pour accéder à l'API ou au MCP.",
+    "created": "Créée le",
+    "note": "Claude n'a jamais accès aux clés en clair. Révoquez toute clé que vous n'utilisez plus."
+  },
+  "audit": {
+    "title": "Journal d'audit",
+    "description": "Toutes les actions humaines et celles des agents, avec le détail du changement.",
+    "filter": "Élément",
+    "types": {
+      "record": "Fiches",
+      "object": "Objets",
+      "database": "Bases",
+      "workflow": "Workflows",
+      "run": "Exécutions",
+      "function": "Fonctions",
+      "page": "Pages",
+      "webhook": "Webhooks",
+      "secret": "Secrets",
+      "api_key": "Clés API",
+      "member": "Membres",
+      "workspace": "Workspaces"
+    },
+    "agent": "Agent (clé API)",
+    "system": "Système",
+    "emptyTitle": "Rien dans le journal",
+    "emptyDescription": "Créations, modifications et suppressions, faites dans l'interface ou par un agent, s'inscrivent ici automatiquement.",
+    "action": "Quoi",
+    "by": "Qui",
+    "when": "Horodatage",
+    "detail": "Détail",
+    "change": "Changement",
+    "where": "Où"
+  },
+  "admin": {
+    "title": "Retours des agents",
+    "description": "Bugs, limites et idées remontés via le MCP (feedback.send), tous comptes confondus.",
+    "kinds": {
+      "bug": "Bug",
+      "limit": "Limite",
+      "idea": "Idée",
+      "usage": "Usage"
+    },
+    "type": "Type",
+    "statusFilter": "Statut (ouverts par défaut)",
+    "done": "Traités",
+    "all": "Tous",
+    "emptyTitle": "Aucun retour",
+    "emptyDescription": "Les agents remontent ici les bugs et limites rencontrés.",
+    "feedback": "Retour",
+    "account": "Compte",
+    "when": "Quand",
+    "context": "Contexte",
+    "apiKey": "Clé API",
+    "reopen": "Rouvrir",
+    "markDone": "Traité",
+    "forbidden": "Réservé aux admins plateforme"
+  },
+  "page": {
+    "title": "Paramètres",
+    "description": "Gérez l'espace de travail, ses membres et ses accès."
+  },
+  "billing": {
+    "plan": {
+      "title": "Offre",
+      "description": "Votre offre actuelle, fournie par votre hébergeur.",
+      "change": "Changer de plan",
+      "manage": "Gérer la facturation"
+    },
+    "usage": {
+      "title": "Usage",
+      "description": "Ce que ce compte utilise par rapport aux limites de son offre.",
+      "of": "{used} / {limit}",
+      "unlimited": "{used} · Illimité",
+      "reached": "Limite atteinte",
+      "records": "Records (ce workspace)",
+      "workspaces": "Workspaces"
+    },
+    "quota": {
+      "link": "Voir le plan et l’usage"
+    }
+  }
+}

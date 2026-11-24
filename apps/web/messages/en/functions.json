@@ -1,0 +1,42 @@
+{
+  "list": {
+    "title": "Functions",
+    "description": "TypeScript code created through MCP, usable as a workflow block (fn.<name>).",
+    "empty": {
+      "title": "No functions",
+      "description": "Functions are created through MCP (functions.create), then used as fn.<name> blocks in workflows."
+    },
+    "columns": {
+      "name": "Name",
+      "version": "Version",
+      "modified": "Modified"
+    },
+    "hint": "Describe to Claude (through MCP) what the function should do: it writes the code, the tests and the input schema."
+  },
+  "form": {
+    "name": "Name",
+    "code": "TypeScript code",
+    "inputSchema": "input_schema (JSON)",
+    "outputSchema": "output_schema (JSON)",
+    "domains": "Allowed network domains (comma-separated, * = public internet; private IPs are always blocked)",
+    "secrets": "Allowed secrets",
+    "saveVersion": "Save as new version"
+  },
+  "detail": {
+    "test": "Test",
+    "versions": "Versions",
+    "subtitle": "TypeScript · v{version}",
+    "fileName": "{name}.ts",
+    "code": "Code",
+    "version": "Version",
+    "createdAt": "Created"
+  },
+  "test": {
+    "input": "Input (JSON)",
+    "running": "Running…",
+    "run": "Test",
+    "output": "Output",
+    "logs": "Logs",
+    "noLogs": "(no logs)"
+  }
+}

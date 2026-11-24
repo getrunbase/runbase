@@ -1,0 +1,58 @@
+---
+title: Quickstart
+description: Run Runbase locally, connect an AI agent through MCP and build a small CRM.
+---
+
+## 1. Start an instance
+
+You need Docker with the Compose plugin and `openssl`.
+
+```sh
+git clone https://github.com/getrunbase/runbase runbase && cd runbase
+./setup.sh
+docker compose -f docker-compose.selfhost.yml up -d --wait
+docker compose -f docker-compose.selfhost.yml exec worker pnpm admin:create you@example.com
+```
+
+Open `http://localhost:3000/login` and ask for a sign-in link. Without email
+settings, the link is printed in the web logs:
+
+```sh
+docker compose -f docker-compose.selfhost.yml logs web | grep email:console
+```
+
+See [self-hosting](/docs/self-hosting) for HTTPS, backups and upgrades.
+
+## 2. Connect an agent
+
+The MCP endpoint is `http://localhost:3000/api/mcp`. MCP clients that support
+OAuth (Claude Code, Claude Desktop, Cursor…) sign in through the browser. For
+other clients, create an API key in **Settings → API keys** and send it as
+`Authorization: Bearer <key>`.
+
+```sh
+claude mcp add --transport http runbase http://localhost:3000/api/mcp
+```
+
+## 3. Build something
+
+Ask the agent, for example:
+
+> Build a small CRM: companies and contacts, a lead score, a workflow that
+> scores new contacts, and a pipeline page.
+
+The agent typically calls `workspace.describe`, then `databases.create`,
+`objects.create`, `records.upsert_batch` (with `test: true` for sample data),
+`workflows.create` and `page.create`. Every tool is listed in the
+[MCP reference](/docs/reference/mcp).
+
+## 4. Clean up test data
+
+`workspace.purge_test` with `{ "dryRun": true }`, then `{ "confirm": true }`,
+deletes the test records, events and runs.
+
+## Next steps
+
+- [Concepts](/docs/concepts): how the building blocks fit together.
+- [Workflow nodes](/docs/reference/nodes): what a workflow can do.
+- [REST API](/docs/reference/api): integrate from your own code.

@@ -1,0 +1,83 @@
+# Source of truth for repository labels, synced by .github/workflows/labels.yml.
+# Labels missing from this file are deleted on sync.
+- name: "type: bug"
+  color: d73a4a
+  description: Something does not work as expected
+- name: "type: feature"
+  color: a2eeef
+  description: New feature or improvement
+- name: "type: docs"
+  color: 0075ca
+  description: Documentation only
+- name: "type: chore"
+  color: ededed
+  description: Refactor, tooling, CI or dependencies
+- name: "type: rfc"
+  color: 5319e7
+  description: Request for comments on a large change
+- name: "area: web"
+  color: c5def5
+  description: Web app (apps/web)
+- name: "area: mcp"
+  color: c5def5
+  description: MCP server
+- name: "area: worker"
+  color: c5def5
+  description: Workflows and worker (apps/worker)
+- name: "area: functions"
+  color: c5def5
+  description: Functions and sandbox
+- name: "area: data"
+  color: c5def5
+  description: Databases, objects and records
+- name: "area: selfhost"
+  color: c5def5
+  description: Self-hosting, Docker and deployment
+- name: "area: connectors"
+  color: c5def5
+  description: Connectors (connectors/)
+- name: "area: templates"
+  color: c5def5
+  description: Template catalog (templates/)
+- name: "area: docs"
+  color: c5def5
+  description: Documentation site (apps/docs)
+- name: "status: needs-triage"
+  color: fbca04
+  description: Waiting for a maintainer to triage
+- name: "status: needs-repro"
+  color: fbca04
+  description: Cannot be reproduced yet
+- name: "status: needs-rfc"
+  color: fbca04
+  description: Too large for an issue, needs an RFC in Discussions
+- name: "status: accepted"
+  color: 0e8a16
+  description: Accepted by a maintainer, pull requests welcome
+- name: "status: blocked"
+  color: b60205
+  description: Blocked by another issue or an external dependency
+- name: roadmap
+  color: 1d76db
+  description: Tracked on the public roadmap board
+- name: security
+  color: b60205
+  description: Security hardening (report vulnerabilities privately, see SECURITY.md)
+- name: "good first issue"
+  color: 7057ff
+  description: Good for newcomers
+- name: "help wanted"
+  color: 008672
+  description: Extra attention is needed
+- name: dependencies
+  color: 0366d6
+  description: Dependency updates
+- name: "autorelease: pending"
+  color: ededed
+  description: Release pull request not yet released (release-please)
+- name: "autorelease: tagged"
+  color: ededed
+  description: Release pull request released (release-please)
+- name: stale
+  color: ededed
+  description: No activity for 60 days (actions/stale)

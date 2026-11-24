@@ -1,0 +1,58 @@
+{
+  "title": "Webhooks",
+  "description": "URLs your tools call to trigger your automations.",
+  "empty": {
+    "title": "No webhooks",
+    "description": "A webhook receives notifications from an external tool (Stripe payment, form submitted…). Each call becomes an event that can start a workflow."
+  },
+  "formats": {
+    "stripe": "Stripe",
+    "standard": "Standard Webhooks",
+    "standardLong": "Standard Webhooks (Svix, Resend, Clerk…)",
+    "hmac": "HMAC",
+    "hmacLong": "HMAC signature (GitHub, Cal.com, other)"
+  },
+  "card": {
+    "produces": "Produces the <code>{event}</code> event, signed with the <code>{secret}</code> secret.",
+    "url": "URL to give the tool",
+    "copyUrl": "Copy URL",
+    "testUrl": "Test URL (runs nothing)",
+    "copyTestUrl": "Copy test URL",
+    "sample": "Last payload received · {date}",
+    "clearSample": "Clear sample",
+    "noSample": "No payload received yet."
+  },
+  "delete": {
+    "title": "Delete the “{name}” webhook?",
+    "description": "The URL will stop responding: tools calling it will get an error. Workflows using it will no longer trigger."
+  },
+  "create": {
+    "button": "New webhook",
+    "title": "New webhook",
+    "description": "A URL your tools (Stripe, forms, CRM…) call to notify the platform of an event.",
+    "name": "Name",
+    "namePlaceholder": "stripe-payments",
+    "event": "Produced event",
+    "eventPlaceholder": "payment.received",
+    "eventHint": "Name of the event that will trigger your workflows.",
+    "format": "Signature format",
+    "header": "Signature header",
+    "secret": "Signing secret",
+    "secretHint": "Name of a secret (Secrets page) holding the key provided by the tool."
+  },
+  "test": {
+    "label": "Send a test",
+    "send": "Send test",
+    "ok": "Received: no workflow started."
+  },
+  "columns": {
+    "name": "Name",
+    "url": "URL",
+    "direction": "Direction",
+    "format": "Format",
+    "lastDelivery": "Last delivery"
+  },
+  "direction": {
+    "incoming": "Incoming"
+  }
+}

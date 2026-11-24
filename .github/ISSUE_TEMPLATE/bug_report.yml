@@ -1,0 +1,90 @@
+name: Bug report
+description: Something does not work as expected.
+labels: ["type: bug", "status: needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Questions belong in [Discussions Q&A](https://github.com/getrunbase/runbase/discussions/categories/q-a).
+        For security issues, use a [private security advisory](https://github.com/getrunbase/runbase/security/advisories/new) instead.
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before you start
+      options:
+        - label: I searched the existing issues and this bug is not reported yet.
+          required: true
+        - label: I removed every secret, token and personal data from this report.
+          required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to …
+        2. Click on …
+        3. See the error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Web app (UI)
+        - MCP server
+        - Workflows / worker
+        - Functions
+        - Data (databases, objects, records)
+        - Connectors
+        - Templates
+        - Self-hosting / deployment
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment
+      options:
+        - Self-hosted (Docker)
+        - Runbase Cloud
+        - Local development
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Release tag (for example v0.1.0) or commit SHA.
+    validations:
+      required: true
+  - type: input
+    id: mcp-client
+    attributes:
+      label: MCP client
+      description: If the bug involves the MCP server, which client and version (Claude, Cursor, ...).
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and OS
+      placeholder: Firefox 140, macOS 15
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and screenshots
+      description: Remove any secret or personal data before pasting.
+      render: shell

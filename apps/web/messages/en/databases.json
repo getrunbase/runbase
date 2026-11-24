@@ -1,0 +1,48 @@
+{
+  "new": "New database",
+  "list": {
+    "title": "Databases",
+    "description": "Each database groups objects and their relations.",
+    "empty": "No databases",
+    "emptyDescription": "Create a database and its first object.",
+    "objects": "{count, plural, one {# object} other {# objects}}"
+  },
+  "detail": {
+    "objectsTab": "Objects",
+    "schemaTab": "Schema",
+    "attributes": "{count, plural, one {# attribute} other {# attributes}}",
+    "records": "{count, plural, one {# record} other {# records}}",
+    "empty": "No objects.",
+    "claudeHint": "“Add a Worksites object linked to Quotes”: Claude creates the object, its fields and the relation."
+  },
+  "graph": {
+    "noAttributes": "No attributes"
+  },
+  "import": {
+    "open": "Import template",
+    "title": "Import a template",
+    "description": "Upload an runbase-template.json file or paste its content. Objects, views, functions, workflows (as drafts) and pages are created in this workspace.",
+    "file": "File",
+    "json": "Template JSON",
+    "submit": "Import",
+    "importing": "Importing…",
+    "failed": "Import failed",
+    "done": "“{name}” imported: {count, plural, one {# object} other {# objects}}",
+    "missingSecrets": "Secrets to set before activating workflows: {names}"
+  },
+  "catalogImport": {
+    "title": "Import “{name}”",
+    "description": "This catalog template will be imported into your current workspace. Workflows are created as drafts.",
+    "notFound": "This template is not in the catalog.",
+    "open": "Open databases",
+    "created": "Will be created in the workspace",
+    "panel": "Review what this template adds before installing it.",
+    "info": "Workflows are installed as drafts. You can test them before enabling them.",
+    "workflowDetail": "Workflow · draft on install",
+    "objectDetail": "{count, plural, one {# field} other {# fields}}",
+    "types": {
+      "workflow": "Workflow",
+      "object": "Object"
+    }
+  }
+}

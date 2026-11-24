@@ -1,0 +1,50 @@
+name: Submit a template
+description: Propose a template for the public Runbase catalog (free, no payment).
+labels: ["area: templates", "status: needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The fastest path is a pull request on `templates/` (see the template
+        checklist in the pull request template), or the MCP tool
+        `templates.submit`, which validates your template and opens the pull
+        request for you. Use this issue if you prefer to share the files here.
+        Review process: see CONTRIBUTING.md, section "Submitting a template".
+  - type: input
+    id: github
+    attributes:
+      label: GitHub username
+      description: Your GitHub login. It becomes your creator page /creators/<username>.
+    validations:
+      required: true
+  - type: input
+    id: name
+    attributes:
+      label: Template name
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description (Markdown)
+      description: At least 300 words, with the sections "## Who it's for", "## The problem", "## What it does" and "## Setup".
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: manifest
+    attributes:
+      label: runbase-template.json
+      description: Export it with the MCP tool template.export. Never include secret values.
+      render: json
+    validations:
+      required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      options:
+        - label: The template contains no secret value, personal data or customer data
+          required: true
+        - label: I agree to publish it under the MIT license of templates/
+          required: true

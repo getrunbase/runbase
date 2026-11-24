@@ -1,0 +1,51 @@
+{
+  "name": "@runbase/kit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Data-bound blocks for Runbase TSX pages (table, kanban, calendar, forms, charts), built on @runbase/sdk and shadcn/ui.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/getrunbase/runbase.git",
+    "directory": "packages/kit"
+  },
+  "files": [
+    "src",
+    "!src/**/*.test.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./examples": "./src/examples.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc",
+    "test": "node --import tsx --test \"src/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@runbase/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.14.27",
+    "react": "^19.0.0",
+    "react-hook-form": "^7.92.0",
+    "recharts": "3.8.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.14.27",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.0.0",
+    "react": "^19.0.0",
+    "react-hook-form": "^7.92.0",
+    "recharts": "3.8.0",
+    "tsx": "^4.23.15",
+    "zod": "^4.6.7"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "title": "Webhooks",
+  "description": "Des adresses que vos outils appellent pour déclencher vos automatisations.",
+  "empty": {
+    "title": "Aucun webhook",
+    "description": "Un webhook reçoit les notifications d'un outil externe (paiement Stripe, formulaire rempli…). Chaque appel devient un événement qui peut lancer un workflow."
+  },
+  "formats": {
+    "stripe": "Stripe",
+    "standard": "Standard Webhooks",
+    "standardLong": "Standard Webhooks (Svix, Resend, Clerk…)",
+    "hmac": "HMAC",
+    "hmacLong": "Signature HMAC (GitHub, Cal.com, autre)"
+  },
+  "card": {
+    "produces": "Produit l'événement <code>{event}</code>, signé avec le secret <code>{secret}</code>.",
+    "url": "Adresse à donner à l'outil",
+    "copyUrl": "Copier l'URL",
+    "testUrl": "Adresse de test (n'exécute rien)",
+    "copyTestUrl": "Copier l'URL de test",
+    "sample": "Dernier payload reçu · {date}",
+    "clearSample": "Vider l'exemple",
+    "noSample": "Aucun payload reçu pour l'instant."
+  },
+  "delete": {
+    "title": "Supprimer le webhook « {name} » ?",
+    "description": "L'adresse cessera de répondre : les outils qui l'appellent recevront une erreur. Les workflows qui l'utilisent ne se déclencheront plus."
+  },
+  "create": {
+    "button": "Nouveau webhook",
+    "title": "Nouveau webhook",
+    "description": "Une adresse que vos outils (Stripe, formulaire, CRM…) appellent pour prévenir la plateforme d'un événement.",
+    "name": "Nom",
+    "namePlaceholder": "stripe-paiements",
+    "event": "Événement produit",
+    "eventPlaceholder": "paiement.recu",
+    "eventHint": "Nom de l'événement qui déclenchera vos workflows.",
+    "format": "Format de signature",
+    "header": "En-tête de la signature",
+    "secret": "Secret de signature",
+    "secretHint": "Nom d'un secret (page Secrets) contenant la clé fournie par l'outil."
+  },
+  "test": {
+    "label": "Envoyer un essai",
+    "send": "Envoyer l'essai",
+    "ok": "Reçu : aucun workflow lancé."
+  },
+  "columns": {
+    "name": "Nom",
+    "url": "URL",
+    "direction": "Sens",
+    "format": "Format",
+    "lastDelivery": "Dernière livraison"
+  },
+  "direction": {
+    "incoming": "Entrant"
+  }
+}

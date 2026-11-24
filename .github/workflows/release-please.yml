@@ -1,0 +1,24 @@
+# Opens and updates the release pull request (CHANGELOG + versions) from the
+# Conventional Commits on main. Merging it creates the vX.Y.Z tag and release.
+# RELEASE_PLEASE_TOKEN (fine-grained PAT) is needed so the created release
+# triggers publish.yml; events from the default GITHUB_TOKEN trigger nothing.
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    name: Release pull request
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

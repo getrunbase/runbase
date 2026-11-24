@@ -1,0 +1,100 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Customer onboarding",
+  "description": "Tracks onboarding progress for every new customer and announces them to the team in Slack.",
+  "databases": [
+    {
+      "slug": "customers",
+      "name": "Customers"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "customers",
+      "name": "Customers",
+      "icon": "user-plus",
+      "database": "customers",
+      "fields": [
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "email",
+          "label": "Email",
+          "type": "email",
+          "unique": true
+        },
+        {
+          "key": "company",
+          "label": "Company",
+          "type": "text"
+        },
+        {
+          "key": "plan",
+          "label": "Plan",
+          "type": "select",
+          "options": ["starter", "pro", "enterprise"]
+        },
+        {
+          "key": "status",
+          "label": "Onboarding status",
+          "type": "select",
+          "options": ["new", "welcomed", "active"]
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "customers",
+      "name": "To onboard",
+      "filter": {
+        "field": "status",
+        "op": "neq",
+        "value": "active"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "key": "welcome",
+      "name": "Welcome new customers",
+      "definition": {
+        "trigger": {
+          "type": "trigger.record_created",
+          "object": "$object:customers"
+        },
+        "steps": [
+          {
+            "id": "track",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "status": "welcomed"
+              }
+            }
+          },
+          {
+            "id": "announce",
+            "type": "node.slack.post_message",
+            "input": {
+              "channel": "#onboarding",
+              "text": "New customer: {{record.name}} ({{record.company}}, {{record.plan}} plan). Say hello at {{record.email}}."
+            }
+          }
+        ],
+        "next": {
+          "track": {
+            "ok": ["announce"]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": ["SLACK_BOT_TOKEN"]
+}

@@ -1,0 +1,25 @@
+---
+title: Interfaces
+description: Pages, dashboards and TSX code components for the people who use the data.
+---
+
+## Pages
+
+A **page** is a declarative layout of components (tables, forms, kanban,
+charts, record details…) bound to queries over objects and saved views.
+`page.components` lists the components with recipes. Edits made with
+`page.update` go to a draft; `page.screenshot` with `{ "draft": true }` checks
+it, then `page.publish` makes it visible. `page.versions` and `page.restore`
+roll back.
+
+## Dashboards
+
+`dashboards.save` builds metric and chart dashboards from queries;
+`dashboards.render` returns the computed data.
+
+## Code components
+
+When built-in components are not enough, `components.save` stores a TSX
+component. It runs in an isolated iframe with a dedicated origin and only the
+permissions it declares. `components.test` renders it with sample props, and
+pages use it like any other component.

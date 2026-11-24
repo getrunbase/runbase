@@ -1,0 +1,9 @@
+{
+  "id": "support-tickets",
+  "slug": "support-tickets",
+  "name": "Support tickets",
+  "categories": ["support", "developer-tools"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-23",
+  "updatedAt": "2026-11-23"
+}

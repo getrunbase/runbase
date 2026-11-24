@@ -1,0 +1,62 @@
+name: Feature request (accepted ideas)
+description: Track a feature that a maintainer has already accepted. New ideas go to Discussions first.
+labels: ["type: feature", "status: needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **New idea?** Post it in [Discussions, Ideas](https://github.com/getrunbase/runbase/discussions/categories/ideas) first.
+        Feature issues are opened once a maintainer agrees the project wants the feature, then labelled `status: accepted`.
+        Large changes (data model, public API, breaking changes) need an [RFC](https://github.com/getrunbase/runbase/discussions/categories/rfc). See [GOVERNANCE.md](https://github.com/getrunbase/runbase/blob/main/GOVERNANCE.md).
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before you start
+      options:
+        - label: I searched the existing issues and discussions and this is not a duplicate.
+          required: true
+  - type: input
+    id: discussion
+    attributes:
+      label: Discussion or RFC link
+      description: Link to the Ideas discussion or RFC where this feature was agreed.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem would this solve? Who has it?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What would you like to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Web app (UI)
+        - MCP server
+        - Workflows / worker
+        - Functions
+        - Data (databases, objects, records)
+        - Connectors
+        - Templates
+        - Self-hosting / deployment
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I would like to implement this myself once the issue is accepted.

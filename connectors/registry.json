@@ -1,0 +1,68 @@
+{
+  "connectors": [
+    {
+      "name": "@runbase-connectors/slack",
+      "version": "0.1.0",
+      "label": "Slack",
+      "description": "Post messages to Slack channels (Web API, bot token).",
+      "path": "slack",
+      "nodes": [
+        {
+          "id": "slack.post_message",
+          "label": "Post a Slack message",
+          "description": "Posts a message to a Slack channel (or a thread reply with threadTs) as the connected bot.",
+          "branches": [
+            "ok"
+          ],
+          "sideEffect": true,
+          "auth": {
+            "secrets": [
+              "SLACK_BOT_TOKEN"
+            ],
+            "domains": [
+              "slack.com"
+            ]
+          },
+          "inputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "channel": {
+                "type": "string",
+                "minLength": 1
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1
+              },
+              "threadTs": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "channel",
+              "text"
+            ]
+          },
+          "outputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "channel": {
+                "type": "string"
+              },
+              "ts": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "channel",
+              "ts"
+            ],
+            "additionalProperties": false
+          }
+        }
+      ]
+    }
+  ]
+}

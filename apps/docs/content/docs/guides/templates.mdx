@@ -1,0 +1,58 @@
+---
+title: Template format
+description: The runbase-template.json format, to share a whole workspace setup.
+---
+
+A template packages objects, views, functions, components, workflows, pages and
+optional sample records in one `runbase-template.json` file (version 1).
+
+| Key | Content |
+| --- | --- |
+| `format`, `version` | `"runbase-template"`, `1` |
+| `name`, `description` | Display name and summary |
+| `databases` | `{ slug, name }` |
+| `objects` | `{ slug, name, icon?, database?, fields }` (typed fields, relations by slug) |
+| `views` | Saved views: `{ object, name, filter?, sort?, columns? }` |
+| `functions` | `{ name, code, inputSchema, outputSchema, permissions, limits }` |
+| `components` | TSX code components: `{ name, source, propsSchema, permissions }` |
+| `workflows` | `{ key, name, definition }`, imported as drafts |
+| `pages` | `{ name, icon?, definition }` |
+| `secrets` | Names of the required secrets, never their values |
+| `records` | Optional sample records: `{ key, object, externalId?, data }` |
+
+Workspace ids never appear. They are replaced by local references, resolved on
+import: `$object:<slug>`, `$workflow:<key>`, `$record:<key>`.
+
+## Minimal example
+
+```json title="runbase-template.json"
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Mini CRM",
+  "description": "Contacts with a lead score.",
+  "databases": [{ "slug": "crm", "name": "CRM" }],
+  "objects": [
+    {
+      "slug": "contact",
+      "name": "Contact",
+      "database": "crm",
+      "fields": [
+        { "key": "email", "label": "Email", "type": "email", "unique": true },
+        { "key": "score", "label": "Score", "type": "number" }
+      ]
+    }
+  ],
+  "secrets": []
+}
+```
+
+## Export and import
+
+- MCP: `template.export` (optionally with `sampleRecords`) and `template.import`.
+- Web app: **Databases → Import template**.
+
+Import is refused when an object, function or component with the same name
+already exists. Workflows are created as drafts: set the secrets listed in
+`missingSecrets`, then activate them. Community templates live in `templates/`
+under the MIT license.

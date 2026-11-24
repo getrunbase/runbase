@@ -1,0 +1,53 @@
+name: Connector request
+description: Ask for an integration with an external service.
+labels: ["area: connectors", "type: feature", "status: needs-triage"]
+body:
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before you start
+      options:
+        - label: I searched the existing issues and this connector is not requested yet.
+          required: true
+  - type: input
+    id: service
+    attributes:
+      label: Service
+      description: Name and website of the service to connect.
+    validations:
+      required: true
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case
+      description: What would you automate or sync with this connector?
+    validations:
+      required: true
+  - type: checkboxes
+    id: direction
+    attributes:
+      label: What is needed?
+      options:
+        - label: Trigger workflows from events in this service (webhooks)
+        - label: Read data from this service
+        - label: Write data or run actions in this service
+  - type: input
+    id: api-docs
+    attributes:
+      label: API documentation
+      description: Link to the service's API docs, if known.
+  - type: dropdown
+    id: auth
+    attributes:
+      label: Authentication
+      options:
+        - API key
+        - OAuth 2.0
+        - Other / unknown
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      description: Connectors are a good first contribution. See CONTRIBUTING.md and the `connectors/` folder.
+      options:
+        - label: I can build this connector myself.

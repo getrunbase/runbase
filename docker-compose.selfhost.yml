@@ -1,0 +1,181 @@
+# Self-hosted Runbase: prebuilt images, nothing to build.
+#   ./setup.sh && docker compose -f docker-compose.selfhost.yml up -d
+# Postgres and Redis sit on an internal network (no host port, no internet);
+# only the web port is published, on 127.0.0.1 by default (see WEB_BIND).
+# See docs/self-hosting.md.
+
+# Hardening shared by every app container (non-root images).
+x-hardening: &hardening
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+
+x-app: &app
+  <<: *hardening
+  restart: unless-stopped
+  env_file: .env
+  environment:
+    DATABASE_URL: postgres://${POSTGRES_USER:-runbase}:${POSTGRES_PASSWORD:?run ./setup.sh}@postgres:5432/${POSTGRES_DB:-runbase}
+    QUERY_DATABASE_URL: postgres://runbase_query:${QUERY_DB_PASSWORD:?run ./setup.sh}@postgres:5432/${POSTGRES_DB:-runbase}
+    REDIS_URL: redis://:${REDIS_PASSWORD:?run ./setup.sh}@redis:6379
+    BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?run ./setup.sh}
+    # Sign-in method: magic-link (default) or password.
+    AUTH_METHOD: ${AUTH_METHOD:-magic-link}
+    SECRETS_MASTER_KEY: ${SECRETS_MASTER_KEY:?run ./setup.sh}
+    FILES_DIR: /data/files
+    # Function code runs in the `sandbox` service (no database, no Redis).
+    SANDBOX_URL: http://sandbox:7200
+    SANDBOX_TOKEN: ${SANDBOX_TOKEN:?run ./setup.sh}
+    # Origin of the web app as seen by the renderer (screenshots).
+    RENDERER_APP_URL: http://web:3000
+  volumes:
+    - files-data:/data/files
+  # Internal network for Postgres/Redis, egress for AI and email, sandbox to
+  # reach the function runner.
+  networks: [internal, egress, sandbox]
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-runbase}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run ./setup.sh}
+      POSTGRES_DB: ${POSTGRES_DB:-runbase}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Password passed through the environment, not the command line (ps).
+    command: ["sh", "-c", 'exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"']
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?run ./setup.sh}
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?run ./setup.sh}
+    volumes:
+      - redis-data:/data
+    networks: [internal]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 20
+
+  # Images run as `node` (non-root): gives back to `node` the files of a
+  # files-data volume created by an older root image (idempotent one-shot).
+  files-perms:
+    image: ${RUNBASE_IMAGE_REPO:-ghcr.io/getrunbase/runbase}-worker:${RUNBASE_VERSION:-latest}
+    restart: "no"
+    user: root
+    command: ["sh", "-c", "find /data/files ! -user node -exec chown node:node {} +"]
+    volumes:
+      - files-data:/data/files
+    network_mode: none
+
+  # Applies database migrations (one-shot, worker image), before the apps start.
+  migrate:
+    <<: *app
+    image: ${RUNBASE_IMAGE_REPO:-ghcr.io/getrunbase/runbase}-worker:${RUNBASE_VERSION:-latest}
+    restart: "no"
+    command: ["pnpm", "db:migrate"]
+    networks: [internal]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  # Runs the jobs (workflows, triggers, schedules).
+  worker:
+    <<: *app
+    image: ${RUNBASE_IMAGE_REPO:-ghcr.io/getrunbase/runbase}-worker:${RUNBASE_VERSION:-latest}
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+      files-perms: { condition: service_completed_successfully }
+      sandbox: { condition: service_started }
+    healthcheck:
+      # Bull Board answers (401 without session) once the workers are up.
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:'+(process.env.BOARD_PORT||7101)).then(r=>process.exit(r.status<500?0:1),()=>process.exit(1))"]
+      interval: 10s
+      start_period: 120s
+      retries: 30
+
+  web:
+    <<: *app
+    image: ${RUNBASE_IMAGE_REPO:-ghcr.io/getrunbase/runbase}-web:${RUNBASE_VERSION:-latest}
+    ports:
+      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-3000}:3000"
+    depends_on:
+      worker: { condition: service_healthy }
+      files-perms: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 10s
+      start_period: 60s
+      retries: 30
+
+  # Runs function code: non-root, read-only filesystem, no env file (no
+  # database URL, no Redis URL, no master key). Networks: `sandbox` (internal,
+  # joined by web and worker) and `sandbox-egress` (internet for functions);
+  # never the Postgres/Redis network.
+  sandbox:
+    image: ${RUNBASE_IMAGE_REPO:-ghcr.io/getrunbase/runbase}-sandbox:${RUNBASE_VERSION:-latest}
+    restart: unless-stopped
+    user: node
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    environment:
+      SANDBOX_TOKEN: ${SANDBOX_TOKEN:?run ./setup.sh}
+    networks: [sandbox, sandbox-egress]
+
+  # Headless Chromium for page screenshots and accessibility audits (`render`
+  # queue). Loads only the web app pages; internal network only. Dedicated
+  # environment, no env file: never the master key, the auth secret or the
+  # sandbox token (it renders user-controlled pages). Read-only filesystem.
+  renderer:
+    <<: *hardening
+    image: ${RUNBASE_IMAGE_REPO:-ghcr.io/getrunbase/runbase}-renderer:${RUNBASE_VERSION:-latest}
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    shm_size: 256m
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-runbase}:${POSTGRES_PASSWORD:?run ./setup.sh}@postgres:5432/${POSTGRES_DB:-runbase}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?run ./setup.sh}@redis:6379
+      RENDERER_APP_URL: http://web:3000
+      # Chromium and pnpm write their profile/cache under HOME.
+      HOME: /tmp
+      LOG_LEVEL: ${LOG_LEVEL:-}
+      RENDER_CONCURRENCY: ${RENDER_CONCURRENCY:-}
+      # Same file driver as web/worker (captures read back by the web app).
+      FILES_DRIVER: ${FILES_DRIVER:-}
+      FILES_DIR: /data/files
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_REGION: ${S3_REGION:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+    volumes:
+      - files-data:/data/files
+    networks: [internal]
+    depends_on:
+      redis: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+      files-perms: { condition: service_completed_successfully }
+
+networks:
+  internal: { internal: true }
+  egress: {}
+  sandbox: { internal: true }
+  sandbox-egress: {}
+
+volumes:
+  postgres-data:
+  redis-data:
+  files-data:

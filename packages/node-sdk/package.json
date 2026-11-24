@@ -1,0 +1,62 @@
+{
+  "name": "@runbase/node-sdk",
+  "version": "0.1.0",
+  "description": "SDK and CLI to build Runbase workflow connectors (defineNode).",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/getrunbase/runbase.git",
+    "directory": "packages/node-sdk"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "bin": {
+    "runbase": "./bin/runbase.mjs"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./runtime": "./src/runtime.ts",
+    "./build": "./src/build.ts",
+    "./cli": "./src/cli.ts"
+  },
+  "publishConfig": {
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./runtime": {
+        "types": "./dist/runtime.d.ts",
+        "default": "./dist/runtime.js"
+      },
+      "./build": {
+        "types": "./dist/build.d.ts",
+        "default": "./dist/build.js"
+      },
+      "./cli": {
+        "types": "./dist/cli.d.ts",
+        "default": "./dist/cli.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "typecheck": "tsc",
+    "test": "node --import tsx --test \"src/**/*.test.ts\""
+  },
+  "dependencies": {
+    "esbuild": "0.25.12",
+    "tsx": "^4.23.15",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5"
+  }
+}

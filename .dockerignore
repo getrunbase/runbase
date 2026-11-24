@@ -1,0 +1,14 @@
+**/node_modules
+**/.next
+**/dist
+**/*.tsbuildinfo
+.git
+.claude
+.env*
+# Inutile aux images (le catalogue lit les README.md de templates/ et connectors/ : pas de *.md global)
+.github
+docs
+/*.md
+**/test-results
+**/playwright-report
+coverage

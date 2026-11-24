@@ -1,0 +1,232 @@
+{
+  "general": {
+    "title": "Settings",
+    "description": "Workspaces, AI budget, limits and agent connection.",
+    "workspaces": {
+      "title": "Workspaces",
+      "rename": "Rename",
+      "active": "Active",
+      "select": "Select",
+      "deleteTitle": "Delete the workspace “{name}”?",
+      "deleteDescription": "All its data, workflows and interfaces will be permanently erased. This cannot be undone.",
+      "deleteConfirm": "Delete permanently",
+      "newPlaceholder": "New workspace",
+      "description": "Names of the organization's workspaces. Visible to all members."
+    },
+    "budget": {
+      "title": "Monthly AI budget",
+      "spent": "Spent this month: {spent}",
+      "ofBudget": " / {budget}",
+      "exhausted": " (reached: AI blocks paused)",
+      "unlimited": "Unlimited",
+      "ariaLabel": "Budget in USD",
+      "description": "Monthly spending cap for AI blocks. Beyond it, they are paused."
+    },
+    "ai": {
+      "title": "AI provider",
+      "description": "Pick the AI provider used by AI blocks and pages, then paste your API key.",
+      "provider": "Provider",
+      "providerPlaceholder": "Choose a provider",
+      "model": "Model",
+      "key": "API key",
+      "keyPlaceholder": "Paste your API key",
+      "keySet": "Key saved (leave empty to keep it)",
+      "keyHint": "Stored encrypted as the {secret} secret. It is never shown again.",
+      "noKeyHint": "No key yet. It will be stored encrypted as the {secret} secret.",
+      "save": "Save",
+      "keySecret": "Secret holding the key"
+    },
+    "limits": {
+      "title": "Workspace limits",
+      "description": "Beyond these, additions are rejected with a clear message. Empty field: default value.",
+      "records": "Maximum number of records",
+      "runsPerMinute": "Workflow runs per minute",
+      "apiPerMinute": "API calls per minute",
+      "concurrency": "Workflow steps running at the same time",
+      "usage": "Records used: {used} / {limit}"
+    },
+    "mcp": {
+      "title": "Connect the MCP",
+      "description": "Give your agent (Claude Code, Claude Desktop, claude.ai…) access to databases, workflows, functions and interfaces.",
+      "serverUrl": "Server URL",
+      "claudeCodeHint": "Then run <code>/mcp</code> in Claude Code to connect (OAuth: pick the workspace and permissions).",
+      "desktopHint": "Settings → Connectors → Add custom connector, paste the URL above, then connect.",
+      "scripts": "Scripts and CI (API key)",
+      "scriptsHint": "Create a key in <link>API keys</link>."
+    },
+    "danger": {
+      "title": "Danger zone",
+      "description": "Irreversible actions. Only an administrator can perform them.",
+      "deleteTitle": "Delete “{name}”",
+      "deleteHint": "Workflows, objects, runs and secrets will be permanently deleted.",
+      "delete": "Delete workspace"
+    }
+  },
+  "roles": {
+    "label": "Role",
+    "owner": "Owner",
+    "admin": "Administrator",
+    "member": "Member",
+    "viewer": "Viewer",
+    "end_user": "End user"
+  },
+  "roleHints": {
+    "admin": "Manages everything: members, API keys, settings",
+    "member": "Creates and edits data, workflows and pages",
+    "viewer": "Sees everything, changes nothing",
+    "end_user": "Only opens the pages meant for them"
+  },
+  "members": {
+    "title": "Members",
+    "description": "Who can access the organization, and what each person can do.",
+    "invitationSent": "Invitation sent",
+    "change": "Change",
+    "cancelInvite": "Cancel invitation",
+    "remove": "Remove",
+    "cancelInviteTitle": "Cancel the invitation for {email}?",
+    "removeTitle": "Remove {name}?",
+    "removeDescription": "This person will lose access to the organization immediately. You can invite them again.",
+    "emailPlaceholder": "email@example.com",
+    "emailLabel": "Email",
+    "invite": "Invite",
+    "inviteHint": "The person receives an email and gets access to the organization once they accept the invitation.",
+    "colMember": "Member",
+    "colInvitee": "Invitee",
+    "colAdded": "Added",
+    "colSent": "Sent",
+    "pendingTitle": "Pending invitations",
+    "inviteTitle": "Invite"
+  },
+  "secrets": {
+    "title": "Secrets",
+    "description": "Encrypted variables injected into workflows and functions at run time. Values are never sent back to Claude.",
+    "new": "New secret",
+    "newDescription": "The value is encrypted and will never be shown again. An existing name is replaced.",
+    "value": "Value",
+    "modified": "Modified",
+    "emptyTitle": "No secrets",
+    "emptyDescription": "Add an API key or a token for your connectors.",
+    "deleteTitle": "Delete the secret “{name}”?",
+    "deleteDescription": "Functions that use it will fail until it is recreated. The value cannot be recovered.",
+    "note": "Read a secret in a function with <code>secrets.NAME</code>. Every change is recorded in the audit log.",
+    "usedBy": "Used by {list}",
+    "deleteUsed": "This secret is used by {list}. They will fail until a secret with this name is recreated. The value cannot be recovered.",
+    "usage": {
+      "workflow": "workflow “{name}”",
+      "function": "function “{name}”",
+      "webhook": "webhook “{name}”",
+      "ai": "AI provider {name}"
+    }
+  },
+  "apiKeys": {
+    "title": "API keys",
+    "description": "Keys let your tools call the Runbase API. They are shown only once, at creation.",
+    "new": "New key",
+    "newTitle": "New API key",
+    "newDescription": "For the MCP, scripts and external integrations.",
+    "copyWarning": "Copy this key: it won't be shown again.",
+    "namePlaceholder": "Claude MCP",
+    "scopesLabel": "Permissions",
+    "scopes": {
+      "read": "Read",
+      "write": "Write",
+      "admin": "Admin"
+    },
+    "workspaces": "Workspaces",
+    "restrict": "Restrict access (optional)",
+    "objects": "Visible objects",
+    "objectsHint": "No box checked: all objects. Otherwise, the key only sees the checked objects and their records.",
+    "tools": "Allowed MCP tools",
+    "toolsHint": "Empty: all tools. Otherwise, comma-separated names.",
+    "submit": "Create key",
+    "lastUsed": "Last used",
+    "never": "Never",
+    "objectsBadge": "Objects: {list}",
+    "toolsCount": "{count, plural, one {# tool} other {# tools}}",
+    "revoked": "Revoked",
+    "revoke": "Revoke",
+    "revokeTitle": "Revoke the key “{name}”?",
+    "revokeDescription": "Agents and scripts using it will lose access immediately. A revoked key cannot be reactivated.",
+    "emptyTitle": "No keys",
+    "emptyDescription": "Create a key to access the API or the MCP.",
+    "created": "Created",
+    "note": "Claude never has access to keys in clear text. Revoke any key you no longer use."
+  },
+  "audit": {
+    "title": "Audit log",
+    "description": "Every action by people and agents, with the details of the change.",
+    "filter": "Item",
+    "types": {
+      "record": "Records",
+      "object": "Objects",
+      "database": "Databases",
+      "workflow": "Workflows",
+      "run": "Runs",
+      "function": "Functions",
+      "page": "Pages",
+      "webhook": "Webhooks",
+      "secret": "Secrets",
+      "api_key": "API keys",
+      "member": "Members",
+      "workspace": "Workspaces"
+    },
+    "agent": "Agent (API key)",
+    "system": "System",
+    "emptyTitle": "Nothing in the log",
+    "emptyDescription": "Creations, edits and deletions, made in the interface or by an agent, are recorded here automatically.",
+    "action": "What",
+    "by": "Who",
+    "when": "Timestamp",
+    "detail": "Detail",
+    "change": "Change",
+    "where": "Where"
+  },
+  "admin": {
+    "title": "Agent feedback",
+    "description": "Bugs, limits and ideas reported via the MCP (feedback.send), across all accounts.",
+    "kinds": {
+      "bug": "Bug",
+      "limit": "Limit",
+      "idea": "Idea",
+      "usage": "Usage"
+    },
+    "type": "Type",
+    "statusFilter": "Status (open by default)",
+    "done": "Resolved",
+    "all": "All",
+    "emptyTitle": "No feedback",
+    "emptyDescription": "Agents report the bugs and limits they hit here.",
+    "feedback": "Feedback",
+    "account": "Account",
+    "when": "When",
+    "context": "Context",
+    "apiKey": "API key",
+    "reopen": "Reopen",
+    "markDone": "Resolved",
+    "forbidden": "Platform admins only"
+  },
+  "page": {
+    "title": "Settings",
+    "description": "Manage the workspace, its members and its access."
+  },
+  "billing": {
+    "plan": {
+      "title": "Plan",
+      "description": "Your current plan, provided by your hosting operator.",
+      "change": "Change plan",
+      "manage": "Manage billing"
+    },
+    "usage": {
+      "title": "Usage",
+      "description": "What this account uses against its plan limits.",
+      "of": "{used} / {limit}",
+      "unlimited": "{used} · Unlimited",
+      "reached": "Limit reached",
+      "records": "Records (this workspace)",
+      "workspaces": "Workspaces"
+    },
+    "quota": {
+      "link": "See plan and usage"
+    }
+  }
+}

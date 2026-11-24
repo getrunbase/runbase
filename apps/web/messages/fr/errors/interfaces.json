@@ -1,0 +1,22 @@
+{
+  "pages.compileFailed": "Échec de compilation en {file}:{line}:{col} : {text}",
+  "pages.editNoMatch": "{path} : `old` doit correspondre exactement une fois",
+  "pages.entryMissing": "Fichier d'entrée introuvable : {entry}",
+  "pages.fileNotFound": "Fichier introuvable : {path}",
+  "pages.invalidFile": "Contenu de fichier invalide : {path}",
+  "pages.invalidPath": "Chemin de fichier invalide : {path}",
+  "pages.notFound": "Page introuvable : {id}",
+  "sdk.rateLimited": "Trop d'appels SDK : {max} par seconde au maximum",
+  "pages.compileTimeout": "compilation trop longue (max {max} ms)",
+  "pages.editOldAmbiguous": "edits[{index}] : `old` apparaît plusieurs fois",
+  "pages.editOldNotFound": "edits[{index}] : `old` introuvable",
+  "pages.sourceRequired": "source requise",
+  "pages.unknownIcon": "Icône lucide inconnue : {icon} (ex. \"users\", \"shopping-cart\", voir lucide.dev/icons)",
+  "sdk.callTooLarge": "Appel SDK trop volumineux (max {max} octets)",
+  "sdk.denied": "{reason}",
+  "sdk.invalidCall": "Appel SDK invalide :\n{detail}",
+  "sdk.notAllowed": "{what} non autorisé : {id}",
+  "sdk.objectNotFound": "objet introuvable : {id}",
+  "sdk.runNotFound": "run introuvable : {id}",
+  "sdk.workflowNotFound": "workflow introuvable : {id}"
+}

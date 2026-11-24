@@ -1,0 +1,84 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Support tickets",
+  "description": "A support ticket inbox that alerts the team in Slack for every new ticket.",
+  "databases": [
+    {
+      "slug": "support",
+      "name": "Support"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "tickets",
+      "name": "Tickets",
+      "icon": "life-buoy",
+      "database": "support",
+      "fields": [
+        {
+          "key": "subject",
+          "label": "Subject",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "email",
+          "label": "Customer email",
+          "type": "email"
+        },
+        {
+          "key": "message",
+          "label": "Message",
+          "type": "text"
+        },
+        {
+          "key": "priority",
+          "label": "Priority",
+          "type": "select",
+          "options": ["low", "normal", "high", "urgent"]
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": ["open", "in_progress", "resolved"]
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "tickets",
+      "name": "Open tickets",
+      "filter": {
+        "field": "status",
+        "op": "neq",
+        "value": "resolved"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "key": "triage",
+      "name": "Alert the team for each ticket",
+      "definition": {
+        "trigger": {
+          "type": "trigger.record_created",
+          "object": "$object:tickets"
+        },
+        "steps": [
+          {
+            "id": "alert",
+            "type": "node.slack.post_message",
+            "input": {
+              "channel": "#support",
+              "text": "New ticket from {{record.email}}: {{record.subject}} ({{record.priority}})"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "secrets": ["SLACK_BOT_TOKEN"]
+}
