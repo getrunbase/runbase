@@ -9,6 +9,7 @@ on:
       - Dockerfile
       - docker-compose.selfhost.yml
       - setup.sh
+      - apps/renderer/**
       - .env.example
       - packages/core/src/email/**
       - .github/workflows/selfhost-smoke.yml
@@ -63,6 +64,12 @@ jobs:
           fi
       - name: Start the stack
         run: $COMPOSE up -d --wait --wait-timeout 300
+      # The renderer runs read_only with cap_drop ALL: Chromium must still
+      # launch and screenshot a page inside the hardened container.
+      - name: Renderer renders a page (read_only, cap_drop ALL)
+        run: |
+          test "$(docker inspect -f '{{.HostConfig.ReadonlyRootfs}}' "$($COMPOSE ps -q renderer)")" = true
+          $COMPOSE exec -T -w /app/apps/renderer renderer node --import tsx src/smoke.ts
       - name: Redis refuses clients without the password
         run: |
           out=$($COMPOSE exec -T -e REDISCLI_AUTH= redis redis-cli ping 2>&1 || true)
