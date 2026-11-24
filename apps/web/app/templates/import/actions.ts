@@ -4,8 +4,10 @@ import { revalidatePath } from "next/cache";
 import { catalogService } from "@runbase/core/catalog";
 import { templatesService } from "@runbase/core/templates";
 import { actionError } from "@/lib/action-error";
+import { formInput, parseInput } from "@/lib/action-input";
 import { getTenant } from "@/lib/tenant";
 import type { ImportTemplateResult } from "../../databases/actions";
+import { catalogInput } from "./inputs";
 
 // Import of a public catalog template into the current workspace.
 export async function importCatalogTemplate(
@@ -14,7 +16,8 @@ export async function importCatalogTemplate(
 ): Promise<ImportTemplateResult> {
   const { ctx } = await getTenant();
   try {
-    const t = await catalogService.getTemplate(String(form.get("template")));
+    const { template } = parseInput(catalogInput, formInput(form));
+    const t = await catalogService.getTemplate(template);
     const r = await templatesService.import(ctx, t.manifest);
     revalidatePath("/", "layout");
     return {
