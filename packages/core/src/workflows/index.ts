@@ -9,6 +9,7 @@ import { workflows, workflowVersions } from "../db/schema";
 import { isValueMode, validateCondition } from "../blocks/catalog/condition";
 import { objectsService } from "../objects";
 import { syncSchedule, triggerSchema } from "../triggers/schema";
+import { checkCronInterval } from "../triggers/cron-interval";
 import { withTenant, type TenantContext, type Tx } from "../tenant";
 import { durationSchema } from "../blocks/duration";
 import {
@@ -55,7 +56,9 @@ export type Definition = z.infer<typeof definitionSchema>;
 // field or with an incompatible type makes the definition invalid (not saved).
 async function validate(ctx: TenantContext, raw: unknown) {
   const definition = definitionSchema.parse(raw);
-  triggerSchema.parse(definition.trigger);
+  const trigger = triggerSchema.parse(definition.trigger);
+  if (trigger.type === "trigger.schedule")
+    await checkCronInterval(ctx, trigger.cron, trigger.timezone);
   for (const step of definition.steps)
     if (step.type === "condition" && !isValueMode(step.input))
       await validateCondition(() => objectsService.list(ctx), step.input);
