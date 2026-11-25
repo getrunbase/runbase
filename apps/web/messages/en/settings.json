@@ -229,5 +229,19 @@
     "quota": {
       "link": "See plan and usage"
     }
+  },
+  "usage": {
+    "title": "Usage",
+    "description": "What this account uses against its effective limits. No limit means unlimited.",
+    "of": "{used} / {limit}",
+    "unlimited": "{used} · Unlimited",
+    "reached": "Limit reached",
+    "meters": {
+      "records": "Records (this workspace)",
+      "runsPerMonth": "Runs this month (all workspaces)",
+      "storageBytes": "File storage (all workspaces)",
+      "apiPerMinute": "API calls this minute (this workspace)",
+      "workspaces": "Workspaces"
+    }
   }
 }
