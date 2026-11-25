@@ -181,6 +181,31 @@ export function resolveAi(raw: unknown) {
   return { preset: p, model, keySecret };
 }
 
+// Per-block AI config (AI workflow blocks, `input.ai`): provider, model and
+// the workspace secret holding the key. `secret` (not `keySecret`) so the
+// secret usage scan picks it up like other block secret references.
+export const blockAiSchema = z.object({
+  provider: z.enum(AI_PRESETS.map((p) => p.id) as [AiProviderId, ...AiProviderId[]]),
+  model: z.string().trim().max(200).optional(),
+  secret: secretNameSchema.optional(),
+});
+export type BlockAi = z.infer<typeof blockAiSchema>;
+
+// Block config first; otherwise the fallback (legacy workspace setting) so
+// blocks saved before per-block config keep running. null = none.
+export function resolveBlockAi(
+  block: unknown,
+  fallback: ReturnType<typeof resolveAi>,
+): ReturnType<typeof resolveAi> {
+  const s = blockAiSchema.safeParse(block);
+  if (!s.success) return fallback;
+  return resolveAi({
+    provider: s.data.provider,
+    model: s.data.model,
+    keySecret: s.data.secret,
+  });
+}
+
 async function readRaw(ctx: TenantContext) {
   const [row] = await withTenant(ctx, (tx) =>
     tx

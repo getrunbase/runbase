@@ -105,7 +105,8 @@
       "format": "Format",
       "timezone": "Fuseau horaire",
       "occurredAt": "Date de l'événement",
-      "idempotencyKey": "Identifiant unique"
+      "idempotencyKey": "Identifiant unique",
+      "ai": "IA"
     },
     "operator": {
       "eq": "est égal à",
@@ -533,7 +534,16 @@
     "addColumn": "Colonne",
     "columnDefault": "colonne{n}",
     "limit": "Nombre maximum de fiches traitées",
-    "limitHelp": "Au-delà, le reste est ignoré (sortie « tronquée »)."
+    "limitHelp": "Au-delà, le reste est ignoré (sortie « tronquée »).",
+    "ai": {
+      "provider": "Fournisseur",
+      "providerPlaceholder": "Choisir une IA",
+      "model": "Modèle",
+      "key": "Clé API",
+      "noSecret": "Aucune clé API enregistrée dans ce workspace.",
+      "addKey": "Ajouter une clé",
+      "fallback": "Non défini : ce bloc utilise l'IA par défaut du workspace."
+    }
   },
   "pickers": {
     "chooseObject": "Choisir un objet",
