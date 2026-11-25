@@ -23,7 +23,6 @@ import {
   Plus,
   Settings,
   SquareFunction,
-  Table2,
   Workflow,
   type LucideIcon,
 } from "lucide-react";
@@ -69,22 +68,26 @@ const ICONS = {
   members: Users,
 } satisfies Record<string, LucideIcon>;
 
-// Tile colour by key (N4zA5 board).
+// Tile colour by key: one colour per sidebar group (lib/nav.ts).
 const TONES: Partial<Record<keyof typeof ICONS, Tone>> = {
   home: "yellow",
+  // Interfaces
   pages: "purple",
   interfaces: "purple",
   page: "purple",
+  // Activity
+  runs: "green",
+  approvals: "green",
+  errors: "green",
+  events: "green",
+  // Automations
+  workflows: "orange",
+  functions: "orange",
+  webhooks: "orange",
+  // Data
   objects: "blue",
   databases: "blue",
   queries: "blue",
-  events: "blue",
-  workflows: "orange",
-  runs: "orange",
-  approvals: "orange",
-  functions: "orange",
-  webhooks: "orange",
-  errors: "red",
 };
 
 export type NavEntry = {
@@ -94,7 +97,6 @@ export type NavEntry = {
   // Free lucide icon (kebab-case): takes precedence over `icon` (interfaces).
   lucide?: string;
   badge?: number;
-  items?: { title: string; url: string }[];
 };
 
 const isActive = (path: string, url: string) =>
@@ -160,39 +162,32 @@ export function NavMain({
 function Menu({ items, path }: { items: NavEntry[]; path: string }) {
   return (
     <SidebarMenu>
-      {items.map((item) => {
-        const Icon = ICONS[item.icon];
-        const tone = TONES[item.icon] ?? "neutral";
-        const active = isActive(path, item.url);
-        return (
-          <SidebarMenuItem key={item.url}>
-            <SidebarMenuButton asChild tooltip={item.title} isActive={active}>
-              <Link href={item.url}>
-                <IconTile
-                  tone={tone}
-                  icon={item.lucide ? <PageIcon name={item.lucide} /> : Icon}
-                />
-                <span>{item.title}</span>
-              </Link>
-            </SidebarMenuButton>
-            {!!item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
-            {item.items?.map((sub) => (
-              <SidebarMenuButton
-                key={sub.url}
-                asChild
-                tooltip={sub.title}
-                isActive={path === sub.url}
-                className="mt-px pl-7"
-              >
-                <Link href={sub.url}>
-                  <IconTile tone={tone} icon={Table2} />
-                  <span>{sub.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            ))}
-          </SidebarMenuItem>
-        );
-      })}
+      {items.map((item) => (
+        <MenuItem key={item.url} item={item} path={path} />
+      ))}
     </SidebarMenu>
+  );
+}
+
+function MenuItem({ item, path }: { item: NavEntry; path: string }) {
+  const Icon = ICONS[item.icon];
+  const tone = TONES[item.icon] ?? "neutral";
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        asChild
+        tooltip={item.title}
+        isActive={isActive(path, item.url)}
+      >
+        <Link href={item.url}>
+          <IconTile
+            tone={tone}
+            icon={item.lucide ? <PageIcon name={item.lucide} /> : Icon}
+          />
+          <span>{item.title}</span>
+        </Link>
+      </SidebarMenuButton>
+      {!!item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
+    </SidebarMenuItem>
   );
 }
