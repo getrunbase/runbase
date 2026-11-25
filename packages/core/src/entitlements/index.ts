@@ -20,6 +20,7 @@ export const QUOTA_KEYS = [
   "quota:aiBudgetUsd",
   "quota:retentionDays",
   "quota:maxRunDurationMs",
+  "quota:cronMinIntervalSec",
 ] as const;
 export type QuotaKey = (typeof QUOTA_KEYS)[number];
 export type FeatureKey = `feat:${string}`;
@@ -40,6 +41,7 @@ export function envEntitlements(): Resolved {
     "quota:aiBudgetUsd": e.QUOTA_MAX_AI_BUDGET_USD,
     "quota:retentionDays": e.RETENTION_DAYS,
     "quota:maxRunDurationMs": e.QUOTA_MAX_RUN_DURATION_MS,
+    "quota:cronMinIntervalSec": e.QUOTA_CRON_MIN_INTERVAL_SEC,
   };
   return {
     features: null,

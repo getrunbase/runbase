@@ -111,6 +111,8 @@ export const envSchema = z.object({
   QUOTA_MAX_AI_BUDGET_USD: z.coerce.number().positive().optional(),
   // Caps function timeouts and the execution time of a run (waits excluded).
   QUOTA_MAX_RUN_DURATION_MS: z.coerce.number().int().positive().optional(),
+  // Shortest allowed interval between two runs of a schedule trigger (s).
+  QUOTA_CRON_MIN_INTERVAL_SEC: z.coerce.number().int().positive().optional(),
   QUOTA_LIMITS_TTL_MS: int(15_000),
 
   // Emails

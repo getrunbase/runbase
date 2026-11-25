@@ -98,5 +98,6 @@
   "webhooks.invalidJson": "Payload JSON invalide",
   "webhooks.testFailed": "Échec du test : {detail}",
   "blocks.loopContextRequired": "loop : contexte de run requis",
-  "blocks.subWorkflowUnavailable": "workflow.run : impossible de lancer un sous-workflow ici"
+  "blocks.subWorkflowUnavailable": "workflow.run : impossible de lancer un sous-workflow ici",
+  "triggers.invalidCron": "Expression cron invalide : {cron}"
 }
