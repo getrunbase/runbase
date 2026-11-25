@@ -89,9 +89,14 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
 
-  test:
-    name: Test
+  # Tests run in parallel shards, each runner with its own Postgres and Redis.
+  test-shard:
+    name: Test shard (${{ matrix.shard }})
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [core-1/4, core-2/4, core-3/4, core-4/4, web, rest]
     # Integration tests: real Postgres and real Redis, as in local development.
     services:
       postgres:
@@ -138,7 +143,30 @@ jobs:
           deno-version: v2.9.8
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:migrate
-      - run: pnpm test
+      - name: Core tests (shard ${{ matrix.shard }})
+        if: startsWith(matrix.shard, 'core-')
+        run: TEST_SHARD="${TEST_SHARD#core-}" pnpm --filter @getrunbase/core test:shard
+        env:
+          TEST_SHARD: ${{ matrix.shard }}
+      - name: Web tests
+        if: matrix.shard == 'web'
+        run: pnpm --filter @getrunbase/web test
+      - name: Other package tests and licenses
+        if: matrix.shard == 'rest'
+        run: |
+          pnpm -r --if-present --filter '!@getrunbase/core' --filter '!@getrunbase/web' test
+          pnpm test:licenses
+
+  # Required status check: stays named "Test" for branch protection.
+  test:
+    name: Test
+    needs: test-shard
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - if: needs.test-shard.result != 'success'
+        run: echo "A test shard did not succeed (${{ needs.test-shard.result }})" && exit 1
+      - run: echo "All test shards passed"
 
   readme-links:
     name: README links
