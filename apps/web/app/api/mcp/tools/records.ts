@@ -42,6 +42,19 @@ export function defineRecordTools(server: McpServer, ctx: TenantContext) {
         };
       }),
   );
+  server.registerTool(
+    "files.delete",
+    {
+      description:
+        "Deletes an uploaded file by its key and frees its bytes from the workspace storage usage. Remove it from the record's `file` field too.",
+      inputSchema: z.object({ key: z.string().min(1) }),
+    },
+    ({ key }) =>
+      run(async () => {
+        await filesService.remove(ctx, key);
+        return { deleted: key };
+      }),
+  );
 
   server.registerTool(
     "objects.migrate",
