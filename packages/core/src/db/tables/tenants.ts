@@ -74,6 +74,8 @@ export const workspaces = pgTable(
     // Paused workspace (null = active): crons and triggers stop, data stays.
     // The next activity resumes it. Nothing pauses by default.
     pausedAt: timestamp("paused_at"),
+    // Last pause warning sent by the inactivity policy (see workspaces/inactivity.ts).
+    warnedAt: timestamp("warned_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (t) => [index("workspaces_organization_id_idx").on(t.organizationId)],
