@@ -24,11 +24,11 @@ after(async () => {
   setImmediate(() => process.exit(0));
 });
 
-// "npm" root: node_modules/@runbase-connectors/<name>, CLI skeleton.
+// "npm" root: node_modules/@getrunbase-connectors/<name>, CLI skeleton.
 async function npmRoot(): Promise<string> {
   const d = await mkdtemp(join(tmpdir(), "conn-npm-"));
   tmp.push(d);
-  const root = join(d, "node_modules", "@runbase-connectors");
+  const root = join(d, "node_modules", "@getrunbase-connectors");
   await mkdir(root, { recursive: true });
   await init("hello", root);
   return root;
@@ -94,7 +94,7 @@ test("static registry: catalog read without running the connector", async () => 
     JSON.stringify({
       connectors: [
         {
-          name: "@runbase-connectors/echo",
+          name: "@getrunbase-connectors/echo",
           version: "1.0.0",
           label: "Echo",
           description: "",
@@ -119,7 +119,7 @@ test("broken connector ignored, the others stay loaded", async () => {
   await mkdir(join(root, "broken"));
   await writeFile(
     join(root, "broken/package.json"),
-    JSON.stringify({ name: "@runbase-connectors/broken", runbase: {} }),
+    JSON.stringify({ name: "@getrunbase-connectors/broken", runbase: {} }),
   );
   await writeFile(
     join(root, "broken/index.ts"),

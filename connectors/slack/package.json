@@ -1,5 +1,5 @@
 {
-  "name": "@runbase-connectors/slack",
+  "name": "@getrunbase-connectors/slack",
   "version": "0.1.0",
   "description": "Post messages to Slack channels (Web API, bot token).",
   "license": "MIT",

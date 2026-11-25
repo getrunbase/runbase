@@ -20,7 +20,7 @@ test("init then test: the skeleton passes", async () => {
     const pkg = JSON.parse(
       await readFile(join(dir, "acme/package.json"), "utf8"),
     );
-    assert.equal(pkg.name, "@runbase-connectors/acme");
+    assert.equal(pkg.name, "@getrunbase-connectors/acme");
     assert.equal(pkg.license, "MIT");
     assert.equal(
       await main(["node", "test", join(dir, "acme")], io),
@@ -62,7 +62,7 @@ test("registry: writes then checks registry.json", async () => {
     assert.equal(await main(["node", "registry", dir], io), 0);
     assert.equal(await main(["node", "registry", dir, "--check"], io), 0);
     const reg = JSON.parse(await readFile(join(dir, "registry.json"), "utf8"));
-    assert.equal(reg.connectors[0].name, "@runbase-connectors/one");
+    assert.equal(reg.connectors[0].name, "@getrunbase-connectors/one");
     assert.equal(reg.connectors[0].path, "one");
     assert.equal(reg.connectors[0].nodes[0].id, "one.hello");
   } finally {
@@ -94,7 +94,7 @@ test("bundle: self-contained module without imports", async () => {
   }
 });
 
-test("publish: refuses a package outside the @runbase-connectors scope", async () => {
+test("publish: refuses a package outside the @getrunbase-connectors scope", async () => {
   const dir = await mkdtemp(join(tmpdir(), "node-cli-"));
   try {
     const io = capture();

@@ -1,6 +1,6 @@
 // External connectors: `defineNode` nodes (@getrunbase/node-sdk) seen
 // as `node.<id>` blocks. Discovered in root folders (connectors/
-// of the repo, node_modules/@runbase-connectors), bundled (esbuild) then
+// of the repo, node_modules/@getrunbase-connectors), bundled (esbuild) then
 // run in the functions Deno sandbox: the core only knows the
 // contract, no connector-specific logic.
 import { stat, readFile } from "node:fs/promises";
@@ -22,13 +22,13 @@ import { logger } from "../logger";
 export const NODE_PREFIX = "node.";
 
 // Root folders: RUNBASE_CONNECTORS_DIRS (separated by `:`), otherwise the nearest
-// `connectors/` and `node_modules/@runbase-connectors/` walking up
+// `connectors/` and `node_modules/@getrunbase-connectors/` walking up
 // from the current directory.
 export async function connectorRoots(): Promise<string[]> {
   const env = process.env.RUNBASE_CONNECTORS_DIRS;
   if (env !== undefined) return env.split(delimiter).filter(Boolean);
   const roots: string[] = [];
-  for (const rel of ["connectors", join("node_modules", "@runbase-connectors")])
+  for (const rel of ["connectors", join("node_modules", "@getrunbase-connectors")])
     for (let d = process.cwd(); ; d = dirname(d)) {
       const p = join(d, rel);
       if ((await stat(p).catch(() => null))?.isDirectory()) {

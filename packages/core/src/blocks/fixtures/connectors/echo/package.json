@@ -1,5 +1,5 @@
 {
-  "name": "@runbase-connectors/echo",
+  "name": "@getrunbase-connectors/echo",
   "version": "1.0.0",
   "description": "Test fixture connector.",
   "license": "MIT",

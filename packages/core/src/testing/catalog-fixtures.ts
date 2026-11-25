@@ -88,7 +88,7 @@ export function catalogFixture(): string {
   mkdirSync(join(root, "connectors"), { recursive: true });
   write(join(root, "connectors", "registry.json"), {
     connectors: connectors.map(([slug, label, nodes]) => ({
-      name: `@runbase-connectors/${slug}`,
+      name: `@getrunbase-connectors/${slug}`,
       version: "0.1.0",
       label,
       path: slug,

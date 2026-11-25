@@ -14,7 +14,7 @@ import { pathToFileURL } from "node:url";
 import { build, type Plugin } from "esbuild";
 import { nodesOf, type Node, type NodeManifest } from "./index.ts";
 
-export const SCOPE = "@runbase-connectors/";
+export const SCOPE = "@getrunbase-connectors/";
 // Maximum bundled code size (dependencies included).
 export const MAX_BUNDLE = 2_000_000;
 
@@ -56,7 +56,7 @@ export async function readConnector(
   };
 }
 
-// Connector subfolders of a root folder (connectors/, node_modules/@runbase-connectors/).
+// Connector subfolders of a root folder (connectors/, node_modules/@getrunbase-connectors/).
 export async function listConnectors(root: string): Promise<ConnectorInfo[]> {
   let names: string[];
   try {
