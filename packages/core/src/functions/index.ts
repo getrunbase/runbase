@@ -21,6 +21,7 @@ import { isUuid } from "../lib/uuid";
 import { recordsService } from "../records";
 import { eventsService, type EventFilter, type EventInput } from "../events";
 import { audit } from "../audit";
+import { countRun } from "../quotas";
 import { functionLogs, functions } from "../db/schema";
 import { withTenant, type TenantContext, type Tx } from "../tenant";
 
@@ -437,6 +438,8 @@ export const functionsService = {
     await requireScope(ctx, "write");
     const f = await withTenant(ctx, (tx) => find(tx, ctx, name));
     if (!f) throw unknownFunction(name);
+    // A function call outside a workflow counts as one run (quota:runsPerMonth).
+    await countRun(ctx);
     const r = await runLogged(ctx, f, input, {
       source: "page",
       secrets: await decryptAll(ctx),

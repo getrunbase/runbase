@@ -691,6 +691,14 @@
     "en": "Workspace id or name (default: active workspace)",
     "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
   },
+  "mcp.files.delete": {
+    "en": "Deletes an uploaded file by its key and frees its bytes from the workspace storage usage. Remove it from the record's `file` field too.",
+    "fr": "Supprime un fichier téléversé par sa clé et libère ses octets dans l'usage de stockage de l'espace de travail. Retirez-le aussi du champ `file` de l'enregistrement."
+  },
+  "mcp.files.delete.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
   "mcp.files.download": {
     "en": "Reads an uploaded file by its key (value of a file field): returns { name, type, base64 }.",
     "fr": "Lit un fichier téléversé par sa clé (valeur d'un champ fichier) : renvoie { name, type, base64 }."

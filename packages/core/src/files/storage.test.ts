@@ -66,7 +66,7 @@ test("s3 (mocked client): commands sent, 404 = missing", async () => {
           Body: { transformToByteArray: async () => file("hi").bytes },
         };
       if (cmd.constructor.name === "HeadObjectCommand")
-        return { ContentType: "text/plain" };
+        return { ContentType: "text/plain", ContentLength: 2 };
       return {};
     },
   } as unknown as S3Client;
@@ -83,7 +83,7 @@ test("s3 (mocked client): commands sent, 404 = missing", async () => {
   });
   assert.equal(Buffer.from((await s.get("ws/a"))!.bytes).toString(), "hi");
   assert.equal(await s.get("ws/missing"), null);
-  assert.deepEqual(await s.head("ws/a"), { type: "text/plain" });
+  assert.deepEqual(await s.head("ws/a"), { type: "text/plain", size: 2 });
   assert.equal(await s.head("ws/missing"), null);
   await s.remove("ws/a");
   assert.equal(sent.at(-1)!.name, "DeleteObjectCommand");
@@ -129,7 +129,7 @@ test("disk -> storage migration: copy, idempotent, dry-run without writes", asyn
   assert.equal(await dest.head("ws1/u1/a.txt"), null);
   const r1 = await migrateLocalFiles(root, dest);
   assert.deepEqual([r1.copied, r1.skipped], [2, 0]);
-  assert.deepEqual(await dest.head("ws2/u2/b.png"), { type: "image/png" });
+  assert.deepEqual(await dest.head("ws2/u2/b.png"), { type: "image/png", size: 1 });
   assert.equal(
     Buffer.from((await dest.get("ws1/u1/a.txt"))!.bytes).toString(),
     "a",
@@ -150,10 +150,10 @@ test("local: hand-written `.type` with a newline, type cleaned", async () => {
   await writeFile(join(root, "ws1/u1/c.png.type"), "image/png\n");
   const src = localStorage(root);
   assert.equal((await src.get("ws1/u1/c.png"))!.type, "image/png");
-  assert.deepEqual(await src.head("ws1/u1/c.png"), { type: "image/png" });
+  assert.deepEqual(await src.head("ws1/u1/c.png"), { type: "image/png", size: 1 });
   const dest = memoryStorage();
   assert.equal((await migrateLocalFiles(root, dest)).copied, 1);
-  assert.deepEqual(await dest.head("ws1/u1/c.png"), { type: "image/png" });
+  assert.deepEqual(await dest.head("ws1/u1/c.png"), { type: "image/png", size: 1 });
 });
 
 // Real MinIO: docker compose --profile files up -d minio
@@ -185,7 +185,7 @@ test(
       Buffer.from((await s.get("ws/1/a.txt"))!.bytes).toString(),
       "bonjour",
     );
-    assert.deepEqual(await s.head("ws/1/a.txt"), { type: "text/plain" });
+    assert.deepEqual(await s.head("ws/1/a.txt"), { type: "text/plain", size: 7 });
     assert.equal(await s.get("ws/1/none"), null);
     const r = await fetch(
       await s.signedGetUrl!("ws/1/a.txt", {

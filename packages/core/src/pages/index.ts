@@ -2,12 +2,14 @@
 // `entry` entry point). The `pages` columns hold the draft; publishing
 // pins an immutable snapshot in `page_versions`, pointed to by currentVersion.
 import { createHash } from "node:crypto";
-import { and, count, desc, eq, gt, lt, sql } from "drizzle-orm";
+import { and, count, desc, eq, gt, isNotNull, lt, sql } from "drizzle-orm";
 import { z } from "zod";
 import { requireScope } from "../api-keys";
 import { audit } from "../audit";
 import { pageErrors, pages, pageVersions, type PageFiles } from "../db/schema";
 import { appError } from "../errors/app-error";
+import { db } from "../db/client";
+import { checkQuota } from "../entitlements";
 import { withTenant, type TenantContext, type Tx } from "../tenant";
 import {
   compilePackage,
@@ -85,6 +87,21 @@ async function version(tx: Tx, pageId: string, v: number) {
 
 // Pins the draft as a new published version.
 async function publishRow(tx: Tx, ctx: TenantContext, p: PageRow) {
+  // First publish: counts against quota:pages (published pages of the
+  // organization, every workspace). Owner connection: RLS scopes the
+  // tenant transaction to one workspace.
+  if (p.currentVersion == null) {
+    const [{ n }] = (await db
+      .select({ n: count() })
+      .from(pages)
+      .where(
+        and(
+          eq(pages.organizationId, ctx.organizationId),
+          isNotNull(pages.currentVersion),
+        ),
+      )) as [{ n: number }];
+    await checkQuota(ctx, "quota:pages", n + 1);
+  }
   const [last] = await tx
     .select({ version: pageVersions.version })
     .from(pageVersions)
