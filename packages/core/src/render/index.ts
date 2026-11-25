@@ -90,7 +90,9 @@ export const shotKey = (
   s: { viewport: Viewport; theme: Theme },
 ) => `${workspaceId}/renders/${jobId}/${s.viewport}-${s.theme}.png`;
 
-const WAIT_MS = 90_000;
+// Below typical MCP client request timeouts (~30 s), so the caller gets
+// platform.renderTimeout instead of a generic client-side timeout.
+const WAIT_MS = 25_000;
 // Bounded queue: beyond that, immediate refusal rather than an endless wait.
 const MAX_WAITING = 16;
 
