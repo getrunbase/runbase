@@ -21,15 +21,13 @@
       },
       "agent": {
         "title": "Connect an AI agent",
-        "description": "Your agent (Claude…) drives everything over MCP with the URL below.",
+        "description": "Your AI agent (ChatGPT, Claude, Gemini…) runs everything with the link below.",
         "cta": "Create a key"
       }
     },
     "connect": {
-      "title": "Connect your agent",
-      "copyUrl": "Copy the MCP server URL",
-      "copyCommand": "Copy the Claude Code command",
-      "help": "Claude Desktop or claude.ai: Settings, Connectors, add the URL. Scripts: send an API key in a header. Details in <link>Settings</link>."
+      "withAi": "Set up with AI",
+      "byHand": "Set up by hand"
     }
   },
   "audit": {

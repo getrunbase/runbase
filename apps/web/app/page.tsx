@@ -20,7 +20,13 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { CopyField } from "@/components/copy-button";
+import { ConnectAgent } from "@/components/connect-agent";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Count, Kpi } from "@/components/ds/atoms";
 import { type Tone, toneFg } from "@/components/ds/tone";
 import { PageHeader } from "@/components/page-header";
@@ -136,67 +142,58 @@ export default async function Home() {
             </p>
             <Progress value={(done / steps.length) * 100} className="mt-2" />
           </div>
-          <div className="flex flex-col gap-4">
-            <ol className="divide-y">
-              {steps.map((s) => (
-                <li
-                  key={s.key}
-                  className="flex flex-wrap items-center gap-3 py-3"
-                >
-                  {s.done ? (
-                    <CheckCircle2 className="text-primary size-5 shrink-0" />
-                  ) : (
-                    <Circle className="text-muted-foreground size-5 shrink-0" />
-                  )}
-                  <div className="min-w-48 flex-1">
-                    <p
-                      className={
-                        s.done
-                          ? "text-muted-foreground text-sm line-through"
-                          : "text-sm font-medium"
-                      }
+          <Accordion type="single" collapsible defaultValue="ai">
+            <AccordionItem value="ai">
+              <AccordionTrigger>
+                {t("onboarding.connect.withAi")}
+              </AccordionTrigger>
+              <AccordionContent>
+                <ConnectAgent mcpUrl={mcpUrl} />
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="hand">
+              <AccordionTrigger>
+                {t("onboarding.connect.byHand")}
+              </AccordionTrigger>
+              <AccordionContent>
+                <ol className="divide-y">
+                  {steps.map((s) => (
+                    <li
+                      key={s.key}
+                      className="flex flex-wrap items-center gap-3 py-3"
                     >
-                      {t(`onboarding.steps.${s.key}.title`)}
-                    </p>
-                    <p className="text-muted-foreground text-sm">
-                      {t(`onboarding.steps.${s.key}.description`)}
-                    </p>
-                  </div>
-                  {!s.done && (s.key !== "agent" || isAdmin) && (
-                    <Button asChild size="sm" variant="secondary">
-                      <Link href={s.href}>
-                        {t(`onboarding.steps.${s.key}.cta`)}
-                      </Link>
-                    </Button>
-                  )}
-                </li>
-              ))}
-            </ol>
-            {!steps.at(-1)!.done && (
-              <div className="space-y-2 rounded-md border p-3">
-                <p className="text-sm font-medium">
-                  {t("onboarding.connect.title")}
-                </p>
-                <CopyField
-                  value={mcpUrl}
-                  label={t("onboarding.connect.copyUrl")}
-                />
-                <CopyField
-                  value={`claude mcp add --transport http runbase ${mcpUrl}`}
-                  label={t("onboarding.connect.copyCommand")}
-                />
-                <p className="text-muted-foreground text-sm">
-                  {t.rich("onboarding.connect.help", {
-                    link: (c) => (
-                      <Link href="/settings/general" className="underline">
-                        {c}
-                      </Link>
-                    ),
-                  })}
-                </p>
-              </div>
-            )}
-          </div>
+                      {s.done ? (
+                        <CheckCircle2 className="text-primary size-5 shrink-0" />
+                      ) : (
+                        <Circle className="text-muted-foreground size-5 shrink-0" />
+                      )}
+                      <div className="min-w-48 flex-1">
+                        <p
+                          className={
+                            s.done
+                              ? "text-muted-foreground text-sm line-through"
+                              : "text-sm font-medium"
+                          }
+                        >
+                          {t(`onboarding.steps.${s.key}.title`)}
+                        </p>
+                        <p className="text-muted-foreground text-sm">
+                          {t(`onboarding.steps.${s.key}.description`)}
+                        </p>
+                      </div>
+                      {!s.done && (s.key !== "agent" || isAdmin) && (
+                        <Button asChild size="sm" variant="secondary">
+                          <Link href={s.href}>
+                            {t(`onboarding.steps.${s.key}.cta`)}
+                          </Link>
+                        </Button>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </section>
       )}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">

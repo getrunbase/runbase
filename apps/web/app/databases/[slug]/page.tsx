@@ -121,7 +121,7 @@ export default async function DatabasePage({
           </div>
           <div className="bg-tag-purple-bg text-tag-purple-fg flex items-center gap-2.5 rounded-lg px-4 py-3 text-sm">
             <Sparkles className="size-3.75 shrink-0" />
-            <span className="flex-1">{t("detail.claudeHint")}</span>
+            <span className="flex-1">{t("detail.agentHint")}</span>
           </div>
         </TabsContent>
         <TabsContent value="schema">

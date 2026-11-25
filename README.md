@@ -62,11 +62,19 @@ docker compose -f docker-compose.selfhost.yml up -d --wait
 docker compose -f docker-compose.selfhost.yml exec worker pnpm admin:create you@example.com
 ```
 
-Open `http://localhost:3000/login`, then connect your agent:
+Open `http://localhost:3000/login`, then connect your AI agent with the URL
+`http://localhost:3000/api/mcp` (sign-in through the browser):
 
 ```sh
-claude mcp add --transport http runbase http://localhost:3000/api/mcp
+claude mcp add --transport http runbase http://localhost:3000/api/mcp   # Claude Code, then /mcp
+codex mcp add runbase --url http://localhost:3000/api/mcp               # Codex, then codex mcp login runbase
+gemini mcp add --transport http runbase http://localhost:3000/api/mcp   # Gemini CLI, then /mcp auth runbase
 ```
+
+Cursor: add `{"mcpServers":{"runbase":{"url":"http://localhost:3000/api/mcp"}}}` to `~/.cursor/mcp.json`.
+Claude Desktop / claude.ai: Settings → Connectors → Add custom connector.
+ChatGPT (web): chatgpt.com/plugins → Add custom MCP server. Any other MCP client:
+the URL with OAuth, or an API key as `Authorization: Bearer <key>`.
 
 HTTPS, backups and upgrades: [self-hosting guide](docs/self-hosting.md).
 

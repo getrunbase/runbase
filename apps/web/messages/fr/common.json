@@ -117,5 +117,35 @@
     "title": "Barre latérale",
     "description": "Affiche la barre latérale mobile.",
     "toggle": "Afficher ou masquer la barre latérale"
+  },
+  "connectAgent": {
+    "url": "Le lien de votre espace",
+    "claude": {
+      "code": "Claude Code : lancez cette commande.",
+      "codeLogin": "Puis tapez <code>/mcp</code> dans Claude Code et connectez-vous.",
+      "desktop": "Claude Desktop ou claude.ai : Paramètres > Connecteurs > Ajouter un connecteur personnalisé, collez le lien ci-dessus."
+    },
+    "chatgpt": {
+      "steps": "Sur chatgpt.com/plugins, cliquez sur « + » puis « Add custom MCP server ». Collez le lien ci-dessus, choisissez OAuth, acceptez l'avertissement et cliquez sur « Create as a plugin ». Dans une conversation, tapez @ pour l'utiliser.",
+      "note": "Web uniquement. Les offres Business et Enterprise/Edu peuvent lire et modifier les données ; Pro peut seulement lire."
+    },
+    "gemini": {
+      "cli": "Gemini CLI : lancez cette commande.",
+      "cliLogin": "Puis tapez <code>/mcp auth runbase</code> pour vous connecter.",
+      "web": "Application Gemini : gemini.google.com > Paramètres > Applications connectées > Ajouter une application personnalisée, collez le lien ci-dessus (disponibilité limitée)."
+    },
+    "cursor": {
+      "steps": "Ajoutez ceci à <code>~/.cursor/mcp.json</code>.",
+      "login": "Cursor vous demande de vous connecter à la première utilisation."
+    },
+    "codex": {
+      "steps": "Lancez ces deux commandes pour ajouter Runbase et vous connecter."
+    },
+    "other": {
+      "tab": "Autre",
+      "oauth": "Tout agent IA compatible MCP : collez le lien ci-dessus. Il se connecte via OAuth.",
+      "key": "Outils sans connexion (scripts, CI) : envoyez une clé API dans cet en-tête.",
+      "keyLink": "Créez une clé dans <link>Clés API</link>."
+    }
   }
 }

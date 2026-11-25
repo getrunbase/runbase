@@ -11,7 +11,7 @@
       "version": "Version",
       "modified": "Modifiée"
     },
-    "hint": "Décrivez à Claude (via le MCP) ce que la fonction doit faire : il écrit le code, les tests et le schéma d'entrée."
+    "hint": "Décrivez à votre agent IA ce que la fonction doit faire : il écrit le code, les tests et le schéma d'entrée."
   },
   "form": {
     "name": "Nom",

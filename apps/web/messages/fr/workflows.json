@@ -1,7 +1,7 @@
 {
   "list": {
     "title": "Workflows",
-    "description": "Les automatisations de l'espace, proposées par Claude ou créées à la main.",
+    "description": "Les automatisations de l'espace, proposées par votre agent IA ou créées à la main.",
     "namePlaceholder": "Nom du workflow",
     "emptyTitle": "Aucun workflow",
     "emptyDescription": "Donnez un nom à votre premier workflow ci-dessus pour le créer.",

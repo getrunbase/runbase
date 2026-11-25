@@ -26,15 +26,30 @@ sauvegardes et les mises à jour.
 
 ## 2. Connecter un agent
 
-Le point de terminaison MCP est `http://localhost:3000/api/mcp`. Les clients MCP
-compatibles OAuth (Claude Code, Claude Desktop, Cursor…) se connectent via le
-navigateur. Pour les autres clients, créez une clé d'API dans
-**Settings → API keys** et envoyez-la sous la forme
-`Authorization: Bearer <key>`.
+Le point de terminaison MCP est `http://localhost:3000/api/mcp`. Les clients se connectent via le
+navigateur (OAuth). Choisissez le vôtre :
 
-```sh
-claude mcp add --transport http runbase http://localhost:3000/api/mcp
-```
+- **Claude Code** : `claude mcp add --transport http runbase http://localhost:3000/api/mcp`, puis
+  `/mcp` dans Claude Code pour se connecter.
+- **Claude Desktop / claude.ai** : Paramètres → Connecteurs → Ajouter un
+  connecteur personnalisé, collez l'URL.
+- **ChatGPT** (web) : chatgpt.com/plugins → **+** → **Add custom MCP server**,
+  collez l'URL, choisissez OAuth, acceptez l'avertissement, **Create as a
+  plugin**. Tapez `@` dans une conversation pour l'utiliser. Les outils
+  d'écriture demandent une offre Business ou Enterprise/Edu (Pro : lecture
+  seule).
+- **Gemini CLI** : `gemini mcp add --transport http runbase http://localhost:3000/api/mcp`, puis
+  `/mcp auth runbase`. L'application web Gemini (Paramètres → Applications
+  connectées → Ajouter une application personnalisée) a une disponibilité
+  limitée.
+- **Cursor** : ajoutez `{"mcpServers":{"runbase":{"url":"http://localhost:3000/api/mcp"}}}` à
+  `~/.cursor/mcp.json`. Cursor demande de se connecter à la première
+  utilisation.
+- **Codex** : `codex mcp add runbase --url http://localhost:3000/api/mcp`, puis
+  `codex mcp login runbase`.
+- **Autres clients MCP** : utilisez l'URL (Streamable HTTP, OAuth), ou créez
+  une clé d'API dans **Settings → API keys** et envoyez-la sous la forme
+  `Authorization: Bearer <key>`.
 
 ## 3. Construire quelque chose
 
