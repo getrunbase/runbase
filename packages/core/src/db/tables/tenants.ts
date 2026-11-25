@@ -68,6 +68,12 @@ export const workspaces = pgTable(
       }>()
       .default({})
       .notNull(),
+    // Last activity (UI session, API/MCP call, manual run), see
+    // workspaces/activity.ts. Null = no activity recorded yet.
+    lastActiveAt: timestamp("last_active_at"),
+    // Paused workspace (null = active): crons and triggers stop, data stays.
+    // The next activity resumes it. Nothing pauses by default.
+    pausedAt: timestamp("paused_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (t) => [index("workspaces_organization_id_idx").on(t.organizationId)],

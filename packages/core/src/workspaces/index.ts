@@ -13,6 +13,8 @@ import {
 import { decryptAll, putSecret } from "../secrets";
 import { checkQuota } from "../entitlements";
 
+export * from "./activity";
+
 const ws = (id: string) => ({ type: "workspace", id });
 
 // External block settings.

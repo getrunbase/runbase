@@ -9,6 +9,7 @@ import {
   resolveUserContext,
   resolveUserSessionCached,
 } from "@getrunbase/core/tenant";
+import { touchActivitySoon } from "@getrunbase/core/workspaces";
 import {
   SHOT_HEADER,
   verifyShotToken,
@@ -68,6 +69,8 @@ export async function getTenant(
     throw appError("web.noOrganization", "No organization");
   }
   const { ctx, role } = us;
+  // UI session: workspace activity (throttled, best-effort).
+  touchActivitySoon(ctx.workspaceId);
   if (!opts.shot && !opts.pages && role === "end_user") redirect("/p");
   return { session, ctx, shot: null as ShotClaims | null, role };
 }
