@@ -90,3 +90,20 @@ test("checkQuota: allows up to the cap, then a 429 QuotaError", async () => {
     return true;
   });
 });
+
+test("checkQuota: points to a plan upgrade when the host provides billing.account", async () => {
+  registerExtensions({
+    billing: {
+      entitlements: async () => ({ features: [], quotas: { "quota:records": 1 } }),
+      reportUsage: async () => {},
+      account: async () => ({ plan: "Test" }),
+    },
+  });
+  await assert.rejects(checkQuota({ organizationId: "u" }, "quota:records", 2), (e) => {
+    assert.ok(e instanceof QuotaError);
+    assert.equal(e.code, "quotas.limitUpgrade");
+    assert.match(e.message, /Upgrade your plan/);
+    assert.doesNotMatch(e.message, /administrator/);
+    return true;
+  });
+});

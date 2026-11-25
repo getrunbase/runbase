@@ -40,6 +40,7 @@
   "overview.purgeConfirm": "Purge des données de test : opération irréversible, relancer avec confirm: true.",
   "quotas.apiPerMinute": "Limite atteinte : {max} appels API par minute dans ce workspace. Réessayez dans {wait} s ou augmentez la limite dans Paramètres.",
   "quotas.exceedsLimit": "{key} : {value} dépasse la limite de votre compte ({max}). Contactez votre administrateur pour l'augmenter.",
+  "quotas.limitUpgrade": "Limite atteinte : {quota} est plafonné à {max} pour votre compte. Changez de plan dans Paramètres > Plan et usage pour l'augmenter.",
   "quotas.limit": "Limite atteinte : {quota} est plafonné à {max} pour votre compte. Contactez votre administrateur pour l'augmenter.",
   "quotas.cronMinInterval": "Planification trop fréquente : exécution toutes les {interval} s, l'intervalle minimum de votre compte est de {min} s. Choisissez une planification moins fréquente.",
   "quotas.records": "Quota atteint : {max} records maximum dans ce workspace. Supprimez des records ou augmentez le quota dans Paramètres.",

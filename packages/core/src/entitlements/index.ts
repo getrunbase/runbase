@@ -106,11 +106,21 @@ export async function checkQuota(
 ) {
   const max = await quotaOf(ctx.organizationId, key);
   if (next > max) {
-    const it = errorItem(
-      "quotas.limit",
-      "Limit reached: {quota} is capped at {max} for your account. Contact your administrator to raise it.",
-      { quota: key.slice(6), max: fmt(max) },
-    );
+    const params = { quota: key.slice(6), max: fmt(max) };
+    // The host provides a billing page (billing.account): point to a plan
+    // change. Self-host without extension: the administrator raises it.
+    const it =
+      typeof getExtensions().billing.account === "function"
+        ? errorItem(
+            "quotas.limitUpgrade",
+            "Limit reached: {quota} is capped at {max} for your account. Upgrade your plan in Settings > Plan & usage to raise it.",
+            params,
+          )
+        : errorItem(
+            "quotas.limit",
+            "Limit reached: {quota} is capped at {max} for your account. Contact your administrator to raise it.",
+            params,
+          );
     throw new QuotaError(it.message, it);
   }
   return max;
