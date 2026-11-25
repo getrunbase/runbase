@@ -15,5 +15,9 @@
   "code": {
     "leftRuntime": "The component left its runtime: rendering stopped.",
     "previewUnavailable": "Code component: preview unavailable here."
+  },
+  "badge": {
+    "text": "Powered by Runbase",
+    "label": "Powered by Runbase (opens in a new tab)"
   }
 }

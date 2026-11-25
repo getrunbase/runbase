@@ -4,6 +4,8 @@ import { getTenant } from "@/lib/tenant";
 import { BuilderBar } from "./builder-bar";
 import { LivePage } from "./live";
 import { pageOr404 } from "./load";
+import { showBadge } from "./badge";
+import { PoweredBadge } from "./powered-badge";
 import { pageTitle } from "@/lib/page-title";
 
 export const generateMetadata = pageTitle("page");
@@ -38,6 +40,7 @@ export default async function PageView({
       preview={draft}
     />
   );
+  const badge = await showBadge(ctx, { draft, shot: !!shot });
   return (
     <main
       className={
@@ -48,6 +51,7 @@ export default async function PageView({
     >
       {bar}
       <LivePage id={page.id} draft={draft} />
+      {badge && <PoweredBadge />}
     </main>
   );
 }
