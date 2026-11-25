@@ -22,6 +22,7 @@ import { withTenant, type TenantContext, type Tx } from "../tenant";
 import { appError, errorItem } from "../errors/app-error";
 import { env } from "../env";
 import { getExtensions } from "../extensions";
+import { touchActivitySoon } from "../workspaces/activity";
 
 export { QuotaError };
 
@@ -174,6 +175,8 @@ function cachedLimits(ctx: TenantContext) {
 
 export async function rateLimit(ctx: TenantContext, kind: keyof typeof kinds) {
   const { key } = kinds[kind];
+  // An API/MCP call is workspace activity (resumes a paused workspace).
+  if (kind === "api") touchActivitySoon(ctx.workspaceId);
   const limits = await cachedLimits(ctx);
   const max = limits[key];
   const minute = Math.floor(Date.now() / 60_000);

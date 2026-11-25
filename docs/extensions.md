@@ -61,6 +61,26 @@ API: `getExtensions()` returns the active implementations,
 `registerExtensions(partial)` replaces some of them, `track(event, props)`
 sends an event best-effort (a failing sink is logged, never thrown).
 
+## Workspace activity and pause
+
+The core records the last activity of each workspace (`workspaces.last_active_at`):
+a UI session, an API/MCP/ingestion call, or a manual run. Writes are throttled
+to one per minute per workspace and process. Scheduled and event-triggered runs
+are not activity, so an idle workspace stays idle.
+
+A workspace can be paused (`workspaces.paused_at`): crons and triggers skip it,
+records, workflows and settings stay untouched, and the next activity resumes
+it. Nothing pauses by default and self-hosted instances never pause on their own.
+The policy belongs to an extension, through `@getrunbase/core/workspaces`:
+
+| Function                     | Purpose                                              |
+| ---------------------------- | ---------------------------------------------------- |
+| `inactiveWorkspaces(before)` | Active workspaces with no activity since `before`.   |
+| `pauseWorkspace(id)`         | Pause: crons and triggers stop.                      |
+| `resumeWorkspace(id)`        | Resume without recording an activity.                |
+| `isPaused(id)`               | Current state.                                       |
+| `touchActivity(id)`          | Record an activity (resumes a paused workspace).     |
+
 ## Loading
 
 Set `RUNBASE_EXTENSIONS` to a package name or a file path. The web app (Next.js
