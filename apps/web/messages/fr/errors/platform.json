@@ -41,6 +41,7 @@
   "quotas.apiPerMinute": "Limite atteinte : {max} appels API par minute dans ce workspace. Réessayez dans {wait} s ou augmentez la limite dans Paramètres.",
   "quotas.exceedsLimit": "{key} : {value} dépasse la limite de votre compte ({max}). Contactez votre administrateur pour l'augmenter.",
   "quotas.limit": "Limite atteinte : {quota} est plafonné à {max} pour votre compte. Contactez votre administrateur pour l'augmenter.",
+  "quotas.cronMinInterval": "Planification trop fréquente : exécution toutes les {interval} s, l'intervalle minimum de votre compte est de {min} s. Choisissez une planification moins fréquente.",
   "quotas.records": "Quota atteint : {max} records maximum dans ce workspace. Supprimez des records ou augmentez le quota dans Paramètres.",
   "quotas.runsPerMonth": "Quota atteint : {max} exécutions par mois pour votre compte. Attendez le mois prochain ou augmentez le quota.",
   "quotas.storageBytes": "Quota atteint : {max} octets de stockage de fichiers pour votre compte. Supprimez des fichiers ou augmentez le quota.",

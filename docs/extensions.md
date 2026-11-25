@@ -53,6 +53,7 @@ an offer only changes the extension, never this repository.
 | `quota:aiTrialUsd`    | free AI credit on the platform key       | `QUOTA_AI_TRIAL_USD` (5.4) |
 | `quota:retentionDays` | retention purge (none when unset)        | `RETENTION_DAYS`           |
 | `quota:maxRunDurationMs` | function timeouts and run execution time (waits excluded) | `QUOTA_MAX_RUN_DURATION_MS` |
+| `quota:cronMinIntervalSec` | workflow save (schedule trigger)    | `QUOTA_CRON_MIN_INTERVAL_SEC` |
 
 A new quota type is still a public change, because the core must count it.
 
