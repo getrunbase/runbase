@@ -26,7 +26,7 @@ import { componentsService } from "../components";
 import { webhooksService } from "../webhooks";
 import { viewsService } from "../views";
 import { filesService } from "../files";
-import { billingService, quotasService } from "../quotas";
+import { billingService, quotasService, usageService } from "../quotas";
 import { overviewService } from "../overview";
 import { templatesService } from "../templates";
 import { catalogService } from "../catalog/service";
@@ -58,6 +58,7 @@ export const services = {
   files: filesService,
   quotas: quotasService,
   billing: billingService,
+  usage: usageService,
   overview: overviewService,
   templates: templatesService,
   catalog: catalogService,
@@ -87,6 +88,8 @@ export const mcpTools: {
   quotas: { get: "quotas.get", set: "quotas.set" },
   // Settings › Plan and usage page (UI): agents read quotas.get.
   billing: { enabled: null, get: null },
+  // Settings › Usage: web page only.
+  usage: { get: null },
   // runbase-template.json format.
   templates: { export: "template.export", import: "template.import" },
   // Public catalog: read through /api/catalog, without MCP.
