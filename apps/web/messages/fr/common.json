@@ -100,6 +100,7 @@
     "runs": "Exécutions",
     "apiKeys": "Clés API",
     "audit": "Journal d'audit",
+    "usage": "Usage",
     "billing": "Facturation",
     "general": "Paramètres généraux",
     "members": "Membres",

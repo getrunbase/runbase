@@ -4,12 +4,12 @@
 // the organization entitlements (../entitlements):
 // effective = min(preference, cap). Rate: fixed one-minute window in
 // Redis (counter shared between web and worker instances).
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, gte, sql } from "drizzle-orm";
 import type { Redis } from "ioredis";
 import { requireScope } from "../api-keys";
 import { audit } from "../audit";
 import { busConnection } from "../bus";
-import { pages, workspaceUsage, workspaces } from "../db/schema";
+import { pages, records, workflowRuns, workspaceUsage, workspaces } from "../db/schema";
 import { db } from "../db/client";
 import {
   entitlementsFor,
@@ -463,6 +463,80 @@ export const billingService = {
       portalUrl: account.portalUrl ?? null,
       items,
     };
+  },
+};
+
+// Settings › Usage: always available (self-host included). Usage against
+// effective limits; limit null = unlimited. Monthly runs and storage are
+// counted across the organization (where plan caps apply); records and
+// API calls for the current workspace. Caps are read by key so a quota
+// type the core does not declare yet simply reads as unlimited.
+export type UsageMeterKey =
+  | "records"
+  | "runsPerMonth"
+  | "storageBytes"
+  | "apiPerMinute"
+  | "workspaces";
+export type UsageMeter = { key: UsageMeterKey; used: number; limit: number | null };
+
+// Start of the current calendar month (UTC).
+export const monthStart = (now = new Date()) =>
+  new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+
+// Calls counted in the current minute by rateLimit(ctx, "api").
+async function apiCallsThisMinute(workspaceId: string) {
+  const minute = Math.floor(Date.now() / 60_000);
+  redis ??= busConnection();
+  return Number((await redis.get(`rl:api:${workspaceId}:${minute}`)) ?? 0);
+}
+
+export const usageService = {
+  get: async (ctx: TenantContext): Promise<UsageMeter[]> => {
+    await requireScope(ctx, "read");
+    const { quotas } = await entitlementsFor(ctx.organizationId);
+    const cap = (k: string) => quotas[k] ?? null;
+    const { limits, recordsUsed } = await withTenant(ctx, async (tx) => {
+      const { limits } = await capsAndLimits(tx, ctx);
+      const [row] = await tx
+        .select({ n: workspaceUsage.records })
+        .from(workspaceUsage)
+        .where(eq(workspaceUsage.workspaceId, ctx.workspaceId));
+      return { limits, recordsUsed: row?.n ?? 0 };
+    });
+    // Organization-wide counters: outside the workspace tenant scope.
+    const org = ctx.organizationId;
+    const [[runs], [storage], [ws], api] = await Promise.all([
+      db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(workflowRuns)
+        .where(
+          and(
+            eq(workflowRuns.organizationId, org),
+            gte(workflowRuns.createdAt, monthStart()),
+          ),
+        ),
+      // Stored files are the { key, size } values of `file` fields.
+      db
+        .select({
+          n: sql<number>`coalesce(sum(s::bigint), 0)::float8`,
+        })
+        .from(
+          sql`${records}, lateral jsonb_path_query(${records.data}, 'strict $.** ? (@.key.type() == "string" && @.size.type() == "number").size') as s`,
+        )
+        .where(eq(records.organizationId, org)),
+      db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(workspaces)
+        .where(eq(workspaces.organizationId, org)),
+      apiCallsThisMinute(ctx.workspaceId),
+    ]);
+    return [
+      { key: "records", used: recordsUsed, limit: limits.records },
+      { key: "runsPerMonth", used: runs?.n ?? 0, limit: cap("quota:runsPerMonth") },
+      { key: "storageBytes", used: Number(storage?.n ?? 0), limit: cap("quota:storageBytes") },
+      { key: "apiPerMinute", used: api, limit: limits.apiPerMinute },
+      { key: "workspaces", used: ws?.n ?? 0, limit: cap("quota:workspaces") },
+    ];
   },
 };
 
