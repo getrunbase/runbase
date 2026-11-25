@@ -109,6 +109,8 @@ export const envSchema = z.object({
   // Published interfaces (pages) per organization.
   QUOTA_MAX_PAGES: z.coerce.number().int().positive().optional(),
   QUOTA_MAX_AI_BUDGET_USD: z.coerce.number().positive().optional(),
+  // Caps function timeouts and the execution time of a run (waits excluded).
+  QUOTA_MAX_RUN_DURATION_MS: z.coerce.number().int().positive().optional(),
   QUOTA_LIMITS_TTL_MS: int(15_000),
 
   // Emails
