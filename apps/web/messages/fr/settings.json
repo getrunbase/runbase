@@ -11,6 +11,9 @@
       "deleteDescription": "Toutes ses données, workflows et interfaces seront définitivement effacés. Cette action est irréversible.",
       "deleteConfirm": "Supprimer définitivement",
       "newPlaceholder": "Nouveau workspace",
+      "limit": "Votre compte est limité à {max, plural, one {# workspace} other {# workspaces}}. Contactez votre administrateur pour l'augmenter.",
+      "limitUpgrade": "Votre offre inclut {max, plural, one {# workspace} other {# workspaces}}.",
+      "upgrade": "Passer à l'offre supérieure pour en ajouter",
       "description": "Nom des espaces de travail de l'organisation. Visibles par tous les membres."
     },
     "budget": {

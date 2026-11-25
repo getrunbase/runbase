@@ -20,7 +20,13 @@ import {
   TabsTrigger,
 } from "@getrunbase/ui/components/ui/tabs";
 import { Button } from "@getrunbase/ui/components/ui/button";
-import { loadRecord, recordHistory, revertRecord, updateCell } from "./actions";
+import {
+  createRecord,
+  loadRecord,
+  recordHistory,
+  revertRecord,
+  updateCell,
+} from "./actions";
 import { ExportMenu, ImportDialog } from "./data-tools";
 import { RefSelect } from "./ref-select";
 import { Cell, RecordsTable, RefLinks } from "./records-table";
@@ -69,9 +75,97 @@ export function RecordsView(props: {
         }}
       >
         <SheetContent className="w-full gap-0 sm:max-w-5xl">
-          {recordId && <RecordSheet id={recordId} fields={props.fields} />}
+          {recordId === "new" ? (
+            <NewRecordSheet
+              objectId={props.objectId}
+              fields={props.fields}
+              onCreated={(id) => {
+                open(id);
+                setReload((n) => n + 1);
+              }}
+            />
+          ) : (
+            recordId && <RecordSheet id={recordId} fields={props.fields} />
+          )}
         </SheetContent>
       </Sheet>
+    </>
+  );
+}
+
+// New record: values are kept locally and the record is created on save,
+// so objects with required fields can be filled before validation.
+function NewRecordSheet({
+  objectId,
+  fields,
+  onCreated,
+}: {
+  objectId: string;
+  fields: Field[];
+  onCreated: (id: string) => void;
+}) {
+  const t = useTranslations("objects.sheet");
+  const [data, setData] = useState<Record<string, unknown>>({});
+  const [links, setLinks] = useState<Record<string, { id: string; label: string }[]>>({});
+  const [error, setErrorRaw] = useState<string>();
+  const [saving, setSaving] = useState(false);
+  const errorText = useErrorText();
+  const set = (key: string, value: unknown) =>
+    setData((d) => ({ ...d, [key]: value }));
+
+  async function create() {
+    setSaving(true);
+    const res = await createRecord(objectId, data);
+    setSaving(false);
+    if (res.error) return setErrorRaw(errorText(res.error));
+    onCreated(res.data!);
+  }
+
+  return (
+    <>
+      <SheetHeader className="border-b">
+        <SheetTitle className="text-2xl font-bold">{t("newTitle")}</SheetTitle>
+        <SheetDescription> </SheetDescription>
+      </SheetHeader>
+      {error && <p className="p-4 text-sm text-destructive">{error}</p>}
+      <dl className="flex flex-col gap-2.5 overflow-y-auto p-4 text-sm md:max-w-xl">
+        {fields.map((f) => (
+          <div
+            key={f.key}
+            className="grid grid-cols-[auto_1fr] items-center gap-3 [&>dt]:w-27.5"
+          >
+            <dt className="truncate text-muted-foreground">
+              {f.label}
+              {f.required && " *"}
+            </dt>
+            <dd className="min-h-8 min-w-0 content-center">
+              {f.type === "ref" || f.type === "refs" ? (
+                <RefSelect
+                  object={f.object}
+                  multiple={f.type === "refs"}
+                  value={links[f.key] ?? []}
+                  onSave={(v, l) => {
+                    set(f.key, v);
+                    setLinks((x) => ({ ...x, [f.key]: l }));
+                  }}
+                />
+              ) : (
+                <Cell
+                  inline
+                  field={f}
+                  value={data[f.key]}
+                  onSave={(v) => set(f.key, v)}
+                />
+              )}
+            </dd>
+          </div>
+        ))}
+        <div>
+          <Button size="sm" disabled={saving} onClick={create}>
+            {t("create")}
+          </Button>
+        </div>
+      </dl>
     </>
   );
 }

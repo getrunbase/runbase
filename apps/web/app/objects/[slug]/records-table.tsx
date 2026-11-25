@@ -39,7 +39,6 @@ import {
   TableRow,
 } from "@getrunbase/ui/components/ui/table";
 import {
-  createRecord,
   deleteRecords,
   deleteView,
   listViews,
@@ -342,11 +341,9 @@ export function RecordsTable({
         <Button
           size="sm"
           className="h-7"
-          onClick={async () => {
-            const res = await createRecord(objectId);
-            if (res.error) return setError(res.error, res.quota);
-            onOpen(res.data!);
-          }}
+          // Opens an empty form: the record is created on save, so
+          // required fields can be filled first.
+          onClick={() => onOpen("new")}
         >
           <Plus className="size-3.5" /> {t("newRecord")}
         </Button>

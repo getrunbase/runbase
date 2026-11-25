@@ -11,6 +11,9 @@
       "deleteDescription": "All its data, workflows and interfaces will be permanently erased. This cannot be undone.",
       "deleteConfirm": "Delete permanently",
       "newPlaceholder": "New workspace",
+      "limit": "Your account is limited to {max, plural, one {# workspace} other {# workspaces}}. Contact your administrator to raise it.",
+      "limitUpgrade": "Your plan includes {max, plural, one {# workspace} other {# workspaces}}.",
+      "upgrade": "Upgrade to add more",
       "description": "Names of the organization's workspaces. Visible to all members."
     },
     "budget": {

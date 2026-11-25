@@ -223,7 +223,9 @@
     "noRuns": "Aucun run.",
     "reason": "« {reason} »",
     "confidence": "(confiance {value, number, percent})",
-    "duration": "{ms} ms"
+    "duration": "{ms} ms",
+    "newTitle": "Nouvel enregistrement",
+    "create": "Créer"
   },
   "history": {
     "actions": {

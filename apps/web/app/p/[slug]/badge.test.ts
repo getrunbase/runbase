@@ -41,3 +41,8 @@ test("draft or screenshot: badge never shown", async () => {
   assert.equal(await showBadge(ctx(), { draft: true, shot: false }), false);
   assert.equal(await showBadge(ctx(), { draft: false, shot: true }), false);
 });
+
+test("builder inside the app: badge never shown", async () => {
+  withFeatures([]);
+  assert.equal(await showBadge(ctx(), { ...live, builder: true }), false);
+});

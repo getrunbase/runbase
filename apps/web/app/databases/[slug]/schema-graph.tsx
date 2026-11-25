@@ -36,7 +36,7 @@ function ObjectNode({ data: { obj } }: NodeProps<Node<Data>>) {
   return (
     <Card
       className={cn(
-        "w-64 gap-0 overflow-hidden py-0 shadow-sm",
+        "w-64 gap-0 overflow-hidden p-0 shadow-sm",
         obj.external && "border-dashed opacity-80",
       )}
     >
