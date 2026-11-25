@@ -1,5 +1,6 @@
 // Tenants, Better Auth, API keys and audit log.
 import {
+  bigint,
   boolean,
   date,
   index,
@@ -88,6 +89,8 @@ export const workspaceUsage = pgTable("workspace_usage", {
   // the first run of a new month is counted.
   runs: integer("runs").notNull().default(0),
   runsMonth: date("runs_month"),
+  // Bytes of attached files stored by the workspace (upload/delete).
+  storageBytes: bigint("storage_bytes", { mode: "number" }).notNull().default(0),
 });
 
 export const membershipRole = pgEnum("membership_role", [

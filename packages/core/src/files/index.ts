@@ -7,6 +7,7 @@ import { appError, notFound } from "../errors/app-error";
 import { randomUUID } from "node:crypto";
 import { requireScope } from "../api-keys";
 import { audit } from "../audit";
+import { addStorage, countStorage } from "../quotas";
 import { withTenant, type TenantContext } from "../tenant";
 import { storageFromEnv, type FileStorage } from "./storage";
 
@@ -83,7 +84,13 @@ export const filesService = {
     const bytes =
       input.bytes ?? new Uint8Array(Buffer.from(input.base64 ?? "", "base64"));
     const meta = newMeta(ctx, input, bytes.length);
-    await fileStorage().put(meta.key, { bytes, type: meta.type });
+    await countStorage(ctx, meta.size);
+    try {
+      await fileStorage().put(meta.key, { bytes, type: meta.type });
+    } catch (e) {
+      await addStorage(ctx, -meta.size);
+      throw e;
+    }
     await logUpload(ctx, meta);
     return meta;
   },
@@ -104,9 +111,25 @@ export const filesService = {
         "Direct upload is not available with this file storage",
       );
     const file = newMeta(ctx, input, input.size);
+    // Counted at signing: the presigned PUT enforces this exact size.
+    await countStorage(ctx, file.size);
     const url = await s.signedPutUrl(file.key, file);
     await logUpload(ctx, file);
     return { file, url };
+  },
+  // Deletes a stored file and frees its bytes in the storage counter.
+  // Size read from the storage, not from the caller.
+  remove: async (ctx: TenantContext, key: string) => {
+    await requireScope(ctx, "write");
+    ownKey(ctx, key);
+    const s = fileStorage();
+    const head = await s.head(key);
+    if (!head) throw notFound("files.notFound", "File not found");
+    await s.remove(key);
+    await addStorage(ctx, -head.size);
+    await withTenant(ctx, (tx) =>
+      audit(tx, ctx, "file.delete", { type: "file", id: key }, { size: head.size }),
+    );
   },
   download: async (ctx: TenantContext, key: string) => {
     await requireScope(ctx, "read");
