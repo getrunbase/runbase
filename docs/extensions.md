@@ -43,6 +43,7 @@ an offer only changes the extension, never this repository.
 | --------------------- | ---------------------------------------- | -------------------------- |
 | `quota:records`       | record creation (caps `quotas.set`)      | `QUOTA_MAX_RECORDS`        |
 | `quota:runsPerMinute` | run launch                               | `QUOTA_MAX_RUNS_PER_MINUTE`|
+| `quota:runsPerMonth`  | runs started per calendar month (UTC), all workspaces of the organization | `QUOTA_MAX_RUNS_PER_MONTH` |
 | `quota:apiPerMinute`  | API rate (MCP, REST, ingestion)          | `QUOTA_MAX_API_PER_MINUTE` |
 | `quota:concurrency`   | default jobs at once per workspace       | `QUOTA_CONCURRENCY`        |
 | `quota:workspaces`    | workspace creation                       | `QUOTA_MAX_WORKSPACES`     |
