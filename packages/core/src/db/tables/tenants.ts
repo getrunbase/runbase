@@ -1,6 +1,7 @@
 // Tenants, Better Auth, API keys and audit log.
 import {
   boolean,
+  date,
   index,
   integer,
   jsonb,
@@ -83,6 +84,10 @@ export const workspaceUsage = pgTable("workspace_usage", {
     .notNull()
     .references(() => organizations.id, { onDelete: "cascade" }),
   records: integer("records").notNull().default(0),
+  // Runs started in `runsMonth` (first day of the UTC month): reset when
+  // the first run of a new month is counted.
+  runs: integer("runs").notNull().default(0),
+  runsMonth: date("runs_month"),
 });
 
 export const membershipRole = pgEnum("membership_role", [

@@ -42,6 +42,7 @@
   "quotas.exceedsLimit": "{key} : {value} dépasse la limite de votre compte ({max}). Contactez votre administrateur pour l'augmenter.",
   "quotas.limit": "Limite atteinte : {quota} est plafonné à {max} pour votre compte. Contactez votre administrateur pour l'augmenter.",
   "quotas.records": "Quota atteint : {max} records maximum dans ce workspace. Supprimez des records ou augmentez le quota dans Paramètres.",
+  "quotas.runsPerMonth": "Quota atteint : {max} exécutions par mois pour votre compte. Attendez le mois prochain ou augmentez le quota.",
   "quotas.runsPerMinute": "Limite atteinte : {max} lancements de workflow par minute dans ce workspace. Réessayez dans {wait} s ou augmentez la limite dans Paramètres.",
   "workspaces.lastNotDeletable": "Dernier workspace non supprimable",
   "workspaces.noneAccessible": "Aucun workspace accessible",

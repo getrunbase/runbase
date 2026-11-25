@@ -11,6 +11,7 @@ import type { TenantContext } from "../tenant";
 export const QUOTA_KEYS = [
   "quota:records",
   "quota:runsPerMinute",
+  "quota:runsPerMonth",
   "quota:apiPerMinute",
   "quota:concurrency",
   "quota:workspaces",
@@ -28,6 +29,7 @@ export function envEntitlements(): Resolved {
   const q: Record<string, number | undefined> = {
     "quota:records": e.QUOTA_MAX_RECORDS,
     "quota:runsPerMinute": e.QUOTA_MAX_RUNS_PER_MINUTE,
+    "quota:runsPerMonth": e.QUOTA_MAX_RUNS_PER_MONTH,
     "quota:apiPerMinute": e.QUOTA_MAX_API_PER_MINUTE,
     "quota:workspaces": e.QUOTA_MAX_WORKSPACES,
     "quota:aiBudgetUsd": e.QUOTA_MAX_AI_BUDGET_USD,

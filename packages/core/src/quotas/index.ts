@@ -15,6 +15,7 @@ import {
   entitlementsFor,
   fmt,
   QuotaError,
+  quotaOf,
   type QuotaKey,
 } from "../entitlements";
 import { withTenant, type TenantContext, type Tx } from "../tenant";
@@ -202,6 +203,57 @@ export async function rateLimit(ctx: TenantContext, kind: keyof typeof kinds) {
   }
 }
 
+// Monthly run counter (workflow runs from any trigger, function calls
+// outside workflows). Counted per workspace in workspace_usage, capped per
+// organization by quota:runsPerMonth (sum of its workspaces for the current
+// UTC month). Unlimited by default: no cap = no read, only the increment.
+export const currentMonth = (now = new Date()) =>
+  `${now.toISOString().slice(0, 7)}-01`;
+
+export async function runsThisMonth(organizationId: string) {
+  const [row] = await db
+    .select({ n: sql<number>`coalesce(sum(${workspaceUsage.runs}), 0)::int` })
+    .from(workspaceUsage)
+    .where(
+      and(
+        eq(workspaceUsage.organizationId, organizationId),
+        eq(workspaceUsage.runsMonth, currentMonth()),
+      ),
+    );
+  return row?.n ?? 0;
+}
+
+// To call before a run starts: refuses beyond the cap, otherwise counts it.
+// Check then increment (not atomic across workspaces): a few concurrent
+// runs may overshoot the cap by a handful, never by more.
+export async function countRun(ctx: TenantContext) {
+  const max = await quotaOf(ctx.organizationId, "quota:runsPerMonth");
+  if (Number.isFinite(max) && (await runsThisMonth(ctx.organizationId)) + 1 > max) {
+    const it = errorItem(
+      "quotas.runsPerMonth",
+      "Quota reached: {max} runs per month for your account. Wait for next month or raise the quota.",
+      { max: fmt(max) },
+    );
+    throw new QuotaError(it.message, it);
+  }
+  const month = currentMonth();
+  await db
+    .insert(workspaceUsage)
+    .values({
+      workspaceId: ctx.workspaceId,
+      organizationId: ctx.organizationId,
+      runs: 1,
+      runsMonth: month,
+    })
+    .onConflictDoUpdate({
+      target: workspaceUsage.workspaceId,
+      set: {
+        runs: sql`case when ${workspaceUsage.runsMonth} = ${month} then ${workspaceUsage.runs} + 1 else 1 end`,
+        runsMonth: month,
+      },
+    });
+}
+
 // Page useAI: AI calls per minute, cap per workspace and
 // per page (a public page alone does not drain the workspace window).
 export const AI_PER_MINUTE = { workspace: 60, page: 20 };
@@ -249,14 +301,22 @@ export const quotasService = {
     return withTenant(ctx, async (tx) => {
       const { limits, defaults, caps } = await capsAndLimits(tx, ctx);
       const [row] = await tx
-        .select({ n: workspaceUsage.records })
+        .select({
+          n: workspaceUsage.records,
+          runs: workspaceUsage.runs,
+          month: workspaceUsage.runsMonth,
+        })
         .from(workspaceUsage)
         .where(eq(workspaceUsage.workspaceId, ctx.workspaceId));
       return {
         limits,
         defaults,
         caps,
-        usage: { records: row?.n ?? 0 },
+        usage: {
+          records: row?.n ?? 0,
+          // Runs of this workspace in the current UTC month.
+          runsThisMonth: row?.month === currentMonth() ? row.runs : 0,
+        },
       };
     });
   },
