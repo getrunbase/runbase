@@ -21,6 +21,12 @@ that makes no network call.
 from the OpenTelemetry metrics of `@getrunbase/core/telemetry`, which describe
 technical health (see `observability.md`).
 
+`reportUsage` is called by the worker on `USAGE_REPORT_CRON` (hourly by
+default), only when an extension module is loaded. For each workspace it
+receives absolute values (gauges): `records` (current count), `runs` (runs
+started this calendar month, UTC) and `storageBytes` (attached files). A
+failing call is logged and does not stop the other reports.
+
 A `null` answer from `billing` or `credentials` means "no opinion": the core
 uses the limits from the environment (unlimited by default, every feature
 allowed) or its configured secret. The platform never supplies an AI key: AI

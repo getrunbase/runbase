@@ -139,6 +139,9 @@ export const envSchema = z.object({
   // sets it per organization (quota:retentionDays). Purge schedule.
   RETENTION_DAYS: z.coerce.number().int().positive().optional(),
   RETENTION_CRON: z.string().default("0 3 * * *"),
+  // Usage reporting to the billing extension (records, monthly runs,
+  // storage). Only scheduled when an extension module is loaded.
+  USAGE_REPORT_CRON: z.string().default("0 * * * *"),
 
   // Logs.
   LOG_LEVEL: z
