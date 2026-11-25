@@ -71,11 +71,11 @@
     "files:migrate": "tsx --env-file-if-exists=../../.env src/cli/files-migrate.ts"
   },
   "dependencies": {
-    "@getrunbase/node-sdk": "workspace:*",
     "@aws-sdk/client-s3": "^3.1175.0",
     "@aws-sdk/s3-request-presigner": "^3.1175.0",
     "@better-auth/mcp": "1.7.26",
     "@better-auth/oauth-provider": "1.7.26",
+    "@getrunbase/node-sdk": "workspace:*",
     "@opentelemetry/api": "^1.10.0",
     "@opentelemetry/exporter-metrics-otlp-http": "0.223.2",
     "@opentelemetry/resources": "2.12.1",
@@ -83,6 +83,7 @@
     "@opentelemetry/sdk-trace-base": "2.12.1",
     "better-auth": "^1.7.26",
     "bullmq": "^6.7.7",
+    "cron-parser": "5.10.5",
     "drizzle-orm": "^0.45.4",
     "esbuild": "0.25.12",
     "ioredis": "^6.0.0",
