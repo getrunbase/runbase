@@ -92,6 +92,7 @@
   "functions.unknownMethod": "records.{method} inconnu : méthodes disponibles {methods}",
   "runs.filterRequired": "Filtre requis : workflowId ou status",
   "runs.timedOut": "Délai dépassé ({seconds} s)",
+  "runs.maxDurationExceeded": "Durée maximale d'exécution atteinte ({seconds} s)",
   "webhooks.splitPathNotArray": "splitPath {path} : pas un tableau",
   "workflows.unknownStep": "l'étape {id} n'existe pas",
   "webhooks.invalidJson": "Payload JSON invalide",

@@ -104,6 +104,9 @@ export const workflowRuns = pgTable(
     status: runStatus("status").notNull().default("running"),
     currentStep: text("current_step"),
     stepCount: integer("step_count").notNull().default(0),
+    // Execution time of the run's step attempts (waits excluded), capped by
+    // quota:maxRunDurationMs.
+    activeMs: integer("active_ms").notNull().default(0),
     // Parallel execution branches: { [path]: { step, n, status } }.
     paths: jsonb("paths").notNull().default({}),
     error: text("error"),
