@@ -9,6 +9,7 @@ import {
   invalidateWorkspaceAccess,
   withTenant,
   type TenantContext,
+  type Tx,
 } from "../tenant";
 import { decryptAll, putSecret } from "../secrets";
 import { checkQuota } from "../entitlements";
@@ -67,6 +68,18 @@ export async function workspaceSettings(ctx: TenantContext) {
   return { ...settings, secrets: await decryptAll(ctx) };
 }
 
+const countIn = async (tx: Tx, organizationId: string) => {
+  const [{ n }] = (await tx
+    .select({ n: sql<number>`count(*)::int` })
+    .from(workspaces)
+    .where(eq(workspaces.organizationId, organizationId))) as [{ n: number }];
+  return n;
+};
+
+// Workspaces of the organization, counted like the quota check on create.
+export const workspaceCount = (ctx: TenantContext) =>
+  withTenant(ctx, (tx) => countIn(tx, ctx.organizationId));
+
 export const workspacesService = {
   // Settings: owners/admins; the audit only keeps secret names.
   setSettings: async (ctx: TenantContext, input: unknown) => {
@@ -120,10 +133,7 @@ export const workspacesService = {
           sql`select set_config('app.ws_ids', ${k!.ids.join(",")}, true)`,
         );
       }
-      const [{ n }] = (await tx
-        .select({ n: sql<number>`count(*)::int` })
-        .from(workspaces)
-        .where(eq(workspaces.organizationId, ctx.organizationId))) as [{ n: number }];
+      const n = await countIn(tx, ctx.organizationId);
       await checkQuota(ctx, "quota:workspaces", n + 1);
       const [row] = await tx
         .insert(workspaces)

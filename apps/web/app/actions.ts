@@ -10,6 +10,7 @@ import { workspacesService } from "@getrunbase/core/workspaces";
 import { runsService } from "@getrunbase/core/runs";
 import { formInput, parseInput } from "@/lib/action-input";
 import { getTenant, WORKSPACE_COOKIE } from "@/lib/tenant";
+import { actionError, type ActionError } from "@/lib/action-error";
 import {
   answerInput,
   budgetInput,
@@ -30,11 +31,21 @@ export async function switchWorkspace(f: FormData) {
   revalidatePath("/", "layout");
 }
 
-export async function createWorkspace(f: FormData) {
-  const { ctx } = await getTenant();
-  const { name } = parseInput(nameInput, formInput(f));
-  if (name) await workspacesService.create(ctx, name);
+// Returns the error (quota reached, ...) instead of throwing: a thrown
+// error in a server action renders the generic error page.
+export async function createWorkspace(
+  _: { error?: ActionError; ok?: boolean } | undefined,
+  f: FormData,
+) {
+  try {
+    const { ctx } = await getTenant();
+    const { name } = parseInput(nameInput, formInput(f));
+    if (name) await workspacesService.create(ctx, name);
+  } catch (e) {
+    return { error: actionError(e) };
+  }
   revalidatePath("/", "layout");
+  return { ok: true };
 }
 
 export async function renameWorkspace(f: FormData) {

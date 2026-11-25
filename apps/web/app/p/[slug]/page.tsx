@@ -40,7 +40,7 @@ export default async function PageView({
       preview={draft}
     />
   );
-  const badge = await showBadge(ctx, { draft, shot: !!shot });
+  const badge = await showBadge(ctx, { draft, shot: !!shot, builder });
   return (
     <main
       className={

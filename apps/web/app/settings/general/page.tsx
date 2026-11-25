@@ -1,6 +1,6 @@
 import { workspacesService } from "@getrunbase/core/workspaces";
 import { runsService } from "@getrunbase/core/runs";
-import { quotasService } from "@getrunbase/core/quotas";
+import { billingService, quotasService } from "@getrunbase/core/quotas";
 import { Check } from "lucide-react";
 import { Label } from "@getrunbase/ui/components/ui/label";
 import { Button } from "@getrunbase/ui/components/ui/button";
@@ -10,7 +10,6 @@ import { getTenant } from "@/lib/tenant";
 import { ConfirmAction } from "@/components/confirm-action";
 import { ConnectAgent } from "@/components/connect-agent";
 import {
-  createWorkspace,
   deleteWorkspace,
   renameWorkspace,
   setLimits,
@@ -22,6 +21,9 @@ import { SettingsPage, SettingsSection } from "../settings-shell";
 import { aiSettingsService } from "@getrunbase/core/ai-providers";
 import { secretsService } from "@getrunbase/core/secrets";
 import { AiProviderForm } from "./ai-provider-form";
+import { CreateWorkspaceForm } from "./create-workspace-form";
+import { workspaceCount } from "@getrunbase/core/workspaces";
+import { quotaOf } from "@getrunbase/core/entitlements";
 import { pageTitle } from "@/lib/page-title";
 
 export const generateMetadata = pageTitle("general");
@@ -49,6 +51,12 @@ export default async function Settings() {
   const isAdmin = role === "owner" || role === "admin";
   const mcpUrl = `${appUrl()}/api/mcp`;
   const list = await workspacesService.list(ctx);
+  // Workspace cap reached: the create form is disabled up front.
+  const [wsMax, wsUsed] = await Promise.all([
+    quotaOf(ctx.organizationId, "quota:workspaces"),
+    workspaceCount(ctx),
+  ]);
+  const wsLimit = wsUsed >= wsMax ? wsMax : null;
   const [budget, quotas, ai, secrets] = await Promise.all([
     runsService.budget(ctx),
     quotasService.get(ctx),
@@ -93,14 +101,10 @@ export default async function Settings() {
               </form>
             </div>
           ))}
-          <form action={createWorkspace} className="flex gap-2">
-            <Input
-              name="name"
-              placeholder={t("workspaces.newPlaceholder")}
-              required
-            />
-            <Button type="submit">{tc("create")}</Button>
-          </form>
+          <CreateWorkspaceForm
+            limit={wsLimit}
+            upgradeHref={billingService.enabled() ? "/settings/billing" : null}
+          />
         </SettingsSection>
       </div>
 

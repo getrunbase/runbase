@@ -223,7 +223,9 @@
     "noRuns": "No runs.",
     "reason": "“{reason}”",
     "confidence": "({value, number, percent} confidence)",
-    "duration": "{ms} ms"
+    "duration": "{ms} ms",
+    "newTitle": "New record",
+    "create": "Create"
   },
   "history": {
     "actions": {

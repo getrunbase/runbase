@@ -150,12 +150,15 @@ export async function runWorkflow(workflowId: string, ids: string[]) {
 }
 
 // New empty record, then opened in its record view.
-export async function createRecord(objectId: string) {
+export async function createRecord(
+  objectId: string,
+  data: Record<string, unknown> = {},
+) {
   const { ctx } = await getTenant();
-  const bad = invalid([idSchema, objectId]);
+  const bad = invalid([idSchema, objectId], [z.record(z.string(), z.unknown()), data]);
   if (bad) return bad;
   return run(async () => {
-    const { record } = await recordsService.upsert(ctx, { objectId, data: {} });
+    const { record } = await recordsService.upsert(ctx, { objectId, data });
     return record.id;
   });
 }
