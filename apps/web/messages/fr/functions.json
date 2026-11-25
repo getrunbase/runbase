@@ -1,10 +1,10 @@
 {
   "list": {
     "title": "Fonctions",
-    "description": "Code TypeScript créé via le MCP, utilisable comme brique de workflow (fn.<nom>).",
+    "description": "Code TypeScript créé via le MCP, utilisable comme brique de workflow (fn.'<nom>').",
     "empty": {
       "title": "Aucune fonction",
-      "description": "Les fonctions se créent via le MCP (functions.create), puis s'utilisent comme briques fn.<nom> dans les workflows."
+      "description": "Les fonctions se créent via le MCP (functions.create), puis s'utilisent comme briques fn.'<nom>' dans les workflows."
     },
     "columns": {
       "name": "Nom",
