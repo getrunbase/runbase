@@ -11,6 +11,7 @@
     "test:e2e": "TSX_TSCONFIG_PATH=tsconfig.test.json node --env-file-if-exists=../../.env --import tsx --test --test-concurrency=1 --test-timeout=300000 \"e2e/**/*.e2e.ts\""
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1175.0",
     "@getrunbase/core": "workspace:*",
     "@getrunbase/kit": "workspace:*",
     "@getrunbase/sdk": "workspace:*",
