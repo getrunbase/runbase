@@ -42,4 +42,9 @@ jobs:
       # Build before test and publish: the packages publish dist/.
       - run: pnpm --filter @getrunbase/sdk --filter @getrunbase/node-sdk run build
       - run: pnpm --filter @getrunbase/sdk --filter @getrunbase/node-sdk --if-present run test
-      - run: pnpm --filter @getrunbase/sdk --filter @getrunbase/node-sdk -r publish --access public --no-git-checks --provenance
+      # npm publish (not pnpm publish): the npm CLI handles the OIDC exchange.
+      # No workspace: dependencies in these packages, so no rewrite is needed.
+      - run: |
+          for pkg in packages/sdk packages/node-sdk; do
+            (cd "$pkg" && npm publish --access public --provenance)
+          done
