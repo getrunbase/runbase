@@ -66,6 +66,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=../../.env src/db/migrate.ts",
     "test": "node --env-file-if-exists=../../.env --import tsx --import ./src/test-setup.ts --test --test-concurrency=1 \"src/**/*.test.ts\"",
+    "test:shard": "node --env-file-if-exists=../../.env --import tsx --import ./src/test-setup.ts --test --test-concurrency=1 --test-shard=$TEST_SHARD \"src/**/*.test.ts\"",
     "admin:create": "tsx --env-file-if-exists=../../.env src/cli/admin-create.ts",
     "files:migrate": "tsx --env-file-if-exists=../../.env src/cli/files-migrate.ts"
   },

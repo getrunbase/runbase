@@ -9,12 +9,13 @@ import type { Redis } from "ioredis";
 import { requireScope } from "../api-keys";
 import { audit } from "../audit";
 import { busConnection } from "../bus";
-import { workspaceUsage, workspaces } from "../db/schema";
+import { pages, workspaceUsage, workspaces } from "../db/schema";
 import { db } from "../db/client";
 import {
   entitlementsFor,
   fmt,
   QuotaError,
+  quotaOf,
   type QuotaKey,
 } from "../entitlements";
 import { withTenant, type TenantContext, type Tx } from "../tenant";
@@ -202,6 +203,105 @@ export async function rateLimit(ctx: TenantContext, kind: keyof typeof kinds) {
   }
 }
 
+// Monthly run counter (workflow runs from any trigger, function calls
+// outside workflows). Counted per workspace in workspace_usage, capped per
+// organization by quota:runsPerMonth (sum of its workspaces for the current
+// UTC month). Unlimited by default: no cap = no read, only the increment.
+export const currentMonth = (now = new Date()) =>
+  `${now.toISOString().slice(0, 7)}-01`;
+
+export async function runsThisMonth(organizationId: string) {
+  const [row] = await db
+    .select({ n: sql<number>`coalesce(sum(${workspaceUsage.runs}), 0)::int` })
+    .from(workspaceUsage)
+    .where(
+      and(
+        eq(workspaceUsage.organizationId, organizationId),
+        eq(workspaceUsage.runsMonth, currentMonth()),
+      ),
+    );
+  return row?.n ?? 0;
+}
+
+// To call before a run starts: refuses beyond the cap, otherwise counts it.
+// Check then increment (not atomic across workspaces): a few concurrent
+// runs may overshoot the cap by a handful, never by more.
+export async function countRun(ctx: TenantContext) {
+  const max = await quotaOf(ctx.organizationId, "quota:runsPerMonth");
+  if (Number.isFinite(max) && (await runsThisMonth(ctx.organizationId)) + 1 > max) {
+    const it = errorItem(
+      "quotas.runsPerMonth",
+      "Quota reached: {max} runs per month for your account. Wait for next month or raise the quota.",
+      { max: fmt(max) },
+    );
+    throw new QuotaError(it.message, it);
+  }
+  const month = currentMonth();
+  await db
+    .insert(workspaceUsage)
+    .values({
+      workspaceId: ctx.workspaceId,
+      organizationId: ctx.organizationId,
+      runs: 1,
+      runsMonth: month,
+    })
+    .onConflictDoUpdate({
+      target: workspaceUsage.workspaceId,
+      set: {
+        runs: sql`case when ${workspaceUsage.runsMonth} = ${month} then ${workspaceUsage.runs} + 1 else 1 end`,
+        runsMonth: month,
+      },
+    });
+}
+
+// Stored file bytes: counted per workspace in workspace_usage (upload adds,
+// delete subtracts), capped per organization by quota:storageBytes (sum of
+// its workspaces). Unlimited by default: no cap = no read, only the update.
+export async function storageBytesOf(organizationId: string) {
+  const [row] = await db
+    .select({
+      n: sql<number>`coalesce(sum(${workspaceUsage.storageBytes}), 0)::bigint`,
+    })
+    .from(workspaceUsage)
+    .where(eq(workspaceUsage.organizationId, organizationId));
+  return Number(row?.n ?? 0);
+}
+
+// To call before storing a file of `bytes`: refuses beyond the cap,
+// otherwise counts it. Same check-then-increment trade-off as countRun.
+export async function countStorage(ctx: TenantContext, bytes: number) {
+  const max = await quotaOf(ctx.organizationId, "quota:storageBytes");
+  if (
+    Number.isFinite(max) &&
+    (await storageBytesOf(ctx.organizationId)) + bytes > max
+  ) {
+    const it = errorItem(
+      "quotas.storageBytes",
+      "Quota reached: {max} bytes of file storage for your account. Delete files or raise the quota.",
+      { max: fmt(max) },
+    );
+    throw new QuotaError(it.message, it);
+  }
+  await addStorage(ctx, bytes);
+}
+
+// Adds (or subtracts, negative) stored bytes; never below zero.
+export async function addStorage(ctx: TenantContext, bytes: number) {
+  await db
+    .insert(workspaceUsage)
+    .values({
+      workspaceId: ctx.workspaceId,
+      organizationId: ctx.organizationId,
+      storageBytes: Math.max(0, bytes),
+    })
+    .onConflictDoUpdate({
+      target: workspaceUsage.workspaceId,
+      set: {
+        storageBytes: sql`greatest(0, ${workspaceUsage.storageBytes} + ${bytes})`,
+      },
+    });
+}
+
 // Page useAI: AI calls per minute, cap per workspace and
 // per page (a public page alone does not drain the workspace window).
 export const AI_PER_MINUTE = { workspace: 60, page: 20 };
@@ -249,14 +349,25 @@ export const quotasService = {
     return withTenant(ctx, async (tx) => {
       const { limits, defaults, caps } = await capsAndLimits(tx, ctx);
       const [row] = await tx
-        .select({ n: workspaceUsage.records })
+        .select({
+          n: workspaceUsage.records,
+          runs: workspaceUsage.runs,
+          month: workspaceUsage.runsMonth,
+          storageBytes: workspaceUsage.storageBytes,
+        })
         .from(workspaceUsage)
         .where(eq(workspaceUsage.workspaceId, ctx.workspaceId));
       return {
         limits,
         defaults,
         caps,
-        usage: { records: row?.n ?? 0 },
+        usage: {
+          records: row?.n ?? 0,
+          // Runs of this workspace in the current UTC month.
+          runsThisMonth: row?.month === currentMonth() ? row.runs : 0,
+          // Bytes of attached files stored by this workspace.
+          storageBytes: row?.storageBytes ?? 0,
+        },
       };
     });
   },
@@ -298,7 +409,7 @@ export const quotasService = {
 // Settings › Plan and usage: plan provided by the extension and
 // used / cap counters (null = unlimited). null without extension.
 export type UsageItem = {
-  key: "records" | "workspaces";
+  key: "records" | "workspaces" | "pages";
   used: number;
   limit: number | null;
 };
@@ -325,6 +436,17 @@ export const billingService = {
       ];
       return { records: rec?.n ?? 0, workspaces: ws.n };
     });
+    // Published pages of the whole organization (RLS would scope the
+    // tenant transaction to one workspace).
+    const [pub] = (await db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(pages)
+      .where(
+        and(
+          eq(pages.organizationId, ctx.organizationId),
+          sql`${pages.currentVersion} is not null`,
+        ),
+      )) as [{ n: number }];
     const limit = (k: QuotaKey) => quotas[k] ?? null;
     const items: UsageItem[] = [
       { key: "records", used: usage.records, limit: limit("quota:records") },
@@ -333,6 +455,7 @@ export const billingService = {
         used: usage.workspaces,
         limit: limit("quota:workspaces"),
       },
+      { key: "pages", used: pub.n, limit: limit("quota:pages") },
     ];
     return {
       plan: account.plan,

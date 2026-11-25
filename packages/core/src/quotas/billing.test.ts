@@ -47,6 +47,11 @@ test("extension: plan, links and counters (unlimited = null)", async () => {
   const ws = b?.items.find((i) => i.key === "workspaces");
   assert.deepEqual(ws, { key: "workspaces", used: 1, limit: 3 });
   assert.equal(b?.items.find((i) => i.key === "records")?.limit ?? null, null);
+  assert.deepEqual(b?.items.find((i) => i.key === "pages"), {
+    key: "pages",
+    used: 0,
+    limit: null,
+  });
 });
 
 test("isQuotaError", () => {
