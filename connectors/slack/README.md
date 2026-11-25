@@ -1,4 +1,4 @@
-# @runbase-connectors/slack
+# @getrunbase-connectors/slack
 
 Post messages and thread replies to Slack channels as your own bot, using the Slack Web API.
 
