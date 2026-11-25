@@ -21,7 +21,7 @@ export type NavInput = {
 };
 
 // Intent-based navigation, in a few groups with everyday vocabulary:
-// Interfaces, Data, Automations, and Settings at the bottom (tabs).
+// Interfaces, Activity, Automations, Data, and Settings at the bottom (tabs).
 export function buildNav(input: NavInput, role: Role, t: T<"nav">) {
   const interfaces: NavEntry[] = [
     ...input.pages.map((p): NavEntry => ({
@@ -35,7 +35,6 @@ export function buildNav(input: NavInput, role: Role, t: T<"nav">) {
   const index = (items: NavEntry[]) => {
     for (const e of items) {
       names[e.url] = { title: e.title, icon: e.lucide };
-      for (const s of e.items ?? []) names[s.url] = { title: s.title };
     }
   };
   index(interfaces);
@@ -60,12 +59,17 @@ export function buildNav(input: NavInput, role: Role, t: T<"nav">) {
     title: d.name,
     url: `/databases/${d.slug}`,
     icon: "databases",
-    items: input.objects
-      .filter((o) => o.databaseId === d.id)
-      .map((o) => ({ title: o.name, url: `/objects/${o.slug}` })),
   }));
+  // Objects are not listed in the sidebar, but breadcrumbs still need their names.
+  for (const o of input.objects) names[`/objects/${o.slug}`] = { title: o.name };
+  // What you build.
   const automations: NavEntry[] = [
     { title: t("items.workflows"), url: "/workflows", icon: "workflows" },
+    { title: t("items.functions"), url: "/functions", icon: "functions" },
+    { title: t("items.webhooks"), url: "/webhooks", icon: "webhooks" },
+  ];
+  // What runs, and what needs attention.
+  const activity: NavEntry[] = [
     { title: t("items.runs"), url: "/runs", icon: "runs" },
     {
       title: t("items.approvals"),
@@ -79,25 +83,22 @@ export function buildNav(input: NavInput, role: Role, t: T<"nav">) {
       icon: "errors",
       badge: input.openErrors,
     },
-    { title: t("items.functions"), url: "/functions", icon: "functions" },
-    { title: t("items.webhooks"), url: "/webhooks", icon: "webhooks" },
-  ];
-  const dataItems: NavEntry[] = [
-    ...data,
     { title: t("items.events"), url: "/events", icon: "events" },
   ];
   const settings: NavEntry[] = [
     { title: t("items.settings"), url: "/settings", icon: "settings" },
   ];
-  index(dataItems);
+  index(data);
+  index(activity);
   index(automations);
   index(settings);
   return {
     sections: [
       { items: [{ title: t("sections.home"), url: "/", icon: "home" }] },
       { label: t("sections.interfaces"), items: interfaces },
-      { label: t("sections.data"), items: dataItems },
+      { label: t("sections.activity"), items: activity },
       { label: t("sections.automations"), items: automations },
+      { label: t("sections.data"), items: data },
       { items: settings, bottom: true },
     ] as NavSection[],
     names,

@@ -24,7 +24,7 @@ test("buildNav: a few clear groups, Settings at the bottom", () => {
   const nav = buildNav(input, "owner");
   assert.deepEqual(
     nav.sections.map((s) => s.label),
-    [undefined, "Interfaces", "Données", "Automatisations", undefined],
+    [undefined, "Interfaces", "Activité", "Automatisations", "Données", undefined],
   );
   const bottom = nav.sections.at(-1)!;
   assert.equal(bottom.bottom, true);
@@ -32,12 +32,13 @@ test("buildNav: a few clear groups, Settings at the bottom", () => {
     bottom.items.map((e) => e.url),
     ["/settings"],
   );
-  assert.ok(nav.sections[2]!.items.every((e) => e.url !== "/databases"));
-  assert.equal(nav.sections[2]!.items[0]!.items![0]!.url, "/objects/contacts");
+  assert.ok(nav.sections[4]!.items.every((e) => e.url !== "/databases"));
+  // Objects are not in the sidebar, but breadcrumbs know their names.
+  assert.ok(nav.names["/objects/contacts"]);
 });
 
-test("buildNav: approvals and errors badges", () => {
-  const auto = buildNav(input, "member").sections[3]!.items;
+test("buildNav: approvals and errors badges under Activity", () => {
+  const auto = buildNav(input, "member").sections[2]!.items;
   assert.equal(auto.find((e) => e.url === "/approvals")!.badge, 3);
   assert.equal(auto.find((e) => e.url === "/errors")!.badge, 2);
 });
@@ -65,6 +66,6 @@ test("buildNav: English labels", () => {
   const nav = build(input, "owner", translator("en", "nav"));
   assert.deepEqual(
     nav.sections.map((s) => s.label),
-    [undefined, "Interfaces", "Data", "Automations", undefined],
+    [undefined, "Interfaces", "Activity", "Automations", "Data", undefined],
   );
 });
