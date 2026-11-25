@@ -64,11 +64,29 @@ export interface ClientExtension {
   headScripts(): Promise<HeadScript[]>;
 }
 
+// Inactivity policy: decides, per active workspace, whether to pause it or
+// warn its owners first. The core applies the decision (pause, warnedAt) and
+// resumes on next activity; the policy never resumes. Default: never pause.
+export type InactivityInput = {
+  workspaceId: string;
+  organizationId: string;
+  // Last activity, or creation date when none was recorded.
+  lastActivityAt: string;
+  paused: boolean;
+  warnedAt: string | null;
+  now: string;
+};
+export type InactivityDecision = { action: "pause" | "warn" | "none" };
+export interface InactivityPolicy {
+  decide(input: InactivityInput): Promise<InactivityDecision>;
+}
+
 export type Extensions = {
   telemetry: TelemetrySink;
   billing: BillingProvider;
   credentials: ManagedCredentials;
   client: ClientExtension;
+  inactivity: InactivityPolicy;
 };
 
 export const defaultExtensions = (): Extensions => ({
@@ -76,6 +94,7 @@ export const defaultExtensions = (): Extensions => ({
   billing: { entitlements: async () => null, reportUsage: async () => {} },
   credentials: { oauthClient: async () => null },
   client: { headScripts: async () => [] },
+  inactivity: { decide: async () => ({ action: "none" }) },
 });
 
 // Methods expected per extension point (validation of a loaded module).
@@ -84,6 +103,7 @@ const SHAPE: { [K in keyof Extensions]: (keyof Extensions[K])[] } = {
   billing: ["entitlements", "reportUsage"],
   credentials: ["oauthClient"],
   client: ["headScripts"],
+  inactivity: ["decide"],
 };
 
 // Global registry: Next loads instrumentation and routes in separate
@@ -111,7 +131,7 @@ const invalid = (module: string, reason: string) =>
 
 function validate(ext: unknown, module: string): Partial<Extensions> {
   if (!ext || typeof ext !== "object")
-    throw invalid(module, "expected an object with telemetry, billing, credentials or client");
+    throw invalid(module, "expected an object with telemetry, billing, credentials, client or inactivity");
   const out: Partial<Extensions> = {};
   for (const [key, impl] of Object.entries(ext)) {
     if (!(key in SHAPE)) throw invalid(module, `unknown extension point "${key}"`);
