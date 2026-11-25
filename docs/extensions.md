@@ -52,6 +52,7 @@ an offer only changes the extension, never this repository.
 | `quota:aiBudgetUsd`   | monthly AI budget of a workspace         | `QUOTA_MAX_AI_BUDGET_USD`  |
 | `quota:aiTrialUsd`    | free AI credit on the platform key       | `QUOTA_AI_TRIAL_USD` (5.4) |
 | `quota:retentionDays` | retention purge (none when unset)        | `RETENTION_DAYS`           |
+| `quota:maxRunDurationMs` | function timeouts and run execution time (waits excluded) | `QUOTA_MAX_RUN_DURATION_MS` |
 
 A new quota type is still a public change, because the core must count it.
 

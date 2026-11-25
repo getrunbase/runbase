@@ -38,6 +38,7 @@ import { stage, dispatch, enqueue, clearOutbox } from "./outbox";
 import { blockEngine } from "../blocks/engine";
 import { runsService } from "./service";
 import { aiGate, AI_LIMIT_MESSAGE } from "./budget";
+import { quotaOf } from "../entitlements";
 import {
   cancelRuns,
   resumeWaiting,
@@ -202,7 +203,17 @@ async function runStep(job: Job<StepJob>) {
       return;
     }
   }
+  // Execution time cap of the run (quota:maxRunDurationMs, waits excluded):
+  // exhausted = path failed, otherwise the step timeout gets the remainder.
+  const maxRunMs = await quotaOf(ctx.organizationId, "quota:maxRunDurationMs");
+  const leftMs = maxRunMs - run.activeMs;
+  if (leftMs <= 0) {
+    await failPath(ctx, ref, p.step, input, runDurationExceeded(maxRunMs));
+    return;
+  }
   const opts = stepOptions(step);
+  const capped = leftMs < opts.timeoutMs;
+  if (capped) opts.timeoutMs = leftMs;
   const startedAt = new Date();
   const key = `${runId}:${path}:${n}`;
   // Step AbortController: at the timeout, the signal cancels the block's
@@ -212,9 +223,16 @@ async function runStep(job: Job<StepJob>) {
   const timer = setTimeout(
     () =>
       controller.abort(
-        appError("runs.timedOut", "Timed out ({seconds} s)", {
-          seconds: opts.timeoutMs / 1000,
-        }),
+        capped
+          ? appError(
+              "runs.maxDurationExceeded",
+              "Maximum run duration reached ({seconds} s)",
+              {
+              seconds: maxRunMs / 1000,
+            })
+          : appError("runs.timedOut", "Timed out ({seconds} s)", {
+              seconds: opts.timeoutMs / 1000,
+            }),
       ),
     opts.timeoutMs,
   );
@@ -238,8 +256,10 @@ async function runStep(job: Job<StepJob>) {
       opts.timeoutMs,
     );
     clearTimeout(timer);
+    await addActiveMs(ctx, runId, startedAt);
   } catch (e) {
     clearTimeout(timer);
+    await addActiveMs(ctx, runId, startedAt);
     const cap = e instanceof CostCapExceeded ? e : undefined;
     // Step retry according to its policy: new delayed job (exponential
     // backoff), the path stays at the same rank.
@@ -324,6 +344,21 @@ async function runStep(job: Job<StepJob>) {
     attempts: attempt + 1,
   });
 }
+
+// Run execution time cap reached (English template of runs.maxDurationExceeded).
+const runDurationExceeded = (maxMs: number) =>
+  `Maximum run duration reached (${maxMs / 1000} s)`;
+
+// Adds the duration of a step attempt to the run execution time.
+const addActiveMs = (ctx: TenantContext, runId: string, startedAt: Date) =>
+  withTenant(ctx, (tx) =>
+    tx
+      .update(workflowRuns)
+      .set({
+        activeMs: sql`${workflowRuns.activeMs} + ${Date.now() - startedAt.getTime()}`,
+      })
+      .where(eq(workflowRuns.id, runId)),
+  );
 
 export const startRunsWorker = () =>
   // Concurrency capped per workspace.
