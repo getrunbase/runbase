@@ -8,6 +8,7 @@ import { mockCall } from "@getrunbase/core/components/mock";
 import { fileStorage } from "@getrunbase/core/files";
 import {
   RENDER_QUEUE,
+  renderSweeper,
   jobWorkspace,
   shotKey,
   type RenderJob,
@@ -28,6 +29,9 @@ function run(job: RenderJob): Promise<ShotReport> {
   });
 }
 
+// Deletes the PNGs the web never read back (timeouts, dropped late results).
+export const sweeper = renderSweeper(fileStorage);
+
 export async function processRender(
   job: Job<RenderJob, RenderResult>,
 ): Promise<RenderResult> {
@@ -38,6 +42,7 @@ export async function processRender(
   for (const s of shots) {
     const key = shotKey(ws, job.id!, s);
     await storage.put(key, { bytes: s.png, type: "image/png" });
+    sweeper.track(key);
     stored.push({ viewport: s.viewport, theme: s.theme, key });
   }
   return { ...rest, shots: stored };

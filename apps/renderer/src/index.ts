@@ -6,13 +6,23 @@ import { createServer } from "node:http";
 import { APP_NAME } from "@getrunbase/core";
 import { busConnection } from "@getrunbase/core/bus";
 import { env } from "@getrunbase/core/env";
-import { startRenderWorker } from "./worker";
+import { startRenderWorker, sweeper } from "./worker";
 
 const worker = startRenderWorker();
 worker.on("failed", (job, e) =>
   console.error(`[${APP_NAME}] render job ${job?.id} failed`, e),
 );
 console.log(`[${APP_NAME}] renderer started`);
+
+// Orphan render PNGs: swept every minute.
+const sweepTimer = setInterval(
+  () =>
+    void sweeper.sweep().then(
+      (n) => n && console.log(`[${APP_NAME}] swept ${n} orphan render(s)`),
+      (e) => console.error(`[${APP_NAME}] render sweep failed`, e),
+    ),
+  60_000,
+);
 
 const redis = busConnection();
 const health = createServer(async (req, res) => {
@@ -30,6 +40,7 @@ const stop = async (signal: string) => {
   stopping = true;
   console.log(`[${APP_NAME}] ${signal}: stopping renderer…`);
   health.close();
+  clearInterval(sweepTimer);
   redis.disconnect();
   await worker.close();
   process.exit(0);
