@@ -8,7 +8,7 @@ that makes no network call.
 
 ## Interfaces
 
-`@getrunbase/core/extensions` exposes four extension points:
+`@getrunbase/core/extensions` exposes five extension points:
 
 | Point         | Interface            | Purpose                                                          |
 | ------------- | -------------------- | ---------------------------------------------------------------- |
@@ -16,6 +16,7 @@ that makes no network call.
 | `billing`     | `BillingProvider`    | `entitlements(organizationId)`, `reportUsage(workspaceId, metric, qty)`. |
 | `credentials` | `ManagedCredentials` | `oauthClient(provider)`.                                         |
 | `client`      | `ClientExtension`    | `headScripts()`: scripts injected in the `<head>` of `apps/web`. |
+| `inactivity`  | `InactivityPolicy`   | `decide(input)`: pause an idle workspace, or warn first.         |
 
 `TelemetrySink` is product analytics (who uses which feature). It is distinct
 from the OpenTelemetry metrics of `@getrunbase/core/telemetry`, which describe
@@ -86,6 +87,16 @@ The policy belongs to an extension, through `@getrunbase/core/workspaces`:
 | `resumeWorkspace(id)`        | Resume without recording an activity.                |
 | `isPaused(id)`               | Current state.                                       |
 | `touchActivity(id)`          | Record an activity (resumes a paused workspace).     |
+
+The `inactivity` extension point plugs a policy without writing a job. The
+worker calls `inactivity.decide({ workspaceId, organizationId, lastActivityAt,
+paused, warnedAt, now })` for each active workspace on `INACTIVITY_CRON`
+(hourly by default), only when an extension module is loaded. `lastActivityAt`
+is the creation date when no activity was recorded. The answer
+`{ action: "pause" | "warn" | "none" }` is applied by the core: `pause` pauses
+the workspace, `warn` stores the date in `workspaces.warned_at`, passed back as
+`warnedAt` on the next calls (sending the warning is the policy's job). Default:
+`none`. A failing call is logged and does not stop the others.
 
 ## Loading
 
