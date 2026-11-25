@@ -48,6 +48,7 @@ an offer only changes the extension, never this repository.
 | `quota:apiPerMinute`  | API rate (MCP, REST, ingestion)          | `QUOTA_MAX_API_PER_MINUTE` |
 | `quota:concurrency`   | default jobs at once per workspace       | `QUOTA_CONCURRENCY`        |
 | `quota:workspaces`    | workspace creation                       | `QUOTA_MAX_WORKSPACES`     |
+| `quota:pages`         | first publish of an interface (page)     | `QUOTA_MAX_PAGES`          |
 | `quota:aiBudgetUsd`   | monthly AI budget of a workspace         | `QUOTA_MAX_AI_BUDGET_USD`  |
 | `quota:aiTrialUsd`    | free AI credit on the platform key       | `QUOTA_AI_TRIAL_USD` (5.4) |
 | `quota:retentionDays` | retention purge (none when unset)        | `RETENTION_DAYS`           |

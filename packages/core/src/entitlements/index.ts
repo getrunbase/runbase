@@ -16,6 +16,7 @@ export const QUOTA_KEYS = [
   "quota:apiPerMinute",
   "quota:concurrency",
   "quota:workspaces",
+  "quota:pages",
   "quota:aiBudgetUsd",
   "quota:retentionDays",
 ] as const;
@@ -34,6 +35,7 @@ export function envEntitlements(): Resolved {
     "quota:storageBytes": e.QUOTA_MAX_STORAGE_BYTES,
     "quota:apiPerMinute": e.QUOTA_MAX_API_PER_MINUTE,
     "quota:workspaces": e.QUOTA_MAX_WORKSPACES,
+    "quota:pages": e.QUOTA_MAX_PAGES,
     "quota:aiBudgetUsd": e.QUOTA_MAX_AI_BUDGET_USD,
     "quota:retentionDays": e.RETENTION_DAYS,
   };

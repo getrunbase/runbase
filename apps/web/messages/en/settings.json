@@ -223,7 +223,8 @@
       "unlimited": "{used} · Unlimited",
       "reached": "Limit reached",
       "records": "Records (this workspace)",
-      "workspaces": "Workspaces"
+      "workspaces": "Workspaces",
+      "pages": "Published interfaces"
     },
     "quota": {
       "link": "See plan and usage"
