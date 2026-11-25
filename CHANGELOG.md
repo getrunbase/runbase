@@ -4,6 +4,26 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.2.0](https://github.com/getrunbase/runbase/compare/v0.1.0...v0.2.0) (2026-11-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename all workspace packages to the @getrunbase scope ([#14](https://github.com/getrunbase/runbase/issues/14))
+* publish the SDKs under the @getrunbase npm scope ([#13](https://github.com/getrunbase/runbase/issues/13))
+
+### Bug Fixes
+
+* **core:** merge workspace settings and make AI budget provider-agnostic ([#12](https://github.com/getrunbase/runbase/issues/12)) ([ddbab4f](https://github.com/getrunbase/runbase/commit/ddbab4fcccfdb6efd02bc0c4f01d8b3d0b6578bb))
+* **sdk:** rewrite .ts import extensions so the package builds ([#1](https://github.com/getrunbase/runbase/issues/1)) ([3fbccbd](https://github.com/getrunbase/runbase/commit/3fbccbda8fa3c08ec9a08ce1438c5b46369951a8))
+* **web:** validate remaining server action inputs with zod ([#10](https://github.com/getrunbase/runbase/issues/10)) ([cd2e1e8](https://github.com/getrunbase/runbase/commit/cd2e1e841f8e7bbc6b001e56ee70146ea932325c))
+
+
+### Code Refactoring
+
+* publish the SDKs under the [@getrunbase](https://github.com/getrunbase) npm scope ([#13](https://github.com/getrunbase/runbase/issues/13)) ([fd07ba0](https://github.com/getrunbase/runbase/commit/fd07ba099c7857257775939919a8dda0a168abfb))
+* rename all workspace packages to the [@getrunbase](https://github.com/getrunbase) scope ([#14](https://github.com/getrunbase/runbase/issues/14)) ([0667e7c](https://github.com/getrunbase/runbase/commit/0667e7ca5a23e2dd36980d93a95caeb1ff0d018b))
+
 ## [Unreleased]
 
 ## [0.1.0] - 2026-11-23
