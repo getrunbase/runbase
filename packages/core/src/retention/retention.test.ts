@@ -123,6 +123,66 @@ test("purge: old data in batches ≤ 5k, recent data untouched, idempotent", asy
   );
 });
 
+test("purge: errors and settled idempotency keys follow the retention", async () => {
+  const o = await org(30);
+  await sql`insert into errors (organization_id, workspace_id, source, message, created_at)
+    values (${o.org}, ${o.ws}, 'ingest', 'old', now() - interval '40 days'),
+      (${o.org}, ${o.ws}, 'ingest', 'new', now())`;
+  await sql`insert into idempotency_keys (organization_id, workspace_id, key, status, created_at)
+    values (${o.org}, ${o.ws}, 'old', 200, now() - interval '40 days'),
+      (${o.org}, ${o.ws}, 'pending', null, now() - interval '40 days'),
+      (${o.org}, ${o.ws}, 'new', 200, now())`;
+  const r = await purgeRetention({ pauseMs: 0, organizationIds: [o.org] });
+  assert.deepEqual(r.deleted, { errors: 1, idempotency_keys: 1 });
+  assert.equal(await count("errors", o.org), 1);
+  const keys = await sql`select key from idempotency_keys
+    where organization_id = ${o.org} order by key`;
+  assert.deepEqual(
+    keys.map((k) => k.key),
+    ["new", "pending"],
+  );
+});
+
+test("purge: no retention quota keeps errors and keys (self-host)", async () => {
+  const o = await org(30);
+  days.delete(o.org);
+  await sql`insert into errors (organization_id, workspace_id, source, message, created_at)
+    values (${o.org}, ${o.ws}, 'ingest', 'old', now() - interval '400 days')`;
+  await sql`insert into idempotency_keys (organization_id, workspace_id, key, status, created_at)
+    values (${o.org}, ${o.ws}, 'old', 200, now() - interval '400 days')`;
+  const r = await purgeRetention({ pauseMs: 0, organizationIds: [o.org] });
+  assert.deepEqual(r.deleted, {});
+  assert.equal(await count("errors", o.org), 1);
+  assert.equal(await count("idempotency_keys", o.org), 1);
+});
+
+test("purge: expired page errors and outbox rows of finished runs, any plan", async () => {
+  const o = await org(30);
+  days.delete(o.org);
+  const [p] = await sql`insert into pages (organization_id, workspace_id, name, files)
+    values (${o.org}, ${o.ws}, 'P', '{}') returning id`;
+  await sql`insert into page_errors (organization_id, page_id, fingerprint, message, last_seen)
+    values (${o.org}, ${p!.id}, 'a', 'old', now() - interval '25 hours'),
+      (${o.org}, ${p!.id}, 'b', 'new', now())`;
+  const [done, live] = await sql`insert into workflow_runs (organization_id,
+      workspace_id, workflow_id, version, actor, input, status, finished_at)
+    values (${o.org}, ${o.ws}, ${o.wf}, 1, '{}', '{}', 'succeeded', now()),
+      (${o.org}, ${o.ws}, ${o.wf}, 1, '{}', '{}', 'waiting', null)
+    returning id`;
+  await sql`insert into run_outbox (organization_id, workspace_id, run_id, path, n, wait_until)
+    values (${o.org}, ${o.ws}, ${done!.id}, 'a', 0, now() + interval '1 day'),
+      (${o.org}, ${o.ws}, ${live!.id}, 'a', 0, now() + interval '1 day')`;
+  const r = await purgeRetention({ pauseMs: 0, organizationIds: [o.org] });
+  assert.deepEqual(r.deleted, { page_errors: 1, run_outbox: 1 });
+  assert.equal(await count("page_errors", o.org), 1);
+  const left =
+    await sql`select run_id from run_outbox where organization_id = ${o.org}`;
+  assert.deepEqual(
+    left.map((x) => x.run_id),
+    [live!.id],
+  );
+});
+
 test("custom batch size: loops until exhausted", async () => {
   const o = await org(30);
   await sql`insert into function_logs (organization_id, workspace_id,
