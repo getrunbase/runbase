@@ -11,6 +11,8 @@ import { appError } from "../errors/app-error";
 import { fileStorage } from "../files";
 import type { TenantContext } from "../tenant";
 
+export { renderSweeper, RENDER_KEY_TTL_MS } from "./sweeper";
+
 export const RENDER_QUEUE = "render";
 
 export type Viewport = "desktop" | "mobile";
