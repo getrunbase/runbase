@@ -5,7 +5,7 @@ import { requireScope } from "../api-keys";
 import { audit } from "../audit";
 import { runSteps, workflowRuns, workspaces } from "../db/schema";
 import { recordsService } from "../records";
-import { exceedsLimit, rateLimit } from "../quotas";
+import { countRun, exceedsLimit, rateLimit } from "../quotas";
 import { quotaOf } from "../entitlements";
 import { withTenant, type TenantContext } from "../tenant";
 import { workflowsService, type Definition } from "../workflows";
@@ -62,6 +62,8 @@ export const runsService = {
             (v) => v.version === version,
           )?.definition;
     if (!definition) return null;
+    // A sub-workflow belongs to its parent run: counted once.
+    if (!opts.parent) await countRun(ctx);
     const { entry } = normalizeGraph(definition as Definition);
     const paths: Paths = Object.fromEntries(
       entry.map((step, i) => [`${i}`, { step, n: 0, status: "running" }]),

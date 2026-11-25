@@ -58,6 +58,7 @@ after(async () => {
 const isPng = (b: Buffer) => b.subarray(0, 4).toString("hex") === "89504e47";
 
 test("page job processed by the renderer: PNG, token forwarded, axe audit", async (t) => {
+  if (!process.env.CI && !process.env.RENDERER_BROWSER_TESTS) return t.skip("browser tests run in CI only");
   if (!(await browserAvailable())) return t.skip("Chromium indisponible");
   const out = await render({
     kind: "page",
@@ -103,6 +104,7 @@ postMessage({ type: "ready" }, "*");
 </script></body></html>`;
 
 test("component job: SDK calls served by the renderer (mock), one image per viewport", async (t) => {
+  if (!process.env.CI && !process.env.RENDERER_BROWSER_TESTS) return t.skip("browser tests run in CI only");
   if (!(await browserAvailable())) return t.skip("Chromium indisponible");
   const out = await render({
     kind: "component",
@@ -132,6 +134,7 @@ test("component job: SDK calls served by the renderer (mock), one image per view
 
 // page.update review = desktop + mobile captures and axe audit.
 test("reviewPage: unlabeled button, button-name violation and two captures", async (t) => {
+  if (!process.env.CI && !process.env.RENDERER_BROWSER_TESTS) return t.skip("browser tests run in CI only");
   if (!(await browserAvailable())) return t.skip("Chromium indisponible");
   const r = await reviewPage({
     kind: "page",

@@ -5,6 +5,8 @@ import { execFileSync } from "node:child_process";
 import postgres from "postgres";
 import type { TenantContext } from "../tenant";
 import { AppError } from "../errors/app-error";
+import { invalidateEntitlements } from "../entitlements";
+import { registerExtensions, resetExtensions } from "../extensions";
 import { pagesService as pg } from "./index";
 
 const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
@@ -235,4 +237,42 @@ test("/p/[slug]: published TSX package compiled for the iframe, permissioned SDK
   await pg.update(a, p.id, { files: { "index.tsx": "export default (" } });
   await rejectsCode(pg.bundle(a, p.id, { draft: true }), "pages.compileFailed");
   await rejectsCode(pg.bundle(a, crypto.randomUUID()), "pages.notFound");
+});
+
+test("quota:pages caps first publishes across the organization; unlimited by default", async () => {
+  const a = await owner("Quota pages");
+  // Second workspace of the same organization.
+  const [ws2] =
+    await sql`insert into workspaces (organization_id, name) values (${a.organizationId}, 'Other') returning id`;
+  const a2 = { ...a, workspaceId: ws2!.id as string };
+  const mk = (ctx: TenantContext, n: string) =>
+    pg.create(ctx, { name: n, files: { "index.tsx": code(n) } });
+  // No extension, no env cap: unlimited.
+  for (const n of ["u1", "u2", "u3"]) await pg.publish(a, (await mk(a, n)).id);
+  registerExtensions({
+    billing: {
+      entitlements: async () => ({ features: [], quotas: { "quota:pages": 4 } }),
+      reportUsage: async () => {},
+    },
+  });
+  invalidateEntitlements();
+  try {
+    const p4 = await mk(a2, "p4");
+    await pg.publish(a2, p4.id);
+    const p5 = await mk(a2, "p5");
+    await rejectsCode(pg.publish(a2, p5.id), "quotas.limit");
+    await rejectsCode(
+      pg.create(a, { name: "p6", files: { "index.tsx": code("p6") }, publish: true }),
+      "quotas.limit",
+    );
+    // Republishing an already published page is not a new interface.
+    await pg.patchFiles(a2, p4.id, [{ op: "write", path: "index.tsx", source: code("v2") }]);
+    assert.equal((await pg.publish(a2, p4.id))!.currentVersion, 2);
+    // Deleting a published page frees a slot.
+    assert.equal(await pg.remove(a2, p4.id), true);
+    assert.equal((await pg.publish(a2, p5.id))!.currentVersion, 1);
+  } finally {
+    resetExtensions();
+    invalidateEntitlements();
+  }
 });

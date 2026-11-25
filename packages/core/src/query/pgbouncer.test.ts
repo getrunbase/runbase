@@ -67,7 +67,7 @@ ignore_startup_parameters = extra_float_digits,options
     "--add-host", "host.docker.internal:host-gateway",
     "-p", `127.0.0.1:${port}:5432`,
     "-v", `${dir}:/etc/pgbouncer:ro`,
-    "edoburu/pgbouncer:latest",
+    "edoburu/pgbouncer:v1.26.1-p0",
   );
   const via = (x: URL) => {
     const v = new URL(x);

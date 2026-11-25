@@ -70,7 +70,10 @@ export function s3Storage(c: S3Config, client?: S3Client): FileStorage {
     head: async (Key) => {
       try {
         const r = await s3.send(new HeadObjectCommand({ Bucket, Key }));
-        return { type: r.ContentType ?? "application/octet-stream" };
+        return {
+          type: r.ContentType ?? "application/octet-stream",
+          size: r.ContentLength ?? 0,
+        };
       } catch (e) {
         if (missing(e)) return null;
         throw e;

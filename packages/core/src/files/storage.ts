@@ -15,7 +15,7 @@ export interface FileStorage {
   put(key: string, file: StoredFile): Promise<void>;
   get(key: string): Promise<StoredFile | null>;
   // Metadata without the bytes; null if missing.
-  head(key: string): Promise<{ type: string } | null>;
+  head(key: string): Promise<{ type: string; size: number } | null>;
   remove(key: string): Promise<void>;
   // Presigned URLs (remote drivers only): the browser reads or
   // uploads the bytes directly in the bucket, without going through the web.
@@ -33,7 +33,7 @@ export function memoryStorage(): FileStorage {
     get: async (k) => files.get(k) ?? null,
     head: async (k) => {
       const f = files.get(k);
-      return f ? { type: f.type } : null;
+      return f ? { type: f.type, size: f.bytes.length } : null;
     },
     remove: async (k) => void files.delete(k),
   };
@@ -65,8 +65,12 @@ export function localStorage(root: string): FileStorage {
     },
     head: async (k) => {
       try {
-        if (!(await stat(path(k))).isFile()) return null;
-        return { type: (await readFile(`${path(k)}.type`, "utf8")).trim() };
+        const st = await stat(path(k));
+        if (!st.isFile()) return null;
+        return {
+          type: (await readFile(`${path(k)}.type`, "utf8")).trim(),
+          size: st.size,
+        };
       } catch {
         return null;
       }

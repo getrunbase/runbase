@@ -248,6 +248,7 @@ export const mcpTools: {
   files: {
     upload: "files.upload",
     download: "files.download",
+    remove: "files.delete",
     // Excluded: presigned URLs for the browser (web), no agent use.
     direct: null,
     uploadUrl: null,

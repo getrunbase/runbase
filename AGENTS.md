@@ -2,6 +2,10 @@
 
 This file is the single source of project rules for every contributor, human or AI coding agent. `CLAUDE.md` only imports it.
 
+## Who we build for
+
+Public copy (README, docs, UI strings, templates) speaks first to growth, ops, RevOps and marketing teams who build their own tools with an AI agent instead of renting SaaS that almost fits. Lead with the result for them (the CRM, workflow or dashboard, and that it keeps running), not with the plumbing. Technical detail (MCP, typed data, functions) comes after, for builders and developers. Open source is the guarantee: they can self-host and leave anytime.
+
 ## Architecture rules
 
 - **UI**: use `@getrunbase/ui` (the design system's shadcn/ui components) and Tailwind with theme tokens only. Do not add any other component library (MUI, Chakra, Mantine, antd, ...). Import components provided by `@getrunbase/ui` from `@getrunbase/ui/components/ui/*`, not from `@/components/ui`. Radix is imported only inside `components/ui` (shadcn components).

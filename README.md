@@ -5,12 +5,21 @@
   </picture>
 </h1>
 
-**The data, automation and interface platform that AI agents build on.**
+**Stop renting tools that almost fit.**
 
-Connect Claude, Cursor or any MCP client, describe the tool you need, and the
-agent builds it end to end: typed databases, webhooks, sandboxed functions,
-durable workflows and the pages your team uses every day. Self-host it in five
-minutes, with unlimited workspaces for free.
+Describe the CRM, workflow or dashboard you need. Your agent builds it on
+Runbase, and it runs from day one: your data, your rules, no per-seat pricing
+on your own tools.
+
+Runbase is the open source platform behind it. Connect Claude Code, Codex,
+Cursor or any MCP client: the agent configures stable building blocks through
+one MCP server (typed data, events and webhooks, sandboxed functions, durable
+workflows, pages and dashboards). Every change is validated, versioned and
+reversible before it goes live.
+
+Self-host it in five minutes with Docker, unlimited workspaces for free, or
+use the managed cloud. Leave anytime: the core is open source and your data
+stays yours.
 
 [![License: FSL-1.1-ALv2](https://img.shields.io/badge/core-FSL--1.1--ALv2-blue)](LICENSE)
 [![SDK license: MIT](https://img.shields.io/badge/SDK%20%26%20connectors-MIT-green)](packages/node-sdk/LICENSE)

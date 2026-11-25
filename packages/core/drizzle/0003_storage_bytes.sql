@@ -1,0 +1,1 @@
+ALTER TABLE "workspace_usage" ADD COLUMN "storage_bytes" bigint DEFAULT 0 NOT NULL;
