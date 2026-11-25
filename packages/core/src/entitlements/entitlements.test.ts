@@ -10,6 +10,7 @@ import {
   invalidateEntitlements,
   quotaOf,
   QuotaError,
+  showsPoweredByBadge,
 } from "./index";
 import { registerExtensions, resetExtensions } from "../extensions";
 
@@ -89,4 +90,16 @@ test("checkQuota: allows up to the cap, then a 429 QuotaError", async () => {
     assert.equal(e.code, "quotas.limit");
     return true;
   });
+});
+
+test("badge: hidden by default, shown only when hideBadge is not granted", async () => {
+  const ctx = { organizationId: crypto.randomUUID() };
+  assert.equal(await showsPoweredByBadge(ctx), false);
+  billing(async (org) =>
+    org === "paid"
+      ? { features: ["feat:hideBadge"], quotas: {} }
+      : { features: [], quotas: {} },
+  );
+  assert.equal(await showsPoweredByBadge({ organizationId: "paid" }), false);
+  assert.equal(await showsPoweredByBadge({ organizationId: "free" }), true);
 });
