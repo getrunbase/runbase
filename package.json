@@ -25,7 +25,7 @@
     "check:licenses": "node scripts/check-licenses.mjs",
     "catalog:validate": "cd packages/core && node --import tsx ../../scripts/validate-catalog.mts",
     "catalog:revalidate": "cd packages/core && node --import tsx ../../scripts/catalog-revalidate.mts",
-    "gen:docs": "cd apps/web && TSX_TSCONFIG_PATH=tsconfig.json node --import tsx ../../scripts/gen-docs.mts && cd ../.. && prettier --log-level warn --write apps/docs/content/docs/reference apps/docs/content/docs/self-hosting.mdx",
+    "gen:docs": "cd apps/web && TSX_TSCONFIG_PATH=tsconfig.json node --import tsx ../../scripts/gen-docs.mts && cd ../.. && prettier --log-level warn --write apps/docs/content/docs/en/reference apps/docs/content/docs/en/self-hosting.mdx apps/docs/content/docs/fr/reference apps/docs/content/docs/fr/self-hosting.mdx",
     "check:readme": "node scripts/check-readme-links.mjs --external README.md"
   },
   "devDependencies": {

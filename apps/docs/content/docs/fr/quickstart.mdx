@@ -1,0 +1,60 @@
+---
+title: Démarrage rapide
+description: Lancez Runbase en local, connectez un agent IA via MCP et construisez un petit CRM.
+---
+
+## 1. Lancer une instance
+
+Il vous faut Docker avec le plugin Compose, ainsi que `openssl`.
+
+```sh
+git clone https://github.com/getrunbase/runbase runbase && cd runbase
+./setup.sh
+docker compose -f docker-compose.selfhost.yml up -d --wait
+docker compose -f docker-compose.selfhost.yml exec worker pnpm admin:create you@example.com
+```
+
+Ouvrez `http://localhost:3000/login` et demandez un lien de connexion. Sans
+configuration e-mail, le lien s'affiche dans les logs du service web :
+
+```sh
+docker compose -f docker-compose.selfhost.yml logs web | grep email:console
+```
+
+Consultez la page [auto-hébergement](/docs/self-hosting) pour HTTPS, les
+sauvegardes et les mises à jour.
+
+## 2. Connecter un agent
+
+Le point de terminaison MCP est `http://localhost:3000/api/mcp`. Les clients MCP
+compatibles OAuth (Claude Code, Claude Desktop, Cursor…) se connectent via le
+navigateur. Pour les autres clients, créez une clé d'API dans
+**Settings → API keys** et envoyez-la sous la forme
+`Authorization: Bearer <key>`.
+
+```sh
+claude mcp add --transport http runbase http://localhost:3000/api/mcp
+```
+
+## 3. Construire quelque chose
+
+Demandez par exemple à l'agent :
+
+> Construis un petit CRM : des entreprises et des contacts, un score de lead,
+> un workflow qui note les nouveaux contacts et une page de pipeline.
+
+L'agent appelle généralement `workspace.describe`, puis `databases.create`,
+`objects.create`, `records.upsert_batch` (avec `test: true` pour les données
+d'exemple), `workflows.create` et `page.create`. Tous les outils sont listés
+dans la [référence MCP](/docs/reference/mcp).
+
+## 4. Nettoyer les données de test
+
+`workspace.purge_test` avec `{ "dryRun": true }`, puis `{ "confirm": true }`,
+supprime les enregistrements, événements et exécutions de test.
+
+## Étapes suivantes
+
+- [Concepts](/docs/concepts) : comment les briques s'articulent.
+- [Nœuds de workflow](/docs/reference/nodes) : ce qu'un workflow peut faire.
+- [API REST](/docs/reference/api) : intégrez Runbase depuis votre propre code.

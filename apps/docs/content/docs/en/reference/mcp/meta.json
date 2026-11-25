@@ -1,0 +1,30 @@
+{
+  "title": "MCP tools",
+  "pages": [
+    "index",
+    "api_keys",
+    "audit",
+    "blocks",
+    "databases",
+    "errors",
+    "events",
+    "feedback",
+    "files",
+    "functions",
+    "members",
+    "objects",
+    "page",
+    "query",
+    "quotas",
+    "records",
+    "runs",
+    "secrets",
+    "template",
+    "templates",
+    "views",
+    "webhooks",
+    "workflows",
+    "workspace",
+    "workspaces"
+  ]
+}

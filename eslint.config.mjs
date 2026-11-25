@@ -92,9 +92,16 @@ const coreErrors = {
 };
 
 // Project rule: no hard-coded UI text, everything goes through next-intl
-// (messages/<locale>/<ns>.json). See docs/i18n.md.
+// (messages/<locale>/<ns>.json). See docs/i18n.md. The docs site
+// (apps/docs) follows the same rule with its own messages files.
 const i18n = {
-  files: ["apps/web/app/**/*.tsx", "apps/web/components/**/*.tsx"],
+  files: [
+    "apps/web/app/**/*.tsx",
+    "apps/web/components/**/*.tsx",
+    "apps/docs/app/**/*.tsx",
+    "apps/docs/components/**/*.tsx",
+    "apps/docs/lib/**/*.tsx",
+  ],
   ignores: ["apps/web/components/ui/**", "apps/web/app/api/**", "**/*.test.*"],
   rules: {
     "no-restricted-syntax": [

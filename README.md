@@ -14,7 +14,7 @@ minutes, with unlimited workspaces for free.
 
 [![License: FSL-1.1-ALv2](https://img.shields.io/badge/core-FSL--1.1--ALv2-blue)](LICENSE)
 [![SDK license: MIT](https://img.shields.io/badge/SDK%20%26%20connectors-MIT-green)](packages/node-sdk/LICENSE)
-[![MCP native](https://img.shields.io/badge/MCP-native-purple)](apps/docs/content/docs/reference/mcp.mdx)
+[![MCP native](https://img.shields.io/badge/MCP-native-purple)](apps/docs/content/docs/en/reference/mcp/index.mdx)
 [![Self-host: Docker](https://img.shields.io/badge/self--host-Docker-2496ED)](docs/self-hosting.md)
 [![CI](https://github.com/getrunbase/runbase/actions/workflows/ci.yml/badge.svg)](https://github.com/getrunbase/runbase/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/getrunbase/runbase)](https://github.com/getrunbase/runbase/releases)
@@ -65,13 +65,13 @@ HTTPS, backups and upgrades: [self-hosting guide](docs/self-hosting.md).
 
 The docs site lives in [`apps/docs`](apps/docs) (`pnpm --filter @getrunbase/docs dev`):
 
-- [Quickstart](apps/docs/content/docs/quickstart.mdx)
-- [Concepts](apps/docs/content/docs/concepts/index.mdx)
-- [Writing a connector](apps/docs/content/docs/guides/connectors.mdx)
-- [Template format](apps/docs/content/docs/guides/templates.mdx)
-- References generated from the code: [REST API](apps/docs/content/docs/reference/api.mdx),
-  [MCP tools](apps/docs/content/docs/reference/mcp.mdx),
-  [workflow nodes](apps/docs/content/docs/reference/nodes.mdx)
+- [Quickstart](apps/docs/content/docs/en/quickstart.mdx)
+- [Concepts](apps/docs/content/docs/en/concepts/index.mdx)
+- [Writing a connector](apps/docs/content/docs/en/guides/connectors.mdx)
+- [Template format](apps/docs/content/docs/en/guides/templates.mdx)
+- References generated from the code: [REST API](apps/docs/content/docs/en/reference/api.mdx),
+  [MCP tools](apps/docs/content/docs/en/reference/mcp/index.mdx),
+  [workflow nodes](apps/docs/content/docs/en/reference/nodes.mdx)
 
 ## How it compares
 

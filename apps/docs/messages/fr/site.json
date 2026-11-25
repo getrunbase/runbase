@@ -1,0 +1,36 @@
+{
+  "brand": "Runbase",
+  "languageName": "Français",
+  "ogLocale": "fr_FR",
+  "meta": {
+    "title": "Documentation Runbase",
+    "titleTemplate": "%s | Documentation Runbase",
+    "description": "Documentation de Runbase : données, automatisation et interfaces, construites par des agents IA via MCP."
+  },
+  "breadcrumbRoot": "Docs",
+  "home": {
+    "title": "Documentation Runbase",
+    "lead": "La plateforme de données, d'automatisation et d'interfaces sur laquelle les agents IA construisent, via MCP.",
+    "cta": "Commencer",
+    "quickstart": {
+      "title": "Démarrage rapide",
+      "text": "De zéro à un espace de travail fonctionnel, construit par un agent IA."
+    },
+    "selfHosting": {
+      "title": "Auto-hébergement",
+      "text": "Faites tourner Runbase sur votre propre serveur avec Docker."
+    },
+    "concepts": {
+      "title": "Concepts",
+      "text": "Espaces de travail, données, événements, fonctions, workflows et interfaces."
+    },
+    "reference": {
+      "title": "Référence",
+      "text": "API REST, outils MCP et nœuds de workflow, générés depuis le code."
+    }
+  },
+  "llms": {
+    "pages": "Pages",
+    "otherLanguages": "Autres langues"
+  }
+}

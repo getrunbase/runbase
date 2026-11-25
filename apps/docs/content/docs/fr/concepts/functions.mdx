@@ -1,0 +1,27 @@
+---
+title: Fonctions
+description: Du JavaScript versionné, exécuté dans un bac à sable côté serveur, avec des permissions explicites.
+---
+
+Une **fonction** est du code JavaScript versionné exécuté dans un bac à sable (Deno,
+sans disque, sans variables d'environnement, sans processus). Elle déclare :
+
+- `inputSchema` et `outputSchema` (JSON Schema), validés à chaque appel ;
+- `permissions` : les `domains` réseau joignables, les `secrets` lisibles, et
+  l'accès aux `records` et aux `events` (`read` ou `write`) ;
+- `limits` : `timeoutMs` et `memoryMb`.
+
+## Cycle de vie
+
+`functions.save` crée une nouvelle version ; `functions.versions` et
+`functions.restore` permettent de revenir en arrière. `functions.test` exécute
+un appel et, avec `{ "dryRun": true }`, renvoie les écritures prévues sans les
+effectuer. `functions.logs` affiche les exécutions passées.
+
+## Dans les workflows
+
+Chaque fonction est un nœud de workflow nommé `fn.<name>` (dernière version) ou
+`fn.<name>@<version>`. Renvoyez `{ "branch": "…" }` pour aiguiller ; renvoyez
+`{ "ok": false, "error": "…" }` pour faire échouer l'étape.
+
+Les secrets sont stockés chiffrés avec `secrets.set` et ne sont jamais renvoyés.
