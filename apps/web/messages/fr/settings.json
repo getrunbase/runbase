@@ -229,5 +229,19 @@
     "quota": {
       "link": "Voir le plan et l’usage"
     }
+  },
+  "usage": {
+    "title": "Usage",
+    "description": "Ce que ce compte utilise par rapport à ses limites effectives. Sans limite, l’usage est illimité.",
+    "of": "{used} / {limit}",
+    "unlimited": "{used} · Illimité",
+    "reached": "Limite atteinte",
+    "meters": {
+      "records": "Records (ce workspace)",
+      "runsPerMonth": "Runs ce mois-ci (tous les workspaces)",
+      "storageBytes": "Stockage de fichiers (tous les workspaces)",
+      "apiPerMinute": "Appels API cette minute (ce workspace)",
+      "workspaces": "Workspaces"
+    }
   }
 }
