@@ -1,10 +1,10 @@
 {
   "list": {
     "title": "Functions",
-    "description": "TypeScript code created through MCP, usable as a workflow block (fn.<name>).",
+    "description": "TypeScript code created through MCP, usable as a workflow block (fn.'<name>').",
     "empty": {
       "title": "No functions",
-      "description": "Functions are created through MCP (functions.create), then used as fn.<name> blocks in workflows."
+      "description": "Functions are created through MCP (functions.create), then used as fn.'<name>' blocks in workflows."
     },
     "columns": {
       "name": "Name",

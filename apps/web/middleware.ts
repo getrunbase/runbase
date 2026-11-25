@@ -61,6 +61,6 @@ export const config = {
     "/api/auth/:path*",
     "/api/mcp",
     "/api/mcp/:path*",
-    "/((?!api/|_next/|c/|favicon\\.ico|robots\\.txt|opengraph-image|.*\\.[a-z0-9]+$).*)",
+    "/((?!api/|_next/|c/|\\.well-known/|favicon\\.ico|robots\\.txt|opengraph-image|.*\\.[a-z0-9]+$).*)",
   ],
 };
