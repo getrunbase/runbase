@@ -1,0 +1,60 @@
+---
+title: Format des templates
+description: Le format runbase-template.json, pour partager la configuration complète d'un espace de travail.
+---
+
+Un template regroupe objets, vues, fonctions, composants, workflows, pages et,
+en option, des enregistrements d'exemple dans un seul fichier
+`runbase-template.json` (version 1).
+
+| Clé | Contenu |
+| --- | --- |
+| `format`, `version` | `"runbase-template"`, `1` |
+| `name`, `description` | Nom affiché et résumé |
+| `databases` | `{ slug, name }` |
+| `objects` | `{ slug, name, icon?, database?, fields }` (champs typés, relations par slug) |
+| `views` | Vues enregistrées : `{ object, name, filter?, sort?, columns? }` |
+| `functions` | `{ name, code, inputSchema, outputSchema, permissions, limits }` |
+| `components` | Composants de code TSX : `{ name, source, propsSchema, permissions }` |
+| `workflows` | `{ key, name, definition }`, importés comme brouillons |
+| `pages` | `{ name, icon?, definition }` |
+| `secrets` | Noms des secrets requis, jamais leurs valeurs |
+| `records` | Enregistrements d'exemple facultatifs : `{ key, object, externalId?, data }` |
+
+Aucun identifiant d'espace de travail n'y figure. Ils sont remplacés par des
+références locales, résolues à l'import : `$object:<slug>`, `$workflow:<key>`,
+`$record:<key>`.
+
+## Exemple minimal
+
+```json title="runbase-template.json"
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Mini CRM",
+  "description": "Contacts with a lead score.",
+  "databases": [{ "slug": "crm", "name": "CRM" }],
+  "objects": [
+    {
+      "slug": "contact",
+      "name": "Contact",
+      "database": "crm",
+      "fields": [
+        { "key": "email", "label": "Email", "type": "email", "unique": true },
+        { "key": "score", "label": "Score", "type": "number" }
+      ]
+    }
+  ],
+  "secrets": []
+}
+```
+
+## Export et import
+
+- MCP : `template.export` (avec `sampleRecords` en option) et `template.import`.
+- Application web : **Databases → Import template**.
+
+L'import est refusé si un objet, une fonction ou un composant portant le même
+nom existe déjà. Les workflows sont créés comme brouillons : renseignez les
+secrets listés dans `missingSecrets`, puis activez-les. Les templates de la
+communauté se trouvent dans `templates/`, sous licence MIT.

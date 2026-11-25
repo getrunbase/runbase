@@ -1,0 +1,27 @@
+---
+title: Interfaces
+description: Pages, tableaux de bord et composants de code TSX pour les personnes qui exploitent les données.
+---
+
+## Pages
+
+Une **page** est une mise en page déclarative de composants (tableaux,
+formulaires, kanban, graphiques, détail d'enregistrement…) liés à des requêtes
+sur des objets et des vues enregistrées. `page.components` liste les composants
+avec des exemples d'utilisation. Les modifications faites avec `page.update`
+sont placées dans un brouillon : vérifiez-le avec `page.screenshot` et
+`{ "draft": true }`, puis rendez-le visible avec `page.publish`.
+`page.versions` et `page.restore` permettent de revenir en arrière.
+
+## Tableaux de bord
+
+`dashboards.save` crée des tableaux de bord d'indicateurs et de graphiques à
+partir de requêtes ; `dashboards.render` renvoie les données calculées.
+
+## Composants de code
+
+Quand les composants intégrés ne suffisent pas, `components.save` enregistre un
+composant TSX. Il s'exécute dans une iframe isolée, sur une origine dédiée, avec
+uniquement les permissions qu'il déclare. `components.test` en fait le rendu
+avec des props d'exemple, et les pages l'utilisent comme n'importe quel autre
+composant.

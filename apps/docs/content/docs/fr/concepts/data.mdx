@@ -1,0 +1,36 @@
+---
+title: Bases, objets et enregistrements
+description: Données typées, relations, champs calculés, vues et garde-fous.
+---
+
+Les données s'organisent sur trois niveaux :
+
+1. Une **base** regroupe des objets liés (par exemple, « CRM »).
+2. Un **objet** est un schéma de champs typés : texte, nombre, e-mail, liste de
+   choix, date, relation, fichier, formule, recherche (lookup), agrégation
+   (rollup), numérotation automatique, etc. Un champ marqué `unique` (comme un
+   e-mail) est garanti par la base de données et sert de clé d'upsert.
+3. Un **enregistrement** est une ligne d'un objet.
+
+## Écriture
+
+- `records.upsert` et `records.upsert_batch` créent ou mettent à jour selon un
+  champ unique ou un `externalId`.
+- `records.transact` écrit des enregistrements liés en tout-ou-rien.
+- `records.merge` fusionne les doublons, relations et timeline comprises.
+- `records.import_csv` importe un fichier CSV, avec dédoublonnage.
+
+## Lecture
+
+`records.search` filtre, trie et pagine (pagination par curseur avec `after`).
+`query.sql` exécute du SQL en lecture seule sur l'espace de travail. Les **vues
+enregistrées** (filtre, tri, colonnes) sont partagées entre la table,
+`records.search` et les pages.
+
+## Sécurité
+
+La suppression place les enregistrements dans la corbeille pendant 30 jours
+(`records.restore`). `records.history` et `records.revert` permettent d'annuler
+une modification. Les opérations en masse par filtre exigent d'abord un aperçu
+`dryRun`. Modifier un schéma qui contient déjà des données passe par
+`objects.migrate`.

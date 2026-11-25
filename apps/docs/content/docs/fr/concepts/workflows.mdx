@@ -1,0 +1,33 @@
+---
+title: Workflows
+description: Déclencheurs et graphes de nœuds, exécutés de façon durable avec relances, attentes et validations.
+---
+
+Un **workflow** associe un déclencheur à un graphe de nœuds. Il peut être
+déclenché par la modification d'un enregistrement, un événement, un webhook,
+une planification ou une exécution manuelle. Les nœuds lisent et écrivent des
+enregistrements, appellent des API HTTP, font appel à l'IA, attendent, bouclent,
+demandent une validation humaine ou exécutent une
+[fonction](/docs/concepts/functions). La liste complète figure dans la
+[référence des nœuds](/docs/reference/nodes).
+
+## Variables de modèle
+
+Les entrées des nœuds peuvent faire référence aux variables de l'exécution :
+`{{record.email}}`, `{{event.payload.id}}`, `{{steps.<id>.output}}`, `{{now}}`.
+
+## Construire sans risque
+
+1. `workflows.create` enregistre un brouillon.
+2. `workflows.validate` vérifie le graphe et les schémas d'entrée.
+3. `workflows.dry_run` l'exécute en simulant les effets de bord.
+4. `workflows.activate` active le déclencheur.
+
+## Exécutions
+
+Chaque exécution d'un workflow est un **run** : durable, relancée étape par
+étape et reprise après un plantage. `runs.get` affiche chaque étape, journaux
+des fonctions compris. Les runs en échec arrivent dans le centre d'erreurs
+(`errors.list`, `errors.retry`). `runs.replay` et `runs.retry_from` relancent un
+run. Les runs démarrés avec `test: true` sont supprimés par
+`workspace.purge_test`.

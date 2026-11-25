@@ -1,0 +1,40 @@
+{
+  "noDescription": "No description.",
+  "noParameters": "_No parameters._",
+  "oneOf": "One of: {values}.",
+  "yes": "yes",
+  "no": "no",
+  "table": { "name": "Name", "type": "Type", "required": "Required", "description": "Description" },
+  "mcp": {
+    "title": "MCP tools",
+    "description": "Every tool of the Runbase MCP server, generated from its definitions.",
+    "intro": "The MCP server exposes {count} tools at `/api/mcp`. Every tool except `workspaces.list` and `workspaces.use` accepts an optional `workspace` parameter (id or name); without it, the active workspace is used.",
+    "groups": "Tool groups",
+    "groupDescription": "The {group}.* tools of the Runbase MCP server, generated from their definitions."
+  },
+  "nodes": {
+    "title": "Workflow nodes",
+    "description": "Every workflow node, generated from the block catalog and the connectors.",
+    "intro": "Built-in nodes run in the workflow engine. Connector nodes (`node.<id>`) come from `connectors/` and run in the functions sandbox. Workspace functions are also available as `fn.<name>` nodes.",
+    "builtIn": "Built-in nodes",
+    "connectors": "Connector nodes",
+    "branches": "Branches: {branches}.",
+    "dynamicBranches": "dynamic (from the configuration)",
+    "input": "Input",
+    "output": "Output"
+  },
+  "api": {
+    "title": "REST API",
+    "description": "Every endpoint of the /api/v1 REST API, generated from the OpenAPI spec.",
+    "spec": "The machine-readable spec is served at `/api/v1/openapi.json`. Authenticate with `Authorization: Bearer <API key>`.",
+    "otherTag": "Other",
+    "parameters": "Parameters",
+    "requestBody": "Request body",
+    "responses": "Responses",
+    "schemas": "Schemas",
+    "in": { "path": "path.", "query": "query.", "cookie": "cookie." }
+  },
+  "selfHosting": {
+    "description": "Run Runbase on your own server with Docker, using prebuilt images."
+  }
+}

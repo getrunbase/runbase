@@ -55,7 +55,35 @@ test("home then quickstart", async () => {
   // Quickstart link to the generated reference.
   await page.getByRole("link", { name: "MCP reference" }).click();
   await page.waitForURL(`${base}/docs/reference/mcp`);
-  await page.locator("h3#recordsupsert").waitFor();
+  await page.getByRole("link", { name: "records", exact: true }).first().waitFor();
+});
+
+test("MCP reference: old single-page anchors go to the group page", async () => {
+  const page = await browser.newPage();
+  await page.goto(`${base}/docs/reference/mcp#recordsupsert`);
+  await page.waitForURL(`${base}/docs/reference/mcp/records#recordsupsert`);
+  await page.locator("h2#recordsupsert").waitFor();
+});
+
+test("French: /docs/fr serves French UI with English fallback content", async () => {
+  const page = await browser.newPage();
+  const res = await page.goto(`${base}/docs/fr/quickstart`);
+  assert.equal(res.status(), 200);
+  assert.equal(await page.locator("html").getAttribute("lang"), "fr");
+  // /docs/en/x is the hidden default language: redirected to /docs/x.
+  await page.goto(`${base}/docs/en/quickstart`);
+  assert.equal(new URL(page.url()).pathname, "/docs/quickstart");
+});
+
+test("SEO: hreflang, sitemap, llms.txt per language, OG image", async () => {
+  const html = await (await fetch(`${base}/docs/quickstart`)).text();
+  assert.match(html, /hrefLang="x-default"/i);
+  assert.match(html, /"@type":"TechArticle"/);
+  assert.match(html, /"@type":"BreadcrumbList"/);
+  const sitemap = await (await fetch(`${base}/docs/sitemap.xml`)).text();
+  assert.match(sitemap, /\/docs\/quickstart</);
+  for (const path of ["/docs/llms.txt", "/docs/fr/llms.txt", "/docs/og/en/quickstart/image.png"])
+    assert.equal((await fetch(`${base}${path}`)).status, 200, path);
 });
 
 test("search: returns matching pages", async () => {

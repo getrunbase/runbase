@@ -1,0 +1,40 @@
+{
+  "noDescription": "Aucune description.",
+  "noParameters": "_Aucun paramètre._",
+  "oneOf": "Valeurs possibles : {values}.",
+  "yes": "oui",
+  "no": "non",
+  "table": { "name": "Nom", "type": "Type", "required": "Requis", "description": "Description" },
+  "mcp": {
+    "title": "Outils MCP",
+    "description": "Tous les outils du serveur MCP de Runbase, générés à partir de leurs définitions.",
+    "intro": "Le serveur MCP expose {count} outils sur `/api/mcp`. Tous les outils, sauf `workspaces.list` et `workspaces.use`, acceptent un paramètre `workspace` facultatif (identifiant ou nom) ; sans lui, l'espace de travail actif est utilisé.",
+    "groups": "Groupes d'outils",
+    "groupDescription": "Les outils {group}.* du serveur MCP de Runbase, générés à partir de leurs définitions."
+  },
+  "nodes": {
+    "title": "Nœuds de workflow",
+    "description": "Tous les nœuds de workflow, générés à partir du catalogue de blocs et des connecteurs.",
+    "intro": "Les nœuds natifs s'exécutent dans le moteur de workflows. Les nœuds de connecteurs (`node.<id>`) proviennent de `connectors/` et s'exécutent dans le bac à sable des fonctions. Les fonctions de l'espace de travail sont aussi disponibles sous forme de nœuds `fn.<name>`.",
+    "builtIn": "Nœuds natifs",
+    "connectors": "Nœuds de connecteurs",
+    "branches": "Branches : {branches}.",
+    "dynamicBranches": "dynamiques (selon la configuration)",
+    "input": "Entrée",
+    "output": "Sortie"
+  },
+  "api": {
+    "title": "API REST",
+    "description": "Tous les endpoints de l'API REST /api/v1, générés à partir de la spécification OpenAPI.",
+    "spec": "La spécification lisible par machine est servie sur `/api/v1/openapi.json`. Authentifiez-vous avec `Authorization: Bearer <clé d'API>`.",
+    "otherTag": "Autres",
+    "parameters": "Paramètres",
+    "requestBody": "Corps de la requête",
+    "responses": "Réponses",
+    "schemas": "Schémas",
+    "in": { "path": "chemin.", "query": "requête.", "cookie": "cookie." }
+  },
+  "selfHosting": {
+    "description": "Exécutez Runbase sur votre propre serveur avec Docker, à partir d'images prêtes à l'emploi."
+  }
+}

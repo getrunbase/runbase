@@ -1,0 +1,72 @@
+---
+title: Écrire un connecteur
+description: Créez des nœuds de workflow avec @getrunbase/node-sdk et defineNode.
+---
+
+Un **connecteur** est un paquet qui exporte un ou plusieurs nœuds. Chaque nœud
+devient un nœud de workflow nommé `node.<id>`, listé dans la
+[référence des nœuds](/docs/reference/nodes). Les nœuds s'exécutent dans le bac
+à sable des fonctions : pas de disque, pas de variables d'environnement, un
+réseau limité aux domaines déclarés et des secrets limités aux noms déclarés.
+
+## Structure du paquet
+
+```json title="connectors/acme/package.json"
+{
+  "name": "@getrunbase-connectors/acme",
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "runbase": { "entry": "index.ts", "label": "Acme" },
+  "dependencies": { "@getrunbase/node-sdk": "workspace:*", "zod": "^4.6.7" }
+}
+```
+
+Les connecteurs sont détectés dans `connectors/` et dans
+`node_modules/@getrunbase-connectors/` (ou dans les dossiers listés dans
+`RUNBASE_CONNECTORS_DIRS`).
+
+## Définir un nœud
+
+```ts title="connectors/acme/index.ts"
+import { z } from "zod";
+import { defineNode } from "@getrunbase/node-sdk";
+
+export default defineNode({
+  id: "acme.create_ticket",
+  label: "Create an Acme ticket",
+  description: "Creates a support ticket in Acme.",
+  inputs: z.object({ title: z.string().min(1), body: z.string() }),
+  outputs: z.object({ id: z.string() }),
+  auth: { secrets: ["ACME_TOKEN"], domains: ["api.acme.com"] },
+  examples: [{ input: { title: "Hi", body: "" } }],
+  run: async (input, ctx) => {
+    const res = await ctx.fetch("https://api.acme.com/tickets", {
+      method: "POST",
+      headers: { authorization: `Bearer ${ctx.secrets.ACME_TOKEN}` },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) throw new Error(`Acme failed (${res.status})`);
+    return { id: ((await res.json()) as { id: string }).id };
+  },
+});
+```
+
+- `id` s'écrit `<connector>.<action>`, en minuscules.
+- `branches` (par défaut `["ok"]`) liste les sorties ; renvoyez
+  `{ branch, output }` pour aiguiller l'exécution.
+- `sideEffect` vaut true par défaut dès qu'un domaine est déclaré : le nœud est
+  alors simulé lors des exécutions à blanc.
+
+## Tester et publier
+
+```sh
+pnpm runbase node init acme --dir connectors  # creates the skeleton
+pnpm runbase node test connectors/acme        # validates, runs the examples, checks the bundle
+pnpm runbase node dev connectors/acme         # reruns test on every change
+pnpm runbase node registry connectors         # updates connectors/registry.json
+pnpm runbase node publish connectors/acme     # tests, then publishes to npm
+```
+
+Les connecteurs sont sous licence MIT. Le paquet `connectors/slack` en est un
+exemple complet.

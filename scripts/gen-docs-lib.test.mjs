@@ -4,6 +4,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   BANNER,
+  loadMessages,
+  locale,
   mdxText,
   renderApi,
   renderMarkdownPage,
@@ -11,8 +13,8 @@ import {
   renderNodes,
 } from "./gen-docs-lib.mjs";
 
-test("fictional MCP tool -> expected page", () => {
-  const out = renderMcp([
+test("fictional MCP tools -> one page per group, index and meta", () => {
+  const files = renderMcp([
     {
       name: "demo.ping",
       description: "Pings {target} <now>.",
@@ -25,21 +27,24 @@ test("fictional MCP tool -> expected page", () => {
         required: ["target"],
       },
     },
+    { name: "alpha.go", inputSchema: { type: "object", properties: {} } },
+  ]);
+  assert.deepEqual(Object.keys(files).sort(), [
+    "alpha.mdx",
+    "demo.mdx",
+    "index.mdx",
+    "meta.json",
   ]);
   assert.equal(
-    out,
+    files["demo.mdx"],
     `---
-title: "MCP tools"
-description: "Every tool of the Runbase MCP server, generated from its definitions."
+title: "demo"
+description: "The demo.* tools of the Runbase MCP server, generated from their definitions."
 ---
 
 ${BANNER}
 
-The MCP server exposes 1 tools at \`/api/mcp\`. Every tool except \`workspaces.list\` and \`workspaces.use\` accepts an optional \`workspace\` parameter (id or name); without it, the active workspace is used.
-
-## demo
-
-### demo.ping
+## demo.ping
 
 Pings \\{target\\} &lt;now&gt;.
 
@@ -49,6 +54,21 @@ Pings \\{target\\} &lt;now&gt;.
 | \`mode\` | enum | no | One of: \`a\`, \`b\`. |
 `,
   );
+  assert.match(files["alpha.mdx"], /## alpha\.go\n\nNo description\.\n\n_No parameters\._/);
+  assert.match(files["index.mdx"], /exposes 2 tools/);
+  assert.match(
+    files["index.mdx"],
+    /- \[alpha\]\(\/docs\/reference\/mcp\/alpha\): `alpha.go`\n- \[demo\]\(\/docs\/reference\/mcp\/demo\): `demo.ping`/,
+  );
+  // Former single-page anchors -> group page.
+  assert.match(
+    files["index.mdx"],
+    /<McpAnchorRedirect anchors=\{\{"alphago":"alpha","demoping":"demo"\}\} \/>/,
+  );
+  assert.deepEqual(JSON.parse(files["meta.json"]), {
+    title: "MCP tools",
+    pages: ["index", "alpha", "demo"],
+  });
 });
 
 test("fictional node -> expected page, connectors separate", () => {
@@ -159,4 +179,39 @@ test("Markdown page reuse and MDX escaping", () => {
   assert.match(out, /^---\ntitle: "Self-hosting"\ndescription: "Desc."\n---/);
   assert.match(out, /Body\.\n$/);
   assert.equal(mdxText("a{b}<c>"), "a\\{b\\}&lt;c&gt;");
+});
+
+test("French locale: template prose and code texts translated by id", () => {
+  const l = locale("fr", loadMessages("fr"), {
+    "mcp.demo.ping": { en: "Pings.", fr: "Envoie un ping." },
+    "mcp.demo.ping.target": { en: "Old text", fr: "Ancien texte" },
+  });
+  const files = renderMcp(
+    [
+      {
+        name: "demo.ping",
+        description: "Pings.",
+        inputSchema: {
+          type: "object",
+          properties: { target: { type: "string", description: "Host" } },
+          required: ["target"],
+        },
+      },
+    ],
+    l,
+  );
+  assert.match(files["demo.mdx"], /## demo\.ping\n\nEnvoie un ping\./);
+  assert.match(files["demo.mdx"], /\| Nom \| Type \| Requis \| Description \|/);
+  // Stale translation (English source changed): English kept, id reported.
+  assert.match(files["demo.mdx"], /\| `target` \| string \| oui \| Host \|/);
+  assert.deepEqual([...l.missing], [["mcp.demo.ping.target", "Host"]]);
+  assert.equal(JSON.parse(files["meta.json"]).title, "Outils MCP");
+});
+
+test("en and fr template messages: same keys", () => {
+  const keys = (o, p = "") =>
+    Object.entries(o).flatMap(([k, v]) =>
+      typeof v === "object" ? keys(v, `${p}${k}.`) : [`${p}${k}`],
+    );
+  assert.deepEqual(keys(loadMessages("fr")).sort(), keys(loadMessages("en")).sort());
 });

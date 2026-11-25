@@ -1,0 +1,2206 @@
+{
+  "api.createRecord.response.201": {
+    "en": "Success",
+    "fr": "Succès"
+  },
+  "api.createRecord.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.createRecord.response.401": {
+    "en": "Missing or invalid API key",
+    "fr": "Clé d'API absente ou invalide"
+  },
+  "api.createRecord.response.403": {
+    "en": "Scope or workspace not allowed",
+    "fr": "Périmètre ou espace de travail non autorisé"
+  },
+  "api.createRecord.response.404": {
+    "en": "Not found",
+    "fr": "Introuvable"
+  },
+  "api.createRecord.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.createRecord.summary": {
+    "en": "Create or update a record (upsert on externalId or a unique field)",
+    "fr": "Créer ou mettre à jour un enregistrement (upsert sur externalId ou sur un champ unique)"
+  },
+  "api.deleteRecord.response.204": {
+    "en": "No content",
+    "fr": "Aucun contenu"
+  },
+  "api.deleteRecord.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.deleteRecord.response.401": {
+    "en": "Missing or invalid API key",
+    "fr": "Clé d'API absente ou invalide"
+  },
+  "api.deleteRecord.response.403": {
+    "en": "Scope or workspace not allowed",
+    "fr": "Périmètre ou espace de travail non autorisé"
+  },
+  "api.deleteRecord.response.404": {
+    "en": "Not found",
+    "fr": "Introuvable"
+  },
+  "api.deleteRecord.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.deleteRecord.summary": {
+    "en": "Move a record to the trash",
+    "fr": "Mettre un enregistrement à la corbeille"
+  },
+  "api.downloadFile.response.200": {
+    "en": "Success",
+    "fr": "Succès"
+  },
+  "api.downloadFile.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.downloadFile.response.401": {
+    "en": "Missing or invalid API key",
+    "fr": "Clé d'API absente ou invalide"
+  },
+  "api.downloadFile.response.403": {
+    "en": "Scope or workspace not allowed",
+    "fr": "Périmètre ou espace de travail non autorisé"
+  },
+  "api.downloadFile.response.404": {
+    "en": "Not found",
+    "fr": "Introuvable"
+  },
+  "api.downloadFile.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.downloadFile.summary": {
+    "en": "Download a file by its key",
+    "fr": "Télécharger un fichier par sa clé"
+  },
+  "api.getCatalogConnector.response.200": {
+    "en": "Success",
+    "fr": "Succès"
+  },
+  "api.getCatalogConnector.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.getCatalogConnector.response.404": {
+    "en": "Not found",
+    "fr": "Introuvable"
+  },
+  "api.getCatalogConnector.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.getCatalogConnector.summary": {
+    "en": "Get a connector and the templates that use it",
+    "fr": "Obtenir un connecteur et les modèles qui l'utilisent"
+  },
+  "api.getCatalogCreator.response.200": {
+    "en": "Success",
+    "fr": "Succès"
+  },
+  "api.getCatalogCreator.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.getCatalogCreator.response.404": {
+    "en": "Not found",
+    "fr": "Introuvable"
+  },
+  "api.getCatalogCreator.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.getCatalogCreator.summary": {
+    "en": "Get a creator profile and their templates",
+    "fr": "Obtenir le profil d'un créateur et ses modèles"
+  },
+  "api.getCatalogTemplate.response.200": {
+    "en": "Success",
+    "fr": "Succès"
+  },
+  "api.getCatalogTemplate.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.getCatalogTemplate.response.404": {
+    "en": "Not found",
+    "fr": "Introuvable"
+  },
+  "api.getCatalogTemplate.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.getCatalogTemplate.summary": {
+    "en": "Get a catalog template by id or slug",
+    "fr": "Obtenir un modèle du catalogue par identifiant ou slug"
+  },
+  "api.getObject.response.200": {
+    "en": "Success",
+    "fr": "Succès"
+  },
+  "api.getObject.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.getObject.response.401": {
+    "en": "Missing or invalid API key",
+    "fr": "Clé d'API absente ou invalide"
+  },
+  "api.getObject.response.403": {
+    "en": "Scope or workspace not allowed",
+    "fr": "Périmètre ou espace de travail non autorisé"
+  },
+  "api.getObject.response.404": {
+    "en": "Not found",
+    "fr": "Introuvable"
+  },
+  "api.getObject.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.getObject.summary": {
+    "en": "Get an object and its fields",
+    "fr": "Obtenir un objet et ses champs"
+  },
+  "api.getRecord.response.200": {
+    "en": "Success",
+    "fr": "Succès"
+  },
+  "api.getRecord.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.getRecord.response.401": {
+    "en": "Missing or invalid API key",
+    "fr": "Clé d'API absente ou invalide"
+  },
+  "api.getRecord.response.403": {
+    "en": "Scope or workspace not allowed",
+    "fr": "Périmètre ou espace de travail non autorisé"
+  },
+  "api.getRecord.response.404": {
+    "en": "Not found",
+    "fr": "Introuvable"
+  },
+  "api.getRecord.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.getRecord.summary": {
+    "en": "Get a record with its resolved references",
+    "fr": "Obtenir un enregistrement avec ses références résolues"
+  },
+  "api.getRun.response.200": {
+    "en": "Success",
+    "fr": "Succès"
+  },
+  "api.getRun.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.getRun.response.401": {
+    "en": "Missing or invalid API key",
+    "fr": "Clé d'API absente ou invalide"
+  },
+  "api.getRun.response.403": {
+    "en": "Scope or workspace not allowed",
+    "fr": "Périmètre ou espace de travail non autorisé"
+  },
+  "api.getRun.response.404": {
+    "en": "Not found",
+    "fr": "Introuvable"
+  },
+  "api.getRun.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.getRun.summary": {
+    "en": "Get a run with its steps",
+    "fr": "Obtenir une exécution et ses étapes"
+  },
+  "api.info": {
+    "en": "REST API v1. Authenticate with an API key: `Authorization: Bearer agk_…`. Lists use keyset pagination: pass `next` as `after`. Errors are `{ code, message, params }`.",
+    "fr": "API REST v1. Authentifiez-vous avec une clé d'API : `Authorization: Bearer agk_…`. Les listes utilisent une pagination par curseur (keyset) : passez `next` comme `after`. Les erreurs ont la forme `{ code, message, params }`."
+  },
+  "api.listCatalogConnectors.response.200": {
+    "en": "Success",
+    "fr": "Succès"
+  },
+  "api.listCatalogConnectors.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.listCatalogConnectors.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.listCatalogConnectors.summary": {
+    "en": "List the connectors of the catalog",
+    "fr": "Lister les connecteurs du catalogue"
+  },
+  "api.listCatalogTemplates.response.200": {
+    "en": "Success",
+    "fr": "Succès"
+  },
+  "api.listCatalogTemplates.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.listCatalogTemplates.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.listCatalogTemplates.summary": {
+    "en": "Search the public template catalog (keyset pagination)",
+    "fr": "Rechercher dans le catalogue public de modèles (pagination par curseur)"
+  },
+  "api.listEvents.response.200": {
+    "en": "Success",
+    "fr": "Succès"
+  },
+  "api.listEvents.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.listEvents.response.401": {
+    "en": "Missing or invalid API key",
+    "fr": "Clé d'API absente ou invalide"
+  },
+  "api.listEvents.response.403": {
+    "en": "Scope or workspace not allowed",
+    "fr": "Périmètre ou espace de travail non autorisé"
+  },
+  "api.listEvents.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.listEvents.summary": {
+    "en": "List events, most recent first (keyset pagination)",
+    "fr": "Lister les événements, du plus récent au plus ancien (pagination par curseur)"
+  },
+  "api.listObjects.response.200": {
+    "en": "Success",
+    "fr": "Succès"
+  },
+  "api.listObjects.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.listObjects.response.401": {
+    "en": "Missing or invalid API key",
+    "fr": "Clé d'API absente ou invalide"
+  },
+  "api.listObjects.response.403": {
+    "en": "Scope or workspace not allowed",
+    "fr": "Périmètre ou espace de travail non autorisé"
+  },
+  "api.listObjects.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.listObjects.summary": {
+    "en": "List the objects of the workspace",
+    "fr": "Lister les objets de l'espace de travail"
+  },
+  "api.listRecords.response.200": {
+    "en": "Success",
+    "fr": "Succès"
+  },
+  "api.listRecords.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.listRecords.response.401": {
+    "en": "Missing or invalid API key",
+    "fr": "Clé d'API absente ou invalide"
+  },
+  "api.listRecords.response.403": {
+    "en": "Scope or workspace not allowed",
+    "fr": "Périmètre ou espace de travail non autorisé"
+  },
+  "api.listRecords.response.404": {
+    "en": "Not found",
+    "fr": "Introuvable"
+  },
+  "api.listRecords.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.listRecords.summary": {
+    "en": "List the records of an object (keyset pagination)",
+    "fr": "Lister les enregistrements d'un objet (pagination par curseur)"
+  },
+  "api.listRuns.response.200": {
+    "en": "Success",
+    "fr": "Succès"
+  },
+  "api.listRuns.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.listRuns.response.401": {
+    "en": "Missing or invalid API key",
+    "fr": "Clé d'API absente ou invalide"
+  },
+  "api.listRuns.response.403": {
+    "en": "Scope or workspace not allowed",
+    "fr": "Périmètre ou espace de travail non autorisé"
+  },
+  "api.listRuns.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.listRuns.summary": {
+    "en": "List workflow runs, most recent first (keyset pagination)",
+    "fr": "Lister les exécutions de workflows, de la plus récente à la plus ancienne (pagination par curseur)"
+  },
+  "api.pushEvent.response.201": {
+    "en": "Success",
+    "fr": "Succès"
+  },
+  "api.pushEvent.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.pushEvent.response.401": {
+    "en": "Missing or invalid API key",
+    "fr": "Clé d'API absente ou invalide"
+  },
+  "api.pushEvent.response.403": {
+    "en": "Scope or workspace not allowed",
+    "fr": "Périmètre ou espace de travail non autorisé"
+  },
+  "api.pushEvent.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.pushEvent.summary": {
+    "en": "Push an event (deduplicated by idempotencyKey)",
+    "fr": "Envoyer un événement (dédupliqué par idempotencyKey)"
+  },
+  "api.startRun.response.201": {
+    "en": "Success",
+    "fr": "Succès"
+  },
+  "api.startRun.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.startRun.response.401": {
+    "en": "Missing or invalid API key",
+    "fr": "Clé d'API absente ou invalide"
+  },
+  "api.startRun.response.403": {
+    "en": "Scope or workspace not allowed",
+    "fr": "Périmètre ou espace de travail non autorisé"
+  },
+  "api.startRun.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.startRun.summary": {
+    "en": "Start a workflow run",
+    "fr": "Démarrer une exécution de workflow"
+  },
+  "api.tag.catalog": {
+    "en": "catalog",
+    "fr": "catalogue"
+  },
+  "api.tag.events": {
+    "en": "events",
+    "fr": "événements"
+  },
+  "api.tag.files": {
+    "en": "files",
+    "fr": "fichiers"
+  },
+  "api.tag.objects": {
+    "en": "objects",
+    "fr": "objets"
+  },
+  "api.tag.records": {
+    "en": "records",
+    "fr": "enregistrements"
+  },
+  "api.tag.runs": {
+    "en": "runs",
+    "fr": "exécutions"
+  },
+  "api.updateRecord.response.200": {
+    "en": "Success",
+    "fr": "Succès"
+  },
+  "api.updateRecord.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.updateRecord.response.401": {
+    "en": "Missing or invalid API key",
+    "fr": "Clé d'API absente ou invalide"
+  },
+  "api.updateRecord.response.403": {
+    "en": "Scope or workspace not allowed",
+    "fr": "Périmètre ou espace de travail non autorisé"
+  },
+  "api.updateRecord.response.404": {
+    "en": "Not found",
+    "fr": "Introuvable"
+  },
+  "api.updateRecord.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.updateRecord.summary": {
+    "en": "Update a record (merge by default)",
+    "fr": "Mettre à jour un enregistrement (fusion par défaut)"
+  },
+  "api.uploadFile.response.201": {
+    "en": "Success",
+    "fr": "Succès"
+  },
+  "api.uploadFile.response.400": {
+    "en": "Invalid request or path parameter",
+    "fr": "Requête ou paramètre de chemin invalide"
+  },
+  "api.uploadFile.response.401": {
+    "en": "Missing or invalid API key",
+    "fr": "Clé d'API absente ou invalide"
+  },
+  "api.uploadFile.response.403": {
+    "en": "Scope or workspace not allowed",
+    "fr": "Périmètre ou espace de travail non autorisé"
+  },
+  "api.uploadFile.response.429": {
+    "en": "Rate limit exceeded (see Retry-After)",
+    "fr": "Limite de débit dépassée (voir Retry-After)"
+  },
+  "api.uploadFile.summary": {
+    "en": "Upload a file (10 MB max)",
+    "fr": "Téléverser un fichier (10 Mo maximum)"
+  },
+  "mcp.api_keys.create": {
+    "en": "Creates an API key (admin scope). The plaintext key is returned only once. The key only sees its `workspaceIds`. Optional restrictions: `tools` (allowed MCP tool names, e.g. [\"records.search\", \"records.upsert\"]; the others are hidden) and `objects` (visible object slugs: other objects and their records stay invisible, query.sql unavailable). Absent = everything.",
+    "fr": "Crée une clé d'API (périmètre admin). La clé en clair n'est renvoyée qu'une seule fois. La clé ne voit que ses `workspaceIds`. Restrictions facultatives : `tools` (noms des outils MCP autorisés, par exemple [\"records.search\", \"records.upsert\"] ; les autres sont masqués) et `objects` (slugs des objets visibles : les autres objets et leurs enregistrements restent invisibles, query.sql indisponible). Absent = tout."
+  },
+  "mcp.api_keys.create.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.api_keys.list": {
+    "en": "Lists the organization's API keys (admin scope).",
+    "fr": "Liste les clés d'API de l'organisation (périmètre admin)."
+  },
+  "mcp.api_keys.list.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.api_keys.revoke": {
+    "en": "Revokes an API key (admin scope).",
+    "fr": "Révoque une clé d'API (périmètre admin)."
+  },
+  "mcp.api_keys.revoke.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.audit.list": {
+    "en": "Workspace audit log (who, what, when), most recent first. Without filter: the whole feed. Filters: `type` and `id` (one resource: record, workflow, function…), `action` (exact, or prefix ending with a dot: `record.`), `actorUserId`, `actorApiKeyId`, `from`/`to` (ISO). Returns { items, hasMore, nextCursor }; next page with `cursor` = nextCursor.",
+    "fr": "Journal d'audit de l'espace de travail (qui, quoi, quand), du plus récent au plus ancien. Sans filtre : tout le flux. Filtres : `type` et `id` (une ressource : enregistrement, workflow, fonction…), `action` (exacte, ou préfixe terminé par un point : `record.`), `actorUserId`, `actorApiKeyId`, `from`/`to` (ISO). Renvoie { items, hasMore, nextCursor } ; page suivante avec `cursor` = nextCursor."
+  },
+  "mcp.audit.list.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.blocks.list": {
+    "en": "Catalog of workflow blocks: type, branches, input and output JSON schemas. Includes the workspace functions as fn.<name>.",
+    "fr": "Catalogue des blocs de workflow : type, branches, schémas JSON d'entrée et de sortie. Inclut les fonctions de l'espace de travail sous la forme fn.<name>."
+  },
+  "mcp.blocks.list.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.databases.create": {
+    "en": "Creates a database. Put objects in it with objects.create (database field).",
+    "fr": "Crée une base de données. Placez-y des objets avec objects.create (champ database)."
+  },
+  "mcp.databases.create.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.databases.delete": {
+    "en": "Deletes a database. Refused if it contains objects, unless confirm=true: objects and records are permanently deleted, in a single transaction (all or nothing). Export each object first (objects.export).",
+    "fr": "Supprime une base de données. Refusé si elle contient des objets, sauf avec confirm=true : les objets et leurs enregistrements sont alors supprimés définitivement, en une seule transaction (tout ou rien). Exportez d'abord chaque objet (objects.export)."
+  },
+  "mcp.databases.delete.database": {
+    "en": "Database slug",
+    "fr": "Slug de la base de données"
+  },
+  "mcp.databases.delete.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.databases.get": {
+    "en": "Reads a database and its objects.",
+    "fr": "Lit une base de données et ses objets."
+  },
+  "mcp.databases.get.database": {
+    "en": "Database slug",
+    "fr": "Slug de la base de données"
+  },
+  "mcp.databases.get.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.databases.list": {
+    "en": "Lists the workspace databases (groups of objects).",
+    "fr": "Liste les bases de données de l'espace de travail (groupes d'objets)."
+  },
+  "mcp.databases.list.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.databases.rename": {
+    "en": "Renames a database, and optionally its icon or description.",
+    "fr": "Renomme une base de données et, au besoin, change son icône ou sa description."
+  },
+  "mcp.databases.rename.database": {
+    "en": "Database slug",
+    "fr": "Slug de la base de données"
+  },
+  "mcp.databases.rename.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.errors.get": {
+    "en": "Reads an error: reference, message, payload, stack.",
+    "fr": "Lit une erreur : référence, message, contenu (payload), pile d'appels."
+  },
+  "mcp.errors.get.id": {
+    "en": "Error id",
+    "fr": "Identifiant de l'erreur"
+  },
+  "mcp.errors.get.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.errors.list": {
+    "en": "Lists the workspace errors (ingest, workflow, function = function call from a page, mcp = failing MCP tool, component = code component failing in a user's browser; payload {page, block}), most recent first. Filters: source, status, run, workflow, record, period (from/to ISO). Returns { items, hasMore, nextCursor }: pass nextCursor back as cursor for the next page.",
+    "fr": "Liste les erreurs de l'espace de travail (ingest, workflow, function = appel de fonction depuis une page, mcp = outil MCP en échec, component = composant de code en échec dans le navigateur d'un utilisateur ; payload {page, block}), de la plus récente à la plus ancienne. Filtres : source, statut, exécution, workflow, enregistrement, période (from/to ISO). Renvoie { items, hasMore, nextCursor } : repassez nextCursor comme cursor pour obtenir la page suivante."
+  },
+  "mcp.errors.list.group": {
+    "en": "One item per fingerprint (same normalized message): the latest, with count and lastAt",
+    "fr": "Un élément par empreinte (même message normalisé) : le plus récent, avec count et lastAt"
+  },
+  "mcp.errors.list.limit": {
+    "en": "Default 50",
+    "fr": "50 par défaut"
+  },
+  "mcp.errors.list.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.errors.resolve": {
+    "en": "Marks an error as resolved.",
+    "fr": "Marque une erreur comme résolue."
+  },
+  "mcp.errors.resolve.id": {
+    "en": "Error id",
+    "fr": "Identifiant de l'erreur"
+  },
+  "mcp.errors.resolve.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.errors.retry": {
+    "en": "Replays an error: re-ingests the rejected payload, or retries the run's failed step. Resolved if the replay succeeds.",
+    "fr": "Rejoue une erreur : réingère le contenu rejeté, ou relance l'étape en échec de l'exécution. L'erreur est résolue si le rejeu réussit."
+  },
+  "mcp.errors.retry.id": {
+    "en": "Error id",
+    "fr": "Identifiant de l'erreur"
+  },
+  "mcp.errors.retry.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.events.funnel": {
+    "en": "Funnel: number of distinct records that received each event type, in the given order.",
+    "fr": "Entonnoir : nombre d'enregistrements distincts ayant reçu chaque type d'événement, dans l'ordre donné."
+  },
+  "mcp.events.funnel.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.events.list": {
+    "en": "Workspace events. With only `recordId`: chronological timeline of that record (array). Otherwise filters `type`, `recordId`, `from`/`to` (ISO, event date), newest to oldest, paginated: returns { items, hasMore, nextCursor }; next page with `cursor` = nextCursor.",
+    "fr": "Événements de l'espace de travail. Avec seulement `recordId` : chronologie de cet enregistrement (tableau). Sinon, filtres `type`, `recordId`, `from`/`to` (ISO, date de l'événement), du plus récent au plus ancien, paginés : renvoie { items, hasMore, nextCursor } ; page suivante avec `cursor` = nextCursor."
+  },
+  "mcp.events.list.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.events.push": {
+    "en": "Records an event, linked to a record or not. `idempotencyKey` (external id): a second push with the same key returns the existing event (`duplicate: true`) without re-triggering workflows. `test: true`: test event, deleted by workspace.purge_test.",
+    "fr": "Enregistre un événement, lié ou non à un enregistrement. `idempotencyKey` (identifiant externe) : un second envoi avec la même clé renvoie l'événement existant (`duplicate: true`) sans redéclencher les workflows. `test: true` : événement de test, supprimé par workspace.purge_test."
+  },
+  "mcp.events.push.test": {
+    "en": "Test data: deleted by workspace.purge_test",
+    "fr": "Données de test : supprimées par workspace.purge_test"
+  },
+  "mcp.events.push.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.events.types": {
+    "en": "Event types already received in the workspace (excluding the internal record.* timeline): values usable in trigger.event.",
+    "fr": "Types d'événements déjà reçus dans l'espace de travail (hors chronologie interne record.*) : valeurs utilisables dans trigger.event."
+  },
+  "mcp.events.types.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.feedback.send": {
+    "en": "Sends feedback to the Runbase team, which reads it to improve the product. Call it without waiting to be asked as soon as: a tool misbehaves or returns an unexpected error (`bug`), a capability is missing and you have to work around it or give up (`limit`), you see a useful improvement (`idea`), or to describe what the user was trying to do (`usage`). Be factual: what you were trying, the exact call, actual vs expected result, the workaround. Never any secret or personal data.",
+    "fr": "Envoie un retour à l'équipe Runbase, qui le lit pour améliorer le produit. Appelez-le sans attendre qu'on vous le demande dès que : un outil se comporte mal ou renvoie une erreur inattendue (`bug`), une fonctionnalité manque et vous devez la contourner ou abandonner (`limit`), vous voyez une amélioration utile (`idea`), ou pour décrire ce que l'utilisateur cherchait à faire (`usage`). Soyez factuel : ce que vous tentiez, l'appel exact, le résultat obtenu par rapport au résultat attendu, le contournement. Jamais de secret ni de donnée personnelle."
+  },
+  "mcp.feedback.send.context": {
+    "en": "Useful data: arguments, error message, ids",
+    "fr": "Données utiles : arguments, message d'erreur, identifiants"
+  },
+  "mcp.feedback.send.details": {
+    "en": "Context, steps, expected vs actual, workaround",
+    "fr": "Contexte, étapes, résultat attendu et obtenu, contournement"
+  },
+  "mcp.feedback.send.title": {
+    "en": "One-line summary",
+    "fr": "Résumé en une ligne"
+  },
+  "mcp.feedback.send.tool": {
+    "en": "Tool involved",
+    "fr": "Outil concerné"
+  },
+  "mcp.feedback.send.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.files.download": {
+    "en": "Reads an uploaded file by its key (value of a file field): returns { name, type, base64 }.",
+    "fr": "Lit un fichier téléversé par sa clé (valeur d'un champ fichier) : renvoie { name, type, base64 }."
+  },
+  "mcp.files.download.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.files.upload": {
+    "en": "Uploads a file (base64, 10 MB max) and returns { key, name, size, type }: put it in a record's `file` field (value = list of these objects).",
+    "fr": "Téléverse un fichier (base64, 10 Mo maximum) et renvoie { key, name, size, type } : placez-le dans le champ `file` d'un enregistrement (valeur = liste de ces objets)."
+  },
+  "mcp.files.upload.type": {
+    "en": "MIME type",
+    "fr": "Type MIME"
+  },
+  "mcp.files.upload.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.functions.create": {
+    "en": "Creates a TypeScript function (admin scope), refused if the name exists. Then usable as block fn.<name>. Code: `export default async (input, { records, events, secrets, test }) => output`. Failure convention in a workflow (fn.* step): return `{ ok: false, error: \"message\" }` or throw: the step fails, is retried per its retry policy, then the run fails and the error appears in errors.list. `test`: true inside a test run (runs.start { test: true }, or a run inherited from one); records and events written by the function in a test run are marked test automatically. Declared secrets: `secrets` context key (and input.secrets if the input does not already have that field). Records SDK (permissions.records 'read': get, search; 'write': + upsert, update, transact, delete, merge): `await records.get(id)`, `records.search(object, {filter, limit})` (object = slug or uuid), `records.upsert({objectId: slug or uuid, data, match})` (returns {record, created}), `records.update(id, data)`, `records.transact(ops)`, `records.delete(id)` (trash), `records.merge(keepId, [ids])`; also as a global `records`. Events SDK (permissions.events 'read': `events.list({type, recordId, from, to, cursor, limit})`; 'write': + `events.push({type, recordId, payload, occurredAt, idempotencyKey})`). `permissions.domains`: hostnames or `'*'` = whole public internet (admin scope); private/loopback/link-local/cloud metadata IPs (RFC1918, 127/8, ::1, 169.254/16, 100.64/10, fc00::/7) are blocked after DNS resolution and on redirects. HTML: `parseHTML(html)` returns `{ document }` (linkedom: querySelectorAll, textContent, getAttribute) and `new DOMParser().parseFromString(html, 'text/html')`, as globals and `ctx.parseHTML`; no browser rendering, no npm imports. `limits`: { timeoutMs 1000-120000 (default 30000), memoryMb 32-512 (default 128) }. console.* = logs (64 KB max), visible in functions.test, functions.logs and runs.get.",
+    "fr": "Crée une fonction TypeScript (périmètre admin), refusé si le nom existe déjà. Elle est ensuite utilisable comme bloc fn.<name>. Code : `export default async (input, { records, events, secrets, test }) => output`. Convention d'échec dans un workflow (étape fn.*) : renvoyez `{ ok: false, error: \"message\" }` ou levez une exception : l'étape échoue, est relancée selon sa politique de nouvelles tentatives, puis l'exécution échoue et l'erreur apparaît dans errors.list. `test` : true dans une exécution de test (runs.start { test: true }, ou une exécution qui en hérite) ; les enregistrements et événements écrits par la fonction dans une exécution de test sont automatiquement marqués comme test. Secrets déclarés : clé de contexte `secrets` (et input.secrets si l'entrée n'a pas déjà ce champ). SDK records (permissions.records 'read' : get, search ; 'write' : + upsert, update, transact, delete, merge) : `await records.get(id)`, `records.search(object, {filter, limit})` (object = slug ou uuid), `records.upsert({objectId: slug or uuid, data, match})` (renvoie {record, created}), `records.update(id, data)`, `records.transact(ops)`, `records.delete(id)` (corbeille), `records.merge(keepId, [ids])` ; aussi disponible en global `records`. SDK events (permissions.events 'read' : `events.list({type, recordId, from, to, cursor, limit})` ; 'write' : + `events.push({type, recordId, payload, occurredAt, idempotencyKey})`). `permissions.domains` : noms d'hôtes ou `'*'` = tout l'internet public (périmètre admin) ; les IP privées, de bouclage, link-local et de métadonnées cloud (RFC1918, 127/8, ::1, 169.254/16, 100.64/10, fc00::/7) sont bloquées après résolution DNS et lors des redirections. HTML : `parseHTML(html)` renvoie `{ document }` (linkedom : querySelectorAll, textContent, getAttribute) et `new DOMParser().parseFromString(html, 'text/html')`, en globals et via `ctx.parseHTML` ; pas de rendu navigateur, pas d'import npm. `limits` : { timeoutMs 1000-120000 (30000 par défaut), memoryMb 32-512 (128 par défaut) }. console.* = journaux (64 Ko maximum), visibles dans functions.test, functions.logs et runs.get."
+  },
+  "mcp.functions.create.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.functions.delete": {
+    "en": "Deletes a function and all its versions (admin scope). Irreversible: confirm: true required. Workflows that use it (fn.<name>) will fail.",
+    "fr": "Supprime une fonction et toutes ses versions (périmètre admin). Irréversible : confirm: true requis. Les workflows qui l'utilisent (fn.<name>) échoueront."
+  },
+  "mcp.functions.delete.name": {
+    "en": "Function name",
+    "fr": "Nom de la fonction"
+  },
+  "mcp.functions.delete.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.functions.get": {
+    "en": "Reads a function by name: latest version, or a fixed version if `version` is given.",
+    "fr": "Lit une fonction par son nom : dernière version, ou une version précise si `version` est fourni."
+  },
+  "mcp.functions.get.name": {
+    "en": "Function name",
+    "fr": "Nom de la fonction"
+  },
+  "mcp.functions.get.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.functions.list": {
+    "en": "Lists the workspace functions (latest version).",
+    "fr": "Liste les fonctions de l'espace de travail (dernière version)."
+  },
+  "mcp.functions.list.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.functions.logs": {
+    "en": "Logs of function executions (workflow, page, test), most recent first: console logs, error, duration, originating run and step. Filters: name, runId, source, errorsOnly. Returns { items, hasMore, nextCursor }.",
+    "fr": "Journaux des exécutions de fonctions (workflow, page, test), du plus récent au plus ancien : journaux console, erreur, durée, exécution et étape d'origine. Filtres : name, runId, source, errorsOnly. Renvoie { items, hasMore, nextCursor }."
+  },
+  "mcp.functions.logs.name": {
+    "en": "Function name",
+    "fr": "Nom de la fonction"
+  },
+  "mcp.functions.logs.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.functions.restore": {
+    "en": "Restores a previous version (creates a new version with its content).",
+    "fr": "Restaure une version précédente (crée une nouvelle version avec son contenu)."
+  },
+  "mcp.functions.restore.name": {
+    "en": "Function name",
+    "fr": "Nom de la fonction"
+  },
+  "mcp.functions.restore.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.functions.save": {
+    "en": "Creates a TypeScript function or, if the name exists, creates a new version of it (admin scope). Permissions: network domains, secrets, records, events. Code: `export default async (input, { records, events, secrets, test }) => output`. Failure convention in a workflow (fn.* step): return `{ ok: false, error: \"message\" }` or throw: the step fails, is retried per its retry policy, then the run fails and the error appears in errors.list. `test`: true inside a test run (runs.start { test: true }, or a run inherited from one); records and events written by the function in a test run are marked test automatically. Declared secrets: `secrets` context key (and input.secrets if the input does not already have that field). Records SDK (permissions.records 'read': get, search; 'write': + upsert, update, transact, delete, merge): `await records.get(id)`, `records.search(object, {filter, limit})` (object = slug or uuid), `records.upsert({objectId: slug or uuid, data, match})` (returns {record, created}), `records.update(id, data)`, `records.transact(ops)`, `records.delete(id)` (trash), `records.merge(keepId, [ids])`; also as a global `records`. Events SDK (permissions.events 'read': `events.list({type, recordId, from, to, cursor, limit})`; 'write': + `events.push({type, recordId, payload, occurredAt, idempotencyKey})`). `permissions.domains`: hostnames or `'*'` = whole public internet (admin scope); private/loopback/link-local/cloud metadata IPs (RFC1918, 127/8, ::1, 169.254/16, 100.64/10, fc00::/7) are blocked after DNS resolution and on redirects. HTML: `parseHTML(html)` returns `{ document }` (linkedom: querySelectorAll, textContent, getAttribute) and `new DOMParser().parseFromString(html, 'text/html')`, as globals and `ctx.parseHTML`; no browser rendering, no npm imports. `limits`: { timeoutMs 1000-120000 (default 30000), memoryMb 32-512 (default 128) }. console.* = logs (64 KB max), visible in functions.test, functions.logs and runs.get.",
+    "fr": "Crée une fonction TypeScript ou, si le nom existe, en crée une nouvelle version (périmètre admin). Permissions : domaines réseau, secrets, records, events. Code : `export default async (input, { records, events, secrets, test }) => output`. Convention d'échec dans un workflow (étape fn.*) : renvoyez `{ ok: false, error: \"message\" }` ou levez une exception : l'étape échoue, est relancée selon sa politique de nouvelles tentatives, puis l'exécution échoue et l'erreur apparaît dans errors.list. `test` : true dans une exécution de test (runs.start { test: true }, ou une exécution qui en hérite) ; les enregistrements et événements écrits par la fonction dans une exécution de test sont automatiquement marqués comme test. Secrets déclarés : clé de contexte `secrets` (et input.secrets si l'entrée n'a pas déjà ce champ). SDK records (permissions.records 'read' : get, search ; 'write' : + upsert, update, transact, delete, merge) : `await records.get(id)`, `records.search(object, {filter, limit})` (object = slug ou uuid), `records.upsert({objectId: slug or uuid, data, match})` (renvoie {record, created}), `records.update(id, data)`, `records.transact(ops)`, `records.delete(id)` (corbeille), `records.merge(keepId, [ids])` ; aussi disponible en global `records`. SDK events (permissions.events 'read' : `events.list({type, recordId, from, to, cursor, limit})` ; 'write' : + `events.push({type, recordId, payload, occurredAt, idempotencyKey})`). `permissions.domains` : noms d'hôtes ou `'*'` = tout l'internet public (périmètre admin) ; les IP privées, de bouclage, link-local et de métadonnées cloud (RFC1918, 127/8, ::1, 169.254/16, 100.64/10, fc00::/7) sont bloquées après résolution DNS et lors des redirections. HTML : `parseHTML(html)` renvoie `{ document }` (linkedom : querySelectorAll, textContent, getAttribute) et `new DOMParser().parseFromString(html, 'text/html')`, en globals et via `ctx.parseHTML` ; pas de rendu navigateur, pas d'import npm. `limits` : { timeoutMs 1000-120000 (30000 par défaut), memoryMb 32-512 (128 par défaut) }. console.* = journaux (64 Ko maximum), visibles dans functions.test, functions.logs et runs.get."
+  },
+  "mcp.functions.save.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.functions.test": {
+    "en": "Really runs a function, outside any workflow: returns output and logs. Without dryRun, its writes (records, events) and network calls happen. dryRun: true: real reads, records/events writes simulated (not made) and listed in `writes` [{ method, args }]; network calls still go out.",
+    "fr": "Exécute réellement une fonction, hors de tout workflow : renvoie la sortie et les journaux. Sans dryRun, ses écritures (enregistrements, événements) et ses appels réseau ont lieu. dryRun: true : lectures réelles, écritures d'enregistrements et d'événements simulées (non effectuées) et listées dans `writes` [{ method, args }] ; les appels réseau partent quand même."
+  },
+  "mcp.functions.test.name": {
+    "en": "Function name",
+    "fr": "Nom de la fonction"
+  },
+  "mcp.functions.test.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.functions.update": {
+    "en": "Creates a new version of an existing function (admin scope). Code: `export default async (input, { records, events, secrets, test }) => output`. Failure convention in a workflow (fn.* step): return `{ ok: false, error: \"message\" }` or throw: the step fails, is retried per its retry policy, then the run fails and the error appears in errors.list. `test`: true inside a test run (runs.start { test: true }, or a run inherited from one); records and events written by the function in a test run are marked test automatically. Declared secrets: `secrets` context key (and input.secrets if the input does not already have that field). Records SDK (permissions.records 'read': get, search; 'write': + upsert, update, transact, delete, merge): `await records.get(id)`, `records.search(object, {filter, limit})` (object = slug or uuid), `records.upsert({objectId: slug or uuid, data, match})` (returns {record, created}), `records.update(id, data)`, `records.transact(ops)`, `records.delete(id)` (trash), `records.merge(keepId, [ids])`; also as a global `records`. Events SDK (permissions.events 'read': `events.list({type, recordId, from, to, cursor, limit})`; 'write': + `events.push({type, recordId, payload, occurredAt, idempotencyKey})`). `permissions.domains`: hostnames or `'*'` = whole public internet (admin scope); private/loopback/link-local/cloud metadata IPs (RFC1918, 127/8, ::1, 169.254/16, 100.64/10, fc00::/7) are blocked after DNS resolution and on redirects. HTML: `parseHTML(html)` returns `{ document }` (linkedom: querySelectorAll, textContent, getAttribute) and `new DOMParser().parseFromString(html, 'text/html')`, as globals and `ctx.parseHTML`; no browser rendering, no npm imports. `limits`: { timeoutMs 1000-120000 (default 30000), memoryMb 32-512 (default 128) }. console.* = logs (64 KB max), visible in functions.test, functions.logs and runs.get.",
+    "fr": "Crée une nouvelle version d'une fonction existante (périmètre admin). Code : `export default async (input, { records, events, secrets, test }) => output`. Convention d'échec dans un workflow (étape fn.*) : renvoyez `{ ok: false, error: \"message\" }` ou levez une exception : l'étape échoue, est relancée selon sa politique de nouvelles tentatives, puis l'exécution échoue et l'erreur apparaît dans errors.list. `test` : true dans une exécution de test (runs.start { test: true }, ou une exécution qui en hérite) ; les enregistrements et événements écrits par la fonction dans une exécution de test sont automatiquement marqués comme test. Secrets déclarés : clé de contexte `secrets` (et input.secrets si l'entrée n'a pas déjà ce champ). SDK records (permissions.records 'read' : get, search ; 'write' : + upsert, update, transact, delete, merge) : `await records.get(id)`, `records.search(object, {filter, limit})` (object = slug ou uuid), `records.upsert({objectId: slug or uuid, data, match})` (renvoie {record, created}), `records.update(id, data)`, `records.transact(ops)`, `records.delete(id)` (corbeille), `records.merge(keepId, [ids])` ; aussi disponible en global `records`. SDK events (permissions.events 'read' : `events.list({type, recordId, from, to, cursor, limit})` ; 'write' : + `events.push({type, recordId, payload, occurredAt, idempotencyKey})`). `permissions.domains` : noms d'hôtes ou `'*'` = tout l'internet public (périmètre admin) ; les IP privées, de bouclage, link-local et de métadonnées cloud (RFC1918, 127/8, ::1, 169.254/16, 100.64/10, fc00::/7) sont bloquées après résolution DNS et lors des redirections. HTML : `parseHTML(html)` renvoie `{ document }` (linkedom : querySelectorAll, textContent, getAttribute) et `new DOMParser().parseFromString(html, 'text/html')`, en globals et via `ctx.parseHTML` ; pas de rendu navigateur, pas d'import npm. `limits` : { timeoutMs 1000-120000 (30000 par défaut), memoryMb 32-512 (128 par défaut) }. console.* = journaux (64 Ko maximum), visibles dans functions.test, functions.logs et runs.get."
+  },
+  "mcp.functions.update.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.functions.versions": {
+    "en": "Lists the (immutable) versions of a function.",
+    "fr": "Liste les versions (immuables) d'une fonction."
+  },
+  "mcp.functions.versions.name": {
+    "en": "Function name",
+    "fr": "Nom de la fonction"
+  },
+  "mcp.functions.versions.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.members.invite": {
+    "en": "Invites a person to the organization by email (admin scope). The invitation stays pending, with no access at all, until the invitee accepts it (email sent with the link). Roles: admin (manage everything), member (create and edit), viewer (read-only), end_user (only opens pages, no MCP). Default: member.",
+    "fr": "Invite une personne dans l'organisation par e-mail (périmètre admin). L'invitation reste en attente, sans aucun accès, jusqu'à ce que la personne invitée l'accepte (e-mail envoyé avec le lien). Rôles : admin (gère tout), member (crée et modifie), viewer (lecture seule), end_user (ouvre uniquement des pages, pas de MCP). Par défaut : member."
+  },
+  "mcp.members.invite.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.members.list": {
+    "en": "Lists organization members and pending invitations (pending: true): id, name, email, role.",
+    "fr": "Liste les membres de l'organisation et les invitations en attente (pending: true) : id, nom, e-mail, rôle."
+  },
+  "mcp.members.list.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.members.remove": {
+    "en": "Removes a member from the organization or cancels an invitation (admin scope). The owner cannot be removed.",
+    "fr": "Retire un membre de l'organisation ou annule une invitation (périmètre admin). Le propriétaire ne peut pas être retiré."
+  },
+  "mcp.members.remove.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.members.set_role": {
+    "en": "Changes a member's role (id from members.list, admin scope). The owner's role does not change.",
+    "fr": "Change le rôle d'un membre (id issu de members.list, périmètre admin). Le rôle du propriétaire ne change pas."
+  },
+  "mcp.members.set_role.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.objects.create": {
+    "en": "Creates an object. Field types: text, number, bool, date, select, multi_select, email, url, json, ref, refs, currency { currency?: 'EUR' }, percent (12.5 = 12.5%), phone, rating { scale?: 5 }, user, file (list of { key, name, size, type } returned by files.upload). Computed (input value ignored): formula { formula: 'amount * qty', result?: text|number|bool|date } recomputed on every write (operators + - * / % = != < > and or not, functions if, concat, round, abs, min, max, upper, lower, len, coalesce, empty, today, days_between); lookup { through, field } and rollup { through, op: count|sum|avg|min|max, field? } computed on read (through = ref/refs field, or slug of an object that points to this one); created_at, updated_at, created_by, autonumber. Per-field validation: required, pattern (regex), minLength, maxLength, min, max; default = value set on creation. `unique: true` (text, email, url, number, phone): unique value in the database, even under concurrent writes (two simultaneous webhooks for the same email -> a single record, or a conflict error without match); serves as the `match` key for records.upsert. Email compared in lowercase.",
+    "fr": "Crée un objet. Types de champs : text, number, bool, date, select, multi_select, email, url, json, ref, refs, currency { currency?: 'EUR' }, percent (12.5 = 12,5 %), phone, rating { scale?: 5 }, user, file (liste de { key, name, size, type } renvoyés par files.upload). Calculés (valeur saisie ignorée) : formula { formula: 'amount * qty', result?: text|number|bool|date } recalculée à chaque écriture (opérateurs + - * / % = != < > and or not, fonctions if, concat, round, abs, min, max, upper, lower, len, coalesce, empty, today, days_between) ; lookup { through, field } et rollup { through, op: count|sum|avg|min|max, field? } calculés à la lecture (through = champ ref/refs, ou slug d'un objet qui pointe vers celui-ci) ; created_at, updated_at, created_by, autonumber. Validation par champ : required, pattern (regex), minLength, maxLength, min, max ; default = valeur définie à la création. `unique: true` (text, email, url, number, phone) : valeur unique dans la base, même en cas d'écritures concurrentes (deux webhooks simultanés pour le même e-mail -> un seul enregistrement, ou une erreur de conflit sans match) ; sert de clé `match` pour records.upsert. E-mail comparé en minuscules."
+  },
+  "mcp.objects.create.database": {
+    "en": "Database slug (default: the default database)",
+    "fr": "Slug de la base de données (par défaut : la base de données par défaut)"
+  },
+  "mcp.objects.create.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.objects.delete": {
+    "en": "Permanently deletes an object and all its records (trash included). Without confirm=true: refused, with the number of records at stake. Export first (objects.export).",
+    "fr": "Supprime définitivement un objet et tous ses enregistrements (corbeille comprise). Sans confirm=true : refusé, avec le nombre d'enregistrements concernés. Exportez d'abord (objects.export)."
+  },
+  "mcp.objects.delete.object": {
+    "en": "Object slug or id (uuid)",
+    "fr": "Slug ou identifiant (uuid) de l'objet"
+  },
+  "mcp.objects.delete.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.objects.export": {
+    "en": "Exports all records of an object, 1000 per page, with no total limit. format csv (default, header on the 1st page) or json. Returns { csv | rows, next }; next page with after = next, until next = null.",
+    "fr": "Exporte tous les enregistrements d'un objet, 1000 par page, sans limite totale. format csv (par défaut, en-tête sur la 1re page) ou json. Renvoie { csv | rows, next } ; page suivante avec after = next, jusqu'à next = null."
+  },
+  "mcp.objects.export.object": {
+    "en": "Object slug or id (uuid)",
+    "fr": "Slug ou identifiant (uuid) de l'objet"
+  },
+  "mcp.objects.export.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.objects.get": {
+    "en": "Reads an object and its schema.",
+    "fr": "Lit un objet et son schéma."
+  },
+  "mcp.objects.get.object": {
+    "en": "Object slug or id (uuid)",
+    "fr": "Slug ou identifiant (uuid) de l'objet"
+  },
+  "mcp.objects.get.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.objects.index": {
+    "en": "Creates (if missing) an index on an object field to speed up frequent filters and sorts on large volumes. Does not block writes, idempotent. Returns { index, field }.",
+    "fr": "Crée (s'il n'existe pas) un index sur un champ d'objet pour accélérer les filtres et tris fréquents sur de gros volumes. Ne bloque pas les écritures, idempotent. Renvoie { index, field }."
+  },
+  "mcp.objects.index.object": {
+    "en": "Object slug or id (uuid)",
+    "fr": "Slug ou identifiant (uuid) de l'objet"
+  },
+  "mcp.objects.index.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.objects.list": {
+    "en": "Lists the workspace objects (record types) and their fields.",
+    "fr": "Liste les objets de l'espace de travail (types d'enregistrements) et leurs champs."
+  },
+  "mcp.objects.list.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.objects.migrate": {
+    "en": "Evolves an object's schema while carrying the data over. op: rename { field, to, label? } (values copied); change_type { field, type, options?, object?, dropInvalid? } (values converted; refused if invalid values remain, unless dropInvalid empties them); add { field: definition, default? } (default written to existing records, mandatory if required); require { field, default? } (default for empty records); delete { field } (purged from records). Always call with dryRun: true first: returns { records, touched, invalid, samples }.",
+    "fr": "Fait évoluer le schéma d'un objet en conservant les données. op : rename { field, to, label? } (valeurs copiées) ; change_type { field, type, options?, object?, dropInvalid? } (valeurs converties ; refusé s'il reste des valeurs invalides, sauf si dropInvalid les vide) ; add { field: definition, default? } (valeur par défaut écrite dans les enregistrements existants, obligatoire si le champ est requis) ; require { field, default? } (valeur par défaut pour les enregistrements vides) ; delete { field } (supprimé des enregistrements). Appelez toujours d'abord avec dryRun: true : renvoie { records, touched, invalid, samples }."
+  },
+  "mcp.objects.migrate.object": {
+    "en": "Object slug or id (uuid)",
+    "fr": "Slug ou identifiant (uuid) de l'objet"
+  },
+  "mcp.objects.migrate.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.objects.update_schema": {
+    "en": "Replaces an object's schema (fields), and optionally its name or icon. Same types as objects.create; an added or changed formula is recomputed on existing records.",
+    "fr": "Remplace le schéma (champs) d'un objet et, au besoin, son nom ou son icône. Mêmes types que objects.create ; une formule ajoutée ou modifiée est recalculée sur les enregistrements existants."
+  },
+  "mcp.objects.update_schema.object": {
+    "en": "Object slug or id (uuid)",
+    "fr": "Slug ou identifiant (uuid) de l'objet"
+  },
+  "mcp.objects.update_schema.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.page.create": {
+    "en": "Creates a page from a TSX package (draft; `publish: true` publishes right away). Shared components are files of the package (e.g. components/card.tsx).",
+    "fr": "Crée une page à partir d'un paquet TSX (brouillon ; `publish: true` publie immédiatement). Les composants partagés sont des fichiers du paquet (par exemple components/card.tsx)."
+  },
+  "mcp.page.create.entry": {
+    "en": "entry file of the package (default index.tsx)",
+    "fr": "fichier d'entrée du paquet (index.tsx par défaut)"
+  },
+  "mcp.page.create.files": {
+    "en": "TSX package: {\"<relative path>\": \"<source>\"}, e.g. {\"index.tsx\": \"export default function Page() {…}\", \"components/card.tsx\": \"…\"}. Paths are relative (no \"..\", no leading \"/\"); the entry file must be present.",
+    "fr": "Paquet TSX : {\"<chemin relatif>\": \"<source>\"}, par exemple {\"index.tsx\": \"export default function Page() {…}\", \"components/card.tsx\": \"…\"}. Les chemins sont relatifs (pas de \"..\", pas de \"/\" initial) ; le fichier d'entrée doit être présent."
+  },
+  "mcp.page.create.icon": {
+    "en": "Lucide icon of the page in the navigation (kebab-case, e.g. users, shopping-cart, kanban, chart-line; see lucide.dev/icons). Pick the icon that best fits the page content. Default: layout-dashboard.",
+    "fr": "Icône Lucide de la page dans la navigation (kebab-case, par exemple users, shopping-cart, kanban, chart-line ; voir lucide.dev/icons). Choisissez l'icône la plus adaptée au contenu de la page. Par défaut : layout-dashboard."
+  },
+  "mcp.page.create.permissions": {
+    "en": "SDK permissions declared by the page",
+    "fr": "Permissions SDK déclarées par la page"
+  },
+  "mcp.page.create.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.page.delete": {
+    "en": "Deletes a page and its versions.",
+    "fr": "Supprime une page et ses versions."
+  },
+  "mcp.page.delete.id": {
+    "en": "Page id",
+    "fr": "Identifiant de la page"
+  },
+  "mcp.page.delete.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.page.discard": {
+    "en": "Discards a page's draft: it goes back to the published version.",
+    "fr": "Abandonne le brouillon d'une page : elle revient à la version publiée."
+  },
+  "mcp.page.discard.id": {
+    "en": "Page id",
+    "fr": "Identifiant de la page"
+  },
+  "mcp.page.discard.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.page.errors": {
+    "en": "Recent browser runtime errors of a page (uncaught errors, unhandled rejections, React render errors, console.error), reported by the page iframe within seconds: the published version, or the draft with `draft: true`. Each error has message, location (file:line:col in the package source), stack, count (deduplicated) and lastSeen; errors expire after 24 h. Open the page first (page.screenshot) to collect them.",
+    "fr": "Erreurs d'exécution récentes d'une page dans le navigateur (erreurs non interceptées, promesses rejetées non gérées, erreurs de rendu React, console.error), remontées par l'iframe de la page en quelques secondes : la version publiée, ou le brouillon avec `draft: true`. Chaque erreur comporte message, emplacement (file:line:col dans la source du paquet), pile d'appels, count (dédupliqué) et lastSeen ; les erreurs expirent après 24 h. Ouvrez d'abord la page (page.screenshot) pour les collecter."
+  },
+  "mcp.page.errors.id": {
+    "en": "Page id",
+    "fr": "Identifiant de la page"
+  },
+  "mcp.page.errors.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.page.examples": {
+    "en": "Reference page packages built on @getrunbase/kit (crm, kanban, dashboard). Without `name`: summarized list {name, description}, paginated (offset, limit). With `name`: the full example (files, entry, permissions, mock `data`), ready for page.create. Adapt object ids and field names to the workspace.",
+    "fr": "Paquets de pages de référence construits sur @getrunbase/kit (crm, kanban, dashboard). Sans `name` : liste résumée {name, description}, paginée (offset, limit). Avec `name` : l'exemple complet (fichiers, entrée, permissions, `data` fictives), prêt pour page.create. Adaptez les identifiants d'objets et les noms de champs à l'espace de travail."
+  },
+  "mcp.page.examples.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.page.get": {
+    "en": "Reads a page package (files, entry, deps, permissions): the published version seen by users (null if never published), or the draft with `draft: true` (hasDraft = draft waiting for page.publish).",
+    "fr": "Lit le paquet d'une page (fichiers, entrée, dépendances, permissions) : la version publiée vue par les utilisateurs (null si jamais publiée), ou le brouillon avec `draft: true` (hasDraft = brouillon en attente de page.publish)."
+  },
+  "mcp.page.get.id": {
+    "en": "Page id",
+    "fr": "Identifiant de la page"
+  },
+  "mcp.page.get.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.page.guide": {
+    "en": "Page guide, to read before writing a page: package structure (entry, files, relative imports), @getrunbase/sdk hooks, @getrunbase/kit blocks, permissions, strict design rules (spacing, hierarchy, empty/loading/error states, responsive, accessibility) and the @ui modules.",
+    "fr": "Guide des pages, à lire avant d'écrire une page : structure du paquet (entrée, fichiers, imports relatifs), hooks @getrunbase/sdk, blocs @getrunbase/kit, permissions, règles de design strictes (espacements, hiérarchie, états vide/chargement/erreur, responsive, accessibilité) et modules @ui."
+  },
+  "mcp.page.guide.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.page.list": {
+    "en": "Lists the workspace pages.",
+    "fr": "Liste les pages de l'espace de travail."
+  },
+  "mcp.page.list.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.page.publish": {
+    "en": "Publishes a page's draft: it becomes the version seen by users. Without a draft, changes nothing.",
+    "fr": "Publie le brouillon d'une page : il devient la version vue par les utilisateurs. Sans brouillon, ne change rien."
+  },
+  "mcp.page.publish.id": {
+    "en": "Page id",
+    "fr": "Identifiant de la page"
+  },
+  "mcp.page.publish.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.page.restore": {
+    "en": "Restores an old version: creates a new published version with its files (any draft is discarded).",
+    "fr": "Restaure une ancienne version : crée une nouvelle version publiée avec ses fichiers (tout brouillon est abandonné)."
+  },
+  "mcp.page.restore.id": {
+    "en": "Page id",
+    "fr": "Identifiant de la page"
+  },
+  "mcp.page.restore.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.page.screenshot": {
+    "en": "PNG screenshot of a saved page as a user sees it (real workspace data, code components included), read-only: actions and workflows are not run. `draft: true` captures the draft (after page.update, before page.publish). Waits until every code component has finished rendering and loaders (skeletons) are gone (max 8 s). User account (OAuth) or API key. Returns the image then {errors, console}; errors include code component errors (also recorded in errors.list, source component). Use after page.create/update to check the rendering (desktop and mobile).",
+    "fr": "Capture d'écran PNG d'une page enregistrée telle que la voit un utilisateur (vraies données de l'espace de travail, composants de code compris), en lecture seule : les actions et les workflows ne sont pas exécutés. `draft: true` capture le brouillon (après page.update, avant page.publish). Attend que chaque composant de code ait fini son rendu et que les chargements (squelettes) aient disparu (8 s maximum). Compte utilisateur (OAuth) ou clé d'API. Renvoie l'image puis {errors, console} ; errors inclut les erreurs des composants de code (aussi enregistrées dans errors.list, source component). À utiliser après page.create/update pour vérifier le rendu (ordinateur et mobile)."
+  },
+  "mcp.page.screenshot.audit": {
+    "en": "also run an axe-core accessibility audit (WCAG 2.1 A/AA): returns `a11y` = [{id, impact, help, nodes, targets}]",
+    "fr": "lance aussi un audit d'accessibilité axe-core (WCAG 2.1 A/AA) : renvoie `a11y` = [{id, impact, help, nodes, targets}]"
+  },
+  "mcp.page.screenshot.componentState": {
+    "en": "useParam state of code blocks: {<blockId>: {<key>: value}} (same as URL parameters c.<blockId>.<key>=<JSON>), e.g. {\"app\": {\"tab\": \"deals\"}}",
+    "fr": "État useParam des blocs de code : {<blockId>: {<key>: value}} (identique aux paramètres d'URL c.<blockId>.<key>=<JSON>), par exemple {\"app\": {\"tab\": \"deals\"}}"
+  },
+  "mcp.page.screenshot.draft": {
+    "en": "capture the draft",
+    "fr": "capturer le brouillon"
+  },
+  "mcp.page.screenshot.id": {
+    "en": "Page id",
+    "fr": "Identifiant de la page"
+  },
+  "mcp.page.screenshot.params": {
+    "en": "URL parameters, e.g. {\"id\": \"<recordId>\"}",
+    "fr": "Paramètres d'URL, par exemple {\"id\": \"<recordId>\"}"
+  },
+  "mcp.page.screenshot.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.page.test": {
+    "en": "Compiles and renders a component. Without `screenshot`: renderToString (sandbox without network or effects) with a mock SDK serving `data` = {<object id>: rows[], records?: {<id>: record}, timeline?: {<recordId>: events[]}, objects?: {<id>: {name, fields}}, user?} (filter, q, sort, pagination, groupBy/aggregate applied in memory; page.examples provides full `data`); returns {errors, html, sdkCalls}, each SDK call outside permissions marked `denied`.\nWith `screenshot`: real rendering in headless Chromium (iframe runtime, compiled CSS, effects run, no network) and returns one PNG image per viewport × theme, then {errors, console, sdkCalls}. `screenshot.data`: \"mock\" (default, serves `data`) or \"live\" (real workspace reads with the permissions; actions, workflows and writes simulated). Always look at the desktop AND mobile screenshots.",
+    "fr": "Compile et affiche un composant. Sans `screenshot` : renderToString (bac à sable sans réseau ni effets) avec un SDK fictif servant `data` = {<object id>: rows[], records?: {<id>: record}, timeline?: {<recordId>: events[]}, objects?: {<id>: {name, fields}}, user?} (filter, q, sort, pagination, groupBy/aggregate appliqués en mémoire ; page.examples fournit des `data` complètes) ; renvoie {errors, html, sdkCalls}, chaque appel SDK hors permissions étant marqué `denied`.\nAvec `screenshot` : vrai rendu dans Chromium headless (runtime iframe, CSS compilé, effets exécutés, pas de réseau) ; renvoie une image PNG par viewport × thème, puis {errors, console, sdkCalls}. `screenshot.data` : \"mock\" (par défaut, sert `data`) ou \"live\" (vraies lectures dans l'espace de travail selon les permissions ; actions, workflows et écritures simulés). Regardez toujours les captures ordinateur ET mobile."
+  },
+  "mcp.page.test.edits": {
+    "en": "{old, new} replacements applied to `source`",
+    "fr": "Remplacements {old, new} appliqués à `source`"
+  },
+  "mcp.page.test.source": {
+    "en": "TSX to test",
+    "fr": "TSX à tester"
+  },
+  "mcp.page.test.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.page.update": {
+    "en": "Updates a page. Name and icon apply immediately. `changes` is a file patch applied in order to the draft, all or nothing: {op: write, path, source} creates or replaces a file, {op: edit, path, old, new} replaces text matching once, {op: rename, from, to} (the entry follows), {op: delete, path} (not the entry). `files` replaces the whole package. Draft changes are invisible to users until page.publish (`publish: true` publishes right away). The package is recompiled: returns {page, errors} (compile errors, file:line), then, unless `review: false` or compile errors, `review` = {a11y (axe violations), pageErrors (runtime errors), renderErrors, warnings} followed by desktop and mobile screenshots of the draft.",
+    "fr": "Met à jour une page. Le nom et l'icône s'appliquent immédiatement. `changes` est un correctif de fichiers appliqué dans l'ordre au brouillon, tout ou rien : {op: write, path, source} crée ou remplace un fichier, {op: edit, path, old, new} remplace un texte présent une seule fois, {op: rename, from, to} (l'entrée suit), {op: delete, path} (pas l'entrée). `files` remplace tout le paquet. Les modifications du brouillon restent invisibles pour les utilisateurs jusqu'à page.publish (`publish: true` publie immédiatement). Le paquet est recompilé : renvoie {page, errors} (erreurs de compilation, file:line), puis, sauf `review: false` ou erreurs de compilation, `review` = {a11y (violations axe), pageErrors (erreurs d'exécution), renderErrors, warnings} suivi des captures ordinateur et mobile du brouillon."
+  },
+  "mcp.page.update.entry": {
+    "en": "entry file of the package (default index.tsx)",
+    "fr": "fichier d'entrée du paquet (index.tsx par défaut)"
+  },
+  "mcp.page.update.files": {
+    "en": "TSX package: {\"<relative path>\": \"<source>\"}, e.g. {\"index.tsx\": \"export default function Page() {…}\", \"components/card.tsx\": \"…\"}. Paths are relative (no \"..\", no leading \"/\"); the entry file must be present.",
+    "fr": "Paquet TSX : {\"<chemin relatif>\": \"<source>\"}, par exemple {\"index.tsx\": \"export default function Page() {…}\", \"components/card.tsx\": \"…\"}. Les chemins sont relatifs (pas de \"..\", pas de \"/\" initial) ; le fichier d'entrée doit être présent."
+  },
+  "mcp.page.update.icon": {
+    "en": "Lucide icon of the page in the navigation (kebab-case, e.g. users, shopping-cart, kanban, chart-line; see lucide.dev/icons). Pick the icon that best fits the page content. Default: layout-dashboard.",
+    "fr": "Icône Lucide de la page dans la navigation (kebab-case, par exemple users, shopping-cart, kanban, chart-line ; voir lucide.dev/icons). Choisissez l'icône la plus adaptée au contenu de la page. Par défaut : layout-dashboard."
+  },
+  "mcp.page.update.id": {
+    "en": "Page id",
+    "fr": "Identifiant de la page"
+  },
+  "mcp.page.update.permissions": {
+    "en": "SDK permissions declared by the page",
+    "fr": "Permissions SDK déclarées par la page"
+  },
+  "mcp.page.update.review": {
+    "en": "automatic review of the draft (default true, skipped on compile errors): desktop and mobile screenshots, axe-core violations and runtime errors",
+    "fr": "revue automatique du brouillon (true par défaut, ignorée en cas d'erreurs de compilation) : captures ordinateur et mobile, violations axe-core et erreurs d'exécution"
+  },
+  "mcp.page.update.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.page.versions": {
+    "en": "Published versions of a page.",
+    "fr": "Versions publiées d'une page."
+  },
+  "mcp.page.versions.id": {
+    "en": "Page id",
+    "fr": "Identifiant de la page"
+  },
+  "mcp.page.versions.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.query.delete": {
+    "en": "Deletes a saved query.",
+    "fr": "Supprime une requête enregistrée."
+  },
+  "mcp.query.delete.name": {
+    "en": "Saved query name",
+    "fr": "Nom de la requête enregistrée"
+  },
+  "mcp.query.delete.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.query.save": {
+    "en": "Creates or replaces a named saved query.",
+    "fr": "Crée ou remplace une requête enregistrée nommée."
+  },
+  "mcp.query.save.name": {
+    "en": "Saved query name",
+    "fr": "Nom de la requête enregistrée"
+  },
+  "mcp.query.save.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.query.saved": {
+    "en": "Lists the workspace saved queries.",
+    "fr": "Liste les requêtes enregistrées de l'espace de travail."
+  },
+  "mcp.query.saved.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.query.sql": {
+    "en": "Runs a read-only SQL query on the workspace views. Returns { rows, truncated }: beyond 1000 rows, truncated = true and only the first 1000 are returned (add LIMIT/OFFSET or aggregate).",
+    "fr": "Exécute une requête SQL en lecture seule sur les vues de l'espace de travail. Renvoie { rows, truncated } : au-delà de 1000 lignes, truncated = true et seules les 1000 premières sont renvoyées (ajoutez LIMIT/OFFSET ou agrégez)."
+  },
+  "mcp.query.sql.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.quotas.get": {
+    "en": "Workspace limits and usage: records (maximum count), runsPerMinute (workflow runs per minute), apiPerMinute (MCP and ingestion calls per minute), concurrency (workflow steps and trigger events processed at the same time; extra jobs wait their turn). Beyond the first three, calls fail with a quota_exceeded error (HTTP 429).",
+    "fr": "Limites et consommation de l'espace de travail : records (nombre maximal d'enregistrements), runsPerMinute (exécutions de workflows par minute), apiPerMinute (appels MCP et d'ingestion par minute), concurrency (étapes de workflows et événements déclencheurs traités en même temps ; les tâches en surplus attendent leur tour). Au-delà des trois premières, les appels échouent avec une erreur quota_exceeded (HTTP 429)."
+  },
+  "mcp.quotas.get.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.quotas.set": {
+    "en": "Sets the workspace limits (admin scope). An omitted value reverts to the default. Values are capped by the account limits (quotas.get: caps, null = unlimited): a value above them is refused (quotas.exceedsLimit).",
+    "fr": "Définit les limites de l'espace de travail (périmètre admin). Une valeur omise revient à la valeur par défaut. Les valeurs sont plafonnées par les limites du compte (quotas.get : caps, null = illimité) : une valeur supérieure est refusée (quotas.exceedsLimit)."
+  },
+  "mcp.quotas.set.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.records.delete": {
+    "en": "Moves a record to the trash: it disappears from reads, searches and SQL queries; its relations (ref/refs) are removed and its timeline kept. Restorable for 30 days (records.restore), then purged.",
+    "fr": "Met un enregistrement à la corbeille : il disparaît des lectures, des recherches et des requêtes SQL ; ses relations (ref/refs) sont retirées et sa chronologie conservée. Restaurable pendant 30 jours (records.restore), puis purgé."
+  },
+  "mcp.records.delete.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.records.delete_where": {
+    "en": "Moves to the trash all records of an object matching the filter (max 10000). Preview required: dryRun: true (returns { count }), then expected = that count.",
+    "fr": "Met à la corbeille tous les enregistrements d'un objet correspondant au filtre (10000 maximum). Aperçu obligatoire : dryRun: true (renvoie { count }), puis expected = ce nombre."
+  },
+  "mcp.records.delete_where.object": {
+    "en": "Object slug or id (uuid)",
+    "fr": "Slug ou identifiant (uuid) de l'objet"
+  },
+  "mcp.records.delete_where.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.records.get": {
+    "en": "Reads a record by id, refs resolved. `include`: relation paths (e.g. `company`, `contact.company`, reverse relation `contact`) -> `included`.",
+    "fr": "Lit un enregistrement par identifiant, références résolues. `include` : chemins de relations (par exemple `company`, `contact.company`, relation inverse `contact`) -> `included`."
+  },
+  "mcp.records.get.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.records.history": {
+    "en": "A record's history (most recent first): creation, updates with diff { changed, before, after }, deletion, restore, actor and date.",
+    "fr": "Historique d'un enregistrement (du plus récent au plus ancien) : création, mises à jour avec diff { changed, before, after }, suppression, restauration, auteur et date."
+  },
+  "mcp.records.history.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.records.import_csv": {
+    "en": "Imports a CSV (1st line = headers, max 10000 lines). mapping { column: field key }; match = unique field (e.g. email) to update the existing record instead of creating a duplicate. Lists: JSON or values separated by \";\". Each line is independent: returns { total, created, updated, unchanged, failed: [{ line, error }] }. dryRun: true to check without writing.",
+    "fr": "Importe un CSV (1re ligne = en-têtes, 10000 lignes maximum). mapping { colonne: clé de champ } ; match = champ unique (par exemple email) pour mettre à jour l'enregistrement existant au lieu de créer un doublon. Listes : JSON ou valeurs séparées par « ; ». Chaque ligne est indépendante : renvoie { total, created, updated, unchanged, failed: [{ line, error }] }. dryRun: true pour vérifier sans écrire."
+  },
+  "mcp.records.import_csv.object": {
+    "en": "Object slug or id (uuid)",
+    "fr": "Slug ou identifiant (uuid) de l'objet"
+  },
+  "mcp.records.import_csv.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.records.merge": {
+    "en": "Merges duplicates into `keep`, atomically: its values win, empty fields are filled, the merged records' relations (ref/refs) and events move to `keep`, then they are deleted.",
+    "fr": "Fusionne des doublons dans `keep`, de façon atomique : ses valeurs priment, les champs vides sont complétés, les relations (ref/refs) et les événements des enregistrements fusionnés passent sur `keep`, puis ceux-ci sont supprimés."
+  },
+  "mcp.records.merge.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.records.purge": {
+    "en": "Empties the trash permanently: the given ids, otherwise the whole given object, otherwise the whole workspace. Irreversible: confirm: true required.",
+    "fr": "Vide définitivement la corbeille : les identifiants donnés, sinon tout l'objet donné, sinon tout l'espace de travail. Irréversible : confirm: true requis."
+  },
+  "mcp.records.purge.object": {
+    "en": "Object slug or id (uuid)",
+    "fr": "Slug ou identifiant (uuid) de l'objet"
+  },
+  "mcp.records.purge.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.records.restore": {
+    "en": "Restores a record from the trash: same id, values, timeline and relations restored. Fails if its unique value or externalId has been taken in the meantime.",
+    "fr": "Restaure un enregistrement depuis la corbeille : même identifiant, valeurs, chronologie et relations restaurées. Échoue si sa valeur unique ou son externalId a été repris entre-temps."
+  },
+  "mcp.records.restore.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.records.revert": {
+    "en": "Restores the values from before an update: auditId = id of a record.update entry from records.history. Creates a new update.",
+    "fr": "Restaure les valeurs d'avant une mise à jour : auditId = identifiant d'une entrée record.update de records.history. Crée une nouvelle mise à jour."
+  },
+  "mcp.records.revert.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.records.search": {
+    "en": "Searches an object's records (DSL filter all/any of { field, op, value }; ops: eq, neq, gt, gte, lt, lte, between, in, not_in, contains, starts_with, ends_with, regex (case-sensitive), before, after, within, older_than, is, is_empty, is_not_empty). `q`: free text (trigram index). Returns { records, hasMore, total, next }. Pagination: `after` = `next` of the previous page (keyset, works with any sort). `view`: name of a saved view (its filter is added, its sort applies when there is no `sort`).",
+    "fr": "Recherche les enregistrements d'un objet (filtre DSL all/any de { field, op, value } ; opérateurs : eq, neq, gt, gte, lt, lte, between, in, not_in, contains, starts_with, ends_with, regex (sensible à la casse), before, after, within, older_than, is, is_empty, is_not_empty). `q` : texte libre (index trigramme). Renvoie { records, hasMore, total, next }. Pagination : `after` = `next` de la page précédente (keyset, fonctionne avec n'importe quel tri). `view` : nom d'une vue enregistrée (son filtre est ajouté, son tri s'applique en l'absence de `sort`)."
+  },
+  "mcp.records.search.object": {
+    "en": "Object slug or id (uuid)",
+    "fr": "Slug ou identifiant (uuid) de l'objet"
+  },
+  "mcp.records.search.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.records.transact": {
+    "en": "Several writes (upsert, update, delete; different objects allowed) in a single transaction: one error cancels everything. Max 1000. \"$n\" (0-based index) refers to the record id of a previous op n: usable in id and in ref/refs fields (e.g. { company: \"$0\" }).",
+    "fr": "Plusieurs écritures (upsert, update, delete ; objets différents autorisés) en une seule transaction : une erreur annule tout. 1000 maximum. \"$n\" (index à partir de 0) désigne l'identifiant d'enregistrement d'une opération précédente n : utilisable dans id et dans les champs ref/refs (par exemple { company: \"$0\" })."
+  },
+  "mcp.records.transact.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.records.trash": {
+    "en": "An object's trash: deleted records (most recent first), with deletedAt and purgeAt (automatic purge). Next page: `after` = id of the last item.",
+    "fr": "Corbeille d'un objet : enregistrements supprimés (du plus récent au plus ancien), avec deletedAt et purgeAt (purge automatique). Page suivante : `after` = identifiant du dernier élément."
+  },
+  "mcp.records.trash.object": {
+    "en": "Object slug or id (uuid)",
+    "fr": "Slug ou identifiant (uuid) de l'objet"
+  },
+  "mcp.records.trash.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.records.update": {
+    "en": "Updates a record by id (merge by default, or replace).",
+    "fr": "Met à jour un enregistrement par identifiant (fusion par défaut, ou remplacement)."
+  },
+  "mcp.records.update.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.records.update_where": {
+    "en": "Updates (merge) all records of an object matching the filter (max 10000). Preview required: call with dryRun: true (returns { count }), then with expected = that count.",
+    "fr": "Met à jour (fusion) tous les enregistrements d'un objet correspondant au filtre (10000 maximum). Aperçu obligatoire : appelez avec dryRun: true (renvoie { count }), puis avec expected = ce nombre."
+  },
+  "mcp.records.update_where.object": {
+    "en": "Object slug or id (uuid)",
+    "fr": "Slug ou identifiant (uuid) de l'objet"
+  },
+  "mcp.records.update_where.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.records.upsert": {
+    "en": "Creates or updates a record, validated against the object's schema. Key: `externalId`, or `match` = key of a `unique: true` field (email, domain); without a key, always creates. `test: true`: test record (on creation), deleted by workspace.purge_test.",
+    "fr": "Crée ou met à jour un enregistrement, validé selon le schéma de l'objet. Clé : `externalId`, ou `match` = clé d'un champ `unique: true` (email, domaine) ; sans clé, crée toujours. `test: true` : enregistrement de test (à la création), supprimé par workspace.purge_test."
+  },
+  "mcp.records.upsert.object": {
+    "en": "Object slug or id (uuid)",
+    "fr": "Slug ou identifiant (uuid) de l'objet"
+  },
+  "mcp.records.upsert.test": {
+    "en": "Test data: deleted by workspace.purge_test",
+    "fr": "Données de test : supprimées par workspace.purge_test"
+  },
+  "mcp.records.upsert.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.records.upsert_batch": {
+    "en": "Upserts several records of an object (max 1000), atomically: one invalid item cancels the whole batch.",
+    "fr": "Crée ou met à jour plusieurs enregistrements d'un objet (1000 maximum), de façon atomique : un élément invalide annule tout le lot."
+  },
+  "mcp.records.upsert_batch.object": {
+    "en": "Object slug or id (uuid)",
+    "fr": "Slug ou identifiant (uuid) de l'objet"
+  },
+  "mcp.records.upsert_batch.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.runs.cancel": {
+    "en": "Cancels an unfinished run (status canceled): its steps stop and the record can start a run again. false if it is already finished.",
+    "fr": "Annule une exécution non terminée (statut canceled) : ses étapes s'arrêtent et l'enregistrement peut relancer une exécution. false si elle est déjà terminée."
+  },
+  "mcp.runs.cancel.id": {
+    "en": "Run id",
+    "fr": "Identifiant de l'exécution"
+  },
+  "mcp.runs.cancel.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.runs.cancel_bulk": {
+    "en": "Cancels all unfinished runs of a workflow and/or a status (at least one filter). confirm: true required. Returns the number of cancelled runs.",
+    "fr": "Annule toutes les exécutions non terminées d'un workflow et/ou d'un statut (au moins un filtre). confirm: true requis. Renvoie le nombre d'exécutions annulées."
+  },
+  "mcp.runs.cancel_bulk.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.runs.decide": {
+    "en": "Approves or rejects a paused run (human.approve): it resumes on the approved or rejected branch. not_found error (unknown run) or not_waiting (run or path not waiting, with the reason).",
+    "fr": "Approuve ou rejette une exécution en pause (human.approve) : elle reprend sur la branche approuvée ou rejetée. Erreur not_found (exécution inconnue) ou not_waiting (exécution ou chemin pas en attente, avec la raison)."
+  },
+  "mcp.runs.decide.id": {
+    "en": "Run id",
+    "fr": "Identifiant de l'exécution"
+  },
+  "mcp.runs.decide.path": {
+    "en": "Waiting path to decide (default: the first)",
+    "fr": "Chemin en attente à trancher (par défaut : le premier)"
+  },
+  "mcp.runs.decide.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.runs.get": {
+    "en": "Reads a run and its steps: path taken (branch; `path` = parallel execution branch, \"0\", \"1\", \"0.1\"…), input, output (AI reasons included; loop: per-iteration details), function logs fn.* (`logs`), startedAt, attempts, duration, cost, error. `paths` gives the state of each path.",
+    "fr": "Lit une exécution et ses étapes : chemin suivi (branche ; `path` = branche d'exécution parallèle, \"0\", \"1\", \"0.1\"…), entrée, sortie (raisonnements de l'IA compris ; boucle : détail par itération), journaux des fonctions fn.* (`logs`), startedAt, tentatives, durée, coût, erreur. `paths` donne l'état de chaque chemin."
+  },
+  "mcp.runs.get.id": {
+    "en": "Run id",
+    "fr": "Identifiant de l'exécution"
+  },
+  "mcp.runs.get.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.runs.list": {
+    "en": "Lists the workspace runs, most recent first, with their cost. Filters: status, workflow, record, period (from/to ISO). Returns { items, hasMore, nextCursor }: pass nextCursor back as cursor for the next page.",
+    "fr": "Liste les exécutions de l'espace de travail, de la plus récente à la plus ancienne, avec leur coût. Filtres : statut, workflow, enregistrement, période (from/to ISO). Renvoie { items, hasMore, nextCursor } : repassez nextCursor comme cursor pour obtenir la page suivante."
+  },
+  "mcp.runs.list.limit": {
+    "en": "Default 50",
+    "fr": "50 par défaut"
+  },
+  "mcp.runs.list.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.runs.pause": {
+    "en": "Pauses a run (status paused): the current step finishes, the next ones wait for runs.resume. false if the run is not running.",
+    "fr": "Met une exécution en pause (statut paused) : l'étape en cours se termine, les suivantes attendent runs.resume. false si l'exécution n'est pas en cours."
+  },
+  "mcp.runs.pause.id": {
+    "en": "Run id",
+    "fr": "Identifiant de l'exécution"
+  },
+  "mcp.runs.pause.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.runs.replay": {
+    "en": "Replays a run: new run of the same workflow version, same record and same input (event included). Returns the new run.",
+    "fr": "Rejoue une exécution : nouvelle exécution de la même version du workflow, avec le même enregistrement et la même entrée (événement compris). Renvoie la nouvelle exécution."
+  },
+  "mcp.runs.replay.id": {
+    "en": "Run id",
+    "fr": "Identifiant de l'exécution"
+  },
+  "mcp.runs.replay.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.runs.resume": {
+    "en": "Resumes a run paused by runs.pause.",
+    "fr": "Reprend une exécution mise en pause par runs.pause."
+  },
+  "mcp.runs.resume.id": {
+    "en": "Run id",
+    "fr": "Identifiant de l'exécution"
+  },
+  "mcp.runs.resume.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.runs.retry_from": {
+    "en": "Retries a finished run (succeeded, failed or cancelled) from a step: that step and the rest of its path are cleared and re-run, earlier steps are kept. Refused if another run is active on the same record.",
+    "fr": "Relance une exécution terminée (réussie, échouée ou annulée) à partir d'une étape : cette étape et la suite de son chemin sont effacées et réexécutées, les étapes antérieures sont conservées. Refusé si une autre exécution est active sur le même enregistrement."
+  },
+  "mcp.runs.retry_from.id": {
+    "en": "Run id",
+    "fr": "Identifiant de l'exécution"
+  },
+  "mcp.runs.retry_from.stepId": {
+    "en": "Id of the step to resume from",
+    "fr": "Identifiant de l'étape à partir de laquelle reprendre"
+  },
+  "mcp.runs.retry_from.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.runs.start": {
+    "en": "Starts a run of a workflow's current version, on an optional record, with an optional event payload (`event`, read by {{event.…}} as if the event had triggered the run). Refused if a run of the same workflow is already active on that record. `test: true`: test run, deleted by workspace.purge_test.",
+    "fr": "Démarre une exécution de la version courante d'un workflow, sur un enregistrement facultatif, avec un contenu d'événement facultatif (`event`, lu par {{event.…}} comme si l'événement avait déclenché l'exécution). Refusé si une exécution du même workflow est déjà active sur cet enregistrement. `test: true` : exécution de test, supprimée par workspace.purge_test."
+  },
+  "mcp.runs.start.id": {
+    "en": "Workflow id",
+    "fr": "Identifiant du workflow"
+  },
+  "mcp.runs.start.test": {
+    "en": "Test data: deleted by workspace.purge_test",
+    "fr": "Données de test : supprimées par workspace.purge_test"
+  },
+  "mcp.runs.start.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.runs.waiting": {
+    "en": "Lists runs paused on a human.approve block, waiting for a decision.",
+    "fr": "Liste les exécutions en pause sur un bloc human.approve, en attente d'une décision."
+  },
+  "mcp.runs.waiting.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.secrets.delete": {
+    "en": "Deletes a secret.",
+    "fr": "Supprime un secret."
+  },
+  "mcp.secrets.delete.name": {
+    "en": "Secret name, referenced by {{secret.NAME}}",
+    "fr": "Nom du secret, référencé par {{secret.NAME}}"
+  },
+  "mcp.secrets.delete.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.secrets.list": {
+    "en": "Lists the workspace secret names (never the values).",
+    "fr": "Liste les noms des secrets de l'espace de travail (jamais les valeurs)."
+  },
+  "mcp.secrets.list.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.secrets.set": {
+    "en": "Creates or replaces a secret (encrypted). The value can never be read back.",
+    "fr": "Crée ou remplace un secret (chiffré). La valeur ne peut jamais être relue."
+  },
+  "mcp.secrets.set.name": {
+    "en": "Secret name, referenced by {{secret.NAME}}",
+    "fr": "Nom du secret, référencé par {{secret.NAME}}"
+  },
+  "mcp.secrets.set.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.template.export": {
+    "en": "Exports the workspace as an runbase-template.json (versioned format): databases, objects and schema, saved views, functions, code components (TSX), workflows, pages, NAMES of the required secrets (never their values) and optional sample records. Workspace ids are replaced by local refs ($object:<slug>, $workflow:<key>, $record:<key>). Returns the template JSON.",
+    "fr": "Exporte l'espace de travail sous forme de runbase-template.json (format versionné) : bases de données, objets et schéma, vues enregistrées, fonctions, composants de code (TSX), workflows, pages, NOMS des secrets requis (jamais leurs valeurs) et enregistrements d'exemple facultatifs. Les identifiants de l'espace de travail sont remplacés par des références locales ($object:<slug>, $workflow:<key>, $record:<key>). Renvoie le JSON du modèle."
+  },
+  "mcp.template.export.sampleRecords": {
+    "en": "sample records per object (default 0)",
+    "fr": "enregistrements d'exemple par objet (0 par défaut)"
+  },
+  "mcp.template.export.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.template.import": {
+    "en": "Imports an runbase-template.json into the workspace (admin scope): creates databases, objects, views, records, functions, workflows (as draft), components and pages. Refused if an object, function or component of the same name exists. Invalid template: one error per problem with its path. Returns counts, created workflow and page ids, and missingSecrets to set (secrets.set) before activating workflows.",
+    "fr": "Importe un runbase-template.json dans l'espace de travail (périmètre admin) : crée bases de données, objets, vues, enregistrements, fonctions, workflows (en brouillon), composants et pages. Refusé si un objet, une fonction ou un composant du même nom existe. Modèle invalide : une erreur par problème avec son chemin. Renvoie les compteurs, les identifiants des workflows et pages créés, et missingSecrets à définir (secrets.set) avant d'activer les workflows."
+  },
+  "mcp.template.import.template": {
+    "en": "the template object, or its JSON text",
+    "fr": "l'objet du modèle, ou son texte JSON"
+  },
+  "mcp.template.import.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.templates.submit": {
+    "en": "Submits a template to the public Runbase catalog. Automatic validation first: description of at least 300 words with the sections ## Who it's for, ## The problem, ## What it does, ## Setup; valid runbase-template.json manifest (get it with template.export); author profile (pass `author` for a first template). Rejected: one clear error per problem. Accepted: opens a pull request for human review and returns its URL; the template is published on merge. No payment involved.",
+    "fr": "Soumet un modèle au catalogue public de Runbase. Validation automatique d'abord : description d'au moins 300 mots avec les sections ## Who it's for, ## The problem, ## What it does, ## Setup ; manifeste runbase-template.json valide (obtenez-le avec template.export) ; profil d'auteur (passez `author` pour un premier modèle). Refusé : une erreur claire par problème. Accepté : ouvre une pull request pour une relecture humaine et renvoie son URL ; le modèle est publié à la fusion. Aucun paiement en jeu."
+  },
+  "mcp.templates.submit.author": {
+    "en": "Creator profile, required for a first template",
+    "fr": "Profil du créateur, requis pour un premier modèle"
+  },
+  "mcp.templates.submit.description": {
+    "en": "Markdown, at least 300 words, with the sections: ## Who it's for, ## The problem, ## What it does, ## Setup",
+    "fr": "Markdown, au moins 300 mots, avec les sections : ## Who it's for, ## The problem, ## What it does, ## Setup"
+  },
+  "mcp.templates.submit.githubUsername": {
+    "en": "Creator's GitHub login (authorId)",
+    "fr": "Identifiant GitHub du créateur (authorId)"
+  },
+  "mcp.templates.submit.manifest": {
+    "en": "The runbase-template.json manifest (template.export)",
+    "fr": "Le manifeste runbase-template.json (template.export)"
+  },
+  "mcp.templates.submit.slug": {
+    "en": "Template slug (folder name), e.g. crm-light",
+    "fr": "Slug du modèle (nom du dossier), par exemple crm-light"
+  },
+  "mcp.templates.submit.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.views.delete": {
+    "en": "Deletes a saved view of an object.",
+    "fr": "Supprime une vue enregistrée d'un objet."
+  },
+  "mcp.views.delete.name": {
+    "en": "View name, unique per object",
+    "fr": "Nom de la vue, unique par objet"
+  },
+  "mcp.views.delete.object": {
+    "en": "Object slug or id (uuid)",
+    "fr": "Slug ou identifiant (uuid) de l'objet"
+  },
+  "mcp.views.delete.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.views.get": {
+    "en": "Reads a saved view of an object.",
+    "fr": "Lit une vue enregistrée d'un objet."
+  },
+  "mcp.views.get.name": {
+    "en": "View name, unique per object",
+    "fr": "Nom de la vue, unique par objet"
+  },
+  "mcp.views.get.object": {
+    "en": "Object slug or id (uuid)",
+    "fr": "Slug ou identifiant (uuid) de l'objet"
+  },
+  "mcp.views.get.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.views.list": {
+    "en": "Lists an object's saved views (filter, sort, visible columns).",
+    "fr": "Liste les vues enregistrées d'un objet (filtre, tri, colonnes visibles)."
+  },
+  "mcp.views.list.object": {
+    "en": "Object slug or id (uuid)",
+    "fr": "Slug ou identifiant (uuid) de l'objet"
+  },
+  "mcp.views.list.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.views.save": {
+    "en": "Creates or replaces a saved view of an object: filter (records.search DSL), sort and visible columns (field keys, in order). Visible in the object's table; a page uses it with a query { type: \"records\", object, view: <name> }.",
+    "fr": "Crée ou remplace une vue enregistrée d'un objet : filtre (DSL de records.search), tri et colonnes visibles (clés de champs, dans l'ordre). Visible dans le tableau de l'objet ; une page l'utilise avec une requête { type: \"records\", object, view: <name> }."
+  },
+  "mcp.views.save.name": {
+    "en": "View name, unique per object",
+    "fr": "Nom de la vue, unique par objet"
+  },
+  "mcp.views.save.object": {
+    "en": "Object slug or id (uuid)",
+    "fr": "Slug ou identifiant (uuid) de l'objet"
+  },
+  "mcp.views.save.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.webhooks.clear_sample": {
+    "en": "Clears the last saved payload (sample) of an inbound webhook.",
+    "fr": "Efface le dernier contenu enregistré (exemple) d'un webhook entrant."
+  },
+  "mcp.webhooks.clear_sample.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.webhooks.create": {
+    "en": "Creates a public endpoint POST /api/hooks/<id> (`path`): signature verified with the secret `secretName` (secrets.set), then event `eventType` pushed (workflow trigger), deduplicated by the external id (`config.idPath`, default `id`). `config.dedupe`: `id` (default: a resend of the same id is dropped, response duplicate: true, no workflow), `id+hash` (dropped only if the item content is identical: an enriched resend of the same id creates a new event and starts the workflow), `none` (every call creates an event). Unique name per workspace. Formats: `stripe`, `standard` (Standard Webhooks/Svix, id = webhook-id header), `hmac` (header, algorithm sha256|sha1|sha512, encoding hex|base64, prefix e.g. `sha256=`, timestampHeader + template `{timestamp}.{body}`, idHeader; headerFormat `kv` reads a `t=<unix>,v1=<sig>[,v1=…]` header value with timestampKey (default `t`) and signatureKey (default `v1`, any listed signature matches), signedPayload default `{t}.{body}`, toleranceSec default 300; secretEncoding raw (default) | base64 | whsec (`whsec_<base64>` decoded)). `stripe` = hmac kv on `stripe-signature`. Outreach-like: { format: 'hmac', header: 'X-Outreach-Signature', headerFormat: 'kv', signedPayload: '{t}.{body}' }. Cal.com: hmac header `x-cal-signature-256`. Batches: `config.splitPath` (e.g. `events`) or a root array give one event per item, `idPath` relative to the item. `config.storeSample: false`: no sample stored. Test URL `testPath` (/api/hooks/<id>/test): signature verified and sample saved, no event or workflow started (to listen to a provider's next call and write the mapping).",
+    "fr": "Crée un endpoint public POST /api/hooks/<id> (`path`) : signature vérifiée avec le secret `secretName` (secrets.set), puis événement `eventType` envoyé (déclencheur de workflow), dédupliqué par l'identifiant externe (`config.idPath`, `id` par défaut). `config.dedupe` : `id` (par défaut : un renvoi du même identifiant est ignoré, réponse duplicate: true, aucun workflow), `id+hash` (ignoré seulement si le contenu de l'élément est identique : un renvoi enrichi du même identifiant crée un nouvel événement et démarre le workflow), `none` (chaque appel crée un événement). Nom unique par espace de travail. Formats : `stripe`, `standard` (Standard Webhooks/Svix, id = en-tête webhook-id), `hmac` (header, algorithm sha256|sha1|sha512, encoding hex|base64, prefix par exemple `sha256=`, timestampHeader + gabarit `{timestamp}.{body}`, idHeader ; headerFormat `kv` lit une valeur d'en-tête `t=<unix>,v1=<sig>[,v1=…]` avec timestampKey (`t` par défaut) et signatureKey (`v1` par défaut, n'importe quelle signature listée convient), signedPayload `{t}.{body}` par défaut, toleranceSec 300 par défaut ; secretEncoding raw (par défaut) | base64 | whsec (`whsec_<base64>` décodé)). `stripe` = hmac kv sur `stripe-signature`. Façon Outreach : { format: 'hmac', header: 'X-Outreach-Signature', headerFormat: 'kv', signedPayload: '{t}.{body}' }. Cal.com : hmac sur l'en-tête `x-cal-signature-256`. Lots : `config.splitPath` (par exemple `events`) ou un tableau racine donnent un événement par élément, `idPath` relatif à l'élément. `config.storeSample: false` : aucun exemple enregistré. URL de test `testPath` (/api/hooks/<id>/test) : signature vérifiée et exemple enregistré, aucun événement ni workflow démarré (pour écouter le prochain appel d'un fournisseur et écrire le mapping)."
+  },
+  "mcp.webhooks.create.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.webhooks.delete": {
+    "en": "Deletes an inbound webhook (the URL stops responding).",
+    "fr": "Supprime un webhook entrant (l'URL cesse de répondre)."
+  },
+  "mcp.webhooks.delete.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.webhooks.list": {
+    "en": "Lists the workspace inbound webhooks: `path` (production), `testPath` (test, starts nothing), last received payload (`sample`, `sampleAt`).",
+    "fr": "Liste les webhooks entrants de l'espace de travail : `path` (production), `testPath` (test, ne démarre rien), dernier contenu reçu (`sample`, `sampleAt`)."
+  },
+  "mcp.webhooks.list.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.webhooks.test": {
+    "en": "Sends a test payload signed with the webhook secret, in test mode: checks secret and configuration, saves the payload as sample, pushes no event and starts no workflow.",
+    "fr": "Envoie un contenu de test signé avec le secret du webhook, en mode test : vérifie le secret et la configuration, enregistre le contenu comme exemple, n'envoie aucun événement et ne démarre aucun workflow."
+  },
+  "mcp.webhooks.test.payload": {
+    "en": "JSON sent, e.g. { id: 'evt_1' }",
+    "fr": "JSON envoyé, par exemple { id: 'evt_1' }"
+  },
+  "mcp.webhooks.test.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.webhooks.update": {
+    "en": "Updates an inbound webhook (name, eventType, secretName, full config) without changing its URL.",
+    "fr": "Met à jour un webhook entrant (name, eventType, secretName, config complète) sans changer son URL."
+  },
+  "mcp.webhooks.update.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workflows.activate": {
+    "en": "Activates a workflow (refused if its definition is invalid): its triggers fire.",
+    "fr": "Active un workflow (refusé si sa définition est invalide) : ses déclencheurs se mettent à fonctionner."
+  },
+  "mcp.workflows.activate.id": {
+    "en": "Workflow id",
+    "fr": "Identifiant du workflow"
+  },
+  "mcp.workflows.activate.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workflows.create": {
+    "en": "Creates a workflow (draft status, version 1). Definition: trigger, steps, next, entry. next[step][branch] = a step id or an array of ids (steps started in parallel). entry = steps started by the trigger (absent: the first step). Event trigger: {\"type\": \"trigger.event\", \"event\": \"<event type>\"} (`eventType` accepted). Without a join, two paths that converge run the common step twice; step `join: true`: waits for all paths and runs only once. Step options (next to input): `timeout` (\"30s\", \"5m\"; default 5m, network calls included) and `retry` { attempts (1-10, default 3), backoff (\"1s\", doubled on each attempt), continueOnFail (after the last failure, follows the error branch if connected, otherwise the first) }. `timeout` at definition level: global run deadline (\"2h\"). human.approve accepts input.timeout (\"2d\"): without a decision, expired branch if connected, otherwise failure. `concurrencyKey` at definition level: template rendered at run start (e.g. \"{{record.company_id}}\"): at most one active run per key value, later runs wait their turn (creation order), nothing is dropped. condition and switch read the record (object, recordId, condition / field) or, in value mode, any run value: condition { left: \"{{steps.x.output.y}}\", op, right }, switch { value: \"{{steps.x.output.y}}\", cases: [{ id, label, op, value }] } (filter operators: eq, neq, gt, in, contains, is_empty…). Input variables: {{record.…}}, {{event.…}} ({{event.recordId}} = record linked to the triggering event), {{steps.<id>.output.…}}, {{now}}, {{today}}, {{run.id}}, {{run.test}} (true in a test run), {{workflow.id}} (an unknown variable is reported by workflows.validate); in loop.do: {{item}}, {{index}} and all run variables (fn.* and raw-input blocks allowed). Triggers: trigger.schedule { cron, object? (without object: a single run), filter?, timezone? (IANA) }; trigger.run_failed { workflow? }: error workflow started when a run fails ({{event.runId}}, {{event.workflowName}}, {{event.error}}). Sub-workflow: block workflow.run { workflow (id or name), recordId?, event?, wait (default true: waits, ok/error branches, output = last output) }, max depth 5. `pins` { stepId: { output, branch? } }: pinned outputs replayed by dry_run and test_step.",
+    "fr": "Crée un workflow (statut brouillon, version 1). Définition : trigger, steps, next, entry. next[step][branch] = un identifiant d'étape ou un tableau d'identifiants (étapes démarrées en parallèle). entry = étapes démarrées par le déclencheur (absent : la première étape). Déclencheur sur événement : {\"type\": \"trigger.event\", \"event\": \"<event type>\"} (`eventType` accepté). Sans jointure, deux chemins qui convergent exécutent deux fois l'étape commune ; étape `join: true` : attend tous les chemins et ne s'exécute qu'une fois. Options d'étape (à côté de input) : `timeout` (\"30s\", \"5m\" ; 5m par défaut, appels réseau compris) et `retry` { attempts (1-10, 3 par défaut), backoff (\"1s\", doublé à chaque tentative), continueOnFail (après le dernier échec, suit la branche error si elle est connectée, sinon la première) }. `timeout` au niveau de la définition : échéance globale de l'exécution (\"2h\"). human.approve accepte input.timeout (\"2d\") : sans décision, branche expired si elle est connectée, sinon échec. `concurrencyKey` au niveau de la définition : gabarit rendu au démarrage de l'exécution (par exemple \"{{record.company_id}}\") : au plus une exécution active par valeur de clé, les suivantes attendent leur tour (ordre de création), rien n'est abandonné. condition et switch lisent l'enregistrement (object, recordId, condition / field) ou, en mode valeur, n'importe quelle valeur de l'exécution : condition { left: \"{{steps.x.output.y}}\", op, right }, switch { value: \"{{steps.x.output.y}}\", cases: [{ id, label, op, value }] } (opérateurs de filtre : eq, neq, gt, in, contains, is_empty…). Variables d'entrée : {{record.…}}, {{event.…}} ({{event.recordId}} = enregistrement lié à l'événement déclencheur), {{steps.<id>.output.…}}, {{now}}, {{today}}, {{run.id}}, {{run.test}} (true dans une exécution de test), {{workflow.id}} (une variable inconnue est signalée par workflows.validate) ; dans loop.do : {{item}}, {{index}} et toutes les variables de l'exécution (blocs fn.* et à entrée brute autorisés). Déclencheurs : trigger.schedule { cron, object? (sans object : une seule exécution), filter?, timezone? (IANA) } ; trigger.run_failed { workflow? } : workflow d'erreur démarré quand une exécution échoue ({{event.runId}}, {{event.workflowName}}, {{event.error}}). Sous-workflow : bloc workflow.run { workflow (id ou nom), recordId?, event?, wait (true par défaut : attend, branches ok/error, output = dernière sortie) }, profondeur maximale 5. `pins` { stepId: { output, branch? } } : sorties épinglées rejouées par dry_run et test_step."
+  },
+  "mcp.workflows.create.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workflows.deactivate": {
+    "en": "Pauses a workflow: its triggers no longer fire and its running runs are cancelled at their next step.",
+    "fr": "Met un workflow en pause : ses déclencheurs ne fonctionnent plus et ses exécutions en cours sont annulées à leur prochaine étape."
+  },
+  "mcp.workflows.deactivate.id": {
+    "en": "Workflow id",
+    "fr": "Identifiant du workflow"
+  },
+  "mcp.workflows.deactivate.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workflows.delete": {
+    "en": "Deletes a workflow, its versions and its whole run history. Irreversible: confirm: true required (workflows.deactivate is enough to stop it).",
+    "fr": "Supprime un workflow, ses versions et tout son historique d'exécutions. Irréversible : confirm: true requis (workflows.deactivate suffit pour l'arrêter)."
+  },
+  "mcp.workflows.delete.id": {
+    "en": "Workflow id",
+    "fr": "Identifiant du workflow"
+  },
+  "mcp.workflows.delete.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workflows.dry_run": {
+    "en": "Runs a definition without ever writing anything: writes, sends, external calls, loops and functions with network or 'write' permissions are simulated (first branch, null output); reads are real. AI blocks (ai.*) simulated by default, real and billed only with ai: true. One run per record in `records`; without records, a single run without a record (useful for a workflow triggered by an event or webhook); `event` = payload of the triggering event ({{event.…}}). Pinned outputs (`definition.pins[stepId] = { output, branch? }`) replayed instead of running the step. A `join: true` step runs once, after the other paths. Returns per run the paths taken (`paths`, one per parallel execution branch; `path`: all steps flattened), with for each step input, output, branch and reason.",
+    "fr": "Exécute une définition sans jamais rien écrire : écritures, envois, appels externes, boucles et fonctions ayant des permissions réseau ou 'write' sont simulés (première branche, sortie null) ; les lectures sont réelles. Les blocs d'IA (ai.*) sont simulés par défaut, réels et facturés seulement avec ai: true. Une exécution par enregistrement de `records` ; sans enregistrements, une seule exécution sans enregistrement (utile pour un workflow déclenché par un événement ou un webhook) ; `event` = contenu de l'événement déclencheur ({{event.…}}). Les sorties épinglées (`definition.pins[stepId] = { output, branch? }`) sont rejouées au lieu d'exécuter l'étape. Une étape `join: true` s'exécute une fois, après les autres chemins. Renvoie pour chaque exécution les chemins suivis (`paths`, un par branche d'exécution parallèle ; `path` : toutes les étapes à plat), avec pour chaque étape l'entrée, la sortie, la branche et la raison."
+  },
+  "mcp.workflows.dry_run.ai": {
+    "en": "true: really runs the AI blocks (paid)",
+    "fr": "true : exécute réellement les blocs d'IA (payant)"
+  },
+  "mcp.workflows.dry_run.event": {
+    "en": "Payload of the triggering event",
+    "fr": "Contenu de l'événement déclencheur"
+  },
+  "mcp.workflows.dry_run.records": {
+    "en": "Record ids (optional)",
+    "fr": "Identifiants d'enregistrements (facultatif)"
+  },
+  "mcp.workflows.dry_run.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workflows.get": {
+    "en": "Reads a workflow and the definition of its current version.",
+    "fr": "Lit un workflow et la définition de sa version courante."
+  },
+  "mcp.workflows.get.id": {
+    "en": "Workflow id",
+    "fr": "Identifiant du workflow"
+  },
+  "mcp.workflows.get.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workflows.list": {
+    "en": "Lists the workspace workflows.",
+    "fr": "Liste les workflows de l'espace de travail."
+  },
+  "mcp.workflows.list.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workflows.restore": {
+    "en": "Restores a previous version (creates a new version with its definition).",
+    "fr": "Restaure une version précédente (crée une nouvelle version avec sa définition)."
+  },
+  "mcp.workflows.restore.id": {
+    "en": "Workflow id",
+    "fr": "Identifiant du workflow"
+  },
+  "mcp.workflows.restore.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workflows.run_manual": {
+    "en": "trigger.manual: starts a workflow on a record or a selection of records (no record = one run without a record). Records that already have an active run are skipped.",
+    "fr": "trigger.manual : démarre un workflow sur un enregistrement ou une sélection d'enregistrements (aucun enregistrement = une exécution sans enregistrement). Les enregistrements qui ont déjà une exécution active sont ignorés."
+  },
+  "mcp.workflows.run_manual.id": {
+    "en": "Workflow id",
+    "fr": "Identifiant du workflow"
+  },
+  "mcp.workflows.run_manual.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workflows.test_step": {
+    "en": "Tests a single step of a definition: `input` provided (otherwise the definition's, templates rendered), context `recordId` and/or `event`, outputs of previous steps via `steps` { stepId: output } (otherwise pinned outputs `definition.pins`). Side effects simulated unless `live: true` (real execution: writes, sends, paid AI). Returns rendered input, branch, output.",
+    "fr": "Teste une seule étape d'une définition : `input` fourni (sinon celui de la définition, gabarits rendus), contexte `recordId` et/ou `event`, sorties des étapes précédentes via `steps` { stepId: output } (sinon les sorties épinglées `definition.pins`). Effets de bord simulés sauf avec `live: true` (exécution réelle : écritures, envois, IA payante). Renvoie l'entrée rendue, la branche et la sortie."
+  },
+  "mcp.workflows.test_step.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workflows.update": {
+    "en": "Updates a workflow. A new definition creates a new version.",
+    "fr": "Met à jour un workflow. Une nouvelle définition crée une nouvelle version."
+  },
+  "mcp.workflows.update.id": {
+    "en": "Workflow id",
+    "fr": "Identifiant du workflow"
+  },
+  "mcp.workflows.update.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workflows.validate": {
+    "en": "Validates a definition: unconnected steps, branches, block inputs, conditions, fn.<name> inputs (required fields of the inputSchema, {{steps.x.output.y}} and {{record.y}} refs to declared fields). Returns { errors, warnings }: errors empty = valid; warnings = non-blocking (refs that cannot be checked before the run, such as {{event.…}}).",
+    "fr": "Valide une définition : étapes non connectées, branches, entrées des blocs, conditions, entrées fn.<name> (champs requis de l'inputSchema, références {{steps.x.output.y}} et {{record.y}} vers des champs déclarés). Renvoie { errors, warnings } : errors vide = valide ; warnings = non bloquants (références impossibles à vérifier avant l'exécution, comme {{event.…}})."
+  },
+  "mcp.workflows.validate.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workflows.versions": {
+    "en": "Lists the (immutable) versions of a workflow.",
+    "fr": "Liste les versions (immuables) d'un workflow."
+  },
+  "mcp.workflows.versions.id": {
+    "en": "Workflow id",
+    "fr": "Identifiant du workflow"
+  },
+  "mcp.workflows.versions.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workspace.describe": {
+    "en": "The whole workspace in one call: databases > objects (fields, record count), workflows (trigger, steps, status), functions (schemas, permissions, limits), webhooks, pages, secret names, SQL views readable by query.sql (name, columns, types), counters (records, events, active runs, open errors). Call it first to discover a workspace.",
+    "fr": "Tout l'espace de travail en un seul appel : bases de données > objets (champs, nombre d'enregistrements), workflows (déclencheur, étapes, statut), fonctions (schémas, permissions, limites), webhooks, pages, noms des secrets, vues SQL lisibles par query.sql (nom, colonnes, types), compteurs (enregistrements, événements, exécutions actives, erreurs ouvertes). Appelez-le en premier pour découvrir un espace de travail."
+  },
+  "mcp.workspace.describe.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workspace.purge_test": {
+    "en": "Deletes test data (created with test: true): records (trash then purge, relations removed), finished events and runs (a still-active run is kept: runs.cancel first). dryRun: true returns the counts without deleting anything; otherwise confirm: true required. hasMore: call again for the next batch.",
+    "fr": "Supprime les données de test (créées avec test: true) : enregistrements (corbeille puis purge, relations retirées), événements et exécutions terminées (une exécution encore active est conservée : runs.cancel d'abord). dryRun: true renvoie les compteurs sans rien supprimer ; sinon confirm: true requis. hasMore : rappelez pour le lot suivant."
+  },
+  "mcp.workspace.purge_test.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workspaces.ai_budget": {
+    "en": "Monthly AI budget of the workspace: USD cap, spend this month, exhausted or not.",
+    "fr": "Budget IA mensuel de l'espace de travail : plafond en USD, dépense du mois, épuisé ou non."
+  },
+  "mcp.workspaces.ai_budget.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workspaces.create": {
+    "en": "Creates a workspace.",
+    "fr": "Crée un espace de travail."
+  },
+  "mcp.workspaces.create.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workspaces.delete": {
+    "en": "Deletes a workspace (the last one cannot be deleted).",
+    "fr": "Supprime un espace de travail (le dernier ne peut pas être supprimé)."
+  },
+  "mcp.workspaces.delete.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workspaces.list": {
+    "en": "Lists accessible workspaces (all organizations), with the active one marked.",
+    "fr": "Liste les espaces de travail accessibles (toutes organisations), en indiquant l'espace actif."
+  },
+  "mcp.workspaces.rename": {
+    "en": "Renames a workspace.",
+    "fr": "Renomme un espace de travail."
+  },
+  "mcp.workspaces.rename.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workspaces.set_ai_budget": {
+    "en": "Sets the monthly AI budget in USD (null = unlimited). At 100% AI blocks are blocked and runs move to paused_budget; they resume if the budget is raised. Capped by the account limit (quota:aiBudgetUsd): a higher value is refused. There is no platform AI key: without the workspace's own provider key, AI calls fail with ai.providerNotConfigured.",
+    "fr": "Définit le budget IA mensuel en USD (null = illimité). À 100 %, les blocs d'IA sont bloqués et les exécutions passent en paused_budget ; elles reprennent si le budget est relevé. Plafonné par la limite du compte (quota:aiBudgetUsd) : une valeur supérieure est refusée. Il n'existe pas de clé d'IA de la plateforme : sans clé de fournisseur propre à l'espace de travail, les appels d'IA échouent avec ai.providerNotConfigured."
+  },
+  "mcp.workspaces.set_ai_budget.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workspaces.use": {
+    "en": "Sets the default workspace for this client's next calls.",
+    "fr": "Définit l'espace de travail par défaut pour les prochains appels de ce client."
+  },
+  "mcp.workspaces.use.workspace": {
+    "en": "Workspace id or name",
+    "fr": "Identifiant ou nom de l'espace de travail"
+  },
+  "node.ai.decide": {
+    "en": "The AI picks one of the declared branches and explains why.",
+    "fr": "L'IA choisit l'une des branches déclarées et explique pourquoi."
+  },
+  "node.ai.decide.label": {
+    "en": "AI decision",
+    "fr": "Décision IA"
+  },
+  "node.ai.extract": {
+    "en": "The AI extracts structured fields from a text.",
+    "fr": "L'IA extrait des champs structurés d'un texte."
+  },
+  "node.ai.extract.label": {
+    "en": "AI extraction",
+    "fr": "Extraction IA"
+  },
+  "node.ai.run": {
+    "en": "The AI follows an instruction and can read or update objects.",
+    "fr": "L'IA suit une instruction et peut lire ou mettre à jour des objets."
+  },
+  "node.ai.run.label": {
+    "en": "AI agent",
+    "fr": "Agent IA"
+  },
+  "node.condition": {
+    "en": "Checks one or more rules on the record (relations included), or compares any run value ({ left: \"{{steps.x.output.y}}\", op, right }): continues on Yes if true, otherwise on No.",
+    "fr": "Vérifie une ou plusieurs règles sur l'enregistrement (relations comprises), ou compare n'importe quelle valeur de l'exécution ({ left: \"{{steps.x.output.y}}\", op, right }) : continue sur Oui si c'est vrai, sinon sur Non."
+  },
+  "node.condition.label": {
+    "en": "Condition (yes / no)",
+    "fr": "Condition (oui / non)"
+  },
+  "node.data.set": {
+    "en": "Creates named values (text, number, variables) to reuse in the following steps.",
+    "fr": "Crée des valeurs nommées (texte, nombre, variables) à réutiliser dans les étapes suivantes."
+  },
+  "node.data.set.label": {
+    "en": "Set values",
+    "fr": "Définir des valeurs"
+  },
+  "node.data.transform": {
+    "en": "Extracts fields from an object (e.g. an event's content) under new names.",
+    "fr": "Extrait des champs d'un objet (par exemple le contenu d'un événement) sous de nouveaux noms."
+  },
+  "node.data.transform.label": {
+    "en": "Reshape data",
+    "fr": "Remodeler des données"
+  },
+  "node.date": {
+    "en": "Formats a date, adds a duration or computes the gap between two dates.",
+    "fr": "Formate une date, ajoute une durée ou calcule l'écart entre deux dates."
+  },
+  "node.date.label": {
+    "en": "Compute a date",
+    "fr": "Calculer une date"
+  },
+  "node.event.emit": {
+    "en": "Publishes an event that can trigger other workflows.",
+    "fr": "Publie un événement qui peut déclencher d'autres workflows."
+  },
+  "node.event.emit.label": {
+    "en": "Emit an event",
+    "fr": "Émettre un événement"
+  },
+  "node.formatter": {
+    "en": "Transforms a value without AI: text (case, replace, split, extract email/URL/number, slug), number (parse, format, round, math), date (parse, format, add, diff), lookup table, first non-empty, list/join.",
+    "fr": "Transforme une valeur sans IA : texte (casse, remplacement, découpage, extraction d'e-mail/URL/nombre, slug), nombre (analyse, formatage, arrondi, calcul), date (analyse, formatage, ajout, écart), table de correspondance, première valeur non vide, liste/jointure."
+  },
+  "node.formatter.label": {
+    "en": "Format a value",
+    "fr": "Formater une valeur"
+  },
+  "node.http.request": {
+    "en": "Calls an external URL and returns the response.",
+    "fr": "Appelle une URL externe et renvoie la réponse."
+  },
+  "node.http.request.label": {
+    "en": "HTTP request",
+    "fr": "Requête HTTP"
+  },
+  "node.human.approve": {
+    "en": "Pauses the run until it is approved or rejected, with an optional timeout.",
+    "fr": "Met l'exécution en pause jusqu'à son approbation ou son rejet, avec un délai facultatif."
+  },
+  "node.human.approve.label": {
+    "en": "Human approval",
+    "fr": "Approbation humaine"
+  },
+  "node.list.aggregate": {
+    "en": "Counts items or computes a sum, average, minimum or maximum, overall or per group.",
+    "fr": "Compte les éléments ou calcule une somme, une moyenne, un minimum ou un maximum, au total ou par groupe."
+  },
+  "node.list.aggregate.label": {
+    "en": "Compute on a list",
+    "fr": "Calculer sur une liste"
+  },
+  "node.list.dedupe": {
+    "en": "Removes duplicate items from a list (by a field or the whole item).",
+    "fr": "Supprime les éléments en double d'une liste (selon un champ ou l'élément entier)."
+  },
+  "node.list.dedupe.label": {
+    "en": "Remove duplicates",
+    "fr": "Supprimer les doublons"
+  },
+  "node.list.filter": {
+    "en": "Keeps the records of a list that match a condition.",
+    "fr": "Garde les enregistrements d'une liste qui remplissent une condition."
+  },
+  "node.list.filter.label": {
+    "en": "Filter a list",
+    "fr": "Filtrer une liste"
+  },
+  "node.list.limit": {
+    "en": "Keeps a limited number of items from a list.",
+    "fr": "Garde un nombre limité d'éléments d'une liste."
+  },
+  "node.list.limit.label": {
+    "en": "Keep the first items",
+    "fr": "Garder les premiers éléments"
+  },
+  "node.list.map": {
+    "en": "Turns each item of a list into an object.",
+    "fr": "Transforme chaque élément d'une liste en objet."
+  },
+  "node.list.map.label": {
+    "en": "Transform a list",
+    "fr": "Transformer une liste"
+  },
+  "node.list.sort": {
+    "en": "Sorts the items of a list by a field.",
+    "fr": "Trie les éléments d'une liste selon un champ."
+  },
+  "node.list.sort.label": {
+    "en": "Sort a list",
+    "fr": "Trier une liste"
+  },
+  "node.loop": {
+    "en": "Repeats a sequence of steps for each item of a list.",
+    "fr": "Répète une suite d'étapes pour chaque élément d'une liste."
+  },
+  "node.loop.label": {
+    "en": "Loop",
+    "fr": "Boucle"
+  },
+  "node.mcp.call": {
+    "en": "Calls a tool on a configured MCP server.",
+    "fr": "Appelle un outil sur un serveur MCP configuré."
+  },
+  "node.mcp.call.label": {
+    "en": "MCP call",
+    "fr": "Appel MCP"
+  },
+  "node.node.slack.post_message": {
+    "en": "Posts a message to a Slack channel (or a thread reply with threadTs) as the connected bot.",
+    "fr": "Publie un message dans un canal Slack (ou une réponse dans un fil avec threadTs) en tant que bot connecté."
+  },
+  "node.node.slack.post_message.label": {
+    "en": "Post a Slack message",
+    "fr": "Publier un message Slack"
+  },
+  "node.record.create": {
+    "en": "Creates a record in an object of a database.",
+    "fr": "Crée un enregistrement dans un objet d'une base de données."
+  },
+  "node.record.create.label": {
+    "en": "Create a record",
+    "fr": "Créer un enregistrement"
+  },
+  "node.record.delete": {
+    "en": "Permanently deletes a record.",
+    "fr": "Supprime définitivement un enregistrement."
+  },
+  "node.record.delete.label": {
+    "en": "Delete a record",
+    "fr": "Supprimer un enregistrement"
+  },
+  "node.record.get": {
+    "en": "Reads a record by its id.",
+    "fr": "Lit un enregistrement par son identifiant."
+  },
+  "node.record.get.label": {
+    "en": "Read a record",
+    "fr": "Lire un enregistrement"
+  },
+  "node.record.map": {
+    "en": "Copies a record to an object in any database, field by field.",
+    "fr": "Copie un enregistrement vers un objet de n'importe quelle base de données, champ par champ."
+  },
+  "node.record.map.label": {
+    "en": "Copy a record",
+    "fr": "Copier un enregistrement"
+  },
+  "node.record.merge": {
+    "en": "Merges duplicates into one record: fields, relations and timeline, all or nothing.",
+    "fr": "Fusionne des doublons en un seul enregistrement : champs, relations et chronologie, tout ou rien."
+  },
+  "node.record.merge.label": {
+    "en": "Merge records",
+    "fr": "Fusionner des enregistrements"
+  },
+  "node.record.search": {
+    "en": "Searches the records of an object with a filter.",
+    "fr": "Recherche les enregistrements d'un objet avec un filtre."
+  },
+  "node.record.search.label": {
+    "en": "Search records",
+    "fr": "Rechercher des enregistrements"
+  },
+  "node.record.transact": {
+    "en": "Applies several creates, updates and deletes in one transaction.",
+    "fr": "Applique plusieurs créations, mises à jour et suppressions en une seule transaction."
+  },
+  "node.record.transact.label": {
+    "en": "Batch writes",
+    "fr": "Écritures groupées"
+  },
+  "node.record.update": {
+    "en": "Updates one or more fields of a record.",
+    "fr": "Met à jour un ou plusieurs champs d'un enregistrement."
+  },
+  "node.record.update.label": {
+    "en": "Update a record",
+    "fr": "Mettre à jour un enregistrement"
+  },
+  "node.record.upsert": {
+    "en": "Upsert by unique field (email, domain…) or external id, without duplicates.",
+    "fr": "Upsert par champ unique (e-mail, domaine…) ou identifiant externe, sans doublon."
+  },
+  "node.record.upsert.label": {
+    "en": "Create or update a record",
+    "fr": "Créer ou mettre à jour un enregistrement"
+  },
+  "node.slack.send": {
+    "en": "Sends a message to Slack through an Incoming Webhook URL.",
+    "fr": "Envoie un message sur Slack via une URL d'Incoming Webhook."
+  },
+  "node.slack.send.label": {
+    "en": "Slack message",
+    "fr": "Message Slack"
+  },
+  "node.stop.error": {
+    "en": "Stops the workflow with an error message; the error shows up in the error center.",
+    "fr": "Arrête le workflow avec un message d'erreur ; l'erreur apparaît dans le centre d'erreurs."
+  },
+  "node.stop.error.label": {
+    "en": "Stop with an error",
+    "fr": "Arrêter avec une erreur"
+  },
+  "node.switch": {
+    "en": "Routes to a branch based on a record field's value, or on any run value ({ value: \"{{steps.x.output.y}}\", cases }): one case per value, then Otherwise.",
+    "fr": "Oriente vers une branche selon la valeur d'un champ de l'enregistrement, ou selon n'importe quelle valeur de l'exécution ({ value: \"{{steps.x.output.y}}\", cases }) : un cas par valeur, puis Sinon."
+  },
+  "node.switch.label": {
+    "en": "Switch",
+    "fr": "Aiguillage"
+  },
+  "node.wait": {
+    "en": "Pauses the run for a duration.",
+    "fr": "Met l'exécution en pause pendant une durée."
+  },
+  "node.wait.label": {
+    "en": "Wait",
+    "fr": "Attendre"
+  },
+  "node.wait.until": {
+    "en": "Pauses the run until a specific date and time.",
+    "fr": "Met l'exécution en pause jusqu'à une date et une heure précises."
+  },
+  "node.wait.until.label": {
+    "en": "Wait until a date",
+    "fr": "Attendre jusqu'à une date"
+  },
+  "node.webhook.emit": {
+    "en": "Sends a signed payload to a URL.",
+    "fr": "Envoie un contenu signé à une URL."
+  },
+  "node.webhook.emit.label": {
+    "en": "Send a webhook",
+    "fr": "Envoyer un webhook"
+  },
+  "node.workflow.run": {
+    "en": "Runs another workflow and waits for its result, or continues without waiting.",
+    "fr": "Exécute un autre workflow et attend son résultat, ou continue sans attendre."
+  },
+  "node.workflow.run.label": {
+    "en": "Run another workflow",
+    "fr": "Exécuter un autre workflow"
+  }
+}

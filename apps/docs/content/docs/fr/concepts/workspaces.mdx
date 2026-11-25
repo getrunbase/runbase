@@ -1,0 +1,30 @@
+---
+title: Espaces de travail
+description: Organisations, espaces de travail, membres et clés d'API.
+---
+
+Une **organisation** regroupe les personnes et la facturation. Elle contient
+autant d'**espaces de travail** que nécessaire : chacun possède ses propres
+données, workflows, fonctions, secrets et pages. Rien n'est partagé entre
+espaces de travail ; la configuration habituelle consiste donc à en créer un par
+client ou par projet. La création d'espaces de travail est gratuite et illimitée.
+
+## Accès
+
+- Les **membres** ont un rôle dans l'organisation (`owner`, `admin`, `member`…).
+  Gérez-les avec `members.invite`, `members.set_role` et `members.remove`.
+- Les **clés d'API** appartiennent à l'organisation et ne voient que les espaces
+  de travail listés dans `workspaceIds`. Une clé peut aussi être limitée à
+  certains outils MCP (`tools`) et à certains objets (`objects`).
+
+## Choix de l'espace de travail
+
+Les clients MCP ont un espace de travail actif (`workspaces.use`). Tous les
+autres outils acceptent un paramètre facultatif `workspace` (identifiant ou
+nom). L'API REST utilise l'en-tête `x-workspace-id`.
+
+## Quotas
+
+Chaque espace de travail dispose de quotas (enregistrements, runs, budget IA).
+Consultez-les avec `quotas.get` ; en auto-hébergement, les administrateurs les
+modifient avec `quotas.set`.

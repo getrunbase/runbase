@@ -1,0 +1,16 @@
+---
+title: Événements
+description: Faits horodatés servant de timeline, de funnel et de déclencheur de workflow.
+---
+
+Un **événement** est un fait horodaté doté d'un `type` (comme `email.opened`) et
+d'un `payload` JSON. Il peut être lié à un enregistrement et apparaît alors dans
+la timeline de celui-ci. Les modifications d'enregistrements produisent
+automatiquement des événements `record.*`.
+
+- Envoyez-les avec `events.push`. Passez une `idempotencyKey` (un identifiant
+  externe) pour rejouer sans risque : une même clé ne crée jamais de doublon.
+- Lisez-les avec `events.list` (filtres par type, enregistrement et dates) et
+  `events.types`. En SQL, une vue `events` est disponible dans `query.sql`.
+- Analysez la conversion avec `events.funnel`.
+- Démarrez des workflows avec un déclencheur sur événement.

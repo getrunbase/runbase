@@ -1,0 +1,24 @@
+---
+title: Webhooks
+description: Webhooks entrants avec vérification de signature, déduplication et mapping.
+---
+
+`webhooks.create` renvoie une URL publique, `/api/hooks/<id>`. Chaque appel :
+
+1. est vérifié à l'aide de sa signature (Stripe, Standard Webhooks/Svix ou un
+   HMAC configurable) ;
+2. est dédupliqué ;
+3. devient un événement et peut, en option, créer ou mettre à jour un
+   enregistrement.
+
+Un workflow doté d'un déclencheur `trigger.webhook` s'exécute à chaque appel.
+Son `mapping` copie des chemins du payload (comme `payload.data.email`) dans les
+champs de l'enregistrement ; le payload complet reste accessible via
+`{{event.…}}`.
+
+## Écrire un mapping
+
+`webhooks.list` renvoie le dernier payload reçu (l'échantillon). Appelez l'URL
+de test (`testPath`) depuis l'émetteur, ou simulez un appel signé avec
+`webhooks.test`, puis lisez l'échantillon pour écrire le mapping.
+`config.splitPath` découpe un payload groupé en un événement par élément.
