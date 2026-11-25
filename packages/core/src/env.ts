@@ -103,6 +103,7 @@ export const envSchema = z.object({
   QUOTA_MAX_RECORDS: z.coerce.number().int().positive().optional(),
   QUOTA_MAX_RUNS_PER_MINUTE: z.coerce.number().int().positive().optional(),
   QUOTA_MAX_RUNS_PER_MONTH: z.coerce.number().int().positive().optional(),
+  QUOTA_MAX_STORAGE_BYTES: z.coerce.number().int().positive().optional(),
   QUOTA_MAX_API_PER_MINUTE: z.coerce.number().int().positive().optional(),
   QUOTA_MAX_WORKSPACES: z.coerce.number().int().positive().optional(),
   QUOTA_MAX_AI_BUDGET_USD: z.coerce.number().positive().optional(),

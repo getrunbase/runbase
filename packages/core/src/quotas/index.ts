@@ -254,6 +254,54 @@ export async function countRun(ctx: TenantContext) {
     });
 }
 
+// Stored file bytes: counted per workspace in workspace_usage (upload adds,
+// delete subtracts), capped per organization by quota:storageBytes (sum of
+// its workspaces). Unlimited by default: no cap = no read, only the update.
+export async function storageBytesOf(organizationId: string) {
+  const [row] = await db
+    .select({
+      n: sql<number>`coalesce(sum(${workspaceUsage.storageBytes}), 0)::bigint`,
+    })
+    .from(workspaceUsage)
+    .where(eq(workspaceUsage.organizationId, organizationId));
+  return Number(row?.n ?? 0);
+}
+
+// To call before storing a file of `bytes`: refuses beyond the cap,
+// otherwise counts it. Same check-then-increment trade-off as countRun.
+export async function countStorage(ctx: TenantContext, bytes: number) {
+  const max = await quotaOf(ctx.organizationId, "quota:storageBytes");
+  if (
+    Number.isFinite(max) &&
+    (await storageBytesOf(ctx.organizationId)) + bytes > max
+  ) {
+    const it = errorItem(
+      "quotas.storageBytes",
+      "Quota reached: {max} bytes of file storage for your account. Delete files or raise the quota.",
+      { max: fmt(max) },
+    );
+    throw new QuotaError(it.message, it);
+  }
+  await addStorage(ctx, bytes);
+}
+
+// Adds (or subtracts, negative) stored bytes; never below zero.
+export async function addStorage(ctx: TenantContext, bytes: number) {
+  await db
+    .insert(workspaceUsage)
+    .values({
+      workspaceId: ctx.workspaceId,
+      organizationId: ctx.organizationId,
+      storageBytes: Math.max(0, bytes),
+    })
+    .onConflictDoUpdate({
+      target: workspaceUsage.workspaceId,
+      set: {
+        storageBytes: sql`greatest(0, ${workspaceUsage.storageBytes} + ${bytes})`,
+      },
+    });
+}
+
 // Page useAI: AI calls per minute, cap per workspace and
 // per page (a public page alone does not drain the workspace window).
 export const AI_PER_MINUTE = { workspace: 60, page: 20 };
@@ -305,6 +353,7 @@ export const quotasService = {
           n: workspaceUsage.records,
           runs: workspaceUsage.runs,
           month: workspaceUsage.runsMonth,
+          storageBytes: workspaceUsage.storageBytes,
         })
         .from(workspaceUsage)
         .where(eq(workspaceUsage.workspaceId, ctx.workspaceId));
@@ -316,6 +365,8 @@ export const quotasService = {
           records: row?.n ?? 0,
           // Runs of this workspace in the current UTC month.
           runsThisMonth: row?.month === currentMonth() ? row.runs : 0,
+          // Bytes of attached files stored by this workspace.
+          storageBytes: row?.storageBytes ?? 0,
         },
       };
     });
