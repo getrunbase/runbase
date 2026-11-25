@@ -8,6 +8,7 @@ import { runsQueue, startRunsSweeper, startRunsWorker } from "@getrunbase/core/r
 import { observeQueue, startMetrics } from "@getrunbase/core/telemetry";
 import { scheduleQueue, startTriggerWorkers } from "@getrunbase/core/triggers";
 import { startUsageWorker } from "@getrunbase/core/usage";
+import { startInactivityWorker } from "@getrunbase/core/workspaces/inactivity";
 import { startBoard } from "./board";
 import { startTelemetry } from "./telemetry";
 
@@ -28,6 +29,9 @@ const workers = [
   // Metered usage for the billing extension: self-host (no extension)
   // schedules nothing.
   ...(extended ? [startUsageWorker()] : []),
+  // Inactivity policy (pause of idle workspaces): extension only, self-host
+  // never pauses.
+  ...(extended ? [startInactivityWorker()] : []),
 ];
 // Run outbox sweeper: jobs lost between commit and
 // enqueue, or gone from Redis (waits included), re-enqueued periodically.

@@ -142,6 +142,8 @@ export const envSchema = z.object({
   // Usage reporting to the billing extension (records, monthly runs,
   // storage). Only scheduled when an extension module is loaded.
   USAGE_REPORT_CRON: z.string().default("0 * * * *"),
+  // Inactivity policy check (extension `inactivity`), only with an extension module.
+  INACTIVITY_CRON: z.string().default("30 * * * *"),
 
   // Logs.
   LOG_LEVEL: z
