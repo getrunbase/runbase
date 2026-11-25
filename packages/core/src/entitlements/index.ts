@@ -20,6 +20,13 @@ export const QUOTA_KEYS = [
 export type QuotaKey = (typeof QUOTA_KEYS)[number];
 export type FeatureKey = `feat:${string}`;
 
+// Gated features known to the core. Granted by default (no extension, or an
+// extension without an opinion): self-host keeps every feature.
+export const FEATURES = {
+  // Hides the "Powered by Runbase" badge on published interfaces.
+  hideBadge: "feat:hideBadge",
+} as const satisfies Record<string, FeatureKey>;
+
 // features null = everything allowed (no extension or extension without an opinion).
 export type Resolved = { features: string[] | null; quotas: Record<string, number> };
 
@@ -76,6 +83,14 @@ export async function can(
 ) {
   const { features } = await entitlementsFor(ctx.organizationId);
   return features == null || features.includes(feature);
+}
+
+// First gated feature: published interfaces show the badge only when the
+// organization is not entitled to hide it.
+export async function showsPoweredByBadge(
+  ctx: Pick<TenantContext, "organizationId">,
+) {
+  return !(await can(ctx, FEATURES.hideBadge));
 }
 
 // Exceeded: clear message (what, how much, what to do), HTTP status 429.
