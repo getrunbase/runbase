@@ -1,45 +1,32 @@
-// Slack connector: posts messages through the Web API (bot token).
+// Slack connector: posts messages through an Incoming Webhook.
 import { z } from "zod";
 import { defineNode } from "@getrunbase/node-sdk";
 
-export const postMessage = defineNode({
-  id: "slack.post_message",
-  label: "Post a Slack message",
+export const send = defineNode({
+  id: "slack.send",
+  label: "Send a Slack message",
   description:
-    "Posts a message to a Slack channel (or a thread reply with threadTs) as the connected bot.",
-  auth: { secrets: ["SLACK_BOT_TOKEN"], domains: ["slack.com"] },
+    "Sends a message to the Slack channel of an Incoming Webhook. The webhook URL can be typed or picked from the workspace secrets.",
+  auth: { secrets: [], domains: ["hooks.slack.com"] },
   inputs: z.object({
-    channel: z.string().min(1),
+    webhookUrl: z.string().min(1),
     text: z.string().min(1),
-    threadTs: z.string().optional(),
   }),
-  outputs: z.object({ channel: z.string(), ts: z.string() }),
-  run: async ({ channel, text, threadTs }, ctx) => {
-    const res = await ctx.fetch("https://slack.com/api/chat.postMessage", {
+  outputs: z.object({ status: z.number() }),
+  run: async ({ webhookUrl, text }, ctx) => {
+    if (!webhookUrl.startsWith("https://hooks.slack.com/"))
+      throw new Error("webhookUrl is not a Slack Incoming Webhook URL");
+    const res = await ctx.fetch(webhookUrl, {
       method: "POST",
-      headers: {
-        authorization: `Bearer ${ctx.secrets.SLACK_BOT_TOKEN ?? ""}`,
-        "content-type": "application/json; charset=utf-8",
-      },
-      body: JSON.stringify({
-        channel,
-        text,
-        ...(threadTs && { thread_ts: threadTs }),
-      }),
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text }),
     });
-    // Slack answers 200 with ok: false on a business error.
-    const data = (await res.json().catch(() => ({}))) as {
-      ok?: boolean;
-      error?: string;
-      channel?: string;
-      ts?: string;
-    };
-    if (!res.ok || !data.ok)
+    if (!res.ok)
       throw new Error(
-        `Slack chat.postMessage failed (${data.error ?? res.status})`,
+        `Slack webhook failed (${res.status} ${await res.text().catch(() => "")})`,
       );
-    return { channel: data.channel ?? channel, ts: data.ts ?? "" };
+    return { status: res.status };
   },
 });
 
-export default [postMessage];
+export default [send];

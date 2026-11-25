@@ -33,17 +33,15 @@ proposal, won or lost), a close date, and links to the company and the main
 contact. Two saved views are included: the open pipeline, sorted by amount,
 and the list of won deals, sorted by close date. A workflow listens for new
 deals and posts a short message to a Slack channel with the deal title, amount
-and stage, using the Slack connector. Sample records (one company, one contact
+and stage, with the Slack connector. Sample records (one company, one contact
 and one deal) show how the relations work and can be deleted at any time.
 
 ## Setup
 
 1. Import the template from the Databases page with **Import template**, or
    with the MCP tool `template.import`.
-2. Create a Slack app with the `chat:write` bot scope, install it in your
-   workspace and invite the bot to your sales channel.
-3. In **Settings › Secrets**, add `SLACK_BOT_TOKEN` with the bot token.
-4. Open the **Announce new deals in Slack** workflow, change the channel from
-   `#sales` to your own channel if needed, then activate it.
+2. In Slack, create an Incoming Webhook for your sales channel and copy its URL.
+3. In **Settings › Secrets**, add `SLACK_WEBHOOK_URL` with the webhook URL.
+4. Open the **Announce new deals in Slack** workflow, then activate it.
 5. Create a deal to check the Slack message, then delete the sample records
    and import your own companies and contacts from CSV.

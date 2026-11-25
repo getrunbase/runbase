@@ -24,6 +24,8 @@ export type BlockInfo = {
   branches: readonly string[];
   // Branches computed from the input (Switch: one case = one branch).
   dynamicBranches?: boolean;
+  // Replacement type: still runs, hidden from the block picker.
+  deprecated?: string;
   inputSchema: unknown;
   outputSchema?: unknown;
 };

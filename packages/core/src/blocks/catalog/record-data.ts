@@ -31,11 +31,12 @@ export const recordUpdate = defineBlock({
   },
 });
 
-// Deletes a record (relations and timeline included).
+// Moves a record to the trash (same as records.delete): relations removed,
+// timeline kept, restorable for 30 days.
 export const recordDelete = defineBlock({
   type: "record.delete",
   label: "Delete a record",
-  description: "Permanently deletes a record.",
+  description: "Moves a record to the trash: its relations are removed, its timeline kept. Restorable for 30 days, then purged.",
   sideEffect: true,
   inputSchema: z.object({ recordId: z.string() }),
   outputSchema: z.object({ deleted: z.boolean() }),

@@ -55,7 +55,8 @@ withMcpRequest({ principal: { key: "docs", actor: { userId: "docs" } } }, () =>
   } as never),
 );
 
-const nodes = (await blocksService.list()).map((n) => ({
+// Deprecated blocks are not documented: they only run in existing workflows.
+const nodes = (await blocksService.list()).filter((n) => !n.deprecated).map((n) => ({
   ...n,
   connector: n.type.startsWith(NODE_PREFIX),
 }));

@@ -4,43 +4,38 @@
       "name": "@getrunbase-connectors/slack",
       "version": "0.1.0",
       "label": "Slack",
-      "description": "Post messages to Slack channels (Web API, bot token).",
+      "description": "Send messages to a Slack channel through an Incoming Webhook.",
       "path": "slack",
       "nodes": [
         {
-          "id": "slack.post_message",
-          "label": "Post a Slack message",
-          "description": "Posts a message to a Slack channel (or a thread reply with threadTs) as the connected bot.",
+          "id": "slack.send",
+          "label": "Send a Slack message",
+          "description": "Sends a message to the Slack channel of an Incoming Webhook. The webhook URL can be typed or picked from the workspace secrets.",
           "branches": [
             "ok"
           ],
           "sideEffect": true,
           "auth": {
-            "secrets": [
-              "SLACK_BOT_TOKEN"
-            ],
+            "secrets": [],
             "domains": [
-              "slack.com"
+              "hooks.slack.com"
             ]
           },
           "inputSchema": {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
             "type": "object",
             "properties": {
-              "channel": {
+              "webhookUrl": {
                 "type": "string",
                 "minLength": 1
               },
               "text": {
                 "type": "string",
                 "minLength": 1
-              },
-              "threadTs": {
-                "type": "string"
               }
             },
             "required": [
-              "channel",
+              "webhookUrl",
               "text"
             ]
           },
@@ -48,16 +43,12 @@
             "$schema": "https://json-schema.org/draft/2020-12/schema",
             "type": "object",
             "properties": {
-              "channel": {
-                "type": "string"
-              },
-              "ts": {
-                "type": "string"
+              "status": {
+                "type": "number"
               }
             },
             "required": [
-              "channel",
-              "ts"
+              "status"
             ],
             "additionalProperties": false
           }

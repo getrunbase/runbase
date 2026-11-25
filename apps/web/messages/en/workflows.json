@@ -247,8 +247,8 @@
       "data": "Data",
       "logic": "Logic",
       "ai": "AI",
-      "communication": "Communication",
-      "connectors": "Connectors",
+      "apps": "Apps",
+      "http": "HTTP & events",
       "code": "Code",
       "other": "Other"
     },
@@ -349,7 +349,7 @@
       },
       "delete": {
         "label": "Delete a record",
-        "description": "Permanently deletes a record."
+        "description": "Moves a record to the trash. Restorable for 30 days, then purged."
       },
       "get": {
         "label": "Read a record",

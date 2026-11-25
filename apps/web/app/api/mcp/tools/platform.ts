@@ -168,8 +168,8 @@ export function definePlatformTools(server: McpServer, ctx: TenantContext) {
     "blocks.list",
     {
       description:
-        "Catalog of workflow blocks: type, branches, input and output JSON schemas. Includes the workspace functions as fn.<name>.",
+        "Catalog of workflow blocks (kind: \"block\"): type, branches, input and output JSON schemas, including the workspace functions as fn.<name>. Also lists the triggers (kind: \"trigger\", for definition.trigger) with their parameters as inputSchema. Deprecated blocks are omitted (they still run in existing workflows).",
     },
-    () => run(() => blocksService.list(ctx)),
+    () => run(() => blocksService.catalog(ctx)),
   );
 }

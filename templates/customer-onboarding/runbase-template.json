@@ -81,9 +81,9 @@
           },
           {
             "id": "announce",
-            "type": "node.slack.post_message",
+            "type": "node.slack.send",
             "input": {
-              "channel": "#onboarding",
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
               "text": "New customer: {{record.name}} ({{record.company}}, {{record.plan}} plan). Say hello at {{record.email}}."
             }
           }
@@ -96,5 +96,5 @@
       }
     }
   ],
-  "secrets": ["SLACK_BOT_TOKEN"]
+  "secrets": ["SLACK_WEBHOOK_URL"]
 }

@@ -7,7 +7,7 @@ description: "The blocks.* tools of the Runbase MCP server, generated from their
 
 ## blocks.list
 
-Catalog of workflow blocks: type, branches, input and output JSON schemas. Includes the workspace functions as fn.&lt;name&gt;.
+Catalog of workflow blocks (kind: "block"): type, branches, input and output JSON schemas, including the workspace functions as fn.&lt;name&gt;. Also lists the triggers (kind: "trigger", for definition.trigger) with their parameters as inputSchema. Deprecated blocks are omitted (they still run in existing workflows).
 
 | Name        | Type   | Required | Description                                      |
 | ----------- | ------ | -------- | ------------------------------------------------ |

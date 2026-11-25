@@ -2,8 +2,11 @@
   "slug": "slack",
   "displayName": "Slack",
   "icon": "message-square",
-  "description": "Post messages and thread replies to Slack channels as your own bot, using the Slack Web API.",
-  "categories": ["communication", "chat"],
-  "docsUrl": "https://api.slack.com/methods/chat.postMessage",
+  "description": "Send messages to a Slack channel through an Incoming Webhook.",
+  "categories": [
+    "communication",
+    "chat"
+  ],
+  "docsUrl": "https://api.slack.com/messaging/webhooks",
   "credentialType": "apiKey"
 }

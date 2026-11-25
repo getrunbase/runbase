@@ -187,7 +187,11 @@ export const mcpTools: {
     deactivate: "workflows.deactivate",
     remove: "workflows.delete",
   },
-  blocks: { list: "blocks.list" },
+  blocks: {
+    // Excluded: editor catalog (deprecated blocks included), blocks.list = catalog.
+    list: null,
+    catalog: "blocks.list",
+  },
   runs: {
     start: "runs.start",
     get: "runs.get",

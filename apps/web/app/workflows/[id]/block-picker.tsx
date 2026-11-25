@@ -17,7 +17,6 @@ import {
   Filter,
   GitBranch,
   Globe,
-  MessageSquare,
   ListTree,
   Plug,
   Plus,
@@ -42,7 +41,7 @@ import type { BlockInfo } from "../graph";
 
 // Category + icon per block type. Unknown type: "other".
 export type Category =
-  "data" | "logic" | "ai" | "communication" | "connectors" | "code" | "other";
+  "data" | "logic" | "ai" | "http" | "apps" | "code" | "other";
 const META: Record<string, [Category, LucideIcon]> = {
   "record.get": ["data", FileText],
   "record.search": ["data", FileSearch],
@@ -60,18 +59,17 @@ const META: Record<string, [Category, LucideIcon]> = {
   "ai.decide": ["ai", BrainCircuit],
   "ai.run": ["ai", Bot],
   "ai.extract": ["ai", ScanText],
-  "http.request": ["connectors", Globe],
-  "webhook.emit": ["connectors", Webhook],
-  "mcp.call": ["connectors", Plug],
-  "event.emit": ["connectors", Radio],
-  "slack.send": ["communication", MessageSquare],
+  "http.request": ["http", Globe],
+  "webhook.emit": ["http", Webhook],
+  "mcp.call": ["http", Plug],
+  "event.emit": ["http", Radio],
 };
 const ORDER: Category[] = [
   "data",
   "logic",
   "ai",
-  "communication",
-  "connectors",
+  "apps",
+  "http",
   "code",
   "other",
 ];
@@ -80,7 +78,7 @@ export const metaOf = (type: string): [Category, LucideIcon] =>
   type.startsWith("fn.")
     ? ["code", SquareFunction]
     : type.startsWith("node.")
-      ? ["connectors", Plug]
+      ? ["apps", Plug]
       : (META[type] ?? ["other", Shuffle]);
 
 // Block picker (⌘K-like): search, categories, icons, descriptions.
@@ -95,7 +93,7 @@ export function BlockPicker({
   const [open, setOpen] = useState(false);
   const groups = ORDER.map((g) => ({
     name: g,
-    items: blocks.filter((b) => metaOf(b.type)[0] === g),
+    items: blocks.filter((b) => !b.deprecated && metaOf(b.type)[0] === g),
   })).filter((g) => g.items.length);
   return (
     <>
