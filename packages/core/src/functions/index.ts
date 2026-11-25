@@ -22,6 +22,7 @@ import { recordsService } from "../records";
 import { eventsService, type EventFilter, type EventInput } from "../events";
 import { audit } from "../audit";
 import { countRun } from "../quotas";
+import { quotaOf } from "../entitlements";
 import { functionLogs, functions } from "../db/schema";
 import { withTenant, type TenantContext, type Tx } from "../tenant";
 
@@ -264,7 +265,13 @@ export async function runLogged(
   let logs = "";
   let error: string | null = null;
   try {
+    // quota:maxRunDurationMs also caps the function's own timeout.
+    const maxMs = await quotaOf(ctx.organizationId, "quota:maxRunDurationMs");
+    const own = (f.limits as SandboxFunction["limits"])?.timeoutMs;
     const r = await execFunction(f as SandboxFunction, input, {
+      ...(Number.isFinite(maxMs) && {
+        timeoutMs: Math.min(own ?? LIMITS.timeoutMs.default, maxMs),
+      }),
       secrets: opts.secrets,
       host: hostBridge(ctx, f, opts.writes),
       test: ctx.test,
