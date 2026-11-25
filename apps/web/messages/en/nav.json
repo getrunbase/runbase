@@ -29,6 +29,7 @@
     "apiKeys": "API keys",
     "secrets": "Secrets",
     "audit": "Audit",
+    "usage": "Usage",
     "billing": "Plan & usage"
   },
   "user": {

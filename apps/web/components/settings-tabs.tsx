@@ -11,6 +11,8 @@ const TABS = [
   { href: "/settings/api-keys", label: "apiKeys", admin: true },
   { href: "/settings/secrets", label: "secrets", admin: true },
   { href: "/settings/audit", label: "audit" },
+  { href: "/settings/usage", label: "usage" },
+  { href: "/settings/usage", label: "usage" },
   // Only if the billing extension provides a plan.
   { href: "/settings/billing", label: "billing", billing: true },
 ] as const;
