@@ -9,7 +9,7 @@ import type { Redis } from "ioredis";
 import { requireScope } from "../api-keys";
 import { audit } from "../audit";
 import { busConnection } from "../bus";
-import { workspaceUsage, workspaces } from "../db/schema";
+import { pages, workspaceUsage, workspaces } from "../db/schema";
 import { db } from "../db/client";
 import {
   entitlementsFor,
@@ -409,7 +409,7 @@ export const quotasService = {
 // Settings › Plan and usage: plan provided by the extension and
 // used / cap counters (null = unlimited). null without extension.
 export type UsageItem = {
-  key: "records" | "workspaces";
+  key: "records" | "workspaces" | "pages";
   used: number;
   limit: number | null;
 };
@@ -436,6 +436,17 @@ export const billingService = {
       ];
       return { records: rec?.n ?? 0, workspaces: ws.n };
     });
+    // Published pages of the whole organization (RLS would scope the
+    // tenant transaction to one workspace).
+    const [pub] = (await db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(pages)
+      .where(
+        and(
+          eq(pages.organizationId, ctx.organizationId),
+          sql`${pages.currentVersion} is not null`,
+        ),
+      )) as [{ n: number }];
     const limit = (k: QuotaKey) => quotas[k] ?? null;
     const items: UsageItem[] = [
       { key: "records", used: usage.records, limit: limit("quota:records") },
@@ -444,6 +455,7 @@ export const billingService = {
         used: usage.workspaces,
         limit: limit("quota:workspaces"),
       },
+      { key: "pages", used: pub.n, limit: limit("quota:pages") },
     ];
     return {
       plan: account.plan,
