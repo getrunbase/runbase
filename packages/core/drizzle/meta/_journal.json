@@ -36,6 +36,13 @@
       "when": 1795630425874,
       "tag": "0004_run_active_ms",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795632127920,
+      "tag": "0005_workspace_activity",
+      "breakpoints": true
     }
   ]
 }

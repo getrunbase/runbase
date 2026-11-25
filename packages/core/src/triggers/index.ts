@@ -18,6 +18,7 @@ import { recordError } from "../errors/record";
 import { RunAlreadyActive, runsService } from "../runs";
 import { withTenant, type TenantContext } from "../tenant";
 import { workflowsService } from "../workflows";
+import { isPaused, touchActivity } from "../workspaces/activity";
 import {
   SCHEDULE_QUEUE,
   triggerSchema,
@@ -165,6 +166,8 @@ export async function resolve(job: { name: BusEvent; data: BusJob }) {
   delete base.fq;
   let ctx: TenantContext = base;
   if (job.name === "record.deleted") return [];
+  // Paused workspace: triggers stop (the event or record itself is kept).
+  if (await isPaused(ctx.workspaceId)) return [];
   if (job.name === "run.failed") return runFailed(ctx, job.data);
   let objectId: string | undefined;
   let recordId: string | undefined;
@@ -291,6 +294,8 @@ async function mapWebhook(
 // Cron: one run per record matching the filter, or a simple run without an object.
 export async function processSchedule(job: Job<ScheduleJob>) {
   const { workflowId, ...ctx } = job.data;
+  // Paused workspace: crons stop until the next activity.
+  if (await isPaused(ctx.workspaceId)) return [];
   const wf = await workflowsService.get(ctx, workflowId);
   const t = triggerSchema.safeParse(wf?.definition.trigger);
   if (!wf || wf.status !== "active" || t.data?.type !== "trigger.schedule")
@@ -339,6 +344,8 @@ export const triggersService = {
     workflowId: string,
     recordIds: string[],
   ) => {
+    // A manual run is activity: it also resumes a paused workspace.
+    await touchActivity(ctx.workspaceId);
     const runs = [];
     for (const recordId of recordIds.length ? recordIds : [undefined])
       runs.push(await start(ctx, workflowId, { recordId, manual: true }));
