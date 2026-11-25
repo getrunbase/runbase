@@ -15,5 +15,9 @@
   "code": {
     "leftRuntime": "Le composant a quitté son runtime : rendu arrêté.",
     "previewUnavailable": "Composant code : aperçu indisponible ici."
+  },
+  "badge": {
+    "text": "Propulsé par Runbase",
+    "label": "Propulsé par Runbase (s'ouvre dans un nouvel onglet)"
   }
 }
