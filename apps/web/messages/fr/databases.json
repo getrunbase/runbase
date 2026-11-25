@@ -13,7 +13,7 @@
     "attributes": "{count, plural, one {# attribut} other {# attributs}}",
     "records": "{count, plural, one {# fiche} other {# fiches}}",
     "empty": "Aucun objet.",
-    "claudeHint": "« Ajoute un objet Chantiers relié aux Devis » — Claude crée l’objet, ses champs et la relation."
+    "agentHint": "« Ajoute un objet Chantiers relié aux Devis » — votre agent IA crée l’objet, ses champs et la relation."
   },
   "graph": {
     "noAttributes": "Aucun attribut"

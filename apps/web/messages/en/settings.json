@@ -46,13 +46,8 @@
       "usage": "Records used: {used} / {limit}"
     },
     "mcp": {
-      "title": "Connect the MCP",
-      "description": "Give your agent (Claude Code, Claude Desktop, claude.ai…) access to databases, workflows, functions and interfaces.",
-      "serverUrl": "Server URL",
-      "claudeCodeHint": "Then run <code>/mcp</code> in Claude Code to connect (OAuth: pick the workspace and permissions).",
-      "desktopHint": "Settings → Connectors → Add custom connector, paste the URL above, then connect.",
-      "scripts": "Scripts and CI (API key)",
-      "scriptsHint": "Create a key in <link>API keys</link>."
+      "title": "Connect your AI",
+      "description": "Give your AI agent (ChatGPT, Claude, Gemini, Cursor…) access to databases, workflows, functions and interfaces."
     },
     "danger": {
       "title": "Danger zone",
@@ -99,7 +94,7 @@
   },
   "secrets": {
     "title": "Secrets",
-    "description": "Encrypted variables injected into workflows and functions at run time. Values are never sent back to Claude.",
+    "description": "Encrypted variables injected into workflows and functions at run time. Values are never sent back to your AI agent.",
     "new": "New secret",
     "newDescription": "The value is encrypted and will never be shown again. An existing name is replaced.",
     "value": "Value",
@@ -125,7 +120,7 @@
     "newTitle": "New API key",
     "newDescription": "For the MCP, scripts and external integrations.",
     "copyWarning": "Copy this key: it won't be shown again.",
-    "namePlaceholder": "Claude MCP",
+    "namePlaceholder": "My agent key",
     "scopesLabel": "Permissions",
     "scopes": {
       "read": "Read",
@@ -150,7 +145,7 @@
     "emptyTitle": "No keys",
     "emptyDescription": "Create a key to access the API or the MCP.",
     "created": "Created",
-    "note": "Claude never has access to keys in clear text. Revoke any key you no longer use."
+    "note": "Your AI agent never has access to keys in clear text. Revoke any key you no longer use."
   },
   "audit": {
     "title": "Audit log",

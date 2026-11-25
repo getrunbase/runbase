@@ -11,7 +11,7 @@
       "version": "Version",
       "modified": "Modified"
     },
-    "hint": "Describe to Claude (through MCP) what the function should do: it writes the code, the tests and the input schema."
+    "hint": "Describe to your AI agent what the function should do: it writes the code, the tests and the input schema."
   },
   "form": {
     "name": "Name",

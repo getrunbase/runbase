@@ -1,7 +1,7 @@
 {
   "list": {
     "title": "Workflows",
-    "description": "The workspace's automations, suggested by Claude or built by hand.",
+    "description": "The workspace's automations, suggested by your AI agent or built by hand.",
     "namePlaceholder": "Workflow name",
     "emptyTitle": "No workflows yet",
     "emptyDescription": "Name your first workflow above to create it.",

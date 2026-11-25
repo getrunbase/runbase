@@ -4,11 +4,11 @@ import { quotasService } from "@getrunbase/core/quotas";
 import { Check } from "lucide-react";
 import { Label } from "@getrunbase/ui/components/ui/label";
 import { Button } from "@getrunbase/ui/components/ui/button";
-import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Input } from "@getrunbase/ui/components/ui/input";
 import { getTenant } from "@/lib/tenant";
 import { ConfirmAction } from "@/components/confirm-action";
+import { ConnectAgent } from "@/components/connect-agent";
 import {
   createWorkspace,
   deleteWorkspace,
@@ -32,15 +32,6 @@ const LIMITS = [
   "apiPerMinute",
   "concurrency",
 ] as const;
-
-// Code block (MCP command): secondary background, radius 6, mono 13.
-function Code({ children }: { children: React.ReactNode }) {
-  return (
-    <pre className="bg-secondary text-foreground rounded-md px-3 py-2 font-mono text-sm break-all whitespace-pre-wrap">
-      {children}
-    </pre>
-  );
-}
 
 // Workspace settings (DNCwy board): workspaces, AI budget, limits, MCP, danger zone.
 export default async function Settings() {
@@ -202,48 +193,7 @@ export default async function Settings() {
         title={t("mcp.title")}
         description={t("mcp.description")}
       >
-        <div className="flex flex-col gap-1.5">
-          <p className="text-foreground text-sm font-medium">
-            {t("mcp.serverUrl")}
-          </p>
-          <Code>{mcpUrl}</Code>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          {/* eslint-disable-next-line no-restricted-syntax -- product name, not translated */}
-          <p className="text-foreground text-sm font-medium">{"Claude Code"}</p>
-          <Code>{`claude mcp add --transport http runbase ${mcpUrl}`}</Code>
-          <p className="text-muted-foreground text-sm">
-            {t.rich("mcp.claudeCodeHint", {
-              code: (c) => <code className="font-mono">{c}</code>,
-            })}
-          </p>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <p className="text-foreground text-sm font-medium">
-            {/* eslint-disable-next-line no-restricted-syntax -- product names, not translated */}
-            {"Claude Desktop / claude.ai"}
-          </p>
-          <p className="text-muted-foreground text-sm">
-            {t("mcp.desktopHint")}
-          </p>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <p className="text-foreground text-sm font-medium">
-            {t("mcp.scripts")}
-          </p>
-          <Code>
-            {`claude mcp add --transport http runbase ${mcpUrl} \\\n  --header "Authorization: Bearer agk_…"`}
-          </Code>
-          <p className="text-muted-foreground text-sm">
-            {t.rich("mcp.scriptsHint", {
-              link: (c) => (
-                <Link href="/settings/api-keys" className="text-link underline">
-                  {c}
-                </Link>
-              ),
-            })}
-          </p>
-        </div>
+        <ConnectAgent mcpUrl={mcpUrl} />
       </SettingsSection>
 
       <SettingsSection

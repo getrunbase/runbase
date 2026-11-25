@@ -46,13 +46,8 @@
       "usage": "Records utilisés : {used} / {limit}"
     },
     "mcp": {
-      "title": "Connecter le MCP",
-      "description": "Donne à votre agent (Claude Code, Claude Desktop, claude.ai…) l'accès aux databases, workflows, fonctions et interfaces.",
-      "serverUrl": "URL du serveur",
-      "claudeCodeHint": "Puis <code>/mcp</code> dans Claude Code pour se connecter (OAuth : choix du workspace et des droits).",
-      "desktopHint": "Paramètres → Connecteurs → Ajouter un connecteur personnalisé, coller l'URL ci-dessus, puis se connecter.",
-      "scripts": "Scripts et CI (clé API)",
-      "scriptsHint": "Clé à créer dans <link>Clés API</link>."
+      "title": "Connectez votre IA",
+      "description": "Donnez à votre agent IA (ChatGPT, Claude, Gemini, Cursor…) l'accès aux databases, workflows, fonctions et interfaces."
     },
     "danger": {
       "title": "Zone de danger",
@@ -99,7 +94,7 @@
   },
   "secrets": {
     "title": "Secrets",
-    "description": "Variables chiffrées injectées dans les workflows et les fonctions au moment de l'exécution. Les valeurs ne sont jamais renvoyées à Claude.",
+    "description": "Variables chiffrées injectées dans les workflows et les fonctions au moment de l'exécution. Les valeurs ne sont jamais renvoyées à votre agent IA.",
     "new": "Nouveau secret",
     "newDescription": "La valeur est chiffrée et ne sera plus jamais affichée. Un nom existant est remplacé.",
     "value": "Valeur",
@@ -125,7 +120,7 @@
     "newTitle": "Nouvelle clé API",
     "newDescription": "Pour le MCP, les scripts et les intégrations externes.",
     "copyWarning": "Copiez cette clé : elle ne sera plus affichée.",
-    "namePlaceholder": "MCP Claude",
+    "namePlaceholder": "Clé de mon agent",
     "scopesLabel": "Droits",
     "scopes": {
       "read": "Lecture",
@@ -150,7 +145,7 @@
     "emptyTitle": "Aucune clé",
     "emptyDescription": "Créez une clé pour accéder à l'API ou au MCP.",
     "created": "Créée le",
-    "note": "Claude n'a jamais accès aux clés en clair. Révoquez toute clé que vous n'utilisez plus."
+    "note": "Votre agent IA n'a jamais accès aux clés en clair. Révoquez toute clé que vous n'utilisez plus."
   },
   "audit": {
     "title": "Journal d'audit",

@@ -117,5 +117,35 @@
     "title": "Sidebar",
     "description": "Displays the mobile sidebar.",
     "toggle": "Toggle sidebar"
+  },
+  "connectAgent": {
+    "url": "Your workspace link",
+    "claude": {
+      "code": "Claude Code: run this command.",
+      "codeLogin": "Then type <code>/mcp</code> in Claude Code and sign in.",
+      "desktop": "Claude Desktop or claude.ai: Settings > Connectors > Add custom connector, paste the link above."
+    },
+    "chatgpt": {
+      "steps": "On chatgpt.com/plugins, click \"+\" then \"Add custom MCP server\". Paste the link above, pick OAuth, accept the warning and click \"Create as a plugin\". In a chat, type @ to use it.",
+      "note": "Web only. Business and Enterprise/Edu plans can read and change data; Pro can only read."
+    },
+    "gemini": {
+      "cli": "Gemini CLI: run this command.",
+      "cliLogin": "Then type <code>/mcp auth runbase</code> to sign in.",
+      "web": "Gemini app: gemini.google.com > Settings > Connected Apps > Add a custom app, paste the link above (availability limited)."
+    },
+    "cursor": {
+      "steps": "Add this to <code>~/.cursor/mcp.json</code>.",
+      "login": "Cursor asks you to sign in the first time you use it."
+    },
+    "codex": {
+      "steps": "Run these two commands to add Runbase and sign in."
+    },
+    "other": {
+      "tab": "Other",
+      "oauth": "Any AI agent that supports MCP: paste the link above. It signs in with OAuth.",
+      "key": "Tools without sign-in (scripts, CI): send an API key in this header.",
+      "keyLink": "Create a key in <link>API keys</link>."
+    }
   }
 }

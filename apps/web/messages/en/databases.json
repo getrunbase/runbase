@@ -13,7 +13,7 @@
     "attributes": "{count, plural, one {# attribute} other {# attributes}}",
     "records": "{count, plural, one {# record} other {# records}}",
     "empty": "No objects.",
-    "claudeHint": "“Add a Worksites object linked to Quotes”: Claude creates the object, its fields and the relation."
+    "agentHint": "“Add a Worksites object linked to Quotes”: your AI agent creates the object, its fields and the relation."
   },
   "graph": {
     "noAttributes": "No attributes"
