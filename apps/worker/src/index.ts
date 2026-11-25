@@ -7,13 +7,14 @@ import { startRetentionWorker } from "@getrunbase/core/retention";
 import { runsQueue, startRunsSweeper, startRunsWorker } from "@getrunbase/core/runs";
 import { observeQueue, startMetrics } from "@getrunbase/core/telemetry";
 import { scheduleQueue, startTriggerWorkers } from "@getrunbase/core/triggers";
+import { startUsageWorker } from "@getrunbase/core/usage";
 import { startBoard } from "./board";
 import { startTelemetry } from "./telemetry";
 
 // Configuration validated before any startup: clear message if invalid.
 validateEnv("worker");
 // Extension points: RUNBASE_EXTENSIONS, otherwise no-op.
-await loadExtensions();
+const extended = await loadExtensions();
 const log = createLogger({ service: "worker" });
 // OpenTelemetry metrics: no-op without OTEL_METRICS_EXPORTER.
 const telemetry = startMetrics("runbase-worker");
@@ -24,6 +25,9 @@ const workers = [
   startRunsWorker(),
   // Per-organization retention (entitlements): BullMQ cron, one run per due date.
   startRetentionWorker(),
+  // Metered usage for the billing extension: self-host (no extension)
+  // schedules nothing.
+  ...(extended ? [startUsageWorker()] : []),
 ];
 // Run outbox sweeper: jobs lost between commit and
 // enqueue, or gone from Redis (waits included), re-enqueued periodically.

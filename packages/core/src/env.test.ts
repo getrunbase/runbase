@@ -32,6 +32,7 @@ test("env: default values and conversions", () => {
   assert.equal(e.QUEUE_PREFIX, "bull");
   assert.equal(e.RETENTION_DAYS, undefined);
   assert.equal(e.RETENTION_CRON, "0 3 * * *");
+  assert.equal(e.USAGE_REPORT_CRON, "0 * * * *");
   assert.equal(e.LOG_LEVEL, undefined);
   assert.equal(e.QUOTA_CONCURRENCY, 5);
   assert.equal(e.QUOTA_MAX_RECORDS, undefined);

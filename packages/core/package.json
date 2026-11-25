@@ -45,6 +45,7 @@
     "./quotas": "./src/quotas/index.ts",
     "./entitlements": "./src/entitlements/index.ts",
     "./retention": "./src/retention/index.ts",
+    "./usage": "./src/usage/index.ts",
     "./views": "./src/views/index.ts",
     "./templates": "./src/templates/index.ts",
     "./files": "./src/files/index.ts",
