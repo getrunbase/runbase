@@ -1,6 +1,1140 @@
 {
   "connectors": [
     {
+      "name": "@getrunbase-connectors/google",
+      "version": "0.1.0",
+      "label": "Google",
+      "description": "Send Gmail emails, manage Google Calendar events, read and write Google Sheets, upload files to Google Drive.",
+      "path": "google",
+      "nodes": [
+        {
+          "id": "gmail.send",
+          "label": "Gmail: send an email",
+          "description": "Sends an email from the connected Gmail account. Give text, html or both. threadId (and the original Message-ID in inReplyTo) sends it as a reply in that thread.",
+          "branches": [
+            "ok"
+          ],
+          "sideEffect": true,
+          "auth": {
+            "secrets": [],
+            "domains": [
+              "gmail.googleapis.com"
+            ],
+            "oauth": {
+              "provider": "google",
+              "authorizeUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+              "tokenUrl": "https://oauth2.googleapis.com/token",
+              "revokeUrl": "https://oauth2.googleapis.com/revoke",
+              "scopes": [
+                "openid",
+                "email",
+                "https://www.googleapis.com/auth/gmail.send"
+              ],
+              "authorizeParams": {
+                "access_type": "offline",
+                "prompt": "consent",
+                "include_granted_scopes": "true"
+              }
+            }
+          },
+          "inputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "to": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 3
+                  },
+                  {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 3
+                    }
+                  }
+                ]
+              },
+              "cc": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 3
+                  },
+                  {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 3
+                    }
+                  }
+                ]
+              },
+              "bcc": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 3
+                  },
+                  {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 3
+                    }
+                  }
+                ]
+              },
+              "replyTo": {
+                "type": "string"
+              },
+              "subject": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string"
+              },
+              "html": {
+                "type": "string"
+              },
+              "threadId": {
+                "type": "string"
+              },
+              "inReplyTo": {
+                "type": "string"
+              },
+              "connection": {
+                "description": "Name of the google connection to use",
+                "type": "string"
+              }
+            },
+            "required": [
+              "to",
+              "subject"
+            ]
+          },
+          "outputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "threadId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "threadId"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "id": "google_calendar.list_events",
+          "label": "Google Calendar: list events",
+          "description": "Lists the events of a calendar between two dates (recurring events expanded), sorted by start. q filters by text.",
+          "branches": [
+            "ok"
+          ],
+          "sideEffect": false,
+          "auth": {
+            "secrets": [],
+            "domains": [
+              "www.googleapis.com"
+            ],
+            "oauth": {
+              "provider": "google",
+              "authorizeUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+              "tokenUrl": "https://oauth2.googleapis.com/token",
+              "revokeUrl": "https://oauth2.googleapis.com/revoke",
+              "scopes": [
+                "openid",
+                "email",
+                "https://www.googleapis.com/auth/calendar.events"
+              ],
+              "authorizeParams": {
+                "access_type": "offline",
+                "prompt": "consent",
+                "include_granted_scopes": "true"
+              }
+            }
+          },
+          "inputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "calendarId": {
+                "default": "primary",
+                "description": "Calendar id; primary = the account's main calendar",
+                "type": "string"
+              },
+              "timeMin": {
+                "description": "ISO date-time, default now",
+                "type": "string"
+              },
+              "timeMax": {
+                "description": "ISO date-time",
+                "type": "string"
+              },
+              "q": {
+                "type": "string"
+              },
+              "maxResults": {
+                "default": 50,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 250
+              },
+              "connection": {
+                "description": "Name of the google connection to use",
+                "type": "string"
+              }
+            }
+          },
+          "outputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "events": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "summary": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "description": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "location": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "start": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "end": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "htmlLink": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "meetLink": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "attendees": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "email": {
+                            "type": "string"
+                          },
+                          "responseStatus": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "email",
+                          "responseStatus"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "summary",
+                    "description",
+                    "location",
+                    "start",
+                    "end",
+                    "status",
+                    "htmlLink",
+                    "meetLink",
+                    "attendees"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "events"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "id": "google_calendar.create_event",
+          "label": "Google Calendar: create an event",
+          "description": "Creates an event. start and end: ISO date-time, or YYYY-MM-DD for an all-day event. sendUpdates=all emails the attendees.",
+          "branches": [
+            "ok"
+          ],
+          "sideEffect": true,
+          "auth": {
+            "secrets": [],
+            "domains": [
+              "www.googleapis.com"
+            ],
+            "oauth": {
+              "provider": "google",
+              "authorizeUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+              "tokenUrl": "https://oauth2.googleapis.com/token",
+              "revokeUrl": "https://oauth2.googleapis.com/revoke",
+              "scopes": [
+                "openid",
+                "email",
+                "https://www.googleapis.com/auth/calendar.events"
+              ],
+              "authorizeParams": {
+                "access_type": "offline",
+                "prompt": "consent",
+                "include_granted_scopes": "true"
+              }
+            }
+          },
+          "inputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "calendarId": {
+                "default": "primary",
+                "description": "Calendar id; primary = the account's main calendar",
+                "type": "string"
+              },
+              "summary": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              },
+              "start": {
+                "type": "string",
+                "minLength": 10
+              },
+              "end": {
+                "type": "string",
+                "minLength": 10
+              },
+              "timeZone": {
+                "description": "IANA time zone, e.g. Europe/Paris",
+                "type": "string"
+              },
+              "attendees": {
+                "description": "Attendee emails",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "addMeet": {
+                "description": "Add a Google Meet link",
+                "type": "boolean"
+              },
+              "sendUpdates": {
+                "default": "none",
+                "type": "string",
+                "enum": [
+                  "all",
+                  "externalOnly",
+                  "none"
+                ]
+              },
+              "connection": {
+                "description": "Name of the google connection to use",
+                "type": "string"
+              }
+            },
+            "required": [
+              "summary",
+              "start",
+              "end"
+            ]
+          },
+          "outputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "summary": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "description": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "location": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "start": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "end": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "htmlLink": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "meetLink": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "attendees": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "email": {
+                      "type": "string"
+                    },
+                    "responseStatus": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "email",
+                    "responseStatus"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "id",
+              "summary",
+              "description",
+              "location",
+              "start",
+              "end",
+              "status",
+              "htmlLink",
+              "meetLink",
+              "attendees"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "id": "google_calendar.update_event",
+          "label": "Google Calendar: update an event",
+          "description": "Changes the given fields of an event (others kept). attendees replaces the whole list.",
+          "branches": [
+            "ok"
+          ],
+          "sideEffect": true,
+          "auth": {
+            "secrets": [],
+            "domains": [
+              "www.googleapis.com"
+            ],
+            "oauth": {
+              "provider": "google",
+              "authorizeUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+              "tokenUrl": "https://oauth2.googleapis.com/token",
+              "revokeUrl": "https://oauth2.googleapis.com/revoke",
+              "scopes": [
+                "openid",
+                "email",
+                "https://www.googleapis.com/auth/calendar.events"
+              ],
+              "authorizeParams": {
+                "access_type": "offline",
+                "prompt": "consent",
+                "include_granted_scopes": "true"
+              }
+            }
+          },
+          "inputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "calendarId": {
+                "default": "primary",
+                "description": "Calendar id; primary = the account's main calendar",
+                "type": "string"
+              },
+              "eventId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "summary": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              },
+              "start": {
+                "type": "string",
+                "minLength": 10
+              },
+              "end": {
+                "type": "string",
+                "minLength": 10
+              },
+              "timeZone": {
+                "description": "IANA time zone, e.g. Europe/Paris",
+                "type": "string"
+              },
+              "attendees": {
+                "description": "Attendee emails",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "addMeet": {
+                "description": "Add a Google Meet link",
+                "type": "boolean"
+              },
+              "sendUpdates": {
+                "default": "none",
+                "type": "string",
+                "enum": [
+                  "all",
+                  "externalOnly",
+                  "none"
+                ]
+              },
+              "connection": {
+                "description": "Name of the google connection to use",
+                "type": "string"
+              }
+            },
+            "required": [
+              "eventId"
+            ]
+          },
+          "outputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "summary": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "description": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "location": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "start": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "end": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "htmlLink": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "meetLink": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "attendees": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "email": {
+                      "type": "string"
+                    },
+                    "responseStatus": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "email",
+                    "responseStatus"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "id",
+              "summary",
+              "description",
+              "location",
+              "start",
+              "end",
+              "status",
+              "htmlLink",
+              "meetLink",
+              "attendees"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "id": "google_calendar.delete_event",
+          "label": "Google Calendar: delete an event",
+          "description": "Deletes an event. sendUpdates=all notifies the attendees.",
+          "branches": [
+            "ok"
+          ],
+          "sideEffect": true,
+          "auth": {
+            "secrets": [],
+            "domains": [
+              "www.googleapis.com"
+            ],
+            "oauth": {
+              "provider": "google",
+              "authorizeUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+              "tokenUrl": "https://oauth2.googleapis.com/token",
+              "revokeUrl": "https://oauth2.googleapis.com/revoke",
+              "scopes": [
+                "openid",
+                "email",
+                "https://www.googleapis.com/auth/calendar.events"
+              ],
+              "authorizeParams": {
+                "access_type": "offline",
+                "prompt": "consent",
+                "include_granted_scopes": "true"
+              }
+            }
+          },
+          "inputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "calendarId": {
+                "default": "primary",
+                "description": "Calendar id; primary = the account's main calendar",
+                "type": "string"
+              },
+              "eventId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sendUpdates": {
+                "default": "none",
+                "type": "string",
+                "enum": [
+                  "all",
+                  "externalOnly",
+                  "none"
+                ]
+              },
+              "connection": {
+                "description": "Name of the google connection to use",
+                "type": "string"
+              }
+            },
+            "required": [
+              "eventId"
+            ]
+          },
+          "outputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "deleted": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "deleted"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "id": "google_sheets.read_rows",
+          "label": "Google Sheets: read rows",
+          "description": "Reads a range (e.g. Sheet1, or Sheet1!A1:D100). headers=true: the first row gives the keys of each row object.",
+          "branches": [
+            "ok"
+          ],
+          "sideEffect": false,
+          "auth": {
+            "secrets": [],
+            "domains": [
+              "sheets.googleapis.com"
+            ],
+            "oauth": {
+              "provider": "google",
+              "authorizeUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+              "tokenUrl": "https://oauth2.googleapis.com/token",
+              "revokeUrl": "https://oauth2.googleapis.com/revoke",
+              "scopes": [
+                "openid",
+                "email",
+                "https://www.googleapis.com/auth/spreadsheets"
+              ],
+              "authorizeParams": {
+                "access_type": "offline",
+                "prompt": "consent",
+                "include_granted_scopes": "true"
+              }
+            }
+          },
+          "inputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "spreadsheetId": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Id in the sheet URL: docs.google.com/spreadsheets/d/<id>/edit"
+              },
+              "range": {
+                "type": "string",
+                "minLength": 1
+              },
+              "headers": {
+                "default": true,
+                "type": "boolean"
+              },
+              "connection": {
+                "description": "Name of the google connection to use",
+                "type": "string"
+              }
+            },
+            "required": [
+              "spreadsheetId",
+              "range"
+            ]
+          },
+          "outputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "rows": {
+                "type": "array",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number",
+                          "boolean",
+                          "null"
+                        ]
+                      }
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": [
+                          "string",
+                          "number",
+                          "boolean",
+                          "null"
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "rows"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "id": "google_sheets.append_rows",
+          "label": "Google Sheets: add rows",
+          "description": "Adds rows after the last row of a tab. Rows as objects are matched to the header row (first row) by column name; rows as arrays are written as is.",
+          "branches": [
+            "ok"
+          ],
+          "sideEffect": true,
+          "auth": {
+            "secrets": [],
+            "domains": [
+              "sheets.googleapis.com"
+            ],
+            "oauth": {
+              "provider": "google",
+              "authorizeUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+              "tokenUrl": "https://oauth2.googleapis.com/token",
+              "revokeUrl": "https://oauth2.googleapis.com/revoke",
+              "scopes": [
+                "openid",
+                "email",
+                "https://www.googleapis.com/auth/spreadsheets"
+              ],
+              "authorizeParams": {
+                "access_type": "offline",
+                "prompt": "consent",
+                "include_granted_scopes": "true"
+              }
+            }
+          },
+          "inputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "spreadsheetId": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Id in the sheet URL: docs.google.com/spreadsheets/d/<id>/edit"
+              },
+              "range": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Tab name, e.g. Sheet1"
+              },
+              "rows": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "number",
+                          "boolean",
+                          "null"
+                        ]
+                      }
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": [
+                          "string",
+                          "number",
+                          "boolean",
+                          "null"
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              "connection": {
+                "description": "Name of the google connection to use",
+                "type": "string"
+              }
+            },
+            "required": [
+              "spreadsheetId",
+              "range",
+              "rows"
+            ]
+          },
+          "outputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "updatedRange": {
+                "type": "string"
+              },
+              "updatedRows": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "updatedRange",
+              "updatedRows"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "id": "google_sheets.update_rows",
+          "label": "Google Sheets: update cells",
+          "description": "Overwrites a range (e.g. Sheet1!A2:C3) with the given rows of values, typed as in the sheet (formulas and dates are interpreted).",
+          "branches": [
+            "ok"
+          ],
+          "sideEffect": true,
+          "auth": {
+            "secrets": [],
+            "domains": [
+              "sheets.googleapis.com"
+            ],
+            "oauth": {
+              "provider": "google",
+              "authorizeUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+              "tokenUrl": "https://oauth2.googleapis.com/token",
+              "revokeUrl": "https://oauth2.googleapis.com/revoke",
+              "scopes": [
+                "openid",
+                "email",
+                "https://www.googleapis.com/auth/spreadsheets"
+              ],
+              "authorizeParams": {
+                "access_type": "offline",
+                "prompt": "consent",
+                "include_granted_scopes": "true"
+              }
+            }
+          },
+          "inputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "spreadsheetId": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Id in the sheet URL: docs.google.com/spreadsheets/d/<id>/edit"
+              },
+              "range": {
+                "type": "string",
+                "minLength": 1
+              },
+              "values": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": [
+                      "string",
+                      "number",
+                      "boolean",
+                      "null"
+                    ]
+                  }
+                }
+              },
+              "connection": {
+                "description": "Name of the google connection to use",
+                "type": "string"
+              }
+            },
+            "required": [
+              "spreadsheetId",
+              "range",
+              "values"
+            ]
+          },
+          "outputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "updatedRange": {
+                "type": "string"
+              },
+              "updatedCells": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "updatedRange",
+              "updatedCells"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "id": "google_drive.upload_file",
+          "label": "Google Drive: create a file",
+          "description": "Creates a file in Google Drive from text (or base64 content). Runbase only sees the files it created.",
+          "branches": [
+            "ok"
+          ],
+          "sideEffect": true,
+          "auth": {
+            "secrets": [],
+            "domains": [
+              "www.googleapis.com"
+            ],
+            "oauth": {
+              "provider": "google",
+              "authorizeUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+              "tokenUrl": "https://oauth2.googleapis.com/token",
+              "revokeUrl": "https://oauth2.googleapis.com/revoke",
+              "scopes": [
+                "openid",
+                "email",
+                "https://www.googleapis.com/auth/drive.file"
+              ],
+              "authorizeParams": {
+                "access_type": "offline",
+                "prompt": "consent",
+                "include_granted_scopes": "true"
+              }
+            }
+          },
+          "inputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "content": {
+                "type": "string"
+              },
+              "encoding": {
+                "default": "text",
+                "type": "string",
+                "enum": [
+                  "text",
+                  "base64"
+                ]
+              },
+              "mimeType": {
+                "default": "text/plain",
+                "type": "string"
+              },
+              "folderId": {
+                "type": "string"
+              },
+              "connection": {
+                "description": "Name of the google connection to use",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "content"
+            ]
+          },
+          "outputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "webViewLink": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "webViewLink"
+            ],
+            "additionalProperties": false
+          }
+        }
+      ]
+    },
+    {
       "name": "@getrunbase-connectors/slack",
       "version": "0.1.0",
       "label": "Slack",

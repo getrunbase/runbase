@@ -1,0 +1,12 @@
+{
+  "slug": "google",
+  "displayName": "Google",
+  "icon": "mail",
+  "description": "Send Gmail emails, manage Google Calendar events, read and write Google Sheets, upload files to Google Drive.",
+  "categories": [
+    "communication",
+    "productivity"
+  ],
+  "docsUrl": "https://developers.google.com/workspace",
+  "credentialType": "oauth2"
+}
