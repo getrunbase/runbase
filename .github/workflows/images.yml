@@ -56,3 +56,21 @@ jobs:
           # Signed build provenance and SBOM attestations attached to the image.
           provenance: true
           sbom: true
+
+  # Optional: tells a downstream repository (e.g. a hosting deployment) that the release images are
+  # published, through a repository_dispatch event `runbase-release` with client_payload.tag = X.Y.Z.
+  # Needs the secrets DOWNSTREAM_REPO (owner/name) and DOWNSTREAM_DISPATCH_TOKEN (fine-grained token,
+  # that repository only, Contents: read and write). Skipped when they are not set.
+  notify:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - env:
+          REPO: ${{ secrets.DOWNSTREAM_REPO }}
+          GH_TOKEN: ${{ secrets.DOWNSTREAM_DISPATCH_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if [ -z "$REPO" ] || [ -z "$GH_TOKEN" ]; then echo "No downstream configured"; exit 0; fi
+          gh api "repos/$REPO/dispatches" -f event_type=runbase-release -f "client_payload[tag]=${TAG#v}"
