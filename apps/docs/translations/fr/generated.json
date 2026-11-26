@@ -2075,6 +2075,14 @@
     "en": "MCP call",
     "fr": "Appel MCP"
   },
+  "node.node.slack.send": {
+    "en": "Sends a message to the Slack channel of an Incoming Webhook. The webhook URL can be typed or picked from the workspace secrets.",
+    "fr": "Envoie un message dans le canal Slack d'un Incoming Webhook. L'URL du webhook peut être saisie ou choisie parmi les secrets de l'espace de travail."
+  },
+  "node.node.slack.send.label": {
+    "en": "Send a Slack message",
+    "fr": "Envoyer un message Slack"
+  },
   "node.record.create": {
     "en": "Creates a record in an object of a database.",
     "fr": "Crée un enregistrement dans un objet d'une base de données."
@@ -2194,13 +2202,5 @@
   "node.workflow.run.label": {
     "en": "Run another workflow",
     "fr": "Exécuter un autre workflow"
-  },
-  "node.node.slack.send": {
-    "en": "Sends a message to the Slack channel of an Incoming Webhook. The webhook URL can be typed or picked from the workspace secrets.",
-    "fr": "Envoie un message dans le canal Slack d'un Incoming Webhook. L'URL du webhook peut être saisie ou choisie parmi les secrets de l'espace de travail."
-  },
-  "node.node.slack.send.label": {
-    "en": "Send a Slack message",
-    "fr": "Envoyer un message Slack"
   }
 }
