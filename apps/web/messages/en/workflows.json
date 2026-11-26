@@ -241,14 +241,20 @@
   "blocks": {
     "add": "Add step",
     "description": "Search for a block to add to the workflow.",
-    "search": "Search blocks…",
+    "search": "Search an app or action…",
+    "all": "All",
+    "categories": "Categories",
+    "back": "Back",
+    "actionCount": "{count, plural, one {# action} other {# actions}}",
+    "escape": "Esc",
     "empty": "No blocks.",
     "category": {
       "data": "Data",
       "logic": "Logic",
       "ai": "AI",
       "apps": "Apps",
-      "http": "HTTP & events",
+      "lists": "Lists",
+      "http": "Web & API",
       "code": "Code",
       "other": "Other"
     },

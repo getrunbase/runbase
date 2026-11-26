@@ -18,6 +18,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import type { LucideIcon } from "lucide-react";
+import type { Tone } from "@/components/ds/tone";
 import {
   CanvasControls,
   FlowNode,
@@ -43,6 +44,8 @@ type Data = {
   kind: FlowNodeKind;
   kindLabel: string;
   icon?: LucideIcon;
+  tone?: Tone;
+  logo?: string;
   branches: { id: string; label: string }[];
   // No incoming link (trigger included).
   unlinked?: boolean;
@@ -68,6 +71,8 @@ function StepNode({ data }: NodeProps<Node<Data>>) {
         kind={data.kind}
         kindLabel={data.kindLabel}
         icon={data.icon}
+        tone={data.tone}
+        logo={data.logo}
         title={data.label}
         description={data.type || undefined}
         state={
@@ -250,8 +255,8 @@ export function WorkflowCanvas({
         position: pos(s.id),
         data: {
           label: block?.label ?? s.type,
-          type: block?.description ?? "",
-          ...kindOf(s.type, t),
+          type: "",
+          ...kindOf(s.type, t, block),
           unlinkedLabel: t("canvas.unlinked"),
           branches: branchesOf(s, block).map((b) => ({
             id: b,

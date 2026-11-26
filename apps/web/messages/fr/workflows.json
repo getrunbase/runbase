@@ -241,14 +241,20 @@
   "blocks": {
     "add": "Ajouter une étape",
     "description": "Recherchez une brique à ajouter au workflow.",
-    "search": "Rechercher une brique…",
+    "search": "Rechercher une app ou une action…",
+    "all": "Tout",
+    "categories": "Catégories",
+    "back": "Retour",
+    "actionCount": "{count, plural, one {# action} other {# actions}}",
+    "escape": "Échap",
     "empty": "Aucune brique.",
     "category": {
       "data": "Données",
       "logic": "Logique",
       "ai": "IA",
       "apps": "Apps",
-      "http": "HTTP et événements",
+      "lists": "Listes",
+      "http": "Web et API",
       "code": "Code",
       "other": "Autres"
     },

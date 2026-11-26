@@ -21,10 +21,9 @@ import {
 } from "../graph";
 import type { scopeFor } from "../variables";
 import { makeLabels } from "../labels";
-import { IconTile } from "@/components/ds/atoms";
-import { flowKind } from "@/components/ds/flow";
 import { cn } from "cn";
 import { kindOf } from "./kind";
+import { BlockIcon } from "./block-picker";
 import {
   ConditionForm,
   ListForm,
@@ -63,10 +62,10 @@ export function StepPanel({
   return (
     <div key={step.id} className="flex flex-1 flex-col gap-4.5">
       <div className="flex items-center gap-2">
-        <IconTile
-          icon={kindOf(step.type, t).icon}
-          tone={flowKind[kindOf(step.type, t).kind].tone}
-          size="panel"
+        <BlockIcon
+          type={step.type}
+          logo={kindOf(step.type, t, block).logo}
+          size="sm"
         />
         <span className="text-muted-foreground flex-1 truncate text-xs font-medium">
           {block?.label ?? step.type}

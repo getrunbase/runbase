@@ -28,7 +28,11 @@ export const AiPresetsProvider = ({
   children: React.ReactNode;
 }) => <Ctx.Provider value={presets}>{children}</Ctx.Provider>;
 
-export type BlockAiValue = { provider: string; model?: string; secret?: string };
+export type BlockAiValue = {
+  provider: string;
+  model?: string;
+  secret?: string;
+};
 
 // Per-block AI config: provider, model and the key picked from the
 // workspace secrets (never typed here). No secret yet: empty state with
@@ -71,9 +75,7 @@ export function AiBlockConfig({
             });
           }}
         />
-        {!value && (
-          <p className="text-destructive text-xs">{t("required")}</p>
-        )}
+        {!value && <p className="text-destructive text-xs">{t("required")}</p>}
       </div>
       {p && value && (
         <>
@@ -96,9 +98,7 @@ export function AiBlockConfig({
               />
             ) : (
               <div className="flex items-center justify-between gap-2 rounded-md border border-dashed p-3">
-                <p className="text-muted-foreground text-sm">
-                  {t("noSecret")}
-                </p>
+                <p className="text-muted-foreground text-sm">{t("noSecret")}</p>
                 <Button
                   type="button"
                   size="sm"
