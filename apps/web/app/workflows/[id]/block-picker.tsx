@@ -181,6 +181,7 @@ export function BlockPicker({
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<Category | "all">("all");
   const [app, setApp] = useState<string | null>(null);
+  const [navigated, setNavigated] = useState(false);
 
   const live = blocks.filter((b) => !b.deprecated);
   const isApp = (b: BlockInfo) => metaOf(b.type)[0] === "apps";
@@ -199,6 +200,7 @@ export function BlockPicker({
     setQ("");
     setApp(null);
     setCat("all");
+    setNavigated(false);
   };
   const pick = (type: string) => {
     onPick(type);
@@ -260,8 +262,15 @@ export function BlockPicker({
           <Command
             shouldFilter={false}
             loop
-            className="min-h-0 flex-1"
+            // cmdk always pre-selects the first item: its highlight is hidden
+            // until the user navigates (arrow keys or pointer).
+            className={cn(
+              "min-h-0 flex-1",
+              !navigated && "[&_[data-selected=true]]:bg-transparent",
+            )}
+            onPointerMove={() => setNavigated(true)}
             onKeyDown={(e) => {
+              if (/^(Arrow|Home|End|Page)/.test(e.key)) setNavigated(true);
               // Backspace on an empty search: back to the app list.
               if (e.key === "Backspace" && !q && app) setApp(null);
             }}
