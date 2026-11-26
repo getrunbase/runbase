@@ -8,12 +8,37 @@ import { z } from "zod";
 // `<connector>.<action>` identifier (lowercase, digits, `_`, `-`).
 export const NODE_ID = /^[a-z][a-z0-9_-]*(\.[a-z][a-z0-9_-]*)+$/;
 
+// OAuth 2.0 provider of a node. The core runs the connection flow, stores and
+// refreshes the tokens; `ctx.fetch` adds `Authorization: Bearer <token>` to
+// requests sent to `auth.domains`. The node never handles the token.
+export type NodeOAuth = {
+  // Provider id shared by every node of the same service (e.g. "google").
+  provider: string;
+  authorizeUrl: string;
+  tokenUrl: string;
+  // Scopes this node needs; a connection requests the scopes of all nodes
+  // of the provider.
+  scopes: string[];
+  // Optional token revocation endpoint (RFC 7009), called on disconnect.
+  revokeUrl?: string;
+  // Extra authorize query parameters (e.g. Google: access_type=offline).
+  authorizeParams?: Record<string, string>;
+};
+
 export type NodeAuth = {
   // Workspace vault secrets read by the node (`ctx.secrets`).
   secrets?: string[];
   // Reachable domains (fetch); no network if empty.
   domains?: string[];
+  oauth?: NodeOAuth;
 };
+
+// Reserved secret carrying the OAuth access token into the sandbox.
+export const OAUTH_TOKEN_SECRET = "__RUNBASE_OAUTH_TOKEN";
+
+// Input added to OAuth nodes: name of the workspace connection to use
+// (optional when the workspace has a single connection for the provider).
+export const CONNECTION_INPUT = "connection";
 
 export type NodeContext = {
   secrets: Record<string, string>;
@@ -58,7 +83,7 @@ export type NodeManifest = {
   description: string;
   branches: string[];
   sideEffect: boolean;
-  auth: { secrets: string[]; domains: string[] };
+  auth: { secrets: string[]; domains: string[]; oauth?: NodeOAuth };
   inputSchema: Record<string, unknown>;
   outputSchema: Record<string, unknown>;
 };
@@ -99,17 +124,35 @@ export function defineNode<I extends z.ZodType, O extends z.ZodType>(
   const branches = [...(config.branches ?? ["ok"])];
   if (!branches.length)
     throw new Error(`defineNode ${config.id}: branches cannot be empty`);
+  const oauth = config.auth?.oauth;
+  if (oauth && !(config.inputs instanceof z.ZodObject))
+    throw new Error(`defineNode ${config.id}: OAuth nodes need object inputs`);
+  if (oauth && !config.auth?.domains?.length)
+    throw new Error(`defineNode ${config.id}: OAuth nodes need auth.domains`);
+  // OAuth nodes take an optional connection name.
+  const inputs = (
+    oauth
+      ? (config.inputs as unknown as z.ZodObject).extend({
+          [CONNECTION_INPUT]: z
+            .string()
+            .optional()
+            .describe(`Name of the ${oauth.provider} connection to use`),
+        })
+      : config.inputs
+  ) as I;
   const auth = {
     secrets: [...(config.auth?.secrets ?? [])],
     domains: [...(config.auth?.domains ?? [])],
+    ...(oauth && { oauth: { ...oauth, scopes: [...oauth.scopes] } }),
   };
   const sideEffect = config.sideEffect ?? auth.domains.length > 0;
 
   return {
     ...config,
+    inputs,
     kind: "runbase.node",
     async execute(raw, ctx = {}) {
-      const parsed = config.inputs.safeParse(raw);
+      const parsed = inputs.safeParse(raw);
       if (!parsed.success)
         throw new Error(
           `${config.id}: invalid input: ${z.prettifyError(parsed.error)}`,
@@ -138,12 +181,29 @@ export function defineNode<I extends z.ZodType, O extends z.ZodType>(
       branches,
       sideEffect,
       auth,
-      inputSchema: z.toJSONSchema(config.inputs, { io: "input" }) as Record<
+      inputSchema: z.toJSONSchema(inputs, { io: "input" }) as Record<
         string,
         unknown
       >,
       outputSchema: z.toJSONSchema(config.outputs) as Record<string, unknown>,
     }),
+  };
+}
+
+// fetch that adds the OAuth bearer token to requests sent to `domains`
+// (exact host or subdomain); other requests go out untouched.
+export function oauthFetch(
+  base: typeof fetch,
+  token: string,
+  domains: string[],
+): typeof fetch {
+  const matches = (host: string) =>
+    domains.some((d) => host === d || host.endsWith(`.${d}`));
+  return (input, init) => {
+    const req = new Request(input, init);
+    if (matches(new URL(req.url).hostname))
+      req.headers.set("authorization", `Bearer ${token}`);
+    return base(req);
   };
 }
 

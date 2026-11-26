@@ -12,10 +12,15 @@ import {
   type ConnectorInfo,
   type Registry,
 } from "@getrunbase/node-sdk/build";
-import type { NodeManifest } from "@getrunbase/node-sdk";
+import {
+  CONNECTION_INPUT,
+  OAUTH_TOKEN_SECRET,
+  type NodeManifest,
+} from "@getrunbase/node-sdk";
 import type { Block } from "./block";
 import { execFunction } from "../functions/sandbox";
 import { decryptAll } from "../secrets";
+import { accessToken } from "../connections/tokens";
 import { withSecrets } from "./catalog/external";
 import { appError } from "../errors/app-error";
 import { logger } from "../logger";
@@ -139,10 +144,30 @@ function nodeBlock(c: Loaded, m: NodeManifest): Block {
           m.auth.secrets.length && bctx.tenant
             ? await decryptAll(bctx.tenant)
             : {};
+        const declared = [...m.auth.secrets];
+        // OAuth: a fresh access token, passed as a reserved secret (the
+        // connector runtime turns it into a bearer header on ctx.fetch).
+        if (m.auth.oauth) {
+          if (!bctx.tenant)
+            throw appError(
+              "blocks.connectorNoTenant",
+              "{type}: OAuth nodes need a workspace",
+              { type: `${NODE_PREFIX}${m.id}` },
+            );
+          const name = (input as Record<string, unknown> | null)?.[
+            CONNECTION_INPUT
+          ];
+          secrets[OAUTH_TOKEN_SECRET] = await accessToken(
+            bctx.tenant,
+            m.auth.oauth,
+            typeof name === "string" && name ? name : undefined,
+          );
+          declared.push(OAUTH_TOKEN_SECRET);
+        }
         const { output } = await execFunction(
           {
             code: await c.code(),
-            permissions: { domains: m.auth.domains, secrets: m.auth.secrets },
+            permissions: { domains: m.auth.domains, secrets: declared },
           },
           { __runbase: "run", node: m.id, input },
           {

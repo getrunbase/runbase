@@ -1,0 +1,12 @@
+{
+  "name": "@getrunbase-connectors/acme",
+  "version": "1.0.0",
+  "description": "Test fixture connector with OAuth.",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "runbase": {
+    "entry": "index.ts",
+    "label": "Acme"
+  }
+}

@@ -106,6 +106,7 @@
     "members": "Membres",
     "settings": "Paramètres",
     "secrets": "Identifiants",
+    "connections": "Connexions",
     "signup": "Inscription",
     "templateImport": "Importer un modèle",
     "webhooks": "Webhooks",

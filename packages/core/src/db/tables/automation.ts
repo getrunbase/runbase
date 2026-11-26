@@ -344,6 +344,35 @@ export const secrets = pgTable(
   ],
 );
 
+// OAuth connections of a workspace (connector nodes with `auth.oauth`):
+// tokens encrypted with the workspace DEK, like secrets.
+export const connections = pgTable(
+  "connections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(),
+    name: text("name").notNull(),
+    // Connected account (email from the id_token), when known.
+    account: text("account"),
+    scopes: text("scopes").notNull(),
+    accessTokenEncrypted: text("access_token_encrypted").notNull(),
+    refreshTokenEncrypted: text("refresh_token_encrypted"),
+    expiresAt: timestamp("expires_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("connections_workspace_name_idx").on(t.workspaceId, t.name),
+    index("connections_organization_id_idx").on(t.organizationId),
+  ],
+);
+
 // Data key (DEK) of a workspace: encrypts its secrets;
 // itself encrypted by the master key (env or KMS). Rotating the master
 // key only re-encrypts these rows.

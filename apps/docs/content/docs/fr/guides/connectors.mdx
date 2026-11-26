@@ -58,6 +58,36 @@ export default defineNode({
 - `sideEffect` vaut true par défaut dès qu'un domaine est déclaré : le nœud est
   alors simulé lors des exécutions à blanc.
 
+## Connexions OAuth
+
+Pour les services qui demandent une connexion (Google, Microsoft…), déclarez
+`auth.oauth` au lieu d'un secret de clé API :
+
+```ts
+auth: {
+  domains: ["gmail.googleapis.com"],
+  oauth: {
+    provider: "google",
+    authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+    tokenUrl: "https://oauth2.googleapis.com/token",
+    revokeUrl: "https://oauth2.googleapis.com/revoke",
+    scopes: ["openid", "email", "https://www.googleapis.com/auth/gmail.send"],
+    authorizeParams: { access_type: "offline", prompt: "consent" },
+  },
+},
+```
+
+- Les utilisateurs connectent leur compte dans **Paramètres › Connexions**.
+  Runbase chiffre les jetons et les renouvelle avant leur expiration.
+- `ctx.fetch` ajoute `Authorization: Bearer <jeton>` aux requêtes envoyées
+  vers `auth.domains`. Le nœud ne manipule jamais le jeton.
+- Le nœud reçoit une entrée facultative `connection` : le nom de la connexion,
+  utile seulement si le workspace a plusieurs comptes chez ce fournisseur.
+- Auto-hébergement : créez un client OAuth chez le fournisseur avec l'URI de
+  redirection `<BETTER_AUTH_URL>/api/connections/callback`, puis définissez
+  `OAUTH_<PROVIDER>_CLIENT_ID` et `OAUTH_<PROVIDER>_CLIENT_SECRET`
+  (par exemple `OAUTH_GOOGLE_CLIENT_ID`).
+
 ## Tester et publier
 
 ```sh

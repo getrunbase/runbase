@@ -1,7 +1,12 @@
 // Entry point of a connector bundled for the functions sandbox: the
 // default function receives `{ __runbase: "manifest" }` (list of nodes) or
 // `{ __runbase: "run", node, input }` (runs a node).
-import { nodesOf, type NodeManifest } from "./index.ts";
+import {
+  nodesOf,
+  oauthFetch,
+  OAUTH_TOKEN_SECRET,
+  type NodeManifest,
+} from "./index.ts";
 
 export type RuntimeRequest =
   | { __runbase: "manifest" }
@@ -19,9 +24,14 @@ export function connectorRuntime(mod: unknown) {
     if (req.__runbase === "manifest") return nodes.map((n) => n.manifest());
     const node = nodes.find((n) => n.id === req.node);
     if (!node) throw new Error(`unknown node "${req.node}"`);
+    const { [OAUTH_TOKEN_SECRET]: token, ...secrets } = ctx.secrets ?? {};
+    const base = globalThis.fetch.bind(globalThis);
     return node.execute(req.input, {
-      secrets: ctx.secrets ?? {},
-      fetch: globalThis.fetch.bind(globalThis),
+      secrets,
+      fetch:
+        token && node.auth?.oauth
+          ? oauthFetch(base, token, node.auth.domains ?? [])
+          : base,
       test: ctx.test === true,
     });
   };

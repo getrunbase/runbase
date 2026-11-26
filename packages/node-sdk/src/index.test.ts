@@ -129,3 +129,46 @@ test("runtime: manifest then execution of a node", async () => {
     /unknown node/,
   );
 });
+
+test("OAuth node: connection input added, bearer only for its domains", async () => {
+  const seen: Record<string, string | null> = {};
+  const node = defineNode({
+    id: "acme.me",
+    auth: {
+      domains: ["api.acme.com"],
+      oauth: {
+        provider: "acme",
+        authorizeUrl: "https://acme.com/authorize",
+        tokenUrl: "https://acme.com/token",
+        scopes: ["read"],
+      },
+    },
+    inputs: z.object({}),
+    outputs: z.object({ ok: z.boolean() }),
+    run: async (_, ctx) => {
+      for (const u of ["https://api.acme.com/me", "https://evil.com/x"])
+        await ctx.fetch(u);
+      return { ok: Object.keys(ctx.secrets).length === 0 };
+    },
+  });
+  const m = node.manifest();
+  assert.equal(m.auth.oauth?.provider, "acme");
+  assert.ok("connection" in (m.inputSchema.properties as object));
+  const real = globalThis.fetch;
+  globalThis.fetch = (async (req: Request) => {
+    seen[new URL(req.url).hostname] = req.headers.get("authorization");
+    return new Response("{}");
+  }) as typeof fetch;
+  try {
+    const run = connectorRuntime([node]);
+    const res = await run(
+      { __runbase: "run", node: "acme.me", input: { connection: "work" } },
+      { secrets: { __RUNBASE_OAUTH_TOKEN: "tok" } },
+    );
+    assert.deepEqual(res, { branch: "ok", output: { ok: true } });
+  } finally {
+    globalThis.fetch = real;
+  }
+  assert.equal(seen["api.acme.com"], "Bearer tok");
+  assert.equal(seen["evil.com"], null);
+});
