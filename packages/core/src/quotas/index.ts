@@ -4,12 +4,12 @@
 // the organization entitlements (../entitlements):
 // effective = min(preference, cap). Rate: fixed one-minute window in
 // Redis (counter shared between web and worker instances).
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { Redis } from "ioredis";
 import { requireScope } from "../api-keys";
 import { audit } from "../audit";
 import { busConnection } from "../bus";
-import { pages, records, workflowRuns, workspaceUsage, workspaces } from "../db/schema";
+import { pages, workspaceUsage, workspaces } from "../db/schema";
 import { db } from "../db/client";
 import {
   entitlementsFor,
@@ -64,7 +64,10 @@ async function capsAndDefaults(organizationId: string) {
 const capped = (l: Limits, caps: Record<CappedKey, number | null>): Limits => ({
   ...l,
   ...Object.fromEntries(
-    CAPPED_KEYS.map((k) => [k, caps[k] == null ? l[k] : Math.min(l[k], caps[k])]),
+    CAPPED_KEYS.map((k) => [
+      k,
+      caps[k] == null ? l[k] : Math.min(l[k], caps[k]),
+    ]),
   ),
 });
 
@@ -87,7 +90,10 @@ export async function tenantConcurrency(workspaceId: string) {
     .where(eq(workspaces.id, workspaceId));
   const { caps, defaults } = row
     ? await capsAndDefaults(row.org)
-    : { caps: { records: null, runsPerMinute: null, apiPerMinute: null }, defaults: DEFAULT_LIMITS };
+    : {
+        caps: { records: null, runsPerMinute: null, apiPerMinute: null },
+        defaults: DEFAULT_LIMITS,
+      };
   const n = resolveLimits(defaults, row?.limits, caps).concurrency;
   concurrencyCache.set(workspaceId, { n, at: Date.now() });
   return n;
@@ -231,7 +237,10 @@ export async function runsThisMonth(organizationId: string) {
 // runs may overshoot the cap by a handful, never by more.
 export async function countRun(ctx: TenantContext) {
   const max = await quotaOf(ctx.organizationId, "quota:runsPerMonth");
-  if (Number.isFinite(max) && (await runsThisMonth(ctx.organizationId)) + 1 > max) {
+  if (
+    Number.isFinite(max) &&
+    (await runsThisMonth(ctx.organizationId)) + 1 > max
+  ) {
     const it = errorItem(
       "quotas.runsPerMonth",
       "Quota reached: {max} runs per month for your account. Wait for next month or raise the quota.",
@@ -344,7 +353,6 @@ export const exceedsLimit = (key: string, value: number, max: number) =>
     { kind: "quota_exceeded" },
   );
 
-
 export const quotasService = {
   // Effective limits and current usage.
   get: async (ctx: TenantContext) => {
@@ -389,7 +397,8 @@ export const quotasService = {
       for (const k of CAPPED_KEYS) {
         const v = limits[k] as number | undefined;
         const max = caps[k];
-        if (v !== undefined && max != null && v > max) throw exceedsLimit(k, v, max);
+        if (v !== undefined && max != null && v > max)
+          throw exceedsLimit(k, v, max);
       }
       await tx
         .update(workspaces)
@@ -478,27 +487,51 @@ export const billingService = {
 };
 
 // Settings › Usage: always available (self-host included). Usage against
-// effective limits; limit null = unlimited. Monthly runs and storage are
-// counted across the organization (where plan caps apply); records and
-// API calls for the current workspace. Caps are read by key so a quota
-// type the core does not declare yet simply reads as unlimited.
+// effective limits; limit null = unlimited. Each meter reads the same
+// counter its quota check enforces, with the same scope: records, rates and
+// AI spending per workspace; monthly runs, storage, workspaces and published
+// pages across the organization. Caps are read by key so a quota type the
+// core does not declare yet simply reads as unlimited.
 export type UsageMeterKey =
   | "records"
   | "runsPerMonth"
   | "storageBytes"
-  | "apiPerMinute"
-  | "workspaces";
-export type UsageMeter = { key: UsageMeterKey; used: number; limit: number | null };
+  | "workspaces"
+  | "pages"
+  | "aiBudgetUsd"
+  | "runsPerMinute"
+  | "apiPerMinute";
+export type UsageScope = "workspace" | "organization";
+export type UsageMeter = {
+  key: UsageMeterKey;
+  scope: UsageScope;
+  used: number;
+  limit: number | null;
+};
 
 // Start of the current calendar month (UTC).
 export const monthStart = (now = new Date()) =>
   new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
-// Calls counted in the current minute by rateLimit(ctx, "api").
-async function apiCallsThisMinute(workspaceId: string) {
+// Calls counted in the current minute by rateLimit(ctx, kind).
+async function rateThisMinute(kind: keyof typeof kinds, workspaceId: string) {
   const minute = Math.floor(Date.now() / 60_000);
   redis ??= busConnection();
-  return Number((await redis.get(`rl:api:${workspaceId}:${minute}`)) ?? 0);
+  return Number((await redis.get(`rl:${kind}:${workspaceId}:${minute}`)) ?? 0);
+}
+
+// Published pages of the organization, as counted by the publish check.
+async function publishedPagesOf(organizationId: string) {
+  const [row] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(pages)
+    .where(
+      and(
+        eq(pages.organizationId, organizationId),
+        sql`${pages.currentVersion} is not null`,
+      ),
+    );
+  return row?.n ?? 0;
 }
 
 export const usageService = {
@@ -506,47 +539,85 @@ export const usageService = {
     await requireScope(ctx, "read");
     const { quotas } = await entitlementsFor(ctx.organizationId);
     const cap = (k: string) => quotas[k] ?? null;
-    const { limits, recordsUsed } = await withTenant(ctx, async (tx) => {
-      const { limits } = await capsAndLimits(tx, ctx);
-      const [row] = await tx
-        .select({ n: workspaceUsage.records })
-        .from(workspaceUsage)
-        .where(eq(workspaceUsage.workspaceId, ctx.workspaceId));
-      return { limits, recordsUsed: row?.n ?? 0 };
-    });
+    const { limits, recordsUsed, budget } = await withTenant(
+      ctx,
+      async (tx) => {
+        const { limits } = await capsAndLimits(tx, ctx);
+        const [row] = await tx
+          .select({ n: workspaceUsage.records })
+          .from(workspaceUsage)
+          .where(eq(workspaceUsage.workspaceId, ctx.workspaceId));
+        const [w] = await tx
+          .select({
+            budgetUsd: workspaces.aiBudgetUsd,
+            spentUsd: workspaces.aiSpentUsd,
+            month: workspaces.aiSpentMonth,
+          })
+          .from(workspaces)
+          .where(eq(workspaces.id, ctx.workspaceId));
+        return { limits, recordsUsed: row?.n ?? 0, budget: w };
+      },
+    );
+    // AI budget as readBudget (runs/budget) computes it, inlined here to
+    // avoid an import cycle: min(workspace preference, entitlement cap).
+    const aiCap = cap("quota:aiBudgetUsd");
+    const aiLimit =
+      aiCap == null
+        ? (budget?.budgetUsd ?? null)
+        : Math.min(budget?.budgetUsd ?? aiCap, aiCap);
+    const aiSpent =
+      budget?.month === new Date().toISOString().slice(0, 7)
+        ? budget.spentUsd
+        : 0;
     // Organization-wide counters: outside the workspace tenant scope.
     const org = ctx.organizationId;
-    const [[runs], [storage], [ws], api] = await Promise.all([
-      db
-        .select({ n: sql<number>`count(*)::int` })
-        .from(workflowRuns)
-        .where(
-          and(
-            eq(workflowRuns.organizationId, org),
-            gte(workflowRuns.createdAt, monthStart()),
-          ),
-        ),
-      // Stored files are the { key, size } values of `file` fields.
-      db
-        .select({
-          n: sql<number>`coalesce(sum(s::bigint), 0)::float8`,
-        })
-        .from(
-          sql`${records}, lateral jsonb_path_query(${records.data}, 'strict $.** ? (@.key.type() == "string" && @.size.type() == "number").size') as s`,
-        )
-        .where(eq(records.organizationId, org)),
+    const [runs, storage, [ws], pub, runRate, apiRate] = await Promise.all([
+      runsThisMonth(org),
+      storageBytesOf(org),
       db
         .select({ n: sql<number>`count(*)::int` })
         .from(workspaces)
         .where(eq(workspaces.organizationId, org)),
-      apiCallsThisMinute(ctx.workspaceId),
+      publishedPagesOf(org),
+      rateThisMinute("runs", ctx.workspaceId),
+      rateThisMinute("api", ctx.workspaceId),
     ]);
+    const W = "workspace" as const;
+    const O = "organization" as const;
     return [
-      { key: "records", used: recordsUsed, limit: limits.records },
-      { key: "runsPerMonth", used: runs?.n ?? 0, limit: cap("quota:runsPerMonth") },
-      { key: "storageBytes", used: Number(storage?.n ?? 0), limit: cap("quota:storageBytes") },
-      { key: "apiPerMinute", used: api, limit: limits.apiPerMinute },
-      { key: "workspaces", used: ws?.n ?? 0, limit: cap("quota:workspaces") },
+      { key: "records", scope: W, used: recordsUsed, limit: limits.records },
+      {
+        key: "runsPerMonth",
+        scope: O,
+        used: runs,
+        limit: cap("quota:runsPerMonth"),
+      },
+      {
+        key: "storageBytes",
+        scope: O,
+        used: storage,
+        limit: cap("quota:storageBytes"),
+      },
+      {
+        key: "workspaces",
+        scope: O,
+        used: ws?.n ?? 0,
+        limit: cap("quota:workspaces"),
+      },
+      { key: "pages", scope: O, used: pub, limit: cap("quota:pages") },
+      { key: "aiBudgetUsd", scope: W, used: aiSpent, limit: aiLimit },
+      {
+        key: "runsPerMinute",
+        scope: W,
+        used: runRate,
+        limit: limits.runsPerMinute,
+      },
+      {
+        key: "apiPerMinute",
+        scope: W,
+        used: apiRate,
+        limit: limits.apiPerMinute,
+      },
     ];
   },
 };
