@@ -74,6 +74,9 @@ common optional ones:
   sandboxed). To use a dedicated origin, build the web image with
   `docker build --build-arg NEXT_PUBLIC_RUNTIME_ORIGIN=https://runtime.example.com .`
   and rebuild whenever it changes.
+- **Google (Gmail, Calendar, Sheets, Drive).** `OAUTH_GOOGLE_CLIENT_ID` and
+  `OAUTH_GOOGLE_CLIENT_SECRET`: OAuth client of the Google connector. Steps and
+  scopes: [Connect Google](/docs/guides/google).
 - **Version.** `RUNBASE_VERSION` pins an image tag (default `latest`).
 
 Apply a change with `docker compose -f docker-compose.selfhost.yml up -d`.

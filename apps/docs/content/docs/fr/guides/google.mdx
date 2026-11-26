@@ -1,0 +1,96 @@
+---
+title: Connecter Google (Gmail, Calendar, Sheets, Drive)
+description: Créer le client OAuth Google et choisir les scopes qui permettent aux workflows d'envoyer des emails, gérer des événements et modifier des feuilles.
+---
+
+Une fois Google configuré, chaque membre du workspace peut connecter son compte
+Google depuis une étape de workflow (le champ **Compte**) ou depuis
+**Paramètres › Connexions**. Les workflows peuvent alors envoyer des emails
+depuis ce Gmail, gérer ses événements d'agenda, lire et écrire ses feuilles,
+et créer des fichiers dans son Drive.
+
+Sur Runbase Cloud, c'est déjà fait : passez à [Utiliser dans un workflow](#utiliser-dans-un-workflow).
+En auto-hébergement, vous créez une fois votre propre client OAuth Google, comme suit.
+
+## Ce que Runbase demande à Google
+
+| Scope                                             | Ce qu'il permet                                                 | Niveau Google |
+| ------------------------------------------------- | --------------------------------------------------------------- | ------------- |
+| `openid`, `email`                                 | Afficher le compte connecté                                     | Non sensible  |
+| `https://www.googleapis.com/auth/gmail.send`      | Envoyer des emails (aucune lecture de la boîte)                 | Sensible      |
+| `https://www.googleapis.com/auth/calendar.events` | Lire, créer, modifier et supprimer des événements               | Sensible      |
+| `https://www.googleapis.com/auth/spreadsheets`    | Lire et écrire dans Google Sheets                               | Sensible      |
+| `https://www.googleapis.com/auth/drive.file`      | Créer des fichiers ; seuls ceux créés par Runbase sont visibles | Non sensible  |
+
+Aucun de ces scopes n'est **restreint** : pas d'audit de sécurité payant (CASA).
+N'ajoutez pas `gmail.readonly`, `gmail.modify`, `https://mail.google.com/` ni
+`drive` : ils sont restreints et exigent cet audit.
+
+## 1. Créer le projet Google Cloud
+
+1. Ouvrez la [console Google Cloud](https://console.cloud.google.com/) et créez
+   un projet (par exemple « Runbase »).
+2. Dans **API et services › Bibliothèque**, activez **Gmail API**,
+   **Google Calendar API**, **Google Sheets API** et **Google Drive API**.
+
+## 2. Configurer l'écran de consentement
+
+Dans **Google Auth Platform** (ou **API et services › Écran de consentement OAuth**) :
+
+1. **Branding** : nom de l'app, email d'assistance, logo, et liens vers votre
+   page d'accueil, votre politique de confidentialité et vos CGU, sur un
+   domaine qui vous appartient.
+2. **Audience** : **Externe**. Tant que l'app est en **Test**, ajoutez les
+   emails des personnes qui connecteront un compte comme **utilisateurs test**.
+3. **Accès aux données** : ajoutez exactement les scopes du tableau ci-dessus.
+
+## 3. Créer le client OAuth
+
+1. Dans **Clients**, créez un client de type **Application Web**.
+2. Dans **URI de redirection autorisés**, ajoutez
+   `<BETTER_AUTH_URL>/api/connections/callback`, par exemple
+   `https://runbase.example.com/api/connections/callback`
+   (`http://localhost:7100/api/connections/callback` en développement).
+3. Copiez l'ID client et le code secret.
+
+## 4. Configurer Runbase
+
+Ajoutez les deux valeurs dans `.env`, puis redémarrez `web` et `worker`
+(`docker compose -f docker-compose.selfhost.yml up -d`) :
+
+```sh
+OAUTH_GOOGLE_CLIENT_ID=1234-abc.apps.googleusercontent.com
+OAUTH_GOOGLE_CLIENT_SECRET=GOCSPX-...
+```
+
+Le conteneur `web` gère la connexion Google ; le `worker` renouvelle l'accès
+pendant les exécutions : les deux ont besoin des valeurs. Sans elles, Google
+apparaît « Non configuré » dans Paramètres › Connexions.
+
+## 5. Test, puis production
+
+- **Test** (par défaut) : fonctionne tout de suite, uniquement pour les
+  utilisateurs test listés, et Google leur demande de se reconnecter tous les 7 jours.
+- **En production, non validée** : tout le monde peut se connecter, jusqu'à
+  100 utilisateurs, derrière un avertissement « Google n'a pas validé cette
+  application » (Paramètres avancés › Continuer).
+- **Validée** : plus d'avertissement ni de limite. Cliquez sur **Publier
+  l'application**, puis soumettez-la à la validation. Google demande une
+  justification par scope sensible et une vidéo de démo (lien YouTube non
+  répertorié) montrant l'écran de consentement et chaque scope utilisé dans
+  votre app. Comptez quelques semaines d'échanges. Aucun changement de code
+  une fois validée.
+
+## Utiliser dans un workflow
+
+1. Ajoutez une étape Google, par exemple **Google Calendar: list events**.
+2. Dans **Compte**, choisissez un compte connecté ou **Connecter un compte
+   google** : Google s'ouvre dans une popup, vous validez, le compte est
+   sélectionné.
+3. Chaque compte porte le nom de son email. Avec un seul compte Google dans le
+   workspace, les étapes l'utilisent par défaut ; avec plusieurs, chaque étape
+   indique lequel utiliser (l'entrée `connection`, listée aussi par l'outil
+   MCP `connections.list`).
+
+Déconnecter un compte (Paramètres › Connexions) révoque l'accès de Runbase chez
+Google ; les étapes qui l'utilisaient échouent jusqu'à sa reconnexion.

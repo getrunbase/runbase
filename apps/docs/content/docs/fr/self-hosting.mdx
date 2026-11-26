@@ -85,6 +85,9 @@ premier. Les paramètres facultatifs les plus courants :
   construisez l'image web avec
   `docker build --build-arg NEXT_PUBLIC_RUNTIME_ORIGIN=https://runtime.example.com .`
   et reconstruisez-la à chaque changement.
+- **Google (Gmail, Calendar, Sheets, Drive).** `OAUTH_GOOGLE_CLIENT_ID` et
+  `OAUTH_GOOGLE_CLIENT_SECRET` : client OAuth du connecteur Google. Étapes et
+  scopes : [Connecter Google](/docs/guides/google).
 - **Version.** `RUNBASE_VERSION` fixe un tag d'image (`latest` par défaut).
 
 Appliquez un changement avec `docker compose -f docker-compose.selfhost.yml up -d`.

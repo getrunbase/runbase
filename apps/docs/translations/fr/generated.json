@@ -527,6 +527,30 @@
     "en": "Workspace id or name (default: active workspace)",
     "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
   },
+  "mcp.connections.delete": {
+    "en": "Disconnects an OAuth account (id from connections.list) and revokes it at the provider. Workflows using it fail until it is reconnected.",
+    "fr": "Déconnecte un compte OAuth (id issu de connections.list) et révoque son accès chez le fournisseur. Les workflows qui l'utilisent échouent jusqu'à sa reconnexion."
+  },
+  "mcp.connections.delete.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Id ou nom du workspace (par défaut : workspace actif)"
+  },
+  "mcp.connections.list": {
+    "en": "Lists the workspace OAuth connections (provider, name, account email). Pass the name as the `connection` input of a connector node when the workspace has several accounts for its provider. The user connects new accounts from the workflow editor or Settings › Connections.",
+    "fr": "Liste les connexions OAuth du workspace (fournisseur, nom, email du compte). Passez le nom dans l'entrée `connection` d'un nœud de connecteur quand le workspace a plusieurs comptes chez ce fournisseur. L'utilisateur connecte de nouveaux comptes depuis l'éditeur de workflow ou Paramètres › Connexions."
+  },
+  "mcp.connections.list.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Id ou nom du workspace (par défaut : workspace actif)"
+  },
+  "mcp.connections.providers": {
+    "en": "Lists the OAuth providers of the installed connectors: scopes, node types and whether an OAuth client is configured.",
+    "fr": "Liste les fournisseurs OAuth des connecteurs installés : scopes, types de nœuds et présence d'un client OAuth configuré."
+  },
+  "mcp.connections.providers.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Id ou nom du workspace (par défaut : workspace actif)"
+  },
   "mcp.databases.create": {
     "en": "Creates a database. Put objects in it with objects.create (database field).",
     "fr": "Crée une base de données. Placez-y des objets avec objects.create (champ database)."
@@ -2102,6 +2126,178 @@
   "node.mcp.call.label": {
     "en": "MCP call",
     "fr": "Appel MCP"
+  },
+  "node.node.gmail.send": {
+    "en": "Sends an email from the connected Gmail account. Give text, html or both. threadId (and the original Message-ID in inReplyTo) sends it as a reply in that thread.",
+    "fr": "Envoie un email depuis le compte Gmail connecté. Donnez text, html ou les deux. threadId (et le Message-ID d'origine dans inReplyTo) l'envoie en réponse dans ce fil."
+  },
+  "node.node.gmail.send.input.connection": {
+    "en": "Name of the google connection to use",
+    "fr": "Nom de la connexion google à utiliser"
+  },
+  "node.node.gmail.send.label": {
+    "en": "Gmail: send an email",
+    "fr": "Gmail : envoyer un email"
+  },
+  "node.node.google_calendar.create_event": {
+    "en": "Creates an event. start and end: ISO date-time, or YYYY-MM-DD for an all-day event. sendUpdates=all emails the attendees.",
+    "fr": "Crée un événement. start et end : date-heure ISO, ou AAAA-MM-JJ pour un événement sur la journée. sendUpdates=all envoie un email aux invités."
+  },
+  "node.node.google_calendar.create_event.input.addMeet": {
+    "en": "Add a Google Meet link",
+    "fr": "Ajouter un lien Google Meet"
+  },
+  "node.node.google_calendar.create_event.input.attendees": {
+    "en": "Attendee emails",
+    "fr": "Emails des invités"
+  },
+  "node.node.google_calendar.create_event.input.calendarId": {
+    "en": "Calendar id; primary = the account's main calendar",
+    "fr": "Id de l'agenda ; primary = l'agenda principal du compte"
+  },
+  "node.node.google_calendar.create_event.input.connection": {
+    "en": "Name of the google connection to use",
+    "fr": "Nom de la connexion google à utiliser"
+  },
+  "node.node.google_calendar.create_event.input.timeZone": {
+    "en": "IANA time zone, e.g. Europe/Paris",
+    "fr": "Fuseau horaire IANA, par ex. Europe/Paris"
+  },
+  "node.node.google_calendar.create_event.label": {
+    "en": "Google Calendar: create an event",
+    "fr": "Google Calendar : créer un événement"
+  },
+  "node.node.google_calendar.delete_event": {
+    "en": "Deletes an event. sendUpdates=all notifies the attendees.",
+    "fr": "Supprime un événement. sendUpdates=all prévient les invités."
+  },
+  "node.node.google_calendar.delete_event.input.calendarId": {
+    "en": "Calendar id; primary = the account's main calendar",
+    "fr": "Id de l'agenda ; primary = l'agenda principal du compte"
+  },
+  "node.node.google_calendar.delete_event.input.connection": {
+    "en": "Name of the google connection to use",
+    "fr": "Nom de la connexion google à utiliser"
+  },
+  "node.node.google_calendar.delete_event.label": {
+    "en": "Google Calendar: delete an event",
+    "fr": "Google Calendar : supprimer un événement"
+  },
+  "node.node.google_calendar.list_events": {
+    "en": "Lists the events of a calendar between two dates (recurring events expanded), sorted by start. q filters by text.",
+    "fr": "Liste les événements d'un agenda entre deux dates (événements récurrents dépliés), triés par début. q filtre par texte."
+  },
+  "node.node.google_calendar.list_events.input.calendarId": {
+    "en": "Calendar id; primary = the account's main calendar",
+    "fr": "Id de l'agenda ; primary = l'agenda principal du compte"
+  },
+  "node.node.google_calendar.list_events.input.connection": {
+    "en": "Name of the google connection to use",
+    "fr": "Nom de la connexion google à utiliser"
+  },
+  "node.node.google_calendar.list_events.input.timeMax": {
+    "en": "ISO date-time",
+    "fr": "Date-heure ISO"
+  },
+  "node.node.google_calendar.list_events.input.timeMin": {
+    "en": "ISO date-time, default now",
+    "fr": "Date-heure ISO, maintenant par défaut"
+  },
+  "node.node.google_calendar.list_events.label": {
+    "en": "Google Calendar: list events",
+    "fr": "Google Calendar : lister les événements"
+  },
+  "node.node.google_calendar.update_event": {
+    "en": "Changes the given fields of an event (others kept). attendees replaces the whole list.",
+    "fr": "Modifie les champs indiqués d'un événement (les autres sont conservés). attendees remplace toute la liste."
+  },
+  "node.node.google_calendar.update_event.input.addMeet": {
+    "en": "Add a Google Meet link",
+    "fr": "Ajouter un lien Google Meet"
+  },
+  "node.node.google_calendar.update_event.input.attendees": {
+    "en": "Attendee emails",
+    "fr": "Emails des invités"
+  },
+  "node.node.google_calendar.update_event.input.calendarId": {
+    "en": "Calendar id; primary = the account's main calendar",
+    "fr": "Id de l'agenda ; primary = l'agenda principal du compte"
+  },
+  "node.node.google_calendar.update_event.input.connection": {
+    "en": "Name of the google connection to use",
+    "fr": "Nom de la connexion google à utiliser"
+  },
+  "node.node.google_calendar.update_event.input.timeZone": {
+    "en": "IANA time zone, e.g. Europe/Paris",
+    "fr": "Fuseau horaire IANA, par ex. Europe/Paris"
+  },
+  "node.node.google_calendar.update_event.label": {
+    "en": "Google Calendar: update an event",
+    "fr": "Google Calendar : modifier un événement"
+  },
+  "node.node.google_drive.upload_file": {
+    "en": "Creates a file in Google Drive from text (or base64 content). Runbase only sees the files it created.",
+    "fr": "Crée un fichier dans Google Drive à partir d'un texte (ou d'un contenu base64). Runbase ne voit que les fichiers qu'il a créés."
+  },
+  "node.node.google_drive.upload_file.input.connection": {
+    "en": "Name of the google connection to use",
+    "fr": "Nom de la connexion google à utiliser"
+  },
+  "node.node.google_drive.upload_file.label": {
+    "en": "Google Drive: create a file",
+    "fr": "Google Drive : créer un fichier"
+  },
+  "node.node.google_sheets.append_rows": {
+    "en": "Adds rows after the last row of a tab. Rows as objects are matched to the header row (first row) by column name; rows as arrays are written as is.",
+    "fr": "Ajoute des lignes après la dernière ligne d'un onglet. Les lignes en objets sont associées à la ligne d'en-tête (première ligne) par nom de colonne ; les lignes en tableaux sont écrites telles quelles."
+  },
+  "node.node.google_sheets.append_rows.input.connection": {
+    "en": "Name of the google connection to use",
+    "fr": "Nom de la connexion google à utiliser"
+  },
+  "node.node.google_sheets.append_rows.input.range": {
+    "en": "Tab name, e.g. Sheet1",
+    "fr": "Nom de l'onglet, par ex. Sheet1"
+  },
+  "node.node.google_sheets.append_rows.input.spreadsheetId": {
+    "en": "Id in the sheet URL: docs.google.com/spreadsheets/d/<id>/edit",
+    "fr": "Id dans l'URL de la feuille : docs.google.com/spreadsheets/d/<id>/edit"
+  },
+  "node.node.google_sheets.append_rows.label": {
+    "en": "Google Sheets: add rows",
+    "fr": "Google Sheets : ajouter des lignes"
+  },
+  "node.node.google_sheets.read_rows": {
+    "en": "Reads a range (e.g. Sheet1, or Sheet1!A1:D100). headers=true: the first row gives the keys of each row object.",
+    "fr": "Lit une plage (par ex. Sheet1, ou Sheet1!A1:D100). headers=true : la première ligne donne les clés de chaque ligne."
+  },
+  "node.node.google_sheets.read_rows.input.connection": {
+    "en": "Name of the google connection to use",
+    "fr": "Nom de la connexion google à utiliser"
+  },
+  "node.node.google_sheets.read_rows.input.spreadsheetId": {
+    "en": "Id in the sheet URL: docs.google.com/spreadsheets/d/<id>/edit",
+    "fr": "Id dans l'URL de la feuille : docs.google.com/spreadsheets/d/<id>/edit"
+  },
+  "node.node.google_sheets.read_rows.label": {
+    "en": "Google Sheets: read rows",
+    "fr": "Google Sheets : lire des lignes"
+  },
+  "node.node.google_sheets.update_rows": {
+    "en": "Overwrites a range (e.g. Sheet1!A2:C3) with the given rows of values, typed as in the sheet (formulas and dates are interpreted).",
+    "fr": "Remplace une plage (par ex. Sheet1!A2:C3) par les lignes de valeurs données, typées comme dans la feuille (formules et dates interprétées)."
+  },
+  "node.node.google_sheets.update_rows.input.connection": {
+    "en": "Name of the google connection to use",
+    "fr": "Nom de la connexion google à utiliser"
+  },
+  "node.node.google_sheets.update_rows.input.spreadsheetId": {
+    "en": "Id in the sheet URL: docs.google.com/spreadsheets/d/<id>/edit",
+    "fr": "Id dans l'URL de la feuille : docs.google.com/spreadsheets/d/<id>/edit"
+  },
+  "node.node.google_sheets.update_rows.label": {
+    "en": "Google Sheets: update cells",
+    "fr": "Google Sheets : modifier des cellules"
   },
   "node.node.slack.send": {
     "en": "Sends a message to the Slack channel of an Incoming Webhook. The webhook URL can be typed or picked from the workspace secrets.",

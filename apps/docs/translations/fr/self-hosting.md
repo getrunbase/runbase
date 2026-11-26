@@ -1,4 +1,4 @@
-<!-- source-sha256: 57cd7b4b3a79784bbace4b9bb4c54d57ac35af67884b630a9eeb35300f513ce1 -->
+<!-- source-sha256: 0f45019eeb47f78ad1b26a9059a7e2ba5ca42fee0ea9f08467305640803bb92f -->
 # Auto-hébergement
 
 Exécutez Runbase sur votre propre serveur avec Docker, à partir d'images
@@ -81,6 +81,9 @@ premier. Les paramètres facultatifs les plus courants :
   construisez l'image web avec
   `docker build --build-arg NEXT_PUBLIC_RUNTIME_ORIGIN=https://runtime.example.com .`
   et reconstruisez-la à chaque changement.
+- **Google (Gmail, Calendar, Sheets, Drive).** `OAUTH_GOOGLE_CLIENT_ID` et
+  `OAUTH_GOOGLE_CLIENT_SECRET` : client OAuth du connecteur Google. Étapes et
+  scopes : [Connecter Google](/docs/guides/google).
 - **Version.** `RUNBASE_VERSION` fixe un tag d'image (`latest` par défaut).
 
 Appliquez un changement avec `docker compose -f docker-compose.selfhost.yml up -d`.

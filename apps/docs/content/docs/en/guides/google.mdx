@@ -1,0 +1,91 @@
+---
+title: Connect Google (Gmail, Calendar, Sheets, Drive)
+description: Create the Google OAuth client and choose the scopes that let workflows send emails, manage events and edit sheets.
+---
+
+Once Google is set up, anyone in the workspace can connect their Google account
+from a workflow step (the **Account** field) or from **Settings › Connections**.
+Workflows can then send emails from that Gmail account, manage its calendar
+events, read and write its sheets, and create files in its Drive.
+
+On Runbase Cloud this is already done: skip to [Use it in a workflow](#use-it-in-a-workflow).
+When you self-host, you create your own Google OAuth client once, as below.
+
+## What Runbase asks Google for
+
+| Scope                                             | What it allows                                          | Google level  |
+| ------------------------------------------------- | ------------------------------------------------------- | ------------- |
+| `openid`, `email`                                 | Show which account is connected                         | Non-sensitive |
+| `https://www.googleapis.com/auth/gmail.send`      | Send emails (no reading of the mailbox)                 | Sensitive     |
+| `https://www.googleapis.com/auth/calendar.events` | Read, create, update and delete events                  | Sensitive     |
+| `https://www.googleapis.com/auth/spreadsheets`    | Read and write Google Sheets                            | Sensitive     |
+| `https://www.googleapis.com/auth/drive.file`      | Create files; only files created by Runbase are visible | Non-sensitive |
+
+None of these is a **restricted** scope, so no paid security assessment (CASA)
+is needed. Do not add `gmail.readonly`, `gmail.modify`, `https://mail.google.com/`
+or `drive`: they are restricted and require that assessment.
+
+## 1. Create the Google Cloud project
+
+1. Open the [Google Cloud console](https://console.cloud.google.com/) and create
+   a project (for example "Runbase").
+2. In **APIs & Services › Library**, enable **Gmail API**, **Google Calendar API**,
+   **Google Sheets API** and **Google Drive API**.
+
+## 2. Configure the consent screen
+
+In **Google Auth Platform** (or **APIs & Services › OAuth consent screen**):
+
+1. **Branding**: app name, support email, logo, and links to your home page,
+   privacy policy and terms of service, all on a domain you own.
+2. **Audience**: **External**. While the app is in **Testing**, add the emails
+   of the people who will connect an account as **test users**.
+3. **Data access**: add exactly the scopes of the table above.
+
+## 3. Create the OAuth client
+
+1. In **Clients**, create a client of type **Web application**.
+2. Under **Authorized redirect URIs**, add
+   `<BETTER_AUTH_URL>/api/connections/callback`, for example
+   `https://runbase.example.com/api/connections/callback`
+   (`http://localhost:7100/api/connections/callback` in development).
+3. Copy the client ID and the client secret.
+
+## 4. Configure Runbase
+
+Add both values to `.env`, then restart `web` and `worker`
+(`docker compose -f docker-compose.selfhost.yml up -d`):
+
+```sh
+OAUTH_GOOGLE_CLIENT_ID=1234-abc.apps.googleusercontent.com
+OAUTH_GOOGLE_CLIENT_SECRET=GOCSPX-...
+```
+
+The `web` container runs the Google sign-in; the `worker` refreshes access
+when workflows run, so both need the values. Without them, Google shows as
+"Not configured" in Settings › Connections.
+
+## 5. Testing, then production
+
+- **Testing** (default): works right away, only for the test users you listed,
+  and Google asks them to reconnect every 7 days.
+- **In production, not verified**: anyone can connect, up to 100 users, behind
+  a "Google hasn't verified this app" warning (Advanced › Continue).
+- **Verified**: no warning, no user cap. Click **Publish app**, then submit for
+  verification. Google asks for a justification per sensitive scope and a demo
+  video (unlisted YouTube link) showing the consent screen and each scope in
+  use in your app. Expect a few weeks of back and forth. No code change is
+  needed once approved.
+
+## Use it in a workflow
+
+1. Add a Google step, for example **Google Calendar: list events**.
+2. In **Account**, pick a connected account or choose **Connect a Google
+   account**: Google opens in a popup, you approve, the account is selected.
+3. Each account is named after its email. With a single Google account in the
+   workspace, steps use it by default; with several, each step names the one
+   to use (the `connection` input, also listed by the `connections.list` MCP
+   tool).
+
+Disconnecting an account (Settings › Connections) revokes Runbase's access at
+Google; the steps that used it fail until it is connected again.

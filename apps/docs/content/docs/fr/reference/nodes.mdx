@@ -1104,6 +1104,508 @@ Branches : `ok`, `error`.
 
 ## Nœuds de connecteurs
 
+### node.gmail.send
+
+**Gmail : envoyer un email**. Envoie un email depuis le compte Gmail connecté. Donnez text, html ou les deux. threadId (et le Message-ID d'origine dans inReplyTo) l'envoie en réponse dans ce fil.
+
+Branches : `ok`.
+
+#### Entrée
+
+| Nom          | Type   | Requis | Description                           |
+| ------------ | ------ | ------ | ------------------------------------- |
+| `to`         | union  | oui    |                                       |
+| `cc`         | union  | non    |                                       |
+| `bcc`        | union  | non    |                                       |
+| `replyTo`    | string | non    |                                       |
+| `subject`    | string | oui    |                                       |
+| `text`       | string | non    |                                       |
+| `html`       | string | non    |                                       |
+| `threadId`   | string | non    |                                       |
+| `inReplyTo`  | string | non    |                                       |
+| `connection` | string | non    | Nom de la connexion google à utiliser |
+
+#### Sortie
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "threadId": {
+      "type": "string"
+    }
+  },
+  "required": ["id", "threadId"],
+  "additionalProperties": false
+}
+```
+
+### node.google_calendar.create_event
+
+**Google Calendar : créer un événement**. Crée un événement. start et end : date-heure ISO, ou AAAA-MM-JJ pour un événement sur la journée. sendUpdates=all envoie un email aux invités.
+
+Branches : `ok`.
+
+#### Entrée
+
+| Nom           | Type    | Requis | Description                                             |
+| ------------- | ------- | ------ | ------------------------------------------------------- |
+| `calendarId`  | string  | non    | Id de l'agenda ; primary = l'agenda principal du compte |
+| `summary`     | string  | oui    |                                                         |
+| `description` | string  | non    |                                                         |
+| `location`    | string  | non    |                                                         |
+| `start`       | string  | oui    |                                                         |
+| `end`         | string  | oui    |                                                         |
+| `timeZone`    | string  | non    | Fuseau horaire IANA, par ex. Europe/Paris               |
+| `attendees`   | array   | non    | Emails des invités                                      |
+| `addMeet`     | boolean | non    | Ajouter un lien Google Meet                             |
+| `sendUpdates` | string  | non    | Valeurs possibles : `all`, `externalOnly`, `none`.      |
+| `connection`  | string  | non    | Nom de la connexion google à utiliser                   |
+
+#### Sortie
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "summary": {
+      "type": ["string", "null"]
+    },
+    "description": {
+      "type": ["string", "null"]
+    },
+    "location": {
+      "type": ["string", "null"]
+    },
+    "start": {
+      "type": ["string", "null"]
+    },
+    "end": {
+      "type": ["string", "null"]
+    },
+    "status": {
+      "type": ["string", "null"]
+    },
+    "htmlLink": {
+      "type": ["string", "null"]
+    },
+    "meetLink": {
+      "type": ["string", "null"]
+    },
+    "attendees": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "responseStatus": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": ["email", "responseStatus"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "id",
+    "summary",
+    "description",
+    "location",
+    "start",
+    "end",
+    "status",
+    "htmlLink",
+    "meetLink",
+    "attendees"
+  ],
+  "additionalProperties": false
+}
+```
+
+### node.google_calendar.delete_event
+
+**Google Calendar : supprimer un événement**. Supprime un événement. sendUpdates=all prévient les invités.
+
+Branches : `ok`.
+
+#### Entrée
+
+| Nom           | Type   | Requis | Description                                             |
+| ------------- | ------ | ------ | ------------------------------------------------------- |
+| `calendarId`  | string | non    | Id de l'agenda ; primary = l'agenda principal du compte |
+| `eventId`     | string | oui    |                                                         |
+| `sendUpdates` | string | non    | Valeurs possibles : `all`, `externalOnly`, `none`.      |
+| `connection`  | string | non    | Nom de la connexion google à utiliser                   |
+
+#### Sortie
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "deleted": {
+      "type": "boolean"
+    }
+  },
+  "required": ["deleted"],
+  "additionalProperties": false
+}
+```
+
+### node.google_calendar.list_events
+
+**Google Calendar : lister les événements**. Liste les événements d'un agenda entre deux dates (événements récurrents dépliés), triés par début. q filtre par texte.
+
+Branches : `ok`.
+
+#### Entrée
+
+| Nom          | Type    | Requis | Description                                             |
+| ------------ | ------- | ------ | ------------------------------------------------------- |
+| `calendarId` | string  | non    | Id de l'agenda ; primary = l'agenda principal du compte |
+| `timeMin`    | string  | non    | Date-heure ISO, maintenant par défaut                   |
+| `timeMax`    | string  | non    | Date-heure ISO                                          |
+| `q`          | string  | non    |                                                         |
+| `maxResults` | integer | non    |                                                         |
+| `connection` | string  | non    | Nom de la connexion google à utiliser                   |
+
+#### Sortie
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "summary": {
+            "type": ["string", "null"]
+          },
+          "description": {
+            "type": ["string", "null"]
+          },
+          "location": {
+            "type": ["string", "null"]
+          },
+          "start": {
+            "type": ["string", "null"]
+          },
+          "end": {
+            "type": ["string", "null"]
+          },
+          "status": {
+            "type": ["string", "null"]
+          },
+          "htmlLink": {
+            "type": ["string", "null"]
+          },
+          "meetLink": {
+            "type": ["string", "null"]
+          },
+          "attendees": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "email": {
+                  "type": "string"
+                },
+                "responseStatus": {
+                  "type": ["string", "null"]
+                }
+              },
+              "required": ["email", "responseStatus"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "summary",
+          "description",
+          "location",
+          "start",
+          "end",
+          "status",
+          "htmlLink",
+          "meetLink",
+          "attendees"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["events"],
+  "additionalProperties": false
+}
+```
+
+### node.google_calendar.update_event
+
+**Google Calendar : modifier un événement**. Modifie les champs indiqués d'un événement (les autres sont conservés). attendees remplace toute la liste.
+
+Branches : `ok`.
+
+#### Entrée
+
+| Nom           | Type    | Requis | Description                                             |
+| ------------- | ------- | ------ | ------------------------------------------------------- |
+| `calendarId`  | string  | non    | Id de l'agenda ; primary = l'agenda principal du compte |
+| `eventId`     | string  | oui    |                                                         |
+| `summary`     | string  | non    |                                                         |
+| `description` | string  | non    |                                                         |
+| `location`    | string  | non    |                                                         |
+| `start`       | string  | non    |                                                         |
+| `end`         | string  | non    |                                                         |
+| `timeZone`    | string  | non    | Fuseau horaire IANA, par ex. Europe/Paris               |
+| `attendees`   | array   | non    | Emails des invités                                      |
+| `addMeet`     | boolean | non    | Ajouter un lien Google Meet                             |
+| `sendUpdates` | string  | non    | Valeurs possibles : `all`, `externalOnly`, `none`.      |
+| `connection`  | string  | non    | Nom de la connexion google à utiliser                   |
+
+#### Sortie
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "summary": {
+      "type": ["string", "null"]
+    },
+    "description": {
+      "type": ["string", "null"]
+    },
+    "location": {
+      "type": ["string", "null"]
+    },
+    "start": {
+      "type": ["string", "null"]
+    },
+    "end": {
+      "type": ["string", "null"]
+    },
+    "status": {
+      "type": ["string", "null"]
+    },
+    "htmlLink": {
+      "type": ["string", "null"]
+    },
+    "meetLink": {
+      "type": ["string", "null"]
+    },
+    "attendees": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "responseStatus": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": ["email", "responseStatus"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "id",
+    "summary",
+    "description",
+    "location",
+    "start",
+    "end",
+    "status",
+    "htmlLink",
+    "meetLink",
+    "attendees"
+  ],
+  "additionalProperties": false
+}
+```
+
+### node.google_drive.upload_file
+
+**Google Drive : créer un fichier**. Crée un fichier dans Google Drive à partir d'un texte (ou d'un contenu base64). Runbase ne voit que les fichiers qu'il a créés.
+
+Branches : `ok`.
+
+#### Entrée
+
+| Nom          | Type   | Requis | Description                           |
+| ------------ | ------ | ------ | ------------------------------------- |
+| `name`       | string | oui    |                                       |
+| `content`    | string | oui    |                                       |
+| `encoding`   | string | non    | Valeurs possibles : `text`, `base64`. |
+| `mimeType`   | string | non    |                                       |
+| `folderId`   | string | non    |                                       |
+| `connection` | string | non    | Nom de la connexion google à utiliser |
+
+#### Sortie
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "webViewLink": {
+      "type": ["string", "null"]
+    }
+  },
+  "required": ["id", "name", "webViewLink"],
+  "additionalProperties": false
+}
+```
+
+### node.google_sheets.append_rows
+
+**Google Sheets : ajouter des lignes**. Ajoute des lignes après la dernière ligne d'un onglet. Les lignes en objets sont associées à la ligne d'en-tête (première ligne) par nom de colonne ; les lignes en tableaux sont écrites telles quelles.
+
+Branches : `ok`.
+
+#### Entrée
+
+| Nom             | Type   | Requis | Description                                                                  |
+| --------------- | ------ | ------ | ---------------------------------------------------------------------------- |
+| `spreadsheetId` | string | oui    | Id dans l'URL de la feuille : docs.google.com/spreadsheets/d/&lt;id&gt;/edit |
+| `range`         | string | oui    | Nom de l'onglet, par ex. Sheet1                                              |
+| `rows`          | array  | oui    |                                                                              |
+| `connection`    | string | non    | Nom de la connexion google à utiliser                                        |
+
+#### Sortie
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "updatedRange": {
+      "type": "string"
+    },
+    "updatedRows": {
+      "type": "number"
+    }
+  },
+  "required": ["updatedRange", "updatedRows"],
+  "additionalProperties": false
+}
+```
+
+### node.google_sheets.read_rows
+
+**Google Sheets : lire des lignes**. Lit une plage (par ex. Sheet1, ou Sheet1!A1:D100). headers=true : la première ligne donne les clés de chaque ligne.
+
+Branches : `ok`.
+
+#### Entrée
+
+| Nom             | Type    | Requis | Description                                                                  |
+| --------------- | ------- | ------ | ---------------------------------------------------------------------------- |
+| `spreadsheetId` | string  | oui    | Id dans l'URL de la feuille : docs.google.com/spreadsheets/d/&lt;id&gt;/edit |
+| `range`         | string  | oui    |                                                                              |
+| `headers`       | boolean | non    |                                                                              |
+| `connection`    | string  | non    | Nom de la connexion google à utiliser                                        |
+
+#### Sortie
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "rows": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "propertyNames": {
+              "type": "string"
+            },
+            "type": "object",
+            "properties": {},
+            "additionalProperties": {
+              "type": ["string", "number", "boolean", "null"]
+            }
+          },
+          {
+            "type": "array",
+            "items": {
+              "type": ["string", "number", "boolean", "null"]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "required": ["rows"],
+  "additionalProperties": false
+}
+```
+
+### node.google_sheets.update_rows
+
+**Google Sheets : modifier des cellules**. Remplace une plage (par ex. Sheet1!A2:C3) par les lignes de valeurs données, typées comme dans la feuille (formules et dates interprétées).
+
+Branches : `ok`.
+
+#### Entrée
+
+| Nom             | Type   | Requis | Description                                                                  |
+| --------------- | ------ | ------ | ---------------------------------------------------------------------------- |
+| `spreadsheetId` | string | oui    | Id dans l'URL de la feuille : docs.google.com/spreadsheets/d/&lt;id&gt;/edit |
+| `range`         | string | oui    |                                                                              |
+| `values`        | array  | oui    |                                                                              |
+| `connection`    | string | non    | Nom de la connexion google à utiliser                                        |
+
+#### Sortie
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "updatedRange": {
+      "type": "string"
+    },
+    "updatedCells": {
+      "type": "number"
+    }
+  },
+  "required": ["updatedRange", "updatedCells"],
+  "additionalProperties": false
+}
+```
+
 ### node.slack.send
 
 **Envoyer un message Slack**. Envoie un message dans le canal Slack d'un Incoming Webhook. L'URL du webhook peut être saisie ou choisie parmi les secrets de l'espace de travail.
