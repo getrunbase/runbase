@@ -237,7 +237,11 @@
       "perYear": "/ an",
       "equivalent": "{price} / mois, facturé annuellement",
       "current": "Offre actuelle",
-      "choose": "Choisir"
+      "choose": "Choisir",
+      "compare": "Comparer les offres",
+      "feature": "Fonctionnalité",
+      "included": "Inclus",
+      "notIncluded": "Non inclus"
     }
   },
   "usage": {
