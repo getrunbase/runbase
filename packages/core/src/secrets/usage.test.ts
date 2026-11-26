@@ -3,7 +3,7 @@
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import postgres from "postgres";
-import { aiSettingsService } from "../ai-providers";
+import { pagesService } from "../pages";
 import type { TenantContext } from "../tenant";
 import { secretsService } from "./index";
 import { secretRefs, secretUsageService } from "./usage";
@@ -37,7 +37,7 @@ async function owner(): Promise<TenantContext> {
   };
 }
 
-test("usages: workflows, functions (latest version) and AI setting", async () => {
+test("usages: workflows, functions (latest version) and page AI configs", async () => {
   const ctx = await owner();
   const value = `sk-${crypto.randomUUID()}`;
   await secretsService.set(ctx, "API_KEY", value);
@@ -50,14 +50,28 @@ test("usages: workflows, functions (latest version) and AI setting", async () =>
       values (${ctx.organizationId}, ${ctx.workspaceId}, 'enrich', ${version}, 'x', '{}', '{}', ${sql.json({ domains: [], secrets })})`;
   await fn(1, ["OLD"]);
   await fn(2, ["API_KEY"]);
-  await aiSettingsService.set(ctx, { provider: "openai", keySecret: "API_KEY" });
+  // Page AI: explicit secret and preset default secret.
+  await pagesService.create(ctx, {
+    name: "Assistant",
+    files: { "index.tsx": "export default function P() { return null; }" },
+    permissions: {
+      ai: {
+        default: { provider: "openai", secret: "API_KEY" },
+        summary: { provider: "anthropic" },
+      },
+    },
+  });
 
   const all = await secretUsageService.all(ctx);
   assert.deepEqual(all.API_KEY!.map((u) => u.type).sort(), [
-    "ai",
     "function",
+    "page",
     "workflow",
   ]);
+  assert.deepEqual(
+    all.ANTHROPIC_API_KEY!.map((u) => u.type),
+    ["page"],
+  );
   assert.equal(all.OLD, undefined);
   assert.ok(!JSON.stringify(all).includes(value));
 });

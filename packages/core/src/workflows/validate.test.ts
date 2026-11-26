@@ -44,7 +44,7 @@ test("validate, activation refused, dry run without side effects", async () => {
   const [org] =
     await sql`insert into organizations (name) values ('Dry') returning id`;
   const [ws] =
-    await sql`insert into workspaces (organization_id, name, settings) values (${org!.id}, 'Default', '{"ai":{"provider":"anthropic"}}') returning id`;
+    await sql`insert into workspaces (organization_id, name, settings) values (${org!.id}, 'Default', '{}') returning id`;
   const uid = crypto.randomUUID();
   await sql`insert into "user" (id, name, email) values (${uid}, 'D', ${uid + "@x.io"})`;
   await sql`insert into memberships (user_id, organization_id, role) values (${uid}, ${org!.id}, 'owner')`;
@@ -81,6 +81,7 @@ test("validate, activation refused, dry run without side effects", async () => {
           prompt: "Qualified?",
           context: "{{record.data}}",
           branches: ["sales", "nurture"],
+          ai: { provider: "anthropic", secret: "ANTHROPIC_API_KEY" },
         },
       },
       {

@@ -32,7 +32,11 @@ export interface BillingProvider {
   account?(organizationId: string): Promise<BillingAccount | null>;
   // Optional: plans offered in Settings › Plan and usage › Plans.
   // Missing, null or no plans: the page does not appear (self-host).
-  plans?(organizationId: string): Promise<BillingPlans | null>;
+  // `locale` (e.g. "en", "fr"): language of the viewer, for the texts.
+  plans?(
+    organizationId: string,
+    opts?: { locale?: string },
+  ): Promise<BillingPlans | null>;
 }
 
 // Plan catalog provided by the extension. Prices in the smallest currency
@@ -54,7 +58,13 @@ export type BillingPlans = {
   current: string | null;
   interval?: "month" | "year";
   plans: BillingPlan[];
+  // Optional comparison table shown under the plan cards. Each row's values
+  // are aligned with `plans` order; true/false render a check or a dash,
+  // null an empty cell.
+  comparison?: { rows: BillingComparisonRow[] };
 };
+
+export type BillingComparisonRow = { label: string; values: (string | boolean | null)[] };
 
 // Plan name and links provided by the extension (no plan name or price
 // in this repo). checkoutUrl: change plan; portalUrl: billing.

@@ -65,14 +65,16 @@
   "templates.issue": "{path} : {message}",
   "templates.workflowCycle": "Des workflows se référencent en cycle : {workflow}",
   "quotas.aiPerMinute": "Limite atteinte : {max} appels IA par minute. Réessayez dans {wait} s.",
-  "ai.providerKeyMissing": "{secret} non configurée : ajoutez votre clé {provider} dans Paramètres › Général",
-  "ai.providerNotConfigured": "Aucun fournisseur IA configuré. Choisissez-en un dans les paramètres.",
-  "ai.unknownProvider": "Fournisseur IA inconnu {provider}",
-  "ai.unknownModel": "Modèle IA inconnu {model}",
+  "ai.providerKeyMissing": "{secret} non configurée : ajoutez votre clé {provider} dans Paramètres › Secrets",
+  "ai.blockNotConfigured": "{block} : aucune IA configurée. Définissez `ai` (fournisseur, modèle, secret) sur ce bloc.",
+  "ai.pageNotConfigured": "Aucune configuration IA « {name} » déclarée par cette page (déclarées : {declared}). Ajoutez-la dans permissions.ai.",
   "apiKeys.invalid": "Clé API invalide",
   "apiKeys.required": "Clé API requise",
   "apiKeys.unknownWorkspace": "Workspace inconnu dans l'organisation",
   "apiKeys.workspaceNotAllowed": "Workspace non autorisé pour cette clé",
   "email.sendFailed": "Échec de l'envoi de l'e-mail ({status}) : {detail}",
-  "http.unsupportedProtocol": "Protocole non pris en charge : {protocol}"
+  "http.unsupportedProtocol": "Protocole non pris en charge : {protocol}",
+  "members.adminAllWorkspaces": "Les propriétaires et les administrateurs accèdent toujours à tous les workspaces",
+  "members.noWorkspace": "Choisissez au moins un workspace, ou tous les workspaces",
+  "members.unknownWorkspace": "Workspace inconnu dans l'organisation"
 }

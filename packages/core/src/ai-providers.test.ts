@@ -6,7 +6,6 @@ import {
   complete,
   preset,
   resolveAi,
-  resolveBlockAi,
 } from "./ai-providers";
 
 const calls: { url: string; headers: Record<string, string>; body: Record<string, unknown> & { messages?: unknown[] } }[] = [];
@@ -30,26 +29,20 @@ test("no default provider", () => {
   assert.equal(resolveAi({}), null);
 });
 
-test("block AI config wins over the workspace fallback", () => {
-  const fallback = resolveAi({ provider: "deepseek" });
-  const own = resolveBlockAi(
-    { provider: "anthropic", model: "claude-haiku-5-5", secret: "MY_KEY" },
-    fallback,
-  )!;
+test("AI config: provider, model and secret", () => {
+  const own = resolveAi({
+    provider: "anthropic",
+    model: "claude-haiku-5-5",
+    secret: "MY_KEY",
+  })!;
   assert.equal(own.preset.id, "anthropic");
   assert.equal(own.model, "claude-haiku-5-5");
   assert.equal(own.keySecret, "MY_KEY");
   // Unknown model: provider's first; no secret: preset's default secret.
-  const lenient = resolveBlockAi({ provider: "openai", model: "nope" }, fallback)!;
+  const lenient = resolveAi({ provider: "openai", model: "nope" })!;
   assert.equal(lenient.model, "gpt-6.1-sol");
   assert.equal(lenient.keySecret, "OPENAI_API_KEY");
-});
-
-test("block without AI config falls back (legacy workspace setting)", () => {
-  const fallback = resolveAi({ provider: "deepseek" });
-  assert.equal(resolveBlockAi(undefined, fallback), fallback);
-  assert.equal(resolveBlockAi({ provider: "unknown" }, fallback), fallback);
-  assert.equal(resolveBlockAi(undefined, null), null);
+  assert.equal(resolveAi({ provider: "unknown" }), null);
 });
 
 test("DeepSeek selected, openai format: text and usage mapped", async () => {

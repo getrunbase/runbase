@@ -1,9 +1,7 @@
 import { membersService } from "@getrunbase/core/members";
-import { UserPlus } from "lucide-react";
 import { ConfirmAction } from "@/components/confirm-action";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
 import { Button } from "@getrunbase/ui/components/ui/button";
-import { Input } from "@getrunbase/ui/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -24,10 +22,13 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { ROLE_HINTS } from "@/lib/roles";
 import { notFound } from "next/navigation";
 import { getTenant } from "@/lib/tenant";
+import { workspacesService } from "@getrunbase/core/workspaces";
 import { isOrgAdmin } from "@/lib/settings-access";
-import { inviteMember, removeMember, setMemberRole } from "../../actions";
+import { removeMember, setMemberRole } from "../../actions";
+import { EditAccessDialog, InviteDialog } from "./workspace-access";
 import { SettingsPage, SettingsSection, TableHeading } from "../settings-shell";
 import { pageTitle } from "@/lib/page-title";
+import { ActionForm } from "@/components/action-form";
 
 export const generateMetadata = pageTitle("members");
 
@@ -70,8 +71,13 @@ const initials = (s: string) =>
 export default async function Members() {
   const { ctx, role } = await getTenant();
   if (!isOrgAdmin(role)) notFound();
-  const isAdmin = role === "owner" || role === "admin";
-  const all = await membersService.list(ctx);
+  const isAdmin = isOrgAdmin(role);
+  const [all, workspaces] = await Promise.all([
+    membersService.list(ctx),
+    workspacesService.list(ctx),
+  ]);
+  const wsName = new Map(workspaces.map((w) => [w.id, w.name]));
+  const choices = workspaces.map(({ id, name }) => ({ id, name }));
   const t = await getTranslations("settings");
   const format = await getFormatter();
   const members = all.filter((m) => !m.pending);
@@ -85,6 +91,7 @@ export default async function Members() {
             {invites ? t("members.colInvitee") : t("members.colMember")}
           </TableHead>
           <TableHead className="w-35">{t("roles.label")}</TableHead>
+          <TableHead>{t("members.colWorkspaces")}</TableHead>
           <TableHead className="w-35">
             {invites ? t("members.colSent") : t("members.colAdded")}
           </TableHead>
@@ -118,6 +125,30 @@ export default async function Members() {
                 {m.role}
               </Badge>
             </TableCell>
+            <TableCell>
+              <div className="flex flex-wrap items-center gap-1">
+                {m.workspaceIds === null ? (
+                  <Badge variant="neutral">{t("members.allWorkspaces")}</Badge>
+                ) : (
+                  m.workspaceIds.map((id) => (
+                    <Badge key={id} variant="neutral">
+                      {wsName.get(id) ?? id}
+                    </Badge>
+                  ))
+                )}
+                {isAdmin && m.role !== "owner" && m.role !== "admin" && (
+                  <EditAccessDialog
+                    member={{
+                      id: m.id,
+                      name: m.name || m.email,
+                      role: m.role,
+                      workspaceIds: m.workspaceIds,
+                    }}
+                    workspaces={choices}
+                  />
+                )}
+              </div>
+            </TableCell>
             <TableCell className="text-muted-foreground text-sm">
               {format.dateTime(m.createdAt, { dateStyle: "medium" })}
             </TableCell>
@@ -125,13 +156,13 @@ export default async function Members() {
               <TableCell>
                 {m.role !== "owner" && (
                   <div className="flex items-center justify-end gap-2">
-                    <form action={setMemberRole} className="flex gap-2">
+                    <ActionForm action={setMemberRole} className="flex gap-2">
                       <input type="hidden" name="id" value={m.id} />
                       <RoleSelect defaultValue={m.role} />
                       <Button type="submit" variant="secondary">
                         {t("members.change")}
                       </Button>
-                    </form>
+                    </ActionForm>
                     <ConfirmAction
                       action={removeMember}
                       fields={{ id: m.id }}
@@ -166,7 +197,17 @@ export default async function Members() {
   );
 
   return (
-    <SettingsPage isAdmin={isAdmin}>
+    <SettingsPage
+      isAdmin={isAdmin}
+      actions={
+        isAdmin && (
+          <InviteDialog
+            workspaces={choices}
+            currentWorkspaceId={ctx.workspaceId}
+          />
+        )
+      }
+    >
       <div className="flex flex-col">
         <TableHeading title={t("members.title")} count={members.length} />
         {table(members, false)}
@@ -181,26 +222,9 @@ export default async function Members() {
         </div>
       )}
       <SettingsSection
-        title={t("members.inviteTitle")}
-        description={t("members.inviteHint")}
+        title={t("members.rolesTitle")}
+        description={t("members.rolesHint")}
       >
-        {isAdmin && (
-          <form action={inviteMember} className="flex flex-wrap gap-2">
-            <Input
-              name="email"
-              type="email"
-              placeholder={t("members.emailPlaceholder")}
-              aria-label={t("members.emailLabel")}
-              required
-              className="min-w-48 flex-1"
-            />
-            <RoleSelect defaultValue="member" />
-            <Button type="submit">
-              <UserPlus />
-              {t("members.invite")}
-            </Button>
-          </form>
-        )}
         <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
           {(Object.keys(ROLE_HINTS) as (keyof typeof ROLE_HINTS)[]).map((r) => (
             <div key={r} className="contents">

@@ -23,6 +23,7 @@ import { clearWebhookSample, deleteWebhook } from "./actions";
 import { CreateWebhookDialog, TestWebhookForm } from "./forms";
 import { env } from "@getrunbase/core/env";
 import { pageTitle } from "@/lib/page-title";
+import { ActionForm } from "@/components/action-form";
 
 export const generateMetadata = pageTitle("webhooks");
 
@@ -154,12 +155,12 @@ export default async function Webhooks() {
                     value={w.sample}
                   />
                   {isAdmin && (
-                    <form action={clearWebhookSample}>
+                    <ActionForm action={clearWebhookSample}>
                       <input type="hidden" name="id" value={w.id} />
                       <Button type="submit" size="sm" variant="ghost">
                         {t("card.clearSample")}
                       </Button>
-                    </form>
+                    </ActionForm>
                   )}
                 </div>
               ) : (

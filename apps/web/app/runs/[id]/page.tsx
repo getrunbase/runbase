@@ -22,6 +22,7 @@ import { runTone } from "../status-tone";
 import { ConfirmAction } from "@/components/confirm-action";
 import { JsonView } from "@/components/json-view";
 import { pageTitle } from "@/lib/page-title";
+import { ActionForm } from "@/components/action-form";
 
 export const generateMetadata = pageTitle("run");
 
@@ -122,7 +123,7 @@ export default async function RunPage({
       >
         {run.isTest && <Badge variant="neutral">{t("test")}</Badge>}
         {run.status === "waiting" && (
-          <form action={decideRun} className="flex gap-2">
+          <ActionForm action={decideRun} className="flex gap-2">
             <input type="hidden" name="id" value={run.id} />
             <Button
               type="submit"
@@ -135,7 +136,7 @@ export default async function RunPage({
             <Button type="submit" name="decision" value="approve">
               {tA("approve")}
             </Button>
-          </form>
+          </ActionForm>
         )}
         {!finished && (
           <ConfirmAction

@@ -25,7 +25,9 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
   const pagePerms = z
     .record(z.string(), z.unknown())
     .optional()
-    .describe("SDK permissions declared by the page");
+    .describe(
+      'SDK permissions declared by the page: { objects, write, workflows, files, ai }. `ai` = AI configs for useAI: { "default": { provider, model, secret }, "<name>": {...} } (no workspace default).',
+    );
   const filePath = z.string().describe("relative file path in the package");
   const pageRow = async <T>(p: Promise<T | null>, id: string) => {
     const row = await p;

@@ -2,9 +2,11 @@
 // so renaming or deleting a used secret must warn the user.
 import { and, eq, sql } from "drizzle-orm";
 import { requireScope } from "../api-keys";
-import { workspaceAi } from "../ai-providers";
+import { resolveAi } from "../ai-providers";
 import {
   functions,
+  pages,
+  pageVersions,
   webhooks,
   workflows,
   workflowVersions,
@@ -12,7 +14,7 @@ import {
 import { withTenant, type TenantContext } from "../tenant";
 
 export type SecretUsage = {
-  type: "workflow" | "function" | "webhook" | "ai";
+  type: "workflow" | "function" | "webhook" | "page";
   id: string;
   name: string;
 };
@@ -36,12 +38,12 @@ export function secretRefs(value: unknown, out = new Set<string>()) {
 
 export const secretUsageService = {
   // Secret name -> usages (current version of workflows, latest version
-  // of functions, incoming webhooks, AI setting).
+  // of functions, incoming webhooks, page AI configs (draft and published).
   all: async (ctx: TenantContext) => {
     await requireScope(ctx, "read");
     const out: Record<string, SecretUsage[]> = {};
     const add = (name: string, u: SecretUsage) => (out[name] ??= []).push(u);
-    const [wfs, fns, hooks] = await withTenant(ctx, (tx) =>
+    const [wfs, fns, hooks, pgs] = await withTenant(ctx, (tx) =>
       Promise.all([
         tx
           .select({
@@ -75,6 +77,22 @@ export const secretUsageService = {
           })
           .from(webhooks)
           .where(eq(webhooks.workspaceId, ctx.workspaceId)),
+        tx
+          .select({
+            id: pages.id,
+            name: pages.name,
+            draft: pages.permissions,
+            published: pageVersions.permissions,
+          })
+          .from(pages)
+          .leftJoin(
+            pageVersions,
+            and(
+              eq(pageVersions.pageId, pages.id),
+              eq(pageVersions.version, pages.currentVersion),
+            ),
+          )
+          .where(eq(pages.workspaceId, ctx.workspaceId)),
       ]),
     );
     for (const w of wfs)
@@ -88,8 +106,19 @@ export const secretUsageService = {
     for (const h of hooks)
       if (h.secretName)
         add(h.secretName, { type: "webhook", id: h.id, name: h.name });
-    const ai = await workspaceAi(ctx);
-    if (ai) add(ai.keySecret, { type: "ai", id: ai.preset.id, name: ai.preset.label });
+    for (const pg of pgs) {
+      // AI configs (`permissions.ai`): explicit or preset default secret.
+      const names = new Set<string>();
+      for (const perms of [pg.draft, pg.published]) {
+        const ai = (perms as { ai?: unknown } | null)?.ai;
+        if (ai && typeof ai === "object")
+          for (const c of Object.values(ai)) {
+            const r = resolveAi(c);
+            if (r) names.add(r.keySecret);
+          }
+      }
+      for (const n of names) add(n, { type: "page", id: pg.id, name: pg.name });
+    }
     return out;
   },
 };

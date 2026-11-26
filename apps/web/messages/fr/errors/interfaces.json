@@ -4,6 +4,7 @@
   "pages.entryMissing": "Fichier d'entrée introuvable : {entry}",
   "pages.fileNotFound": "Fichier introuvable : {path}",
   "pages.invalidFile": "Contenu de fichier invalide : {path}",
+  "pages.invalidPermissions": "Permissions de page invalides :\n{detail}",
   "pages.invalidPath": "Chemin de fichier invalide : {path}",
   "pages.notFound": "Page introuvable : {id}",
   "sdk.rateLimited": "Trop d'appels SDK : {max} par seconde au maximum",

@@ -31,18 +31,18 @@ const SCOPE_TONE = { read: "green", write: "orange", admin: "blue" } as const;
 export default async function ApiKeys() {
   const { ctx, role } = await getTenant();
   if (!isOrgAdmin(role)) notFound();
+  const tc = await getTranslations("common");
   const [keys, workspaces, objects] = await Promise.all([
     apiKeysService.list(ctx),
     workspacesService.list(ctx),
     objectsService.list(ctx),
   ]);
   const t = await getTranslations("settings.apiKeys");
-  const tc = await getTranslations("common");
   const format = await getFormatter();
   const date = (d: Date) =>
     format.dateTime(d, { dateStyle: "short", timeStyle: "short" });
   return (
-    <SettingsPage isAdmin={role === "owner" || role === "admin"}>
+    <SettingsPage isAdmin>
       <div className="flex flex-col">
         <SectionHead title={t("title")} description={t("description")}>
           <CreateKeyDialog

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { appError } from "@getrunbase/core/app-error";
 import { webhooksService } from "@getrunbase/core/webhooks";
-import { actionError, type ActionError } from "@/lib/action-error";
+import { actionError, type ActionError, runAction } from "@/lib/action-error";
 import { formInput, id, parseInput, trimmed } from "@/lib/action-input";
 import { getTenant } from "@/lib/tenant";
 
@@ -73,15 +73,19 @@ export async function testWebhook(
 }
 
 export async function clearWebhookSample(f: FormData) {
-  const { ctx } = await getTenant();
-  const { id } = parseInput(idInput, formInput(f));
-  await webhooksService.clearSample(ctx, id);
-  revalidatePath("/webhooks");
+  return runAction(async () => {
+    const { ctx } = await getTenant();
+    const { id } = parseInput(idInput, formInput(f));
+    await webhooksService.clearSample(ctx, id);
+    revalidatePath("/webhooks");
+  });
 }
 
 export async function deleteWebhook(f: FormData) {
-  const { ctx } = await getTenant();
-  const { id } = parseInput(idInput, formInput(f));
-  await webhooksService.remove(ctx, id);
-  revalidatePath("/webhooks");
+  return runAction(async () => {
+    const { ctx } = await getTenant();
+    const { id } = parseInput(idInput, formInput(f));
+    await webhooksService.remove(ctx, id);
+    revalidatePath("/webhooks");
+  });
 }
