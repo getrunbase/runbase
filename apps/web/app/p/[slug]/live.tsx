@@ -14,7 +14,11 @@ export function LivePage({ id, draft }: { id: string; draft: boolean }) {
   const host = useMemo<CodeHost>(
     () => ({
       screen: true,
-      bundle: () => pageBundle(id, draft),
+      bundle: async () => {
+        const r = await pageBundle(id, draft);
+        if (!r.data) throw new Error(errorText(r.error));
+        return r.data;
+      },
       call: async (_, c) => {
         const r = await callPage(id, c, draft);
         // Translated text relayed to the page code (SDK promise rejection).

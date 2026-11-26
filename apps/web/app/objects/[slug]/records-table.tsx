@@ -13,7 +13,7 @@ import {
 import { Columns3, Plus, X } from "lucide-react";
 import type { Field } from "@getrunbase/core/objects/fields";
 import { FIELD_ICONS as ICONS } from "@/lib/field-icons";
-import { QuotaLink } from "@/components/quota-link";
+import { QuotaLink, type QuotaHint } from "@/components/quota-link";
 import { AgentPrompts } from "@/components/agent-prompts";
 import { Button } from "@getrunbase/ui/components/ui/button";
 import {
@@ -101,10 +101,10 @@ export function RecordsTable({
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
   const [selection, setSelection] = useState<RowSelectionState>({});
   const [error, setErrorText] = useState<string>();
-  const [quota, setQuota] = useState(false);
+  const [quota, setQuota] = useState<QuotaHint | false>(false);
   const errorText = useErrorText();
   // Action errors arrive as serializable items: translated here.
-  const setError = (e?: unknown, q = false) => {
+  const setError = (e?: unknown, q: QuotaHint | false = false) => {
     setErrorText(e ? errorText(e) : undefined);
     setQuota(q);
   };

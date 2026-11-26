@@ -1,3 +1,4 @@
+import { ActionForm } from "@/components/action-form";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { errorsService } from "@getrunbase/core/errors";
@@ -52,22 +53,22 @@ export default async function ErrorDetail({
         })}
         description={ref}
       >
-        <form className="flex gap-2">
-          <input type="hidden" name="id" value={e.id} />
-          <Button
-            type="submit"
-            variant="outline"
-            formAction={resolveError}
-            disabled={!open}
-          >
-            <CheckCheck />
-            {t("detail.resolve")}
-          </Button>
-          <Button type="submit" formAction={retryError}>
-            <RotateCcw />
-            {t("detail.retry")}
-          </Button>
-        </form>
+        <div className="flex flex-wrap gap-2">
+          <ActionForm action={resolveError}>
+            <input type="hidden" name="id" value={e.id} />
+            <Button type="submit" variant="outline" disabled={!open}>
+              <CheckCheck />
+              {t("detail.resolve")}
+            </Button>
+          </ActionForm>
+          <ActionForm action={retryError}>
+            <input type="hidden" name="id" value={e.id} />
+            <Button type="submit">
+              <RotateCcw />
+              {t("detail.retry")}
+            </Button>
+          </ActionForm>
+        </div>
       </PageHeader>
       <div className="flex flex-wrap items-center gap-3">
         <Badge variant={open ? "red" : "green"}>

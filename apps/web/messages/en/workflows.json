@@ -542,7 +542,7 @@
       "key": "API key",
       "noSecret": "No API key saved in this workspace yet.",
       "addKey": "Add a key",
-      "fallback": "Not set: this block uses the workspace default AI."
+      "required": "Required: choose the provider, model and key this block runs with."
     }
   },
   "pickers": {

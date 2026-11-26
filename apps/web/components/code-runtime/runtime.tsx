@@ -150,8 +150,9 @@ function useUpload() {
   return { upload, pending: state.pending > 0, error: state.error };
 }
 
-// useAI: server-side completion (ai permission, budget and rate checked).
-function useAI() {
+// useAI: server-side completion with the page's AI config `name` (default:
+// `default`); permission, budget and rate checked server-side.
+function useAI(name?: string) {
   const [state, setState] = useState<{
     pending: number;
     text?: string;
@@ -163,6 +164,7 @@ function useAI() {
       const data = (await call("ai", {
         prompt,
         ...(opts?.system && { system: opts.system }),
+        ...(name && { name }),
       })) as { text: string };
       setState((x) => ({ pending: x.pending - 1, text: data.text }));
       return { ok: true, data } as Result;

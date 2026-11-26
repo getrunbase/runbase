@@ -512,8 +512,8 @@
     "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
   },
   "mcp.audit.list": {
-    "en": "Workspace audit log (who, what, when), most recent first. Without filter: the whole feed. Filters: `type` and `id` (one resource: record, workflow, function…), `action` (exact, or prefix ending with a dot: `record.`), `actorUserId`, `actorApiKeyId`, `from`/`to` (ISO). Returns { items, hasMore, nextCursor }; next page with `cursor` = nextCursor.",
-    "fr": "Journal d'audit de l'espace de travail (qui, quoi, quand), du plus récent au plus ancien. Sans filtre : tout le flux. Filtres : `type` et `id` (une ressource : enregistrement, workflow, fonction…), `action` (exacte, ou préfixe terminé par un point : `record.`), `actorUserId`, `actorApiKeyId`, `from`/`to` (ISO). Renvoie { items, hasMore, nextCursor } ; page suivante avec `cursor` = nextCursor."
+    "en": "Workspace audit log (who, what, when), most recent first (admin scope). Without filter: the whole feed. Filters: `type` and `id` (one resource: record, workflow, function…), `action` (exact, or prefix ending with a dot: `record.`), `actorUserId`, `actorApiKeyId`, `from`/`to` (ISO). Returns { items, hasMore, nextCursor }; next page with `cursor` = nextCursor.",
+    "fr": "Journal d'audit de l'espace de travail (qui, quoi, quand), du plus récent au plus ancien (périmètre admin). Sans filtre : tout le flux. Filtres : `type` et `id` (une ressource : enregistrement, workflow, fonction…), `action` (exacte, ou préfixe terminé par un point : `record.`), `actorUserId`, `actorApiKeyId`, `from`/`to` (ISO). Renvoie { items, hasMore, nextCursor } ; page suivante avec `cursor` = nextCursor."
   },
   "mcp.audit.list.workspace": {
     "en": "Workspace id or name (default: active workspace)",
@@ -824,16 +824,20 @@
     "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
   },
   "mcp.members.invite": {
-    "en": "Invites a person to the organization by email (admin scope). The invitation stays pending, with no access at all, until the invitee accepts it (email sent with the link). Roles: admin (manage everything), member (create and edit), viewer (read-only), end_user (only opens pages, no MCP). Default: member.",
-    "fr": "Invite une personne dans l'organisation par e-mail (périmètre admin). L'invitation reste en attente, sans aucun accès, jusqu'à ce que la personne invitée l'accepte (e-mail envoyé avec le lien). Rôles : admin (gère tout), member (crée et modifie), viewer (lecture seule), end_user (ouvre uniquement des pages, pas de MCP). Par défaut : member."
+    "en": "Invites a person to the organization by email (admin scope). The invitation stays pending, with no access at all, until the invitee accepts it (email sent with the link). Roles: admin (manage everything), member (create and edit), viewer (read-only), end_user (only opens pages, no MCP). Default: member. Access is limited to workspaceIds (default: the current workspace; null = all workspaces, including future ones). Owners and admins always access every workspace. Inviting someone already invited or already a member adds the workspaces to their access (a pending invitation also takes the new role and is resent).",
+    "fr": "Invite une personne dans l'organisation par e-mail (périmètre admin). L'invitation reste en attente, sans aucun accès, jusqu'à ce que la personne invitée l'accepte (e-mail envoyé avec le lien). Rôles : admin (gère tout), member (crée et modifie), viewer (lecture seule), end_user (ouvre uniquement des pages, pas de MCP). Par défaut : member. L'accès est limité à workspaceIds (par défaut : l'espace de travail courant ; null = tous les espaces de travail, y compris les futurs). Les propriétaires et les admins accèdent toujours à tous les espaces de travail. Inviter une personne déjà invitée ou déjà membre ajoute les espaces de travail à son accès (une invitation en attente prend aussi le nouveau rôle et est renvoyée)."
   },
   "mcp.members.invite.workspace": {
     "en": "Workspace id or name (default: active workspace)",
     "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
   },
+  "mcp.members.invite.workspaceIds": {
+    "en": "Workspace ids from workspaces.list; null = all workspaces; omitted = the current workspace",
+    "fr": "Identifiants d'espaces de travail issus de workspaces.list ; null = tous les espaces de travail ; absent = l'espace de travail courant"
+  },
   "mcp.members.list": {
-    "en": "Lists organization members and pending invitations (pending: true): id, name, email, role.",
-    "fr": "Liste les membres de l'organisation et les invitations en attente (pending: true) : id, nom, e-mail, rôle."
+    "en": "Lists organization members and pending invitations (pending: true): id, name, email, role, workspaceIds (accessible workspaces; null = all) (admin scope).",
+    "fr": "Liste les membres de l'organisation et les invitations en attente (pending: true) : id, nom, e-mail, rôle, workspaceIds (espaces de travail accessibles ; null = tous) (périmètre admin)."
   },
   "mcp.members.list.workspace": {
     "en": "Workspace id or name (default: active workspace)",
@@ -854,6 +858,18 @@
   "mcp.members.set_role.workspace": {
     "en": "Workspace id or name (default: active workspace)",
     "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.members.set_workspaces": {
+    "en": "Sets the workspaces a member or pending invitee can access (id from members.list, admin scope). workspaceIds replaces the current list; null = all workspaces. Owners and admins always access every workspace (null only).",
+    "fr": "Définit les espaces de travail auxquels un membre ou une personne invitée accède (id issu de members.list, périmètre admin). workspaceIds remplace la liste actuelle ; null = tous les espaces de travail. Les propriétaires et les admins accèdent toujours à tous les espaces de travail (null uniquement)."
+  },
+  "mcp.members.set_workspaces.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.members.set_workspaces.workspaceIds": {
+    "en": "Workspace ids from workspaces.list, or null for all",
+    "fr": "Identifiants d'espaces de travail issus de workspaces.list, ou null pour tous"
   },
   "mcp.objects.create": {
     "en": "Creates an object. Field types: text, number, bool, date, select, multi_select, email, url, json, ref, refs, currency { currency?: 'EUR' }, percent (12.5 = 12.5%), phone, rating { scale?: 5 }, user, file (list of { key, name, size, type } returned by files.upload). Computed (input value ignored): formula { formula: 'amount * qty', result?: text|number|bool|date } recomputed on every write (operators + - * / % = != < > and or not, functions if, concat, round, abs, min, max, upper, lower, len, coalesce, empty, today, days_between); lookup { through, field } and rollup { through, op: count|sum|avg|min|max, field? } computed on read (through = ref/refs field, or slug of an object that points to this one); created_at, updated_at, created_by, autonumber. Per-field validation: required, pattern (regex), minLength, maxLength, min, max; default = value set on creation. `unique: true` (text, email, url, number, phone): unique value in the database, even under concurrent writes (two simultaneous webhooks for the same email -> a single record, or a conflict error without match); serves as the `match` key for records.upsert. Email compared in lowercase.",
@@ -964,8 +980,8 @@
     "fr": "Icône Lucide de la page dans la navigation (kebab-case, par exemple users, shopping-cart, kanban, chart-line ; voir lucide.dev/icons). Choisissez l'icône la plus adaptée au contenu de la page. Par défaut : layout-dashboard."
   },
   "mcp.page.create.permissions": {
-    "en": "SDK permissions declared by the page",
-    "fr": "Permissions SDK déclarées par la page"
+    "en": "SDK permissions declared by the page: { objects, write, workflows, files, ai }. `ai` = AI configs for useAI: { \"default\": { provider, model, secret }, \"<name>\": {...} } (no workspace default).",
+    "fr": "Permissions SDK déclarées par la page : { objects, write, workflows, files, ai }. `ai` = configurations d'IA pour useAI : { \"default\": { provider, model, secret }, \"<name>\": {...} } (pas d'IA par défaut de l'espace de travail)."
   },
   "mcp.page.create.workspace": {
     "en": "Workspace id or name (default: active workspace)",
@@ -1132,8 +1148,8 @@
     "fr": "Identifiant de la page"
   },
   "mcp.page.update.permissions": {
-    "en": "SDK permissions declared by the page",
-    "fr": "Permissions SDK déclarées par la page"
+    "en": "SDK permissions declared by the page: { objects, write, workflows, files, ai }. `ai` = AI configs for useAI: { \"default\": { provider, model, secret }, \"<name>\": {...} } (no workspace default).",
+    "fr": "Permissions SDK déclarées par la page : { objects, write, workflows, files, ai }. `ai` = configurations d'IA pour useAI : { \"default\": { provider, model, secret }, \"<name>\": {...} } (pas d'IA par défaut de l'espace de travail)."
   },
   "mcp.page.update.review": {
     "en": "automatic review of the draft (default true, skipped on compile errors): desktop and mobile screenshots, axe-core violations and runtime errors",
@@ -1196,8 +1212,8 @@
     "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
   },
   "mcp.quotas.get": {
-    "en": "Workspace limits and usage: records (maximum count), runsPerMinute (workflow runs per minute), apiPerMinute (MCP and ingestion calls per minute), concurrency (workflow steps and trigger events processed at the same time; extra jobs wait their turn). Beyond the first three, calls fail with a quota_exceeded error (HTTP 429).",
-    "fr": "Limites et consommation de l'espace de travail : records (nombre maximal d'enregistrements), runsPerMinute (exécutions de workflows par minute), apiPerMinute (appels MCP et d'ingestion par minute), concurrency (étapes de workflows et événements déclencheurs traités en même temps ; les tâches en surplus attendent leur tour). Au-delà des trois premières, les appels échouent avec une erreur quota_exceeded (HTTP 429)."
+    "en": "Workspace limits and usage (admin scope): records (maximum count), runsPerMinute (workflow runs per minute), apiPerMinute (MCP and ingestion calls per minute), concurrency (workflow steps and trigger events processed at the same time; extra jobs wait their turn). Beyond the first three, calls fail with a quota_exceeded error (HTTP 429).",
+    "fr": "Limites et consommation de l'espace de travail (périmètre admin) : records (nombre maximal d'enregistrements), runsPerMinute (exécutions de workflows par minute), apiPerMinute (appels MCP et d'ingestion par minute), concurrency (étapes de workflows et événements déclencheurs traités en même temps ; les tâches en surplus attendent leur tour). Au-delà des trois premières, les appels échouent avec une erreur quota_exceeded (HTTP 429)."
   },
   "mcp.quotas.get.workspace": {
     "en": "Workspace id or name (default: active workspace)",
@@ -1872,8 +1888,8 @@
     "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
   },
   "mcp.workspaces.ai_budget": {
-    "en": "Monthly AI budget of the workspace: USD cap, spend this month, exhausted or not.",
-    "fr": "Budget IA mensuel de l'espace de travail : plafond en USD, dépense du mois, épuisé ou non."
+    "en": "Monthly AI budget of the workspace (admin scope): USD cap, spend this month, exhausted or not.",
+    "fr": "Budget IA mensuel de l'espace de travail (périmètre admin) : plafond en USD, dépense du mois, épuisé ou non."
   },
   "mcp.workspaces.ai_budget.workspace": {
     "en": "Workspace id or name (default: active workspace)",
@@ -1908,8 +1924,8 @@
     "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
   },
   "mcp.workspaces.set_ai_budget": {
-    "en": "Sets the monthly AI budget in USD (null = unlimited). At 100% AI blocks are blocked and runs move to paused_budget; they resume if the budget is raised. Capped by the account limit (quota:aiBudgetUsd): a higher value is refused. There is no platform AI key: without the workspace's own provider key, AI calls fail with ai.providerNotConfigured.",
-    "fr": "Définit le budget IA mensuel en USD (null = illimité). À 100 %, les blocs d'IA sont bloqués et les exécutions passent en paused_budget ; elles reprennent si le budget est relevé. Plafonné par la limite du compte (quota:aiBudgetUsd) : une valeur supérieure est refusée. Il n'existe pas de clé d'IA de la plateforme : sans clé de fournisseur propre à l'espace de travail, les appels d'IA échouent avec ai.providerNotConfigured."
+    "en": "Sets the monthly AI budget in USD (null = unlimited). At 100% AI blocks are blocked and runs move to paused_budget; they resume if the budget is raised. Capped by the account limit (quota:aiBudgetUsd): a higher value is refused. There is no platform AI key and no workspace default AI: each AI block (`ai` in its input) and each page (`permissions.ai`) names its provider, model and key secret.",
+    "fr": "Définit le budget IA mensuel en USD (null = illimité). À 100 %, les blocs d'IA sont bloqués et les exécutions passent en paused_budget ; elles reprennent si le budget est relevé. Plafonné par la limite du compte (quota:aiBudgetUsd) : une valeur supérieure est refusée. Il n'existe ni clé d'IA de la plateforme ni IA par défaut de l'espace de travail : chaque bloc d'IA (`ai` dans son entrée) et chaque page (`permissions.ai`) indique son fournisseur, son modèle et le secret de sa clé."
   },
   "mcp.workspaces.set_ai_budget.workspace": {
     "en": "Workspace id or name (default: active workspace)",
@@ -1927,6 +1943,10 @@
     "en": "The AI picks one of the declared branches and explains why.",
     "fr": "L'IA choisit l'une des branches déclarées et explique pourquoi."
   },
+  "node.ai.decide.input.ai": {
+    "en": "AI of this block (required to run): { provider, model, secret }",
+    "fr": "IA de ce bloc (obligatoire pour l'exécution) : { provider, model, secret }"
+  },
   "node.ai.decide.label": {
     "en": "AI decision",
     "fr": "Décision IA"
@@ -1935,6 +1955,10 @@
     "en": "The AI extracts structured fields from a text.",
     "fr": "L'IA extrait des champs structurés d'un texte."
   },
+  "node.ai.extract.input.ai": {
+    "en": "AI of this block (required to run): { provider, model, secret }",
+    "fr": "IA de ce bloc (obligatoire pour l'exécution) : { provider, model, secret }"
+  },
   "node.ai.extract.label": {
     "en": "AI extraction",
     "fr": "Extraction IA"
@@ -1942,6 +1966,10 @@
   "node.ai.run": {
     "en": "The AI follows an instruction and can read or update objects.",
     "fr": "L'IA suit une instruction et peut lire ou mettre à jour des objets."
+  },
+  "node.ai.run.input.ai": {
+    "en": "AI of this block (required to run): { provider, model, secret }",
+    "fr": "IA de ce bloc (obligatoire pour l'exécution) : { provider, model, secret }"
   },
   "node.ai.run.label": {
     "en": "AI agent",

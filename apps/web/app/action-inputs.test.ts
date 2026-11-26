@@ -25,6 +25,21 @@ test("root: ids, names, roles, limits, invitation, budget", () => {
   );
   assert.equal(root.inviteInput.parse({ email: "" }).role, "member");
   fails(root.inviteInput, { email: "not-an-email" });
+  // Workspace picker: switch on = all (null), otherwise the checked ids.
+  const ws = "6f1c2b9e-2d4a-4c3b-9a1e-0b5d7e8f9a10";
+  assert.equal(
+    root.inviteInput.parse({ email: "", all: "1", workspaceIds: ws }).workspaceIds,
+    null,
+  );
+  assert.deepEqual(
+    root.inviteInput.parse({ email: "", workspaceIds: [ws] }).workspaceIds,
+    [ws],
+  );
+  fails(root.inviteInput, { email: "", workspaceIds: "nope" });
+  assert.deepEqual(
+    root.workspacesInput.parse({ id: "m1", workspaceIds: ws }).workspaceIds,
+    [ws],
+  );
   assert.equal(
     root.limitsInput.parse({ records: "10", concurrency: "" }).records,
     10,

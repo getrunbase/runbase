@@ -10,6 +10,7 @@ import { getTranslations } from "next-intl/server";
 import { ROLE_HINTS } from "@/lib/roles";
 import { answerInvite } from "../actions";
 import { pageTitle } from "@/lib/page-title";
+import { ActionForm } from "@/components/action-form";
 
 export const generateMetadata = pageTitle("invitations");
 
@@ -75,7 +76,7 @@ export default async function Invitations() {
               </p>
             )}
             <div className="flex w-full gap-3">
-              <form action={answerInvite} className="flex flex-1">
+              <ActionForm action={answerInvite} className="flex flex-1">
                 <input
                   type="hidden"
                   name="organizationId"
@@ -84,8 +85,8 @@ export default async function Invitations() {
                 <Button type="submit" variant="outline" className="flex-1 p-3">
                   {t("decline")}
                 </Button>
-              </form>
-              <form action={answerInvite} className="flex flex-1">
+              </ActionForm>
+              <ActionForm action={answerInvite} className="flex flex-1">
                 <input
                   type="hidden"
                   name="organizationId"
@@ -95,7 +96,7 @@ export default async function Invitations() {
                 <Button type="submit" className="flex-1 p-3">
                   {t("accept")}
                 </Button>
-              </form>
+              </ActionForm>
             </div>
           </div>
         ))

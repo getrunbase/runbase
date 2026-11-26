@@ -1,6 +1,5 @@
-// AI blocks: provider, model and key secret set on the block (`input.ai`);
-// blocks without it fall back to the workspace AI setting, no implicit
-// provider. Messages use the Anthropic Messages shape internally;
+// AI blocks: provider, model and key secret set on the block (`input.ai`),
+// required to run: no workspace default, no implicit provider. Messages use the Anthropic Messages shape internally;
 // OpenAI-format presets are translated (tools = function calling). Key:
 // workspace secret named by the provider settings, never a platform key.
 // Tokens and cost (model price of the preset) go up into `run_steps`.
@@ -9,12 +8,10 @@ import { CostCapExceeded, defineBlock, type BlockContext } from "../block";
 import { appError, notFound } from "../../errors/app-error";
 import type { Filter } from "../../filter";
 import {
+  aiConfigSchema,
   aiCost,
-  aiNotConfigured,
-  blockAiSchema,
-  resolveBlockAi,
-  workspaceAi,
-  type AiPreset,
+  resolveAi,
+  type ResolvedAi,
 } from "../../ai-providers";
 
 // Safety cap per block execution, not configurable.
@@ -35,30 +32,29 @@ type Body = {
   tool_choice?: { type: "tool"; name: string };
 };
 type Reply = { content: Content[]; usage: Usage };
-type Ai = { preset: AiPreset; model: string; keySecret: string };
+type Ai = ResolvedAi;
 
-async function resolve(ctx: BlockContext, block: unknown): Promise<Ai> {
-  // Block config wins; the workspace setting is only read when needed.
-  const own = resolveBlockAi(block, null);
-  const ai =
-    own ??
-    (ctx.ai
-      ? await ctx.ai()
-      : ctx.tenant
-        ? await workspaceAi(ctx.tenant)
-        : null);
-  // No provider chosen: explicit failure, no implicit provider.
-  if (!ai) throw aiNotConfigured();
+// No AI config on the block: explicit failure naming it, no fallback.
+function resolve(type: string, block: unknown): Ai {
+  const ai = resolveAi(block);
+  if (!ai)
+    throw appError(
+      "ai.blockNotConfigured",
+      "{block}: no AI configured. Set `ai` (provider, model, secret) on this block.",
+      { block: type },
+    );
   return ai;
 }
 
 async function call(
   ctx: BlockContext,
+  type: string,
   block: unknown,
   body: Body,
   usage: Usage,
 ) {
-  const ai = await resolve(ctx, block);
+  const step = ctx.run?.stepId;
+  const ai = resolve(step ? `${type} (${step})` : type, block);
   // User key only: never a platform key.
   const key = (await ctx.settings()).secrets[ai.keySecret];
   if (!key)
@@ -246,8 +242,11 @@ const base = {
   prompt: z.string().min(1),
   // Record, timeline… already rendered by the engine (`{{record}}`).
   context: z.unknown().optional(),
-  // Provider, model and key secret of this block (default: workspace setting).
-  ai: blockAiSchema.optional(),
+  // Provider, model and key secret of this block: required to run (checked
+  // at execution so drafts stay savable).
+  ai: aiConfigSchema
+    .optional()
+    .describe("AI of this block (required to run): { provider, model, secret }"),
 };
 
 const decision = z.object({
@@ -273,6 +272,7 @@ export const aiDecide = defineBlock({
     const usage = { input: 0, output: 0 };
     const res = await call(
       ctx,
+      "ai.decide",
       input.ai,
       {
         system: system(input),
@@ -412,6 +412,7 @@ export const aiRun = defineBlock({
     for (let turn = 0; turn < MAX_TURNS; turn++) {
       const res = await call(
         ctx,
+        "ai.run",
         input.ai,
         {
           system: sys,
@@ -524,7 +525,9 @@ export const aiExtract = defineBlock({
       text: z.string().min(1),
       fields: z.array(field).min(1),
       instructions: z.string().optional(),
-      ai: blockAiSchema.optional(),
+      ai: aiConfigSchema
+        .optional()
+        .describe("AI of this block (required to run): { provider, model, secret }"),
     })
     .superRefine((v, c) => {
       v.fields.forEach((f, i) => {
@@ -565,6 +568,7 @@ export const aiExtract = defineBlock({
     for (let attempt = 0; attempt < 2; attempt++) {
       const res = await call(
         ctx,
+        "ai.extract",
         input.ai,
         {
           system: sys,

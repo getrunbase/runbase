@@ -69,3 +69,10 @@ test("buildNav: English labels", () => {
     [undefined, "Interfaces", "Activity", "Automations", "Data", undefined],
   );
 });
+
+test("buildNav: Settings shown to members, hidden from viewers", () => {
+  const urls = (r: Parameters<typeof build>[1]) =>
+    buildNav(input, r).sections.flatMap((s) => s.items.map((e) => e.url));
+  assert.ok(urls("member").includes("/settings"));
+  assert.ok(!urls("viewer").includes("/settings"));
+});

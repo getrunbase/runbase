@@ -149,6 +149,7 @@
       "keyLink": "Create a key in <link>API keys</link>."
     }
   },
+  "adminOnly": "Only an administrator can change this.",
   "agentPrompts": {
     "title": "Ask your AI",
     "copy": "Copy",

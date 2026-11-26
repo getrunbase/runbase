@@ -25,20 +25,6 @@
       "ariaLabel": "Budget USD",
       "description": "Plafond de dépense mensuel des blocs IA. Au-delà, ils sont mis en pause."
     },
-    "ai": {
-      "title": "Fournisseur IA",
-      "description": "Choisissez le fournisseur IA utilisé par les briques et les pages IA, puis collez votre clé API.",
-      "provider": "Fournisseur",
-      "providerPlaceholder": "Choisir un fournisseur",
-      "model": "Modèle",
-      "key": "Clé API",
-      "keyPlaceholder": "Collez votre clé API",
-      "keySet": "Clé enregistrée (laisser vide pour la conserver)",
-      "keyHint": "Stockée chiffrée dans l'identifiant {secret}. Elle n'est plus jamais affichée.",
-      "noKeyHint": "Aucune clé pour l'instant. Elle sera stockée chiffrée dans l'identifiant {secret}.",
-      "save": "Enregistrer",
-      "keySecret": "Identifiant qui porte la clé"
-    },
     "limits": {
       "title": "Limites du workspace",
       "description": "Au-delà, les ajouts sont refusés avec un message clair. Champ vide : valeur par défaut.",
@@ -87,13 +73,26 @@
     "emailPlaceholder": "email@exemple.com",
     "emailLabel": "E-mail",
     "invite": "Inviter",
-    "inviteHint": "La personne reçoit un email et accède à l'organisation une fois l'invitation acceptée.",
+    "inviteHint": "La personne reçoit un e-mail et accède aux workspaces choisis une fois l'invitation acceptée.",
     "colMember": "Membre",
     "colInvitee": "Invité",
     "colAdded": "Ajouté le",
     "colSent": "Envoyée",
     "pendingTitle": "Invitations en attente",
-    "inviteTitle": "Inviter"
+    "inviteTitle": "Inviter",
+    "sendInvite": "Envoyer l'invitation",
+    "workspacesLabel": "Workspaces",
+    "colWorkspaces": "Workspaces",
+    "allWorkspaces": "Tous les workspaces",
+    "allWorkspacesHint": "Y compris ceux créés plus tard.",
+    "noWorkspace": "Choisissez au moins un workspace.",
+    "adminAllWorkspaces": "Les propriétaires et les administrateurs accèdent à tous les workspaces de l'organisation.",
+    "editWorkspaces": "Modifier les workspaces",
+    "editWorkspacesTitle": "Workspaces de {name}",
+    "editWorkspacesHint": "Cette personne ne voit et n'ouvre que les workspaces cochés ici.",
+    "save": "Enregistrer",
+    "rolesTitle": "Rôles",
+    "rolesHint": "Ce que chaque rôle peut faire dans les workspaces auxquels il accède."
   },
   "secrets": {
     "title": "Identifiants",
@@ -113,7 +112,7 @@
       "workflow": "le workflow « {name} »",
       "function": "la fonction « {name} »",
       "webhook": "le webhook « {name} »",
-      "ai": "le fournisseur IA {name}"
+      "page": "la page « {name} »"
     }
   },
   "apiKeys": {
@@ -200,8 +199,7 @@
     "context": "Contexte",
     "apiKey": "Clé API",
     "reopen": "Rouvrir",
-    "markDone": "Traité",
-    "forbidden": "Réservé aux admins plateforme"
+    "markDone": "Traité"
   },
   "page": {
     "title": "Paramètres",
@@ -214,17 +212,8 @@
       "change": "Changer de plan",
       "manage": "Gérer la facturation"
     },
-    "usage": {
-      "title": "Usage",
-      "description": "Ce que ce compte utilise par rapport aux limites de son offre.",
-      "of": "{used} / {limit}",
-      "unlimited": "{used} · Illimité",
-      "reached": "Limite atteinte",
-      "records": "Fiches (ce workspace)",
-      "workspaces": "Workspaces",
-      "pages": "Interfaces publiées"
-    },
     "quota": {
+      "ask": "Limite du plan atteinte. Demandez à un propriétaire ou à un administrateur de changer de plan.",
       "link": "Changer de plan"
     },
     "plans": {
@@ -237,7 +226,11 @@
       "perYear": "/ an",
       "equivalent": "{price} / mois, facturé annuellement",
       "current": "Offre actuelle",
-      "choose": "Choisir"
+      "choose": "Choisir",
+      "compare": "Comparer les offres",
+      "feature": "Fonctionnalité",
+      "included": "Inclus",
+      "notIncluded": "Non inclus"
     }
   },
   "usage": {
@@ -247,11 +240,18 @@
     "unlimited": "{used} · Illimité",
     "reached": "Limite atteinte",
     "meters": {
-      "records": "Fiches (ce workspace)",
-      "runsPerMonth": "Runs ce mois-ci (tous les workspaces)",
-      "storageBytes": "Stockage de fichiers (tous les workspaces)",
-      "apiPerMinute": "Appels API cette minute (ce workspace)",
-      "workspaces": "Workspaces"
+      "records": "Fiches",
+      "runsPerMonth": "Runs ce mois-ci",
+      "storageBytes": "Stockage de fichiers",
+      "workspaces": "Workspaces",
+      "pages": "Interfaces publiées",
+      "aiBudgetUsd": "Dépenses IA ce mois-ci",
+      "runsPerMinute": "Runs démarrés cette minute",
+      "apiPerMinute": "Appels API cette minute"
+    },
+    "scope": {
+      "workspace": "Ce workspace",
+      "organization": "Toute l’organisation"
     }
   }
 }

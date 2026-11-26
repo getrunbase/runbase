@@ -3,13 +3,13 @@
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import postgres from "postgres";
-import { pageAi } from "./ai";
+import { pageAi, pageAiConfig } from "./ai";
 import { registerExtensions, resetExtensions } from "./extensions";
 import { invalidateEntitlements } from "./entitlements";
 import { handleSdkCall, permissionsSchema } from "./components/sdk";
 import { AI_PER_MINUTE } from "./quotas";
 import { secretsService } from "./secrets";
-import { aiSettingsService } from "./ai-providers";
+import type { AiConfig } from "./ai-providers";
 import type { TenantContext } from "./tenant";
 
 const keys: string[] = [];
@@ -43,7 +43,7 @@ async function owner(): Promise<TenantContext> {
   const [org] =
     await sql`insert into organizations (name) values ('A') returning id`;
   const [ws] =
-    await sql`insert into workspaces (organization_id, name, settings) values (${org!.id}, 'W', '{"ai":{"provider":"deepseek"}}') returning id`;
+    await sql`insert into workspaces (organization_id, name, settings) values (${org!.id}, 'W', '{}') returning id`;
   const uid = crypto.randomUUID();
   await sql`insert into "user" (id, name, email) values (${uid}, 'U', ${uid + "@x.io"})`;
   await sql`insert into memberships (user_id, organization_id, role) values (${uid}, ${org!.id}, 'owner')`;
@@ -56,12 +56,14 @@ async function owner(): Promise<TenantContext> {
 const month = () => new Date().toISOString().slice(0, 7);
 const code = (e: unknown) => (e as { code?: string }).code;
 const page = () => crypto.randomUUID();
+// AI configs declared by the page (`permissions.ai`).
+const DS: Record<string, AiConfig> = { default: { provider: "deepseek" } };
 
 test("useAI: workspace budget exhausted -> ai.budgetExceeded, no call", async () => {
   const ctx = await owner();
   await sql`update workspaces set ai_budget_usd = 1, ai_spent_usd = 1.5, ai_spent_month = ${month()} where id = ${ctx.workspaceId}`;
   const n = keys.length;
-  await assert.rejects(pageAi(ctx, page(), { prompt: "hi" }), (e) => {
+  await assert.rejects(pageAi(ctx, page(), DS, { prompt: "hi" }), (e) => {
     assert.equal(code(e), "ai.budgetExceeded");
     return true;
   });
@@ -79,7 +81,7 @@ test("useAI: entitlement cap applied without tenant preference", async () => {
   invalidateEntitlements();
   try {
     await sql`update workspaces set ai_spent_usd = 3, ai_spent_month = ${month()} where id = ${ctx.workspaceId}`;
-    await assert.rejects(pageAi(ctx, page(), { prompt: "hi" }), (e) => {
+    await assert.rejects(pageAi(ctx, page(), DS, { prompt: "hi" }), (e) => {
       assert.equal(code(e), "ai.budgetExceeded");
       return true;
     });
@@ -92,7 +94,7 @@ test("useAI: entitlement cap applied without tenant preference", async () => {
 test("useAI: tenant key used, never the platform key", async () => {
   const ctx = await owner();
   await secretsService.set(ctx, "DEEPSEEK_API_KEY", "cle-tenant");
-  const r = await pageAi(ctx, page(), { prompt: "hi" });
+  const r = await pageAi(ctx, page(), DS, { prompt: "hi" });
   assert.equal(r.text, "ok");
   assert.equal(keys.at(-1), "cle-tenant");
 });
@@ -100,11 +102,9 @@ test("useAI: tenant key used, never the platform key", async () => {
 test("useAI: secret chosen from the vault, resolved server-side", async () => {
   const ctx = await owner();
   await secretsService.set(ctx, "MA_CLE_DS", "cle-choisie");
-  await aiSettingsService.set(ctx, { provider: "deepseek", keySecret: "MA_CLE_DS" });
-  const got = await aiSettingsService.get(ctx);
-  assert.equal(got.keySecret, "MA_CLE_DS");
-  assert.ok(!JSON.stringify(got).includes("cle-choisie"));
-  await pageAi(ctx, page(), { prompt: "hi" });
+  const configs = { default: { provider: "deepseek", secret: "MA_CLE_DS" } } as const;
+  const r = await pageAi(ctx, page(), configs, { prompt: "hi" });
+  assert.ok(!JSON.stringify(r).includes("cle-choisie"));
   assert.equal(keys.at(-1), "cle-choisie");
 });
 
@@ -112,7 +112,7 @@ test("useAI: secret chosen from the vault, resolved server-side", async () => {
 test("useAI: no tenant key -> ai.providerKeyMissing, no call", async () => {
   const ctx = await owner();
   const n = keys.length;
-  await assert.rejects(pageAi(ctx, page(), { prompt: "hi" }), (e) => {
+  await assert.rejects(pageAi(ctx, page(), DS, { prompt: "hi" }), (e) => {
     assert.equal(code(e), "ai.providerKeyMissing");
     return true;
   });
@@ -124,15 +124,15 @@ test("useAI: rate limit per page then per workspace", async () => {
   await secretsService.set(ctx, "DEEPSEEK_API_KEY", "cle-tenant");
   const p = page();
   for (let i = 0; i < AI_PER_MINUTE.page; i++)
-    await pageAi(ctx, p, { prompt: "hi" });
-  await assert.rejects(pageAi(ctx, p, { prompt: "hi" }), (e) => {
+    await pageAi(ctx, p, DS, { prompt: "hi" });
+  await assert.rejects(pageAi(ctx, p, DS, { prompt: "hi" }), (e) => {
     assert.equal(code(e), "quotas.aiPerMinute");
     return true;
   });
   // Other pages: workspace cap (calls already counted: page + 1).
   const left = AI_PER_MINUTE.workspace - AI_PER_MINUTE.page - 1;
-  for (let i = 0; i < left; i++) await pageAi(ctx, page(), { prompt: "hi" });
-  await assert.rejects(pageAi(ctx, page(), { prompt: "hi" }), (e) => {
+  for (let i = 0; i < left; i++) await pageAi(ctx, page(), DS, { prompt: "hi" });
+  await assert.rejects(pageAi(ctx, page(), DS, { prompt: "hi" }), (e) => {
     assert.equal(code(e), "quotas.aiPerMinute");
     return true;
   });
@@ -155,26 +155,65 @@ test("useAI: undeclared ai permission -> refused before any call", async () => {
   assert.equal(keys.length, n);
   const ok = (await handleSdkCall(
     ctx,
-    permissionsSchema.parse({ ai: true }),
+    permissionsSchema.parse({ ai: DS }),
     { method: "ai", args: { prompt: "hi" } },
     host,
   )) as { text: string };
   assert.equal(ok.text, "ok");
 });
 
-test("pageAi: no provider chosen -> ai.providerNotConfigured", async () => {
+test("pageAi: default and named configs resolved from the page", async () => {
   const ctx = await owner();
-  await sql`update workspaces set settings = '{}' where id = ${ctx.workspaceId}`;
-  await assert.rejects(pageAi(ctx, page(), { prompt: "x" }), {
-    code: "ai.providerNotConfigured",
+  await secretsService.set(ctx, "DEEPSEEK_API_KEY", "cle-ds");
+  await secretsService.set(ctx, "OPENAI_KEY", "cle-oa");
+  const configs: Record<string, AiConfig> = {
+    default: { provider: "deepseek" },
+    summary: { provider: "openai", model: "gpt-6-luna", secret: "OPENAI_KEY" },
+  };
+  await pageAi(ctx, page(), configs, { prompt: "hi" });
+  assert.equal(keys.at(-1), "cle-ds");
+  await pageAi(ctx, page(), configs, { prompt: "hi", name: "summary" });
+  assert.equal(keys.at(-1), "cle-oa");
+  assert.equal(pageAiConfig(configs, "summary").model, "gpt-6-luna");
+});
+
+test("pageAi: unknown name or no config -> ai.pageNotConfigured, no call", async () => {
+  const ctx = await owner();
+  await secretsService.set(ctx, "DEEPSEEK_API_KEY", "cle-ds");
+  const n = keys.length;
+  await assert.rejects(
+    pageAi(ctx, page(), DS, { prompt: "x", name: "nope" }),
+    { code: "ai.pageNotConfigured", params: { name: "nope", declared: "default" } },
+  );
+  // Only named configs: no implicit `default`.
+  await assert.rejects(
+    pageAi(ctx, page(), { summary: { provider: "deepseek" } }, { prompt: "x" }),
+    { code: "ai.pageNotConfigured", params: { name: "default", declared: "summary" } },
+  );
+  await assert.rejects(pageAi(ctx, page(), {}, { prompt: "x" }), {
+    code: "ai.pageNotConfigured",
+    params: { name: "default", declared: "none" },
   });
+  // Prototype keys are not configs.
+  assert.throws(() => pageAiConfig(DS, "constructor"), { code: "ai.pageNotConfigured" });
+  assert.equal(keys.length, n);
+});
+
+test("pageAi: declared secret missing from the vault -> ai.providerKeyMissing", async () => {
+  const ctx = await owner();
+  const n = keys.length;
+  await assert.rejects(
+    pageAi(ctx, page(), { default: { provider: "deepseek", secret: "ABSENT" } }, { prompt: "x" }),
+    { code: "ai.providerKeyMissing", params: { secret: "ABSENT", provider: "DeepSeek" } },
+  );
+  assert.equal(keys.length, n);
 });
 
 // Provider-agnostic budget: not tied to DeepSeek.
 test("useAI: non-DeepSeek provider spend is counted in the budget", async () => {
   const ctx = await owner();
-  await aiSettingsService.set(ctx, { provider: "openai", key: "cle-openai" });
-  await pageAi(ctx, page(), { prompt: "hi" });
+  await secretsService.set(ctx, "OPENAI_API_KEY", "cle-openai");
+  await pageAi(ctx, page(), { default: { provider: "openai" } }, { prompt: "hi" });
   assert.equal(keys.at(-1), "cle-openai");
   const [w] =
     await sql`select ai_spent_usd from workspaces where id = ${ctx.workspaceId}`;
@@ -196,15 +235,7 @@ const runStatus = async (id: string) =>
 
 test("budget resume: OPENAI_API_KEY secret resumes runs (not only DeepSeek)", async () => {
   const ctx = await owner();
-  await aiSettingsService.set(ctx, { provider: "openai" });
   const id = await pausedRun(ctx);
   await secretsService.set(ctx, "OPENAI_API_KEY", "cle-openai");
-  assert.equal(await runStatus(id), "running");
-});
-
-test("budget resume: key given in AI settings resumes runs for any provider", async () => {
-  const ctx = await owner();
-  const id = await pausedRun(ctx);
-  await aiSettingsService.set(ctx, { provider: "anthropic", key: "cle-claude" });
   assert.equal(await runStatus(id), "running");
 });

@@ -7,7 +7,7 @@ description: "Les outils workspaces.* du serveur MCP de Runbase, générés à p
 
 ## workspaces.ai_budget
 
-Budget IA mensuel de l'espace de travail : plafond en USD, dépense du mois, épuisé ou non.
+Budget IA mensuel de l'espace de travail (périmètre admin) : plafond en USD, dépense du mois, épuisé ou non.
 
 | Nom         | Type   | Requis | Description                                                                        |
 | ----------- | ------ | ------ | ---------------------------------------------------------------------------------- |
@@ -49,7 +49,7 @@ Renomme un espace de travail.
 
 ## workspaces.set_ai_budget
 
-Définit le budget IA mensuel en USD (null = illimité). À 100 %, les blocs d'IA sont bloqués et les exécutions passent en paused_budget ; elles reprennent si le budget est relevé. Plafonné par la limite du compte (quota:aiBudgetUsd) : une valeur supérieure est refusée. Il n'existe pas de clé d'IA de la plateforme : sans clé de fournisseur propre à l'espace de travail, les appels d'IA échouent avec ai.providerNotConfigured.
+Définit le budget IA mensuel en USD (null = illimité). À 100 %, les blocs d'IA sont bloqués et les exécutions passent en paused_budget ; elles reprennent si le budget est relevé. Plafonné par la limite du compte (quota:aiBudgetUsd) : une valeur supérieure est refusée. Il n'existe ni clé d'IA de la plateforme ni IA par défaut de l'espace de travail : chaque bloc d'IA (`ai` dans son entrée) et chaque page (`permissions.ai`) indique son fournisseur, son modèle et le secret de sa clé.
 
 | Nom         | Type   | Requis | Description                                                                        |
 | ----------- | ------ | ------ | ---------------------------------------------------------------------------------- |

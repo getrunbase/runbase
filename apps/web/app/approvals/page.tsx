@@ -12,6 +12,7 @@ import { cn } from "cn";
 import { getTenant } from "@/lib/tenant";
 import { decideRun } from "./actions";
 import { pageTitle } from "@/lib/page-title";
+import { ActionForm } from "@/components/action-form";
 
 export const generateMetadata = pageTitle("approvals");
 
@@ -54,7 +55,7 @@ export default async function Approvals() {
       ) : (
         <div className="flex flex-col gap-3">
           {runs.map((r, i) => (
-            <form
+            <ActionForm
               key={r.id}
               action={decideRun}
               className={cn(
@@ -111,7 +112,7 @@ export default async function Approvals() {
                   </Link>
                 </Button>
               </div>
-            </form>
+            </ActionForm>
           ))}
         </div>
       )}

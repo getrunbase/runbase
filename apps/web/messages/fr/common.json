@@ -149,6 +149,7 @@
       "keyLink": "Créez une clé dans <link>Clés API</link>."
     }
   },
+  "adminOnly": "Seul un administrateur peut modifier ce réglage.",
   "agentPrompts": {
     "title": "Demandez à votre IA",
     "copy": "Copier",

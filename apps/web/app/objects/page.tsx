@@ -7,6 +7,7 @@ import { AgentPrompts } from "@/components/agent-prompts";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
 import { Card } from "@getrunbase/ui/components/ui/card";
+import { isAdminRole } from "@/lib/roles";
 import { getTenant } from "@/lib/tenant";
 import { NewObjectDialog } from "./new-object-dialog";
 import { relationTargets } from "./targets";
@@ -17,7 +18,9 @@ export const generateMetadata = pageTitle("objects");
 // Workspace object list and creation.
 export default async function Objects() {
   const t = await getTranslations("objects");
-  const { ctx } = await getTenant();
+  const { ctx, role } = await getTenant();
+  // Creating objects: admins only.
+  const isAdmin = isAdminRole(role);
   const [list, targets] = await Promise.all([
     objectsService.list(ctx),
     relationTargets(ctx),
@@ -25,7 +28,7 @@ export default async function Objects() {
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:p-6">
       <PageHeader title={t("list.title")} description={t("list.description")}>
-        <NewObjectDialog targets={targets} />
+        {isAdmin && <NewObjectDialog targets={targets} />}
       </PageHeader>
       {list.length === 0 ? (
         <EmptyState
@@ -34,7 +37,7 @@ export default async function Objects() {
           description={t("list.emptyDescription")}
         >
           <AgentPrompts group="databases" />
-          <NewObjectDialog targets={targets} />
+          {isAdmin && <NewObjectDialog targets={targets} />}
         </EmptyState>
       ) : (
         <Card className="gap-0 divide-y py-0">
