@@ -8,6 +8,7 @@ import * as schema from "../db/schema";
 import { memberships, organizations, user, workspaces } from "../db/schema";
 import { emailSender } from "../email";
 import { track } from "../extensions";
+import { attributionFromCookieHeader } from "./attribution";
 import {
   magicLinkEmail,
   resetPasswordEmail,
@@ -148,7 +149,7 @@ export const auth = betterAuth({
           data: { ...u, name: u.name?.trim() || nameFromEmail(u.email) },
         }),
         // Each account gets its organization (owner) and a default workspace.
-        after: async (user) => {
+        after: async (user, ctx) => {
           const organizationId = await db.transaction(async (tx) => {
             const [org] = await tx
               .insert(organizations)
@@ -165,7 +166,13 @@ export const auth = betterAuth({
             return org!.id;
           });
           // Product analytics (no-op without extension): never the email or name.
-          await track("user.signed_up", { userId: user.id, organizationId });
+          // First-touch attribution (UTM, click IDs) from the signup request.
+          const cookie = ctx?.headers?.get("cookie") ?? ctx?.request?.headers.get("cookie");
+          await track("user.signed_up", {
+            ...attributionFromCookieHeader(cookie),
+            userId: user.id,
+            organizationId,
+          });
         },
       },
     },

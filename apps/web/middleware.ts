@@ -6,6 +6,11 @@ import {
   ipRateLimit,
   tooLarge,
 } from "@/lib/request-limits";
+import {
+  ATTRIBUTION_COOKIE,
+  ATTRIBUTION_MAX_AGE,
+  attributionFromQuery,
+} from "@getrunbase/core/auth/attribution";
 
 // Public routes (hooks, ingest, auth, MCP): per-IP limit before any
 // authentication, 429 + Retry-After; declared body too large: 413 (the
@@ -38,6 +43,26 @@ const hasSessionCookie = (req: NextRequest) =>
 // ponytail: optimistic check (cookie present); pages re-check the
 // session (getTenant), so an expired cookie also ends up on /login.
 export async function middleware(req: NextRequest) {
+  return withAttribution(req, await route(req));
+}
+
+// First touch: the first visit carrying UTM or click IDs sets the cookie,
+// never overwritten (read at signup, see @getrunbase/core/auth/attribution).
+function withAttribution(req: NextRequest, res: Response) {
+  if (req.cookies.has(ATTRIBUTION_COOKIE) || !(res instanceof NextResponse)) return res;
+  const a = attributionFromQuery(req.nextUrl.searchParams);
+  if (a)
+    // Next URL-encodes the value itself: pass the raw JSON.
+    res.cookies.set(ATTRIBUTION_COOKIE, JSON.stringify(a), {
+      maxAge: ATTRIBUTION_MAX_AGE,
+      sameSite: "lax",
+      secure: req.nextUrl.protocol === "https:",
+      path: "/",
+    });
+  return res;
+}
+
+async function route(req: NextRequest): Promise<Response> {
   const { pathname, search } = req.nextUrl;
   if (pathname.startsWith("/api/"))
     return (await guardApi(req)) ?? NextResponse.next();
