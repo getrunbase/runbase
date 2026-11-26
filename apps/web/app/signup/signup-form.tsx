@@ -5,11 +5,12 @@ import { useTranslations } from "next-intl";
 import { z } from "zod";
 import { AuthForm } from "@/components/auth-form";
 import { AuthFooter } from "@/components/auth-shell";
+import { GoogleButton } from "@/components/google-button";
 import { signUpWithPassword } from "@/lib/auth-client";
 
 // Password sign-up: the organization and the workspace are created by
 // the core databaseHooks; invitations stay on /invitations.
-export function SignupForm() {
+export function SignupForm({ google }: { google: boolean }) {
   const query = useSearchParams().toString();
   const t = useTranslations("auth.login");
   const tp = useTranslations("auth.password");
@@ -49,6 +50,7 @@ export function SignupForm() {
       onSubmit={({ name, email, password }) =>
         signUpWithPassword({ name, email, password }, tp)
       }
+      alternative={google && <GoogleButton />}
       footer={
         <AuthFooter
           question={tp("hasAccount")}

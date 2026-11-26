@@ -71,6 +71,10 @@ common optional ones:
   (invitations, magic link) set one through the reset link.
 - **Sign-ups.** Closed by default; set `SIGNUPS_ENABLED=true` to open them, or
   create accounts with `pnpm admin:create` as above.
+- **Sign in with Google.** Set `OAUTH_GOOGLE_CLIENT_ID` and
+  `OAUTH_GOOGLE_CLIENT_SECRET` (the same Google OAuth client as the Google
+  connectors) to show a "Continue with Google" button on the sign-in and
+  sign-up pages. See [Sign in with Google](#sign-in-with-google).
 - **AI blocks.** No platform key: each workspace adds its own provider key as a secret (Settings › Secrets), and every AI block and page names the provider, model and secret it uses.
 - **Code component runtime.** `NEXT_PUBLIC_RUNTIME_ORIGIN` serves the
   sandboxed iframe of code components from a second domain pointing to the same
@@ -107,6 +111,25 @@ failed ping (network, receiver down) is ignored and never affects the app.
 
 **Opt out:** set `RUNBASE_TELEMETRY=0` in `.env`, then apply the change. The
 worker then sends no request at all.
+
+## Sign in with Google
+
+One Google OAuth client serves both sign-in and the Google connectors.
+
+1. In the Google Cloud console, create (or reuse) an OAuth client of type
+   "Web application".
+2. Add the authorized redirect URI
+   `<BETTER_AUTH_URL>/api/auth/callback/google` (for example
+   `https://runbase.example.com/api/auth/callback/google`), next to the
+   connector redirect URI if you already use one.
+3. Set `OAUTH_GOOGLE_CLIENT_ID` and `OAUTH_GOOGLE_CLIENT_SECRET`, then restart
+   the `web` container.
+
+Sign-in only requests `openid`, `email` and `profile`: these scopes are
+non-sensitive, so the consent screen needs no Google verification. A Google
+account whose verified email matches an existing account is linked to it,
+not duplicated. With sign-ups closed (`SIGNUPS_ENABLED` unset), Google sign-in
+works for existing accounts and invited members only.
 
 ## Reverse proxy (HTTPS)
 

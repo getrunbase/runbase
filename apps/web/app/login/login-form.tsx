@@ -6,18 +6,31 @@ import { z } from "zod";
 import type { AuthMethod } from "@getrunbase/core/env";
 import { AuthForm } from "@/components/auth-form";
 import { AuthFooter } from "@/components/auth-shell";
-import { sendMagicLink, signInWithPassword } from "@/lib/auth-client";
+import { GoogleButton } from "@/components/google-button";
+import {
+  googleErrorKey,
+  sendMagicLink,
+  signInWithPassword,
+} from "@/lib/auth-client";
 
 export function LoginForm({
   authMethod,
   canReset,
+  google,
 }: {
   authMethod: AuthMethod;
   canReset: boolean;
+  // A Google OAuth client is configured (server-computed).
+  google: boolean;
 }) {
   const params = useSearchParams();
-  const expired = params.get("error");
   const t = useTranslations("auth.login");
+  // Failed Google sign-in (?google=1&error=...) vs expired magic link.
+  const googleError = googleErrorKey(params);
+  const expired = !googleError && params.get("error");
+  const alternative = google && (
+    <GoogleButton error={googleError && t(googleError)} />
+  );
   const tp = useTranslations("auth.password");
   const email = {
     name: "email",
@@ -35,6 +48,7 @@ export function LoginForm({
         fields={[email]}
         submitLabel={t("submit")}
         onSubmit={(v) => sendMagicLink(v.email, t)}
+        alternative={alternative}
       />
     );
 
@@ -54,6 +68,7 @@ export function LoginForm({
       ]}
       submitLabel={tp("loginSubmit")}
       onSubmit={(v) => signInWithPassword(v.email, v.password, tp)}
+      alternative={alternative}
       footer={
         <div className="flex flex-col items-center gap-2">
           <AuthFooter
