@@ -106,7 +106,12 @@
       "timezone": "Time zone",
       "occurredAt": "Event date",
       "idempotencyKey": "Unique ID",
-      "ai": "AI"
+      "ai": "AI",
+      "connection": "Account",
+      "spreadsheetId": "Spreadsheet",
+      "range": "Tab",
+      "rows": "Rows",
+      "calendarId": "Calendar"
     },
     "operator": {
       "eq": "equals",
@@ -533,7 +538,7 @@
     "chooseList": "Choose a list",
     "noList": "No upstream list. Add “Search records” before this step, or “Get record” with an included relation.",
     "keepWhere": "Keep records where all these conditions are true",
-    "columns": "Columns for each item",
+    "columns": "Columns",
     "columnsHelp": "Each record becomes a row with these columns (e.g. for an email, a spreadsheet, an AI).",
     "columnName": "Column name",
     "removeColumn": "Remove column",
@@ -549,7 +554,23 @@
       "noSecret": "No API key saved in this workspace yet.",
       "addKey": "Add a key",
       "required": "Required: choose the provider, model and key this block runs with."
-    }
+    },
+    "optionsLoading": "Loading…",
+    "optionsPlaceholder": "Choose…",
+    "optionsEmpty": "Nothing to choose from",
+    "chooseInDrive": "Choose in Drive",
+    "changeFile": "Choose another file",
+    "pickerFailed": "Google Drive could not open, try again",
+    "pickerNotConfigured": "Choosing a file in Drive is not set up on this instance (GOOGLE_PICKER_API_KEY and GOOGLE_PICKER_APP_ID): enter the spreadsheet id from its URL.",
+    "spreadsheetIdManual": "Spreadsheet id",
+    "columnEmpty": "Empty",
+    "noColumns": "The first row of this tab has no column names.",
+    "advanced": "Advanced options",
+    "cells": "Cells",
+    "cellsHelp": "Optional range in the tab, e.g. A2:C10. Empty: the whole tab.",
+    "firstRowHeaders": "First row holds the column names",
+    "rowsJson": "Rows (JSON)",
+    "rowsJsonHelp": "To add several rows or a list from a previous step: an array of objects keyed by column name."
   },
   "pickers": {
     "chooseObject": "Choose a table",

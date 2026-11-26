@@ -13,13 +13,14 @@ When you self-host, you create your own Google OAuth client once, as below.
 
 ## What Runbase asks Google for
 
-| Scope                                             | What it allows                                          | Google level  |
-| ------------------------------------------------- | ------------------------------------------------------- | ------------- |
-| `openid`, `email`                                 | Show which account is connected                         | Non-sensitive |
-| `https://www.googleapis.com/auth/gmail.send`      | Send emails (no reading of the mailbox)                 | Sensitive     |
-| `https://www.googleapis.com/auth/calendar.events` | Read, create, update and delete events                  | Sensitive     |
-| `https://www.googleapis.com/auth/spreadsheets`    | Read and write Google Sheets                            | Sensitive     |
-| `https://www.googleapis.com/auth/drive.file`      | Create files; only files created by Runbase are visible | Non-sensitive |
+| Scope                                                            | What it allows                                                             | Google level  |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------- |
+| `openid`, `email`                                                | Show which account is connected                                            | Non-sensitive |
+| `https://www.googleapis.com/auth/gmail.send`                     | Send emails (no reading of the mailbox)                                    | Sensitive     |
+| `https://www.googleapis.com/auth/calendar.events`                | Read, create, update and delete events                                     | Sensitive     |
+| `https://www.googleapis.com/auth/calendar.calendarlist.readonly` | List the account's calendars (calendar dropdown of a step)                 | Sensitive     |
+| `https://www.googleapis.com/auth/spreadsheets`                   | Read and write Google Sheets                                               | Sensitive     |
+| `https://www.googleapis.com/auth/drive.file`                     | Create files; only files created by Runbase or picked in Drive are visible | Non-sensitive |
 
 None of these is a **restricted** scope, so no paid security assessment (CASA)
 is needed. Do not add `gmail.readonly`, `gmail.modify`, `https://mail.google.com/`
@@ -30,7 +31,7 @@ or `drive`: they are restricted and require that assessment.
 1. Open the [Google Cloud console](https://console.cloud.google.com/) and create
    a project (for example "Runbase").
 2. In **APIs & Services › Library**, enable **Gmail API**, **Google Calendar API**,
-   **Google Sheets API** and **Google Drive API**.
+   **Google Sheets API**, **Google Drive API** and **Google Picker API**.
 
 ## 2. Configure the consent screen
 
@@ -65,7 +66,32 @@ The `web` container runs the Google sign-in; the `worker` refreshes access
 when workflows run, so both need the values. Without them, Google shows as
 "Not configured" in Settings › Connections.
 
-## 5. Testing, then production
+## 5. Choose spreadsheets in Drive (Google Picker)
+
+Google Sheets steps have a **Choose in Drive** button: it opens Google's own
+file picker, so nobody has to copy a spreadsheet id. It needs two more values:
+
+1. In **APIs & Services › Library**, enable **Google Picker API**.
+2. In **APIs & Services › Credentials**, create an **API key**. Restrict it:
+   - **Application restrictions**: **Websites**, with your app's address, for
+     example `https://runbase.example.com/*` (`http://localhost:7100/*` in
+     development).
+   - **API restrictions**: **Google Picker API** only.
+3. Find the **project number** on the project's **Dashboard** (or
+   **IAM & Admin › Settings**): digits only, not the project id. Google uses it
+   to grant Runbase access to the picked file (`drive.file` scope).
+4. Add both to `.env` and restart `web`:
+
+```sh
+GOOGLE_PICKER_API_KEY=AIza...
+GOOGLE_PICKER_APP_ID=123456789012
+```
+
+The API key is public by design (the browser sends it), which is why it is
+restricted to the Picker API and to your domain. Without these values, Sheets
+steps ask for the spreadsheet id instead.
+
+## 6. Testing, then production
 
 - **Testing** (default): works right away, only for the test users you listed,
   and Google asks them to reconnect every 7 days.
@@ -82,6 +108,10 @@ when workflows run, so both need the values. Without them, Google shows as
 1. Add a Google step, for example **Google Calendar: list events**.
 2. In **Account**, pick a connected account or choose **Connect a Google
    account**: Google opens in a popup, you approve, the account is selected.
+   Then pick the **Calendar** from the account's list (the main calendar by
+   default). In a Google Sheets step, **Choose in Drive** picks the
+   spreadsheet, then the **Tab** and, to add rows, a value for each column of
+   the first row.
 3. Each account is named after its email. With a single Google account in the
    workspace, steps use it by default; with several, each step names the one
    to use (the `connection` input, also listed by the `connections.list` MCP

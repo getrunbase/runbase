@@ -56,6 +56,8 @@
   "blocks.dateFormatInvalid": "Format de date invalide « {format} » : jeton inconnu « {token} ». Jetons pris en charge : {tokens}",
   "blocks.formatterInvalid": "Formatter {op} : entrée invalide « {input} »",
   "blocks.connectorBadResult": "{type} : le connecteur n'a renvoyé aucune branche",
+  "blocks.connectorBadOptions": "{type} : le connecteur n'a renvoyé aucun choix",
+  "blocks.noOptions": "{type} ne propose pas de choix pour {field}",
   "ai.budgetExceeded": "Budget IA dépassé pour ce workspace ({max} USD par mois)",
   "ai.providerError": "Erreur du fournisseur IA {status}",
   "ai.budgetReached": "Budget IA atteint pour ce workspace. Augmentez-le dans les Paramètres pour continuer : les runs en pause reprendront.",

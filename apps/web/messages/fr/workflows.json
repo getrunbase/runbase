@@ -106,7 +106,12 @@
       "timezone": "Fuseau horaire",
       "occurredAt": "Date de l'événement",
       "idempotencyKey": "Identifiant unique",
-      "ai": "IA"
+      "ai": "IA",
+      "connection": "Compte",
+      "spreadsheetId": "Feuille",
+      "range": "Onglet",
+      "rows": "Lignes",
+      "calendarId": "Agenda"
     },
     "operator": {
       "eq": "est égal à",
@@ -533,7 +538,7 @@
     "chooseList": "Choisir une liste",
     "noList": "Aucune liste en amont. Ajoutez avant cette étape « Rechercher des fiches », ou « Lire une fiche » avec une relation incluse.",
     "keepWhere": "Garder les fiches où toutes ces conditions sont vraies",
-    "columns": "Colonnes de chaque élément",
+    "columns": "Colonnes",
     "columnsHelp": "Chaque fiche devient une ligne avec ces colonnes (ex. pour un e-mail, un tableau, une IA).",
     "columnName": "Nom de la colonne",
     "removeColumn": "Supprimer la colonne",
@@ -549,7 +554,23 @@
       "noSecret": "Aucune clé API enregistrée dans ce workspace.",
       "addKey": "Ajouter une clé",
       "required": "Obligatoire : choisissez le fournisseur, le modèle et la clé utilisés par ce bloc."
-    }
+    },
+    "optionsLoading": "Chargement…",
+    "optionsPlaceholder": "Choisir…",
+    "optionsEmpty": "Aucun choix disponible",
+    "chooseInDrive": "Choisir dans Drive",
+    "changeFile": "Choisir un autre fichier",
+    "pickerFailed": "Google Drive n’a pas pu s’ouvrir, réessayez",
+    "pickerNotConfigured": "Le choix d’un fichier dans Drive n’est pas configuré sur cette instance (GOOGLE_PICKER_API_KEY et GOOGLE_PICKER_APP_ID) : saisissez l’identifiant de la feuille, visible dans son URL.",
+    "spreadsheetIdManual": "Identifiant de la feuille",
+    "columnEmpty": "Vide",
+    "noColumns": "La première ligne de cet onglet ne contient aucun nom de colonne.",
+    "advanced": "Options avancées",
+    "cells": "Cellules",
+    "cellsHelp": "Plage facultative dans l’onglet, par ex. A2:C10. Vide : tout l’onglet.",
+    "firstRowHeaders": "La première ligne contient les noms de colonnes",
+    "rowsJson": "Lignes (JSON)",
+    "rowsJsonHelp": "Pour ajouter plusieurs lignes ou une liste d’une étape précédente : un tableau d’objets indexés par nom de colonne."
   },
   "pickers": {
     "chooseObject": "Choisir une table",

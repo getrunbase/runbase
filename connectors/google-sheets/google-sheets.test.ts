@@ -26,6 +26,7 @@ test("every node: google OAuth provider, scopes without security assessment", ()
     "email",
     "https://www.googleapis.com/auth/gmail.send",
     "https://www.googleapis.com/auth/calendar.events",
+    "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive.file",
   ]);
@@ -82,4 +83,65 @@ test("sheets.append_rows: unknown column refused", async () => {
     ),
     /Columns not in the header row of Leads: phone/,
   );
+});
+
+test("sheets: choices for the step form (file name, tabs, header columns)", async () => {
+  const { calls, fetch } = mock(
+    [200, { properties: { title: "Leads 2026" } }],
+    [
+      200,
+      {
+        sheets: [
+          { properties: { title: "Leads" } },
+          { properties: { title: "Old" } },
+        ],
+      },
+    ],
+    [200, { values: [["email", "name", ""]] }],
+  );
+  assert.deepEqual(readRows.manifest().options, ["spreadsheetId", "range"]);
+  assert.deepEqual(appendRows.manifest().options, [
+    "spreadsheetId",
+    "range",
+    "rows",
+  ]);
+  assert.deepEqual(
+    await readRows.loadOptions(
+      "spreadsheetId",
+      { spreadsheetId: "s1" },
+      { fetch },
+    ),
+    [{ value: "s1", label: "Leads 2026" }],
+  );
+  assert.match(calls[0]!.url, /spreadsheets\/s1\?fields=properties.title$/);
+  assert.deepEqual(
+    await updateRows.loadOptions("range", { spreadsheetId: "s1" }, { fetch }),
+    [
+      { value: "Leads", label: "Leads" },
+      { value: "Old", label: "Old" },
+    ],
+  );
+  assert.match(calls[1]!.url, /\?fields=sheets.properties.title$/);
+  assert.deepEqual(
+    await appendRows.loadOptions(
+      "rows",
+      { spreadsheetId: "s1", range: "Leads" },
+      { fetch },
+    ),
+    [
+      { value: "email", label: "email" },
+      { value: "name", label: "name" },
+    ],
+  );
+  // Nothing picked yet, or a variable: no call.
+  assert.deepEqual(await appendRows.loadOptions("range", {}, { fetch }), []);
+  assert.deepEqual(
+    await appendRows.loadOptions(
+      "rows",
+      { spreadsheetId: "{{x}}", range: "A" },
+      { fetch },
+    ),
+    [],
+  );
+  assert.equal(calls.length, 3);
 });

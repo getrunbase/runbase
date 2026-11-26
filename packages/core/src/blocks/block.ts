@@ -141,6 +141,9 @@ export class StopError extends Error {}
 
 export type BlockApp = { name: string; label: string; logo?: string };
 
+// Choice of a dynamic input (step form dropdown).
+export type BlockOption = { value: string; label: string };
+
 export type Block<
   I extends z.ZodType = z.ZodType,
   O extends z.ZodType = z.ZodType,
@@ -167,6 +170,14 @@ export type Block<
   // App the block belongs to (connector nodes): folder name, label and
   // optional logo as a data URL.
   app?: BlockApp;
+  // Inputs whose choices are loaded on demand (connector nodes), and the
+  // loader: called with the inputs already filled in the step form.
+  optionFields?: readonly string[];
+  options?: (
+    field: string,
+    input: unknown,
+    ctx: BlockContext,
+  ) => Promise<BlockOption[]>;
   // Simulated result in dry run; by default, first branch and null output.
   simulate?: (input: z.infer<I>) => BlockResult<O>;
   run: (input: z.infer<I>, ctx: BlockContext) => Promise<BlockResult<O>>;

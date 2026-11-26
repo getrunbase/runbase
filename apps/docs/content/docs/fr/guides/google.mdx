@@ -14,13 +14,14 @@ En auto-hébergement, vous créez une fois votre propre client OAuth Google, com
 
 ## Ce que Runbase demande à Google
 
-| Scope                                             | Ce qu'il permet                                                 | Niveau Google |
-| ------------------------------------------------- | --------------------------------------------------------------- | ------------- |
-| `openid`, `email`                                 | Afficher le compte connecté                                     | Non sensible  |
-| `https://www.googleapis.com/auth/gmail.send`      | Envoyer des emails (aucune lecture de la boîte)                 | Sensible      |
-| `https://www.googleapis.com/auth/calendar.events` | Lire, créer, modifier et supprimer des événements               | Sensible      |
-| `https://www.googleapis.com/auth/spreadsheets`    | Lire et écrire dans Google Sheets                               | Sensible      |
-| `https://www.googleapis.com/auth/drive.file`      | Créer des fichiers ; seuls ceux créés par Runbase sont visibles | Non sensible  |
+| Scope                                                            | Ce qu'il permet                                                                       | Niveau Google |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------- |
+| `openid`, `email`                                                | Afficher le compte connecté                                                           | Non sensible  |
+| `https://www.googleapis.com/auth/gmail.send`                     | Envoyer des emails (aucune lecture de la boîte)                                       | Sensible      |
+| `https://www.googleapis.com/auth/calendar.events`                | Lire, créer, modifier et supprimer des événements                                     | Sensible      |
+| `https://www.googleapis.com/auth/calendar.calendarlist.readonly` | Lister les agendas du compte (liste des agendas d'une étape)                          | Sensible      |
+| `https://www.googleapis.com/auth/spreadsheets`                   | Lire et écrire dans Google Sheets                                                     | Sensible      |
+| `https://www.googleapis.com/auth/drive.file`                     | Créer des fichiers ; seuls ceux créés par Runbase ou choisis dans Drive sont visibles | Non sensible  |
 
 Aucun de ces scopes n'est **restreint** : pas d'audit de sécurité payant (CASA).
 N'ajoutez pas `gmail.readonly`, `gmail.modify`, `https://mail.google.com/` ni
@@ -31,7 +32,8 @@ N'ajoutez pas `gmail.readonly`, `gmail.modify`, `https://mail.google.com/` ni
 1. Ouvrez la [console Google Cloud](https://console.cloud.google.com/) et créez
    un projet (par exemple « Runbase »).
 2. Dans **API et services › Bibliothèque**, activez **Gmail API**,
-   **Google Calendar API**, **Google Sheets API** et **Google Drive API**.
+   **Google Calendar API**, **Google Sheets API**, **Google Drive API** et
+   **Google Picker API**.
 
 ## 2. Configurer l'écran de consentement
 
@@ -67,7 +69,35 @@ Le conteneur `web` gère la connexion Google ; le `worker` renouvelle l'accès
 pendant les exécutions : les deux ont besoin des valeurs. Sans elles, Google
 apparaît « Non configuré » dans Paramètres › Connexions.
 
-## 5. Test, puis production
+## 5. Choisir les feuilles dans Drive (Google Picker)
+
+Les étapes Google Sheets ont un bouton **Choisir dans Drive** : il ouvre le
+sélecteur de fichiers de Google, personne n'a à copier l'identifiant d'une
+feuille. Il demande deux valeurs de plus :
+
+1. Dans **API et services › Bibliothèque**, activez **Google Picker API**.
+2. Dans **API et services › Identifiants**, créez une **clé API**.
+   Restreignez-la :
+   - **Restrictions relatives aux applications** : **Sites web**, avec
+     l'adresse de votre app, par exemple `https://runbase.example.com/*`
+     (`http://localhost:7100/*` en développement).
+   - **Restrictions relatives aux API** : **Google Picker API** uniquement.
+3. Relevez le **numéro du projet** dans le **Tableau de bord** du projet (ou
+   **IAM et administration › Paramètres**) : des chiffres uniquement, pas l'ID
+   du projet. Google s'en sert pour donner à Runbase l'accès au fichier choisi
+   (scope `drive.file`).
+4. Ajoutez les deux dans `.env` et redémarrez `web` :
+
+```sh
+GOOGLE_PICKER_API_KEY=AIza...
+GOOGLE_PICKER_APP_ID=123456789012
+```
+
+La clé API est publique par nature (le navigateur l'envoie) : c'est pourquoi
+elle est restreinte à Google Picker API et à votre domaine. Sans ces valeurs,
+les étapes Sheets demandent l'identifiant de la feuille.
+
+## 6. Test, puis production
 
 - **Test** (par défaut) : fonctionne tout de suite, uniquement pour les
   utilisateurs test listés, et Google leur demande de se reconnecter tous les 7 jours.
@@ -86,7 +116,10 @@ apparaît « Non configuré » dans Paramètres › Connexions.
 1. Ajoutez une étape Google, par exemple **Google Calendar: list events**.
 2. Dans **Compte**, choisissez un compte connecté ou **Connecter un compte
    google** : Google s'ouvre dans une popup, vous validez, le compte est
-   sélectionné.
+   sélectionné. Choisissez ensuite l'**Agenda** dans la liste du compte
+   (l'agenda principal par défaut). Dans une étape Google Sheets,
+   **Choisir dans Drive** sélectionne la feuille, puis l'**Onglet** et, pour
+   ajouter des lignes, une valeur pour chaque colonne de la première ligne.
 3. Chaque compte porte le nom de son email. Avec un seul compte Google dans le
    workspace, les étapes l'utilisent par défaut ; avec plusieurs, chaque étape
    indique lequel utiliser (l'entrée `connection`, listée aussi par l'outil

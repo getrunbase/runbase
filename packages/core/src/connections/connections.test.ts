@@ -13,6 +13,7 @@ import {
   verifyState,
   idTokenEmail,
 } from "./index";
+import { blocksService } from "../blocks";
 
 const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
 const realFetch = globalThis.fetch;
@@ -150,6 +151,26 @@ test("connect, refresh, isolate and disconnect", async () => {
   });
   assert.equal((await svc.list(a)).length, 2);
   await assert.rejects(accessToken(a, acme), /Several acme connections/);
+
+  // Step form: dynamic choices run in the sandbox with the named connection;
+  // the Picker token is the connection's own token.
+  assert.deepEqual(
+    await blocksService.options(a, "node.acme.read", "tab", {
+      sheet: "q",
+      connection: "work",
+    }),
+    [{ value: "q-1", label: "Tab 1" }],
+  );
+  await assert.rejects(
+    blocksService.options(a, "node.acme.read", "sheet", {}),
+    /no choices for sheet/,
+  );
+  await assert.rejects(
+    blocksService.options(b, "node.acme.read", "tab", {}),
+    /Connect acme first/,
+  );
+  assert.equal(await svc.accessToken(a, "acme", "work"), "at2");
+  await assert.rejects(svc.accessToken(b, "acme", "work"), /named work/);
 
   await svc.remove(a, list[0]!.id);
   assert.equal(calls.at(-1)!.get("token"), "rt");

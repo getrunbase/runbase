@@ -16,6 +16,8 @@ import { TRIGGER_RECORD, varObject, type VarScope } from "../variables";
 import { ObjectPicker, PillInput } from "./pickers";
 import { AiBlockConfig, type BlockAiValue } from "./ai-config";
 import { RecordFieldsForm } from "./record-fields";
+import { OptionsSelect } from "./dynamic-options";
+import { SheetsForm } from "./sheets-form";
 import {
   Choice,
   InsertSecret,
@@ -42,9 +44,12 @@ export function SchemaForm({
   onChange,
   objects,
   scope,
+  options,
 }: {
   // Block type: OAuth nodes get an account selector.
   type?: string;
+  // Inputs with choices loaded from the connected account (dropdowns).
+  options?: string[];
   schema: unknown;
   value: Input;
   onChange: (v: Input) => void;
@@ -60,6 +65,13 @@ export function SchemaForm({
     if (v === undefined || v === "") delete next[k];
     onChange(next);
   };
+  const fields = formFields(schema);
+  const dynamic = (k: string) => options?.includes(k) ?? false;
+  // Google Sheets: file picked in Drive, tab and columns from the sheet.
+  if (type?.startsWith("node.google_sheets."))
+    return (
+      <SheetsForm type={type} value={value} onChange={onChange} scope={scope} />
+    );
   // "Update a record" / "Create a record": target object of the form.
   const target = objects.find(
     (o) =>
@@ -69,7 +81,7 @@ export function SchemaForm({
   );
   return (
     <div className="space-y-3">
-      {formFields(schema).map((f) => (
+      {fields.map((f) => (
         <div key={f.key} className="space-y-1">
           {f.key === "recordId" || f.key === "id" ? (
             <RecordField
@@ -125,7 +137,18 @@ export function SchemaForm({
               onChange={(n) => set("connection", n)}
             />
           )}
+          {f.kind === "text" && dynamic(f.key) && (
+            <OptionsSelect
+              type={type}
+              field={f.key}
+              input={value}
+              deps={fields.map((x) => x.key).filter((k) => k !== f.key)}
+              value={value[f.key] as string | undefined}
+              onChange={(v) => set(f.key, v)}
+            />
+          )}
           {!(provider && f.key === "connection") &&
+            !dynamic(f.key) &&
             f.key !== "object" &&
             f.key !== "objects" &&
             f.key !== "recordId" &&

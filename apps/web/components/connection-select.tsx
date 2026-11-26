@@ -26,6 +26,8 @@ type Ctx = {
   connections: ConnectionInfo[];
   // Block type (`node.<id>`) -> provider.
   providers: Record<string, string>;
+  // Google Picker public config (null: not configured on this instance).
+  googlePicker?: { apiKey: string; appId: string } | null;
 };
 
 // Accounts connected from any step are shared with every step of the page.
@@ -52,6 +54,7 @@ export function ConnectionsProvider({
     <C.Provider
       value={{
         providers: value.providers,
+        googlePicker: value.googlePicker,
         connections,
         add: (c) => setAdded((a) => [...a.filter((x) => x.name !== c.name), c]),
       }}
@@ -60,6 +63,8 @@ export function ConnectionsProvider({
     </C.Provider>
   );
 }
+
+export const useGooglePicker = () => useContext(C).googlePicker ?? null;
 
 export const useConnectionProvider = (blockType?: string) => {
   const { providers } = useContext(C);

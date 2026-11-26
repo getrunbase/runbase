@@ -19,7 +19,13 @@ import { connections } from "../db/schema";
 import { appUrl, env } from "../env";
 import { appError } from "../errors/app-error";
 import { decryptWith, encryptWith } from "../secrets/crypto";
-import { envKey, expiry, oauthClient, tokenRequest } from "./tokens";
+import {
+  accessToken,
+  envKey,
+  expiry,
+  oauthClient,
+  tokenRequest,
+} from "./tokens";
 import { workspaceDek } from "../secrets";
 import { withTenant, type TenantContext } from "../tenant";
 
@@ -294,6 +300,17 @@ export const connectionsService = {
       });
     });
     return { provider: s.provider, name, popup: s.popup === true };
+  },
+
+  // Short-lived access token of a workspace connection, handed to the
+  // browser only for provider widgets that need the user's own token (the
+  // Google Picker). Acceptable: the editor is a member who could connect the
+  // same account; the token expires within the hour and carries only the
+  // scopes the connection was granted. Never logged nor stored client side.
+  accessToken: async (ctx: TenantContext, provider: string, name?: string) => {
+    await requireScope(ctx, "write");
+    const { p } = await requireProvider(provider);
+    return accessToken(ctx, p, name);
   },
 
   // Deletes the connection; revokes the token at the provider (best effort).

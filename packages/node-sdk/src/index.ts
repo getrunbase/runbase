@@ -57,6 +57,19 @@ export type NodeExample = {
   secrets?: Record<string, string>;
 };
 
+// Choice offered for an input in the step form (dropdown).
+export type NodeOption = { value: string; label: string };
+
+// Options loader of an input: called from the step form with the inputs
+// already filled (partial, not validated) and the step's OAuth connection
+// (`ctx.fetch` adds the token, the loader never sees it).
+export type NodeOptionsLoader = (
+  input: Record<string, unknown>,
+  ctx: NodeContext,
+) => Promise<NodeOption[]>;
+
+const nodeOptions = z.array(z.object({ value: z.string(), label: z.string() }));
+
 export type NodeConfig<I extends z.ZodType, O extends z.ZodType> = {
   id: string;
   label?: string;
@@ -71,6 +84,8 @@ export type NodeConfig<I extends z.ZodType, O extends z.ZodType> = {
   sideEffect?: boolean;
   // Cases played by `runbase node test` (no network: ctx.fetch refuses).
   examples?: NodeExample[];
+  // Dynamic choices per input key (e.g. the tabs of a spreadsheet).
+  options?: Record<string, NodeOptionsLoader>;
   run: (
     input: z.output<I>,
     ctx: NodeContext,
@@ -86,6 +101,8 @@ export type NodeManifest = {
   auth: { secrets: string[]; domains: string[]; oauth?: NodeOAuth };
   inputSchema: Record<string, unknown>;
   outputSchema: Record<string, unknown>;
+  // Input keys with an options loader (absent: none).
+  options?: string[];
 };
 
 export type Node<
@@ -98,6 +115,12 @@ export type Node<
     input: unknown,
     ctx?: Partial<NodeContext>,
   ) => Promise<{ branch: string; output: z.output<O> }>;
+  // Runs the options loader of `field`; the output is validated.
+  loadOptions: (
+    field: string,
+    input: unknown,
+    ctx?: Partial<NodeContext>,
+  ) => Promise<NodeOption[]>;
   manifest: () => NodeManifest;
 };
 
@@ -146,6 +169,22 @@ export function defineNode<I extends z.ZodType, O extends z.ZodType>(
     ...(oauth && { oauth: { ...oauth, scopes: [...oauth.scopes] } }),
   };
   const sideEffect = config.sideEffect ?? auth.domains.length > 0;
+  const loaders = config.options ?? {};
+  const shape = (inputs as unknown as z.ZodObject).shape as
+    Record<string, unknown> | undefined;
+  for (const [k, fn] of Object.entries(loaders)) {
+    if (typeof fn !== "function")
+      throw new Error(
+        `defineNode ${config.id}: options.${k} must be a function`,
+      );
+    if (!shape || !(k in shape))
+      throw new Error(`defineNode ${config.id}: options.${k} is not an input`);
+  }
+  const ctxOf = (ctx: Partial<NodeContext>): NodeContext => ({
+    secrets: ctx.secrets ?? {},
+    fetch: ctx.fetch ?? noNetwork,
+    test: ctx.test ?? false,
+  });
 
   return {
     ...config,
@@ -157,11 +196,7 @@ export function defineNode<I extends z.ZodType, O extends z.ZodType>(
         throw new Error(
           `${config.id}: invalid input: ${z.prettifyError(parsed.error)}`,
         );
-      const res = await config.run(parsed.data as z.output<I>, {
-        secrets: ctx.secrets ?? {},
-        fetch: ctx.fetch ?? noNetwork,
-        test: ctx.test ?? false,
-      });
+      const res = await config.run(parsed.data as z.output<I>, ctxOf(ctx));
       const [branch, value] = isRouted(res)
         ? [res.branch, res.output]
         : [branches[0]!, res];
@@ -173,6 +208,20 @@ export function defineNode<I extends z.ZodType, O extends z.ZodType>(
           `${config.id}: invalid output: ${z.prettifyError(out.error)}`,
         );
       return { branch, output: out.data as z.output<O> };
+    },
+    async loadOptions(field, input, ctx = {}) {
+      const fn = Object.hasOwn(loaders, field) ? loaders[field] : undefined;
+      if (!fn) throw new Error(`${config.id}: no options for "${field}"`);
+      const raw =
+        input && typeof input === "object" && !Array.isArray(input)
+          ? (input as Record<string, unknown>)
+          : {};
+      const out = nodeOptions.safeParse(await fn(raw, ctxOf(ctx)));
+      if (!out.success)
+        throw new Error(
+          `${config.id}: invalid options for "${field}": ${z.prettifyError(out.error)}`,
+        );
+      return out.data;
     },
     manifest: () => ({
       id: config.id,
@@ -186,6 +235,7 @@ export function defineNode<I extends z.ZodType, O extends z.ZodType>(
         unknown
       >,
       outputSchema: z.toJSONSchema(config.outputs) as Record<string, unknown>,
+      ...(Object.keys(loaders).length && { options: Object.keys(loaders) }),
     }),
   };
 }

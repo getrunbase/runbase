@@ -1,4 +1,4 @@
-<!-- source-sha256: 4ec6951c74243d75da0b8bfc0f04c40dff32162b87b7f7171e520be93076a1d8 -->
+<!-- source-sha256: 6a43cae595d5bc062bab57e4d1063c3138b27249f2d7f6486760af05ba4b81a8 -->
 # Auto-hébergement
 
 Exécutez Runbase sur votre propre serveur avec Docker, à partir d'images
@@ -88,6 +88,10 @@ premier. Les paramètres facultatifs les plus courants :
 - **Google (Gmail, Calendar, Sheets, Drive).** `OAUTH_GOOGLE_CLIENT_ID` et
   `OAUTH_GOOGLE_CLIENT_SECRET` : client OAuth du connecteur Google. Étapes et
   scopes : [Connecter Google](/docs/guides/google).
+- **Google Picker.** `GOOGLE_PICKER_API_KEY` (clé API restreinte à Google
+  Picker API et au référent de votre app) et `GOOGLE_PICKER_APP_ID` (numéro du
+  projet Google Cloud) ajoutent **Choisir dans Drive** aux étapes Google
+  Sheets. Voir [Connecter Google](/docs/guides/google).
 - **Version.** `RUNBASE_VERSION` fixe un tag d'image (`latest` par défaut).
 
 Appliquez un changement avec `docker compose -f docker-compose.selfhost.yml up -d`.

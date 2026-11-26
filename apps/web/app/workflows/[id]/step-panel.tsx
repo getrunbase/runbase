@@ -118,6 +118,7 @@ export function StepPanel({
         <SchemaForm
           type={step.type}
           schema={block?.inputSchema}
+          options={block?.options}
           value={step.input ?? {}}
           onChange={(i) => updateInput(step.id, i)}
           objects={objects}

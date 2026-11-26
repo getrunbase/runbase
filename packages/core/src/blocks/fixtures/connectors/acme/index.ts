@@ -15,7 +15,16 @@ export default [
     id: "acme.read",
     label: "Acme read",
     auth: { domains: ["api.acme.test"], oauth: { ...oauth, scopes: ["read"] } },
-    inputs: z.object({}),
+    inputs: z.object({
+      sheet: z.string().optional(),
+      tab: z.string().optional(),
+    }),
+    // Dynamic choices: built from the other inputs (no network in tests).
+    options: {
+      tab: async (input) => [
+        { value: `${String(input.sheet ?? "s")}-1`, label: "Tab 1" },
+      ],
+    },
     outputs: z.object({ ok: z.boolean() }),
     run: async () => ({ ok: true }),
   }),

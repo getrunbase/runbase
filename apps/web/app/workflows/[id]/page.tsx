@@ -12,6 +12,7 @@ import { workflowsService } from "@getrunbase/core/workflows";
 import { SecretsProvider } from "@/components/secret-select";
 import { ConnectionsProvider } from "@/components/connection-select";
 import { connectionsService } from "@getrunbase/core/connections";
+import { googlePicker } from "@getrunbase/core/env";
 import { AiPresetsProvider } from "./ai-config";
 import { getTenant } from "@/lib/tenant";
 import type { Definition } from "../graph";
@@ -110,6 +111,7 @@ export default async function WorkflowPage({
           providers: Object.fromEntries(
             providers.flatMap((p) => p.types.map((t) => [t, p.provider])),
           ),
+          googlePicker: googlePicker(),
         }}
       >
         <AiPresetsProvider

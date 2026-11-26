@@ -26,6 +26,7 @@ test("every node: google OAuth provider, scopes without security assessment", ()
     "email",
     "https://www.googleapis.com/auth/gmail.send",
     "https://www.googleapis.com/auth/calendar.events",
+    "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive.file",
   ]);
@@ -86,4 +87,26 @@ test("calendar: list, create with Meet, update, delete", async () => {
   const d = await deleteEvent.execute({ eventId: "e1" }, { fetch });
   assert.deepEqual(d.output, { deleted: true });
   assert.equal(calls[3]!.method, "DELETE");
+});
+
+test("calendar: calendarId choices from the account's calendar list", async () => {
+  const { calls, fetch } = mock([
+    200,
+    {
+      items: [
+        { id: "ada@x.io", summary: "Ada", primary: true },
+        { id: "team@group.calendar.google.com", summary: "Team" },
+      ],
+    },
+  ]);
+  for (const n of [listEvents, createEvent, updateEvent, deleteEvent])
+    assert.deepEqual(n.manifest().options, ["calendarId"]);
+  assert.deepEqual(await listEvents.loadOptions("calendarId", {}, { fetch }), [
+    { value: "primary", label: "Ada" },
+    { value: "team@group.calendar.google.com", label: "Team" },
+  ]);
+  assert.match(
+    calls[0]!.url,
+    /\/users\/me\/calendarList\?minAccessRole=reader$/,
+  );
 });

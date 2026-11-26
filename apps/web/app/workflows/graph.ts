@@ -30,6 +30,8 @@ export type BlockInfo = {
   app?: { name: string; label: string; logo?: string };
   inputSchema: unknown;
   outputSchema?: unknown;
+  // Inputs whose choices come from the connected account (dropdown).
+  options?: string[];
 };
 
 type Case = { id: string; label?: string; value?: unknown };

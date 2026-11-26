@@ -192,6 +192,8 @@ export const mcpTools: {
     // Excluded: editor catalog (deprecated blocks included), blocks.list = catalog.
     list: null,
     catalog: "blocks.list",
+    // Excluded: step form dropdowns of the editor.
+    options: null,
   },
   runs: {
     start: "runs.start",
@@ -273,6 +275,8 @@ export const mcpTools: {
     // Excluded: the OAuth flow needs a browser and a signed-in user.
     authorizeUrl: null,
     complete: null,
+    // Excluded: hands a token to the browser (Google Picker), never to agents.
+    accessToken: null,
     remove: "connections.delete",
   },
   // Excluded: helper of the secrets UI (deletion confirmation).

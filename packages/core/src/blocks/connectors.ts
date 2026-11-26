@@ -17,7 +17,7 @@ import {
   OAUTH_TOKEN_SECRET,
   type NodeManifest,
 } from "@getrunbase/node-sdk";
-import type { Block, BlockApp } from "./block";
+import type { Block, BlockApp, BlockContext, BlockOption } from "./block";
 import { logoDataUrl } from "../catalog/logo";
 import { execFunction } from "../functions/sandbox";
 import { decryptAll } from "../secrets";
@@ -136,8 +136,51 @@ export async function loadConnectors(): Promise<Loaded[]> {
 }
 
 function nodeBlock(c: Loaded, m: NodeManifest): Block {
+  const type = `${NODE_PREFIX}${m.id}`;
+  // Runs a request of the connector runtime in the sandbox, with the node's
+  // secrets and, for OAuth nodes, a fresh access token passed as a reserved
+  // secret (the runtime turns it into a bearer header on ctx.fetch).
+  const sandbox = async (
+    bctx: BlockContext,
+    input: unknown,
+    req: Record<string, unknown>,
+  ) => {
+    const secrets =
+      m.auth.secrets.length && bctx.tenant ? await decryptAll(bctx.tenant) : {};
+    const declared = [...m.auth.secrets];
+    if (m.auth.oauth) {
+      if (!bctx.tenant)
+        throw appError(
+          "blocks.connectorNoTenant",
+          "{type}: OAuth nodes need a workspace",
+          { type },
+        );
+      const name = (input as Record<string, unknown> | null)?.[
+        CONNECTION_INPUT
+      ];
+      secrets[OAUTH_TOKEN_SECRET] = await accessToken(
+        bctx.tenant,
+        m.auth.oauth,
+        typeof name === "string" && name ? name : undefined,
+      );
+      declared.push(OAUTH_TOKEN_SECRET);
+    }
+    const { output } = await execFunction(
+      {
+        code: await c.code(),
+        permissions: { domains: m.auth.domains, secrets: declared },
+      },
+      { ...req, node: m.id, input },
+      {
+        secrets,
+        test:
+          (bctx.scope?.run as { test?: boolean } | undefined)?.test === true,
+      },
+    );
+    return output;
+  };
   return {
-    type: `${NODE_PREFIX}${m.id}`,
+    type,
     label: m.label,
     description: m.description,
     inputSchema: z.fromJSONSchema(m.inputSchema as never),
@@ -145,53 +188,35 @@ function nodeBlock(c: Loaded, m: NodeManifest): Block {
     branches: m.branches,
     sideEffect: m.sideEffect,
     app: c.app,
+    ...(m.options?.length && {
+      optionFields: m.options,
+      options: async (field, input, bctx) => {
+        const out = await sandbox(bctx, input, {
+          __runbase: "options",
+          field,
+        });
+        if (!Array.isArray(out))
+          throw appError(
+            "blocks.connectorBadOptions",
+            "{type}: connector returned no options",
+            { type },
+          );
+        return out as BlockOption[];
+      },
+    }),
     // `{{secret.NAME}}` in inputs is resolved (and redacted from the output),
     // as for core blocks: a node can take a URL or a key per step.
     run: (raw, bctx) => {
       const exec = async (input: unknown) => {
-        const secrets =
-          m.auth.secrets.length && bctx.tenant
-            ? await decryptAll(bctx.tenant)
-            : {};
-        const declared = [...m.auth.secrets];
-        // OAuth: a fresh access token, passed as a reserved secret (the
-        // connector runtime turns it into a bearer header on ctx.fetch).
-        if (m.auth.oauth) {
-          if (!bctx.tenant)
-            throw appError(
-              "blocks.connectorNoTenant",
-              "{type}: OAuth nodes need a workspace",
-              { type: `${NODE_PREFIX}${m.id}` },
-            );
-          const name = (input as Record<string, unknown> | null)?.[
-            CONNECTION_INPUT
-          ];
-          secrets[OAUTH_TOKEN_SECRET] = await accessToken(
-            bctx.tenant,
-            m.auth.oauth,
-            typeof name === "string" && name ? name : undefined,
-          );
-          declared.push(OAUTH_TOKEN_SECRET);
-        }
-        const { output } = await execFunction(
-          {
-            code: await c.code(),
-            permissions: { domains: m.auth.domains, secrets: declared },
-          },
-          { __runbase: "run", node: m.id, input },
-          {
-            secrets,
-            test:
-              (bctx.scope?.run as { test?: boolean } | undefined)?.test ===
-              true,
-          },
-        );
-        const res = output as { branch?: unknown; output?: unknown } | null;
+        const res = (await sandbox(bctx, input, { __runbase: "run" })) as {
+          branch?: unknown;
+          output?: unknown;
+        } | null;
         if (!res || typeof res.branch !== "string")
           throw appError(
             "blocks.connectorBadResult",
             "{type}: connector returned no branch",
-            { type: `${NODE_PREFIX}${m.id}` },
+            { type },
           );
         return { branch: res.branch, output: res.output };
       };

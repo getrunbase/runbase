@@ -11,12 +11,12 @@ import {
 const SCOPE = "https://www.googleapis.com/auth/";
 
 // Same provider for every node: one connection covers all of them.
-const google = (scope: string): NodeOAuth => ({
+const google = (...scopes: string[]): NodeOAuth => ({
   provider: "google",
   authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
   tokenUrl: "https://oauth2.googleapis.com/token",
   revokeUrl: "https://oauth2.googleapis.com/revoke",
-  scopes: ["openid", "email", `${SCOPE}${scope}`],
+  scopes: ["openid", "email", ...scopes.map((s) => `${SCOPE}${s}`)],
   // Refresh token on every consent; keeps scopes granted earlier.
   authorizeParams: {
     access_type: "offline",
@@ -107,8 +107,25 @@ const simple = (e: GEvent): z.input<typeof event> => ({
 
 const calAuth = {
   domains: ["www.googleapis.com"],
-  oauth: google("calendar.events"),
+  // calendarList.readonly: the calendar dropdown of the step form.
+  oauth: google("calendar.events", "calendar.calendarlist.readonly"),
 };
+
+// Calendars of the account, for the calendarId dropdown.
+async function calendars(_: unknown, ctx: NodeContext) {
+  const r = await api<{
+    items?: { id: string; summary?: string; primary?: boolean }[];
+  }>(
+    ctx,
+    "GET",
+    "https://www.googleapis.com/calendar/v3/users/me/calendarList?minAccessRole=reader",
+  );
+  return (r.items ?? []).map((c) => ({
+    value: c.primary ? "primary" : c.id,
+    label: c.summary ?? c.id,
+  }));
+}
+const calOptions = { calendarId: calendars };
 const eventFields = {
   summary: z.string().optional(),
   description: z.string().optional(),
@@ -152,6 +169,7 @@ export const listEvents = defineNode({
   description:
     "Lists the events of a calendar between two dates (recurring events expanded), sorted by start. q filters by text.",
   auth: calAuth,
+  options: calOptions,
   inputs: z.object({
     calendarId,
     timeMin: z.string().optional().describe("ISO date-time, default now"),
@@ -185,6 +203,7 @@ export const createEvent = defineNode({
   description:
     "Creates an event. start and end: ISO date-time, or YYYY-MM-DD for an all-day event. sendUpdates=all emails the attendees.",
   auth: calAuth,
+  options: calOptions,
   inputs: z.object({
     calendarId,
     ...eventFields,
@@ -210,6 +229,7 @@ export const updateEvent = defineNode({
   description:
     "Changes the given fields of an event (others kept). attendees replaces the whole list.",
   auth: calAuth,
+  options: calOptions,
   inputs: z.object({ calendarId, eventId: z.string().min(1), ...eventFields }),
   outputs: event,
   run: async ({ calendarId, eventId, ...i }, ctx) =>
@@ -228,6 +248,7 @@ export const deleteEvent = defineNode({
   label: "Delete an event",
   description: "Deletes an event. sendUpdates=all notifies the attendees.",
   auth: calAuth,
+  options: calOptions,
   inputs: z.object({
     calendarId,
     eventId: z.string().min(1),

@@ -165,7 +165,8 @@
               "scopes": [
                 "openid",
                 "email",
-                "https://www.googleapis.com/auth/calendar.events"
+                "https://www.googleapis.com/auth/calendar.events",
+                "https://www.googleapis.com/auth/calendar.calendarlist.readonly"
               ],
               "authorizeParams": {
                 "access_type": "offline",
@@ -309,7 +310,10 @@
               "events"
             ],
             "additionalProperties": false
-          }
+          },
+          "options": [
+            "calendarId"
+          ]
         },
         {
           "id": "google_calendar.create_event",
@@ -332,7 +336,8 @@
               "scopes": [
                 "openid",
                 "email",
-                "https://www.googleapis.com/auth/calendar.events"
+                "https://www.googleapis.com/auth/calendar.events",
+                "https://www.googleapis.com/auth/calendar.calendarlist.readonly"
               ],
               "authorizeParams": {
                 "access_type": "offline",
@@ -494,7 +499,10 @@
               "attendees"
             ],
             "additionalProperties": false
-          }
+          },
+          "options": [
+            "calendarId"
+          ]
         },
         {
           "id": "google_calendar.update_event",
@@ -517,7 +525,8 @@
               "scopes": [
                 "openid",
                 "email",
-                "https://www.googleapis.com/auth/calendar.events"
+                "https://www.googleapis.com/auth/calendar.events",
+                "https://www.googleapis.com/auth/calendar.calendarlist.readonly"
               ],
               "authorizeParams": {
                 "access_type": "offline",
@@ -680,7 +689,10 @@
               "attendees"
             ],
             "additionalProperties": false
-          }
+          },
+          "options": [
+            "calendarId"
+          ]
         },
         {
           "id": "google_calendar.delete_event",
@@ -703,7 +715,8 @@
               "scopes": [
                 "openid",
                 "email",
-                "https://www.googleapis.com/auth/calendar.events"
+                "https://www.googleapis.com/auth/calendar.events",
+                "https://www.googleapis.com/auth/calendar.calendarlist.readonly"
               ],
               "authorizeParams": {
                 "access_type": "offline",
@@ -755,7 +768,10 @@
               "deleted"
             ],
             "additionalProperties": false
-          }
+          },
+          "options": [
+            "calendarId"
+          ]
         }
       ]
     },
@@ -887,7 +903,8 @@
               "scopes": [
                 "openid",
                 "email",
-                "https://www.googleapis.com/auth/spreadsheets"
+                "https://www.googleapis.com/auth/spreadsheets",
+                "https://www.googleapis.com/auth/drive.file"
               ],
               "authorizeParams": {
                 "access_type": "offline",
@@ -964,7 +981,11 @@
               "rows"
             ],
             "additionalProperties": false
-          }
+          },
+          "options": [
+            "spreadsheetId",
+            "range"
+          ]
         },
         {
           "id": "google_sheets.append_rows",
@@ -987,7 +1008,8 @@
               "scopes": [
                 "openid",
                 "email",
-                "https://www.googleapis.com/auth/spreadsheets"
+                "https://www.googleapis.com/auth/spreadsheets",
+                "https://www.googleapis.com/auth/drive.file"
               ],
               "authorizeParams": {
                 "access_type": "offline",
@@ -1070,7 +1092,12 @@
               "updatedRows"
             ],
             "additionalProperties": false
-          }
+          },
+          "options": [
+            "spreadsheetId",
+            "range",
+            "rows"
+          ]
         },
         {
           "id": "google_sheets.update_rows",
@@ -1093,7 +1120,8 @@
               "scopes": [
                 "openid",
                 "email",
-                "https://www.googleapis.com/auth/spreadsheets"
+                "https://www.googleapis.com/auth/spreadsheets",
+                "https://www.googleapis.com/auth/drive.file"
               ],
               "authorizeParams": {
                 "access_type": "offline",
@@ -1157,7 +1185,11 @@
               "updatedCells"
             ],
             "additionalProperties": false
-          }
+          },
+          "options": [
+            "spreadsheetId",
+            "range"
+          ]
         }
       ]
     },
