@@ -1,33 +1,44 @@
 {
   "title": "Accueil",
   "onboarding": {
-    "title": "Démarrer en 10 minutes",
-    "progress": "{done, plural, one {# étape} other {# étapes}} sur {total} : stockez vos données, automatisez, créez une vue, puis laissez un agent IA piloter le tout.",
+    "title": "Bien démarrer",
+    "progress": "{done, plural, one {# étape terminée} other {# étapes terminées}} sur {total}. Dites à votre IA ce dont vous avez besoin, elle le construit.",
+    "doneTitle": "Tout est prêt",
+    "doneHint": "Votre IA est connectée et votre espace tourne.",
+    "dismiss": "Masquer",
     "steps": {
-      "database": {
-        "title": "Créer une base de données",
-        "description": "Un endroit pour ranger vos fiches : contacts, commandes…",
-        "cta": "Créer une base"
-      },
-      "workflow": {
-        "title": "Automatiser une tâche",
-        "description": "Un workflow réagit seul : nouvelle fiche, horaire, webhook.",
-        "cta": "Créer un workflow"
-      },
-      "interface": {
-        "title": "Créer une vue",
-        "description": "Une page pour consulter et agir sur vos données.",
-        "cta": "Voir les interfaces"
-      },
       "agent": {
-        "title": "Connecter un agent IA",
-        "description": "Votre agent IA (ChatGPT, Claude, Gemini…) pilote tout avec le lien ci-dessous.",
-        "cta": "Créer une clé"
+        "title": "Connecter mon IA",
+        "description": "Ajoutez Runbase à Claude, ChatGPT, Gemini, Cursor ou Codex en deux minutes. Votre IA construit et fait tourner le reste pour vous."
+      },
+      "template": {
+        "title": "Partir d'un modèle, ou demander à votre IA",
+        "description": "Choisissez un CRM, une boîte support ou un suivi d'onboarding prêt à l'emploi ci-dessous, ou demandez à votre IA de construire exactement ce qu'il vous faut.",
+        "descriptionMember": "Demandez à votre IA de construire ce qu'il vous faut. Les modèles sont installés par un administrateur.",
+        "cta": "Voir les modèles"
+      },
+      "change": {
+        "title": "Faire une modification en la demandant à votre IA",
+        "description": "Demandez à votre IA d'ajouter un champ, une étape ou une page. Elle met votre espace à jour pour vous.",
+        "example": "Ajoute une date « Prochaine relance » à mes leads et préviens-moi sur Slack la veille."
+      },
+      "team": {
+        "title": "Inviter votre équipe",
+        "description": "Partagez ce que vous avez construit avec ceux qui s'en servent tous les jours.",
+        "cta": "Inviter"
       }
     },
-    "connect": {
-      "withAi": "Configurer avec l'IA",
-      "byHand": "Configurer à la main"
+    "connected": {
+      "title": "Votre IA est connectée",
+      "client": "Connectée avec {client}.",
+      "viaKey": "Connectée avec une clé d'API.",
+      "prompts": "Essayez une de ces premières demandes :",
+      "show": "Connecter une autre IA"
+    },
+    "prompts": {
+      "crm": "Construis-moi un CRM pour suivre mes leads : Leads, Entreprises et une page Pipeline",
+      "slack": "Chaque matin, envoie-moi sur Slack les nouveaux leads avec un score élevé",
+      "csv": "Importe ce CSV de contacts et supprime les doublons"
     }
   },
   "audit": {
@@ -131,5 +142,18 @@
     "approve": "Approuver",
     "reject": "Refuser",
     "empty": "Rien à valider."
-  }
+  },
+  "templates": {
+    "title": "Partir d'un modèle",
+    "description": "Prêt à l'emploi en une minute. Modifiez ce que vous voulez ensuite en le demandant à votre IA.",
+    "use": "Utiliser ce modèle",
+    "browse": "Modèles",
+    "empty": "Aucun modèle disponible pour l'instant.",
+    "items": {
+      "crm-light": "Suivez entreprises, contacts et affaires dans un pipeline, avec une alerte Slack à chaque nouvelle affaire.",
+      "customer-onboarding": "Voyez où en est chaque nouveau client et prévenez l'équipe sur Slack pour qu'on le contacte.",
+      "support-tickets": "Une boîte partagée pour les tickets support, avec une alerte Slack à chaque nouveau ticket."
+    }
+  },
+  "newTemplate": "Partir d'un modèle"
 }

@@ -55,7 +55,9 @@ test("API keys: only hash stored, revocation, scopes", async () => {
 
   // Revoked key refused (including an already resolved context)
   await apiKeysService.revoke(owner, id);
-  await assert.rejects(authenticateApiKey(key, ws!.id), { kind: "unauthorized" });
+  await assert.rejects(authenticateApiKey(key, ws!.id), {
+    kind: "unauthorized",
+  });
   await assert.rejects(workspacesService.list(ctx), /Access denied/);
   await assert.rejects(authenticateApiKey("agk_inconnue", ws!.id), {
     kind: "unauthorized",

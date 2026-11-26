@@ -1,10 +1,28 @@
 // Scoped API keys, for ingestion. The plain key is returned
 // only at creation; only its SHA-256 hash is stored.
 import { createHash, randomBytes } from "node:crypto";
-import { and, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import {
+  and,
+  arrayContains,
+  desc,
+  eq,
+  gt,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  sql,
+} from "drizzle-orm";
 import { audit } from "../audit";
 import { db } from "../db/client";
-import { apiKeys, memberships, workspaces } from "../db/schema";
+import {
+  apiKeys,
+  memberships,
+  oauthAccessToken,
+  oauthClient,
+  oauthRefreshToken,
+  workspaces,
+} from "../db/schema";
 import {
   withTenant,
   type McpPrincipal,
@@ -166,7 +184,8 @@ export async function apiKeyPrincipal(key: string): Promise<McpPrincipal> {
     .select()
     .from(apiKeys)
     .where(eq(apiKeys.keyHash, hash(key)));
-  if (!row || row.revokedAt) throw unauthorized("apiKeys.invalid", "Invalid API key");
+  if (!row || row.revokedAt)
+    throw unauthorized("apiKeys.invalid", "Invalid API key");
   await db
     .update(apiKeys)
     .set({ lastUsedAt: new Date() })
@@ -205,7 +224,8 @@ export async function authenticateApiKey(
     .select()
     .from(apiKeys)
     .where(eq(apiKeys.keyHash, hash(key)));
-  if (!row || row.revokedAt) throw unauthorized("apiKeys.invalid", "Invalid API key");
+  if (!row || row.revokedAt)
+    throw unauthorized("apiKeys.invalid", "Invalid API key");
   workspaceId ||= row.workspaceIds[0] ?? "";
   if (!row.workspaceIds.includes(workspaceId))
     throw forbidden(
@@ -221,4 +241,86 @@ export async function authenticateApiKey(
     workspaceId,
     actor: { apiKeyId: row.id, scopes: row.scopes },
   };
+}
+
+export type AgentConnection = {
+  connected: boolean;
+  // How the AI reaches the workspace: OAuth MCP client or API key.
+  via: "oauth" | "key" | null;
+  // MCP client name as registered at OAuth time (e.g. "Claude"), when known.
+  client: string | null;
+};
+
+// Is an AI agent connected? Read-only, for the home onboarding. True when the
+// session user has a live OAuth MCP grant (refresh token still valid, or an
+// access token issued in the last `days`), or when a key allowed on this
+// workspace made a call in the last `days`. OAuth grants are bound to the
+// account (the workspace is picked per MCP call), so they are checked for the
+// viewer only, never for other members.
+export async function agentConnection(
+  ctx: TenantContext,
+  days = 30,
+): Promise<AgentConnection> {
+  const now = new Date();
+  const since = new Date(now.getTime() - days * 24 * 3600 * 1000);
+  if ("userId" in ctx.actor) {
+    const userId = ctx.actor.userId;
+    const live = (c: typeof oauthClient.disabled) =>
+      sql`coalesce(${c}, false) = false`;
+    // OAuth tables live outside RLS: filtered on the session user only.
+    const [refresh] = await db
+      .select({ name: oauthClient.name, at: oauthRefreshToken.createdAt })
+      .from(oauthRefreshToken)
+      .innerJoin(
+        oauthClient,
+        eq(oauthClient.clientId, oauthRefreshToken.clientId),
+      )
+      .where(
+        and(
+          eq(oauthRefreshToken.userId, userId),
+          isNull(oauthRefreshToken.revoked),
+          gt(oauthRefreshToken.expiresAt, now),
+          live(oauthClient.disabled),
+        ),
+      )
+      .orderBy(desc(oauthRefreshToken.createdAt))
+      .limit(1);
+    const [access] = await db
+      .select({ name: oauthClient.name, at: oauthAccessToken.createdAt })
+      .from(oauthAccessToken)
+      .innerJoin(
+        oauthClient,
+        eq(oauthClient.clientId, oauthAccessToken.clientId),
+      )
+      .where(
+        and(
+          eq(oauthAccessToken.userId, userId),
+          isNull(oauthAccessToken.revoked),
+          gte(oauthAccessToken.createdAt, since),
+          live(oauthClient.disabled),
+        ),
+      )
+      .orderBy(desc(oauthAccessToken.createdAt))
+      .limit(1);
+    const latest = [refresh, access]
+      .filter((r) => r !== undefined)
+      .sort((a, b) => b.at.getTime() - a.at.getTime())[0];
+    if (latest)
+      return { connected: true, via: "oauth", client: latest.name ?? null };
+  }
+  const [key] = await withTenant(ctx, (tx) =>
+    tx
+      .select({ id: apiKeys.id })
+      .from(apiKeys)
+      .where(
+        and(
+          isNull(apiKeys.revokedAt),
+          gte(apiKeys.lastUsedAt, since),
+          arrayContains(apiKeys.workspaceIds, [ctx.workspaceId]),
+        ),
+      )
+      .limit(1),
+  );
+  if (key) return { connected: true, via: "key", client: null };
+  return { connected: false, via: null, client: null };
 }

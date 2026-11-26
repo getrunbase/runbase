@@ -1,33 +1,44 @@
 {
   "title": "Home",
   "onboarding": {
-    "title": "Get started in 10 minutes",
-    "progress": "{done} of {total} steps: store your data, automate, build a view, then let an AI agent run it all.",
+    "title": "Get started",
+    "progress": "{done} of {total} steps done. Tell your AI what you need, it builds it.",
+    "doneTitle": "You're all set",
+    "doneHint": "Your AI is connected and your workspace is up and running.",
+    "dismiss": "Hide",
     "steps": {
-      "database": {
-        "title": "Create a database",
-        "description": "A place for your records: contacts, orders…",
-        "cta": "Create a database"
-      },
-      "workflow": {
-        "title": "Automate a task",
-        "description": "A workflow runs on its own: new record, schedule, webhook.",
-        "cta": "Create a workflow"
-      },
-      "interface": {
-        "title": "Create a view",
-        "description": "A page to view and act on your data.",
-        "cta": "View interfaces"
-      },
       "agent": {
-        "title": "Connect an AI agent",
-        "description": "Your AI agent (ChatGPT, Claude, Gemini…) runs everything with the link below.",
-        "cta": "Create a key"
+        "title": "Connect my AI",
+        "description": "Add Runbase to Claude, ChatGPT, Gemini, Cursor or Codex in two minutes. Your AI then builds and runs everything for you."
+      },
+      "template": {
+        "title": "Start from a template, or ask your AI",
+        "description": "Pick a ready-made CRM, support inbox or onboarding tracker below, or ask your AI to build exactly what you need.",
+        "descriptionMember": "Ask your AI to build what you need. Templates are installed by an admin.",
+        "cta": "See templates"
+      },
+      "change": {
+        "title": "Make a change by asking your AI",
+        "description": "Ask your AI to add a field, a step or a page. It updates your workspace for you.",
+        "example": "Add a \"Next follow-up\" date to my leads and remind me on Slack the day before."
+      },
+      "team": {
+        "title": "Invite your team",
+        "description": "Share what you built with the people who use it every day.",
+        "cta": "Invite"
       }
     },
-    "connect": {
-      "withAi": "Set up with AI",
-      "byHand": "Set up by hand"
+    "connected": {
+      "title": "Your AI is connected",
+      "client": "Connected with {client}.",
+      "viaKey": "Connected with an API key.",
+      "prompts": "Try one of these first requests:",
+      "show": "Connect another AI"
+    },
+    "prompts": {
+      "crm": "Build me a CRM to track my leads: Leads, Companies and a Pipeline page",
+      "slack": "Every morning, send me on Slack the new leads with a high score",
+      "csv": "Import this CSV of contacts and remove duplicates"
     }
   },
   "audit": {
@@ -131,5 +142,18 @@
     "approve": "Approve",
     "reject": "Reject",
     "empty": "Nothing to approve."
-  }
+  },
+  "templates": {
+    "title": "Start from a template",
+    "description": "Ready to use in a minute. Change anything later by asking your AI.",
+    "use": "Use this template",
+    "browse": "Templates",
+    "empty": "No templates available yet.",
+    "items": {
+      "crm-light": "Track companies, contacts and deals in a pipeline, with a Slack alert for every new deal.",
+      "customer-onboarding": "See where each new customer stands and tell the team on Slack so someone reaches out.",
+      "support-tickets": "One shared inbox for support tickets, with a Slack alert for each new one."
+    }
+  },
+  "newTemplate": "Start from a template"
 }

@@ -1,43 +1,41 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { apiKeysService } from "@getrunbase/core/api-keys";
+import { agentConnection } from "@getrunbase/core/api-keys";
+import { catalogService } from "@getrunbase/core/catalog";
 import { databasesService } from "@getrunbase/core/databases";
 import { errorsService } from "@getrunbase/core/errors";
+import { membersService } from "@getrunbase/core/members";
 import { pagesService } from "@getrunbase/core/pages";
 import { runsService } from "@getrunbase/core/runs";
 import { workflowsService } from "@getrunbase/core/workflows";
 import {
   ArrowRight,
   Check,
-  CheckCircle2,
   Circle,
   CircleCheck,
   CirclePause,
   CircleX,
+  LayoutTemplate,
   LoaderCircle,
   Plus,
   X,
   type LucideIcon,
 } from "lucide-react";
-import { ConnectAgent } from "@/components/connect-agent";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Count, Kpi } from "@/components/ds/atoms";
 import { type Tone, toneFg } from "@/components/ds/tone";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
 import { Button } from "@getrunbase/ui/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { onboardingSteps } from "@/lib/onboarding";
+import { hasContent, onboardingSteps, wasChanged } from "@/lib/onboarding";
 import { getTenant, getSession } from "@/lib/tenant";
 import { appUrl } from "@getrunbase/core/env";
 import { decideRun } from "./approvals/actions";
 import { pageTitle } from "@/lib/page-title";
+import { onboardingCookie } from "./_home/cookie";
+import { Onboarding } from "./_home/onboarding";
+import { TemplateGallery } from "./_home/template-gallery";
 
 export const generateMetadata = pageTitle("home");
 
@@ -63,8 +61,14 @@ const STATUS: Record<RunStatus, { tone: Tone; icon: LucideIcon }> = {
 
 const DAY = 24 * 3600 * 1000;
 
-// Home (JhKCs board): greeting, KPIs, recent activity, approvals.
-export default async function Home() {
+// Home (JhKCs board): guided start (connect the AI, then a template),
+// KPIs, recent activity, approvals. A workspace with content shows its
+// dashboard first; the template gallery folds into a "Templates" link.
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ templates?: string }>;
+}) {
   // Visitor without a session: sign-in wall.
   if (!(await getSession())) redirect("/login");
   const { session, ctx, role } = await getTenant();
@@ -74,18 +78,37 @@ export default async function Home() {
   const now = new Date();
   const since = new Date(now.getTime() - DAY);
   const before = new Date(now.getTime() - 2 * DAY);
-  const [dbs, workflows, pages, keys, recent, waiting, open, day, prev] =
-    await Promise.all([
-      databasesService.list(ctx),
-      workflowsService.list(ctx),
-      pagesService.list(ctx),
-      isAdmin ? apiKeysService.list(ctx) : Promise.resolve([]),
-      runsService.list(ctx, { limit: 6 }),
-      runsService.list(ctx, { status: "waiting", limit: 3 }),
-      errorsService.openCount(ctx),
-      runsService.statusCounts(ctx, since, now),
-      runsService.statusCounts(ctx, before, since),
-    ]);
+  const [
+    dbs,
+    workflows,
+    pages,
+    agent,
+    members,
+    catalog,
+    recent,
+    waiting,
+    open,
+    day,
+    prev,
+  ] = await Promise.all([
+    databasesService.list(ctx),
+    workflowsService.list(ctx),
+    pagesService.list(ctx),
+    agentConnection(ctx),
+    isAdmin ? membersService.list(ctx) : Promise.resolve([]),
+    // Template import is reserved to owners/admins (admin scope).
+    isAdmin
+      ? catalogService
+          .searchTemplates({ limit: 6 })
+          .then((r) => r.data)
+          .catch(() => [])
+      : Promise.resolve([]),
+    runsService.list(ctx, { limit: 6 }),
+    runsService.list(ctx, { status: "waiting", limit: 3 }),
+    errorsService.openCount(ctx),
+    runsService.statusCounts(ctx, since, now),
+    runsService.statusCounts(ctx, before, since),
+  ]);
   const waitingCount = (await runsService.waiting(ctx)).length;
   const total = (c: typeof day) =>
     Object.values(c).reduce((a, n) => a + (n ?? 0), 0);
@@ -105,14 +128,36 @@ export default async function Home() {
     return format.dateTime(d, { day: "numeric", month: "short" });
   };
   const name = (session.user.name || session.user.email).split(/[\s@]/)[0]!;
-  const steps = onboardingSteps({
+  const state = {
+    agentConnected: agent.connected,
     databases: dbs.length,
     workflows: workflows.length,
-    interfaces: pages.length,
-    agentConnected: keys.some((k) => !k.revokedAt && k.lastUsedAt),
-  });
-  const done = steps.filter((s) => s.done).length;
+    pages: pages.length,
+    changed: wasChanged([...workflows, ...pages]),
+    members: members.length,
+    isAdmin,
+  };
+  const steps = onboardingSteps(state);
+  const finished = steps.every((s) => s.done);
+  const dismissed =
+    finished && (await cookies()).has(onboardingCookie(ctx.workspaceId));
+  const returning = hasContent(state);
+  const showTemplates = isAdmin && catalog.length > 0;
+  // Header link opens the folded gallery (server-rendered, no script).
+  const collapsed = returning && !(await searchParams).templates;
   const mcpUrl = `${appUrl()}/api/mcp`;
+  const onboarding = !dismissed && (
+    <Onboarding
+      steps={steps}
+      agent={agent}
+      mcpUrl={mcpUrl}
+      isAdmin={isAdmin}
+      showTemplates={showTemplates}
+    />
+  );
+  const gallery = showTemplates && (
+    <TemplateGallery templates={catalog} collapsed={collapsed} />
+  );
   return (
     <main className="flex flex-1 flex-col gap-6 px-12 py-8">
       <PageHeader
@@ -126,76 +171,23 @@ export default async function Home() {
           count: waitingCount,
         })}
       >
-        <Button asChild>
+        {showTemplates && (
+          <Button asChild>
+            <Link href={collapsed ? "/?templates=1#templates" : "#templates"}>
+              <LayoutTemplate />
+              {t("newTemplate")}
+            </Link>
+          </Button>
+        )}
+        <Button asChild variant={showTemplates ? "secondary" : "default"}>
           <Link href="/workflows">
             <Plus />
             {t("newWorkflow")}
           </Link>
         </Button>
       </PageHeader>
-      {done < steps.length && (
-        <section className="flex flex-col gap-3 rounded-lg border p-4">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-base font-semibold">{t("onboarding.title")}</h2>
-            <p className="text-muted-foreground text-sm">
-              {t("onboarding.progress", { done, total: steps.length })}
-            </p>
-            <Progress value={(done / steps.length) * 100} className="mt-2" />
-          </div>
-          <Accordion type="single" collapsible defaultValue="ai">
-            <AccordionItem value="ai">
-              <AccordionTrigger>
-                {t("onboarding.connect.withAi")}
-              </AccordionTrigger>
-              <AccordionContent>
-                <ConnectAgent mcpUrl={mcpUrl} />
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="hand">
-              <AccordionTrigger>
-                {t("onboarding.connect.byHand")}
-              </AccordionTrigger>
-              <AccordionContent>
-                <ol className="divide-y">
-                  {steps.map((s) => (
-                    <li
-                      key={s.key}
-                      className="flex flex-wrap items-center gap-3 py-3"
-                    >
-                      {s.done ? (
-                        <CheckCircle2 className="text-primary size-5 shrink-0" />
-                      ) : (
-                        <Circle className="text-muted-foreground size-5 shrink-0" />
-                      )}
-                      <div className="min-w-48 flex-1">
-                        <p
-                          className={
-                            s.done
-                              ? "text-muted-foreground text-sm line-through"
-                              : "text-sm font-medium"
-                          }
-                        >
-                          {t(`onboarding.steps.${s.key}.title`)}
-                        </p>
-                        <p className="text-muted-foreground text-sm">
-                          {t(`onboarding.steps.${s.key}.description`)}
-                        </p>
-                      </div>
-                      {!s.done && (s.key !== "agent" || isAdmin) && (
-                        <Button asChild size="sm" variant="secondary">
-                          <Link href={s.href}>
-                            {t(`onboarding.steps.${s.key}.cta`)}
-                          </Link>
-                        </Button>
-                      )}
-                    </li>
-                  ))}
-                </ol>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </section>
-      )}
+      {!returning && onboarding}
+      {!returning && gallery}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <Kpi
           label={t("kpi.runs")}
@@ -343,6 +335,8 @@ export default async function Home() {
           )}
         </section>
       </div>
+      {returning && onboarding}
+      {returning && gallery}
     </main>
   );
 }
