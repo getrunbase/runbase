@@ -25,20 +25,6 @@
       "ariaLabel": "Budget USD",
       "description": "Plafond de dépense mensuel des blocs IA. Au-delà, ils sont mis en pause."
     },
-    "ai": {
-      "title": "Fournisseur IA",
-      "description": "Choisissez le fournisseur IA utilisé par les briques et les pages IA, puis collez votre clé API.",
-      "provider": "Fournisseur",
-      "providerPlaceholder": "Choisir un fournisseur",
-      "model": "Modèle",
-      "key": "Clé API",
-      "keyPlaceholder": "Collez votre clé API",
-      "keySet": "Clé enregistrée (laisser vide pour la conserver)",
-      "keyHint": "Stockée chiffrée dans le secret {secret}. Elle n'est plus jamais affichée.",
-      "noKeyHint": "Aucune clé pour l'instant. Elle sera stockée chiffrée dans le secret {secret}.",
-      "save": "Enregistrer",
-      "keySecret": "Secret qui porte la clé"
-    },
     "limits": {
       "title": "Limites du workspace",
       "description": "Au-delà, les ajouts sont refusés avec un message clair. Champ vide : valeur par défaut.",
@@ -113,7 +99,7 @@
       "workflow": "le workflow « {name} »",
       "function": "la fonction « {name} »",
       "webhook": "le webhook « {name} »",
-      "ai": "le fournisseur IA {name}"
+      "page": "la page « {name} »"
     }
   },
   "apiKeys": {

@@ -158,7 +158,7 @@ const perms = (objects: string[], write: string[] = []) => ({
   write,
   workflows: [],
   files: false,
-  ai: false,
+  ai: {},
 });
 
 export type PageExample = {

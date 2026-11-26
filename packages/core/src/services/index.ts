@@ -30,7 +30,6 @@ import { billingService, quotasService, usageService } from "../quotas";
 import { overviewService } from "../overview";
 import { templatesService } from "../templates";
 import { catalogService } from "../catalog/service";
-import { aiSettingsService } from "../ai-providers";
 import { secretUsageService } from "../secrets/usage";
 
 export const services = {
@@ -62,7 +61,6 @@ export const services = {
   overview: overviewService,
   templates: templatesService,
   catalog: catalogService,
-  aiSettings: aiSettingsService,
   secretUsage: secretUsageService,
 };
 
@@ -266,8 +264,6 @@ export const mcpTools: {
     set: "secrets.set",
     remove: "secrets.delete",
   },
-  // Excluded: AI setting by an admin (web UI), outside MCP.
-  aiSettings: { presets: null, get: null, set: null },
   // Excluded: helper of the secrets UI (deletion confirmation).
   secretUsage: { all: null },
   // Read-only SQL, executed on the isolated runbase_query role.

@@ -17,12 +17,12 @@ Branches: .
 
 #### Input
 
-| Name       | Type   | Required | Description |
-| ---------- | ------ | -------- | ----------- |
-| `prompt`   | string | yes      |             |
-| `context`  | any    | no       |             |
-| `ai`       | object | no       |             |
-| `branches` | array  | yes      |             |
+| Name       | Type   | Required | Description                                                       |
+| ---------- | ------ | -------- | ----------------------------------------------------------------- |
+| `prompt`   | string | yes      |                                                                   |
+| `context`  | any    | no       |                                                                   |
+| `ai`       | object | no       | AI of this block (required to run): \{ provider, model, secret \} |
+| `branches` | array  | yes      |                                                                   |
 
 #### Output
 
@@ -54,12 +54,12 @@ Branches: `ok`.
 
 #### Input
 
-| Name           | Type   | Required | Description |
-| -------------- | ------ | -------- | ----------- |
-| `text`         | string | yes      |             |
-| `fields`       | array  | yes      |             |
-| `instructions` | string | no       |             |
-| `ai`           | object | no       |             |
+| Name           | Type   | Required | Description                                                       |
+| -------------- | ------ | -------- | ----------------------------------------------------------------- |
+| `text`         | string | yes      |                                                                   |
+| `fields`       | array  | yes      |                                                                   |
+| `instructions` | string | no       |                                                                   |
+| `ai`           | object | no       | AI of this block (required to run): \{ provider, model, secret \} |
 
 #### Output
 
@@ -82,13 +82,13 @@ Branches: `ok`.
 
 #### Input
 
-| Name      | Type   | Required | Description |
-| --------- | ------ | -------- | ----------- |
-| `prompt`  | string | yes      |             |
-| `context` | any    | no       |             |
-| `ai`      | object | no       |             |
-| `objects` | array  | yes      |             |
-| `schema`  | object | no       |             |
+| Name      | Type   | Required | Description                                                       |
+| --------- | ------ | -------- | ----------------------------------------------------------------- |
+| `prompt`  | string | yes      |                                                                   |
+| `context` | any    | no       |                                                                   |
+| `ai`      | object | no       | AI of this block (required to run): \{ provider, model, secret \} |
+| `objects` | array  | yes      |                                                                   |
+| `schema`  | object | no       |                                                                   |
 
 #### Output
 

@@ -72,7 +72,7 @@ export function AiBlockConfig({
           }}
         />
         {!value && (
-          <p className="text-muted-foreground text-xs">{t("fallback")}</p>
+          <p className="text-destructive text-xs">{t("required")}</p>
         )}
       </div>
       {p && value && (

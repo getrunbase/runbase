@@ -15,7 +15,7 @@ const all = permissionsSchema.parse({
   write: ["deals"],
   workflows: [U],
   files: true,
-  ai: true,
+  ai: { default: { provider: "openai", secret: "OPENAI_API_KEY" } },
 });
 
 // One valid call per method: refused without permission, allowed with it.
@@ -89,9 +89,19 @@ test("sdk: invalid calls refused", () => {
 test("sdk: ai refused without a declared ai permission", () => {
   const c = parseCall({ method: "ai", args: { prompt: "hi" } });
   assert.equal(
-    denied({ ...all, ai: false }, c),
-    "ai not allowed (permissions.ai is false)",
+    denied({ ...all, ai: {} }, c),
+    "ai not allowed (permissions.ai declares no AI config)",
   );
+  // Named config: valid name accepted, invalid one refused by the shape.
+  assert.equal(
+    denied(all, parseCall({ method: "ai", args: { prompt: "hi", name: "summary" } })),
+    null,
+  );
+  assert.throws(() =>
+    parseCall({ method: "ai", args: { prompt: "hi", name: "bad name!" } }),
+  );
+  assert.throws(() => permissionsSchema.parse({ ai: true }));
+  assert.throws(() => permissionsSchema.parse({ ai: { default: { provider: "nope" } } }));
   assert.throws(
     () => parseCall({ method: "ai", args: { prompt: "" } }),
     /Invalid/,

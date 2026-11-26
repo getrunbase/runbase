@@ -37,6 +37,17 @@ export function checkPath(path: string) {
   return path;
 }
 
+// Declared permissions (AI configs included) checked on save, not only
+// on the first SDK call.
+function checkPermissions(raw: Record<string, unknown> | undefined) {
+  if (raw === undefined) return;
+  const r = permissionsSchema.safeParse(raw);
+  if (!r.success)
+    throw appError("pages.invalidPermissions", "Invalid page permissions:\n{detail}", {
+      detail: z.prettifyError(r.error),
+    });
+}
+
 function checkFiles(files: PageFiles, entry: string) {
   for (const [p, src] of Object.entries(files)) {
     checkPath(p);
@@ -268,6 +279,7 @@ export const pagesService = {
     await requireScope(ctx, "write");
     const entry = input.entry ?? DEFAULT_ENTRY;
     checkFiles(input.files, entry);
+    checkPermissions(input.permissions);
     const icon = input.icon ? parseIcon(input.icon) : undefined;
     return withTenant(ctx, async (tx) => {
       const [p] = await tx
@@ -291,6 +303,7 @@ export const pagesService = {
   // modify the draft (`files` replaces the whole package).
   update: async (ctx: TenantContext, id: string, patch: Partial<PageInput>) => {
     await requireScope(ctx, "write");
+    checkPermissions(patch.permissions);
     const icon = patch.icon ? parseIcon(patch.icon) : undefined;
     const draft =
       patch.files !== undefined ||

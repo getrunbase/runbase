@@ -24,6 +24,7 @@ Goal: an interface a product designer would sign off on. Dense, readable, live d
 ## Permissions
 The page declares \`permissions\`; every SDK call is checked server-side against them.
 - \`objects\`: readable objects (uuids). \`write\`: objects the page may create, update or delete in. \`workflows\`: workflows it may start. \`files\`: upload allowed.
+- \`ai\`: AI configs the page may call with useAI, \`{ "default": { "provider", "model", "secret" }, "<name>": {...} }\`. \`useAI()\` uses \`default\`, \`useAI("<name>")\` a named one. There is no workspace default: without a matching config, the call fails. \`secret\` names a workspace secret (secrets.list), read server-side and never sent to the page.
 - Grant the minimum: a dashboard only reads. A call outside the permissions fails and is reported by page.errors.
 
 ## Blocks (@getrunbase/kit)
