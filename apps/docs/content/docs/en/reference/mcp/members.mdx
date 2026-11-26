@@ -7,17 +7,18 @@ description: "The members.* tools of the Runbase MCP server, generated from thei
 
 ## members.invite
 
-Invites a person to the organization by email (admin scope). The invitation stays pending, with no access at all, until the invitee accepts it (email sent with the link). Roles: admin (manage everything), member (create and edit), viewer (read-only), end_user (only opens pages, no MCP). Default: member.
+Invites a person to the organization by email (admin scope). The invitation stays pending, with no access at all, until the invitee accepts it (email sent with the link). Roles: admin (manage everything), member (create and edit), viewer (read-only), end_user (only opens pages, no MCP). Default: member. Access is limited to workspaceIds (default: the current workspace; null = all workspaces, including future ones). Owners and admins always access every workspace. Inviting someone already invited or already a member adds the workspaces to their access (a pending invitation also takes the new role and is resent).
 
-| Name        | Type   | Required | Description                                      |
-| ----------- | ------ | -------- | ------------------------------------------------ |
-| `email`     | string | yes      |                                                  |
-| `role`      | string | no       | One of: `admin`, `member`, `viewer`, `end_user`. |
-| `workspace` | string | no       | Workspace id or name (default: active workspace) |
+| Name           | Type   | Required | Description                                                                                |
+| -------------- | ------ | -------- | ------------------------------------------------------------------------------------------ |
+| `email`        | string | yes      |                                                                                            |
+| `role`         | string | no       | One of: `admin`, `member`, `viewer`, `end_user`.                                           |
+| `workspaceIds` | union  | no       | Workspace ids from workspaces.list; null = all workspaces; omitted = the current workspace |
+| `workspace`    | string | no       | Workspace id or name (default: active workspace)                                           |
 
 ## members.list
 
-Lists organization members and pending invitations (pending: true): id, name, email, role.
+Lists organization members and pending invitations (pending: true): id, name, email, role, workspaceIds (accessible workspaces; null = all).
 
 | Name        | Type   | Required | Description                                      |
 | ----------- | ------ | -------- | ------------------------------------------------ |
@@ -41,3 +42,13 @@ Changes a member's role (id from members.list, admin scope). The owner's role do
 | `id`        | string | yes      |                                                  |
 | `role`      | string | yes      | One of: `admin`, `member`, `viewer`, `end_user`. |
 | `workspace` | string | no       | Workspace id or name (default: active workspace) |
+
+## members.set_workspaces
+
+Sets the workspaces a member or pending invitee can access (id from members.list, admin scope). workspaceIds replaces the current list; null = all workspaces. Owners and admins always access every workspace (null only).
+
+| Name           | Type   | Required | Description                                         |
+| -------------- | ------ | -------- | --------------------------------------------------- |
+| `id`           | string | yes      |                                                     |
+| `workspaceIds` | union  | yes      | Workspace ids from workspaces.list, or null for all |
+| `workspace`    | string | no       | Workspace id or name (default: active workspace)    |

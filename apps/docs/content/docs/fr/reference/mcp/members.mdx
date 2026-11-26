@@ -7,17 +7,18 @@ description: "Les outils members.* du serveur MCP de Runbase, générés à part
 
 ## members.invite
 
-Invite une personne dans l'organisation par e-mail (périmètre admin). L'invitation reste en attente, sans aucun accès, jusqu'à ce que la personne invitée l'accepte (e-mail envoyé avec le lien). Rôles : admin (gère tout), member (crée et modifie), viewer (lecture seule), end_user (ouvre uniquement des pages, pas de MCP). Par défaut : member.
+Invite une personne dans l'organisation par e-mail (périmètre admin). L'invitation reste en attente, sans aucun accès, jusqu'à ce que la personne invitée l'accepte (e-mail envoyé avec le lien). Rôles : admin (gère tout), member (crée et modifie), viewer (lecture seule), end_user (ouvre uniquement des pages, pas de MCP). Par défaut : member. L'accès est limité à workspaceIds (par défaut : l'espace de travail courant ; null = tous les espaces de travail, y compris les futurs). Les propriétaires et les admins accèdent toujours à tous les espaces de travail. Inviter une personne déjà invitée ou déjà membre ajoute les espaces de travail à son accès (une invitation en attente prend aussi le nouveau rôle et est renvoyée).
 
-| Nom         | Type   | Requis | Description                                                                        |
-| ----------- | ------ | ------ | ---------------------------------------------------------------------------------- |
-| `email`     | string | oui    |                                                                                    |
-| `role`      | string | non    | Valeurs possibles : `admin`, `member`, `viewer`, `end_user`.                       |
-| `workspace` | string | non    | Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif) |
+| Nom            | Type   | Requis | Description                                                                                                                            |
+| -------------- | ------ | ------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `email`        | string | oui    |                                                                                                                                        |
+| `role`         | string | non    | Valeurs possibles : `admin`, `member`, `viewer`, `end_user`.                                                                           |
+| `workspaceIds` | union  | non    | Identifiants d'espaces de travail issus de workspaces.list ; null = tous les espaces de travail ; absent = l'espace de travail courant |
+| `workspace`    | string | non    | Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)                                                     |
 
 ## members.list
 
-Liste les membres de l'organisation et les invitations en attente (pending: true) : id, nom, e-mail, rôle.
+Liste les membres de l'organisation et les invitations en attente (pending: true) : id, nom, e-mail, rôle, workspaceIds (espaces de travail accessibles ; null = tous).
 
 | Nom         | Type   | Requis | Description                                                                        |
 | ----------- | ------ | ------ | ---------------------------------------------------------------------------------- |
@@ -41,3 +42,13 @@ Change le rôle d'un membre (id issu de members.list, périmètre admin). Le rô
 | `id`        | string | oui    |                                                                                    |
 | `role`      | string | oui    | Valeurs possibles : `admin`, `member`, `viewer`, `end_user`.                       |
 | `workspace` | string | non    | Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif) |
+
+## members.set_workspaces
+
+Définit les espaces de travail auxquels un membre ou une personne invitée accède (id issu de members.list, périmètre admin). workspaceIds remplace la liste actuelle ; null = tous les espaces de travail. Les propriétaires et les admins accèdent toujours à tous les espaces de travail (null uniquement).
+
+| Nom            | Type   | Requis | Description                                                                        |
+| -------------- | ------ | ------ | ---------------------------------------------------------------------------------- |
+| `id`           | string | oui    |                                                                                    |
+| `workspaceIds` | union  | oui    | Identifiants d'espaces de travail issus de workspaces.list, ou null pour tous      |
+| `workspace`    | string | non    | Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif) |
