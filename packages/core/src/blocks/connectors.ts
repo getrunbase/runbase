@@ -16,6 +16,7 @@ import type { NodeManifest } from "@getrunbase/node-sdk";
 import type { Block } from "./block";
 import { execFunction } from "../functions/sandbox";
 import { decryptAll } from "../secrets";
+import { withSecrets } from "./catalog/external";
 import { appError } from "../errors/app-error";
 import { logger } from "../logger";
 
@@ -28,7 +29,10 @@ export async function connectorRoots(): Promise<string[]> {
   const env = process.env.RUNBASE_CONNECTORS_DIRS;
   if (env !== undefined) return env.split(delimiter).filter(Boolean);
   const roots: string[] = [];
-  for (const rel of ["connectors", join("node_modules", "@getrunbase-connectors")])
+  for (const rel of [
+    "connectors",
+    join("node_modules", "@getrunbase-connectors"),
+  ])
     for (let d = process.cwd(); ; d = dirname(d)) {
       const p = join(d, rel);
       if ((await stat(p).catch(() => null))?.isDirectory()) {
@@ -127,31 +131,40 @@ function nodeBlock(c: Loaded, m: NodeManifest): Block {
     outputSchema: z.fromJSONSchema(m.outputSchema as never),
     branches: m.branches,
     sideEffect: m.sideEffect,
-    run: async (input, bctx) => {
-      const secrets =
-        m.auth.secrets.length && bctx.tenant
-          ? await decryptAll(bctx.tenant)
-          : {};
-      const { output } = await execFunction(
-        {
-          code: await c.code(),
-          permissions: { domains: m.auth.domains, secrets: m.auth.secrets },
-        },
-        { __runbase: "run", node: m.id, input },
-        {
-          secrets,
-          test:
-            (bctx.scope?.run as { test?: boolean } | undefined)?.test === true,
-        },
-      );
-      const res = output as { branch?: unknown; output?: unknown } | null;
-      if (!res || typeof res.branch !== "string")
-        throw appError(
-          "blocks.connectorBadResult",
-          "{type}: connector returned no branch",
-          { type: `${NODE_PREFIX}${m.id}` },
+    // `{{secret.NAME}}` in inputs is resolved (and redacted from the output),
+    // as for core blocks: a node can take a URL or a key per step.
+    run: (raw, bctx) => {
+      const exec = async (input: unknown) => {
+        const secrets =
+          m.auth.secrets.length && bctx.tenant
+            ? await decryptAll(bctx.tenant)
+            : {};
+        const { output } = await execFunction(
+          {
+            code: await c.code(),
+            permissions: { domains: m.auth.domains, secrets: m.auth.secrets },
+          },
+          { __runbase: "run", node: m.id, input },
+          {
+            secrets,
+            test:
+              (bctx.scope?.run as { test?: boolean } | undefined)?.test ===
+              true,
+          },
         );
-      return { branch: res.branch, output: res.output };
+        const res = output as { branch?: unknown; output?: unknown } | null;
+        if (!res || typeof res.branch !== "string")
+          throw appError(
+            "blocks.connectorBadResult",
+            "{type}: connector returned no branch",
+            { type: `${NODE_PREFIX}${m.id}` },
+          );
+        return { branch: res.branch, output: res.output };
+      };
+      // Workspace settings are only loaded when an input references a secret.
+      return JSON.stringify(raw).includes("{{secret.")
+        ? withSecrets(bctx, raw, exec)
+        : exec(raw);
     },
   };
 }

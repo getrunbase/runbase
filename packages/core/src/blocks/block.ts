@@ -166,6 +166,9 @@ export type Block<
   // Side effect (write, send, external call): mandatory, dry run
   // then simulates the block instead of executing it.
   sideEffect: boolean;
+  // Deprecated: still executes (existing workflows keep working) but is
+  // hidden from the MCP catalog and the editor picker. Value: replacement.
+  deprecated?: string;
   // Simulated result in dry run; by default, first branch and null output.
   simulate?: (input: z.infer<I>) => BlockResult<O>;
   run: (input: z.infer<I>, ctx: BlockContext) => Promise<BlockResult<O>>;

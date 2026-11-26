@@ -1,17 +1,20 @@
 # @getrunbase-connectors/slack
 
-Post messages and thread replies to Slack channels as your own bot, using the Slack Web API.
+Send messages to a Slack channel through an Incoming Webhook.
 
 ## Nodes
 
-- `node.slack.post_message`: Posts a message to a Slack channel (or a thread reply with threadTs) as the connected bot.
+- `node.slack.send`: Sends a message to the Slack channel of an Incoming Webhook. The webhook URL can be typed or picked from the workspace secrets.
 
 ## Setup
 
-Create a Slack app, add the `chat:write` bot scope, install it in your workspace and invite the bot to the channel. Copy the bot token (`xoxb-…`).
+In Slack, create an Incoming Webhook for the channel and copy its URL
+(`https://hooks.slack.com/services/…`).
 
-Add the secret in **Settings › Secrets** of your workspace:
-`SLACK_BOT_TOKEN`. The node can only reach `slack.com`.
+Paste it in the step's `webhookUrl` field, or store it in **Settings › Secrets**
+and insert the secret there. Each step can use its own webhook, so one workspace
+can post to several channels or Slack workspaces. The node can only reach
+`hooks.slack.com`.
 
 ## Development
 

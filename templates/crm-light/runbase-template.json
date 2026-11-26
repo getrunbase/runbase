@@ -96,9 +96,9 @@
         "steps": [
           {
             "id": "notify",
-            "type": "node.slack.post_message",
+            "type": "node.slack.send",
             "input": {
-              "channel": "#sales",
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
               "text": "New deal: {{record.title}} ({{record.amount}}), stage {{record.stage}}"
             }
           }
@@ -106,7 +106,7 @@
       }
     }
   ],
-  "secrets": ["SLACK_BOT_TOKEN"],
+  "secrets": ["SLACK_WEBHOOK_URL"],
   "records": [
     {
       "key": "acme",

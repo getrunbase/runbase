@@ -663,7 +663,7 @@ Branches : `ok`.
 
 ### record.delete
 
-**Supprimer un enregistrement**. Supprime définitivement un enregistrement.
+**Supprimer un enregistrement**. Met un enregistrement à la corbeille : ses relations sont supprimées, sa timeline conservée. Restaurable pendant 30 jours, puis purgé.
 
 Branches : `ok`, `not_found`.
 
@@ -923,35 +923,6 @@ Branches : `created`, `updated`.
 }
 ```
 
-### slack.send
-
-**Message Slack**. Envoie un message sur Slack via une URL d'Incoming Webhook.
-
-Branches : `ok`, `error`.
-
-#### Entrée
-
-| Nom          | Type   | Requis | Description |
-| ------------ | ------ | ------ | ----------- |
-| `webhookUrl` | string | oui    |             |
-| `text`       | string | oui    |             |
-
-#### Sortie
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "type": "object",
-  "properties": {
-    "status": {
-      "type": "number"
-    }
-  },
-  "required": ["status"],
-  "additionalProperties": false
-}
-```
-
 ### stop.error
 
 **Arrêter avec une erreur**. Arrête le workflow avec un message d'erreur ; l'erreur apparaît dans le centre d'erreurs.
@@ -1133,19 +1104,18 @@ Branches : `ok`, `error`.
 
 ## Nœuds de connecteurs
 
-### node.slack.post_message
+### node.slack.send
 
-**Publier un message Slack**. Publie un message dans un canal Slack (ou une réponse dans un fil avec threadTs) en tant que bot connecté.
+**Envoyer un message Slack**. Envoie un message dans le canal Slack d'un Incoming Webhook. L'URL du webhook peut être saisie ou choisie parmi les secrets de l'espace de travail.
 
 Branches : `ok`.
 
 #### Entrée
 
-| Nom        | Type   | Requis | Description |
-| ---------- | ------ | ------ | ----------- |
-| `channel`  | string | oui    |             |
-| `text`     | string | oui    |             |
-| `threadTs` | string | non    |             |
+| Nom          | Type   | Requis | Description |
+| ------------ | ------ | ------ | ----------- |
+| `webhookUrl` | string | oui    |             |
+| `text`       | string | oui    |             |
 
 #### Sortie
 
@@ -1154,14 +1124,11 @@ Branches : `ok`.
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
-    "channel": {
-      "type": "string"
-    },
-    "ts": {
-      "type": "string"
+    "status": {
+      "type": "number"
     }
   },
-  "required": ["channel", "ts"],
+  "required": ["status"],
   "additionalProperties": false
 }
 ```

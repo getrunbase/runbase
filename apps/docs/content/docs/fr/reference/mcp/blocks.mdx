@@ -7,7 +7,7 @@ description: "Les outils blocks.* du serveur MCP de Runbase, générés à parti
 
 ## blocks.list
 
-Catalogue des blocs de workflow : type, branches, schémas JSON d'entrée et de sortie. Inclut les fonctions de l'espace de travail sous la forme fn.&lt;name&gt;.
+Catalogue des blocs de workflow (kind : "block") : type, branches, schémas JSON d'entrée et de sortie, y compris les fonctions de l'espace de travail sous la forme fn.&lt;name&gt;. Liste aussi les déclencheurs (kind : "trigger", pour definition.trigger) avec leurs paramètres dans inputSchema. Les blocs obsolètes sont omis (ils tournent toujours dans les workflows existants).
 
 | Nom         | Type   | Requis | Description                                                                        |
 | ----------- | ------ | ------ | ---------------------------------------------------------------------------------- |

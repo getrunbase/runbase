@@ -42,9 +42,7 @@ its own without sending the alert twice.
 
 1. Import the template from the Databases page with **Import template**, or
    with the MCP tool `template.import`.
-2. Create a Slack app with the `chat:write` bot scope, install it and invite
-   the bot to your support channel.
-3. In **Settings › Secrets**, add `SLACK_BOT_TOKEN`.
-4. Open the **Alert the team for each ticket** workflow, replace `#support`
-   with your channel, then activate it.
+2. In Slack, create an Incoming Webhook for your support channel and copy its URL.
+3. In **Settings › Secrets**, add `SLACK_WEBHOOK_URL` with the webhook URL.
+4. Open the **Alert the team for each ticket** workflow, then activate it.
 5. Create a test ticket to check the Slack alert.

@@ -1,61 +1,50 @@
 // Slack connector against a simulated fetch (no network call).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { postMessage } from "./index";
+import { send } from "./index";
 
-type Call = { url: string; method: string; headers: Headers; body: string };
-function mock(...responses: [number, unknown][]) {
+type Call = { url: string; method: string; body: string };
+function mock(status: number, body = "ok") {
   const calls: Call[] = [];
   const fetch: typeof globalThis.fetch = async (input, init) => {
     calls.push({
       url: String(input),
       method: init?.method ?? "GET",
-      headers: new Headers(init?.headers),
       body: String(init?.body ?? ""),
     });
-    const [status, body] = responses.shift() ?? [500, {}];
-    return new Response(JSON.stringify(body), { status });
+    return new Response(body, { status });
   };
   return { calls, fetch };
 }
-const secrets = { SLACK_BOT_TOKEN: "xoxb-test" };
+const webhookUrl = "https://hooks.slack.com/services/T/B/x";
 
-test("slack.post_message: calls chat.postMessage with the token", async () => {
-  const { calls, fetch } = mock([
-    200,
-    { ok: true, channel: "C1", ts: "1700.1" },
-  ]);
-  const r = await postMessage.execute(
-    { channel: "#sales", text: "Hi", threadTs: "1699.0" },
-    { secrets, fetch },
-  );
-  assert.deepEqual(r, {
-    branch: "ok",
-    output: { channel: "C1", ts: "1700.1" },
-  });
-  assert.equal(calls[0]!.url, "https://slack.com/api/chat.postMessage");
+test("slack.send: posts the text to the webhook", async () => {
+  const { calls, fetch } = mock(200);
+  const r = await send.execute({ webhookUrl, text: "Hi" }, { fetch });
+  assert.deepEqual(r, { branch: "ok", output: { status: 200 } });
+  assert.equal(calls[0]!.url, webhookUrl);
   assert.equal(calls[0]!.method, "POST");
-  assert.equal(calls[0]!.headers.get("authorization"), "Bearer xoxb-test");
-  assert.deepEqual(JSON.parse(calls[0]!.body), {
-    channel: "#sales",
-    text: "Hi",
-    thread_ts: "1699.0",
-  });
+  assert.deepEqual(JSON.parse(calls[0]!.body), { text: "Hi" });
 });
 
-test("slack.post_message: ok: false surfaces the Slack error", async () => {
-  const { fetch } = mock([200, { ok: false, error: "channel_not_found" }]);
+test("slack.send: a Slack error is surfaced", async () => {
+  const { fetch } = mock(404, "no_service");
   await assert.rejects(
-    postMessage.execute({ channel: "x", text: "y" }, { secrets, fetch }),
-    /Slack chat.postMessage failed \(channel_not_found\)/,
+    send.execute({ webhookUrl, text: "y" }, { fetch }),
+    /Slack webhook failed \(404 no_service\)/,
   );
 });
 
-test("slack.post_message: manifest (secret, domain, required input)", async () => {
-  const m = postMessage.manifest();
-  assert.deepEqual(m.auth, {
-    secrets: ["SLACK_BOT_TOKEN"],
-    domains: ["slack.com"],
-  });
-  await assert.rejects(postMessage.execute({ channel: "x" }), /invalid input/);
+test("slack.send: refuses a URL outside hooks.slack.com", async () => {
+  const { fetch } = mock(200);
+  await assert.rejects(
+    send.execute({ webhookUrl: "https://evil.test/x", text: "y" }, { fetch }),
+    /not a Slack Incoming Webhook URL/,
+  );
+});
+
+test("slack.send: manifest (secret, domain, required input)", async () => {
+  const m = send.manifest();
+  assert.deepEqual(m.auth, { secrets: [], domains: ["hooks.slack.com"] });
+  await assert.rejects(send.execute({ text: "y" }), /invalid input/);
 });

@@ -294,11 +294,15 @@ export const eventEmit = defineBlock({
 
 // Slack message through an Incoming Webhook. The URL can be `{{secret.SLACK_WEBHOOK}}`.
 // Domain fixed to hooks.slack.com: no need to add it to the allowed domains.
+// Replaced by the Slack connector (node.slack.send): kept executable for
+// existing workflows, hidden from the catalog and the block picker.
 export const slackSend = defineBlock({
   type: "slack.send",
-  label: "Slack message",
-  description: "Sends a message to Slack through an Incoming Webhook URL.",
+  label: "Slack message (deprecated)",
+  description:
+    "Deprecated: use node.slack.send. Sends a message to Slack through an Incoming Webhook URL.",
   sideEffect: true,
+  deprecated: "node.slack.send",
   inputSchema: z.object({
     webhookUrl: z.string().min(1),
     text: z.string().min(1),

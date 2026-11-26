@@ -7,6 +7,7 @@ import { decryptAll } from "../secrets";
 import type { TenantContext } from "../tenant";
 import * as catalog from "./catalog";
 import { connectorBlocks, NODE_PREFIX } from "./connectors";
+import { triggerVariants } from "../triggers/schema";
 
 export * from "./block";
 export { render } from "./render";
@@ -87,10 +88,60 @@ export async function getBlock(
   return f ? functionBlock(ctx, f) : undefined;
 }
 
+// Workflow triggers (`definition.trigger`), described for the catalog.
+const TRIGGERS: Record<string, { label: string; description: string }> = {
+  "trigger.record_created": {
+    label: "Record created",
+    description: "Starts a run when a record of `object` is created.",
+  },
+  "trigger.record_updated": {
+    label: "Record updated",
+    description:
+      "Starts a run when a record of `object` changes; `fields` limits it to those fields (empty: any change).",
+  },
+  "trigger.event": {
+    label: "Event",
+    description:
+      "Starts a run for each event of type `event` ({{event.…}}; {{event.recordId}} = linked record).",
+  },
+  "trigger.schedule": {
+    label: "Schedule",
+    description:
+      "Cron schedule (`timezone`: IANA, default UTC). With `object`: one run per record matching `filter`; without: a single run.",
+  },
+  "trigger.webhook": {
+    label: "Incoming webhook",
+    description:
+      "Starts a run on each valid reception of webhook `webhook` (name). With `object` + `mapping` (field -> payload path), the record is created or updated first (`match`: unique field) and the run targets it.",
+  },
+  "trigger.run_failed": {
+    label: "Workflow failed",
+    description:
+      "Error workflow: starts when a run of another workflow fails (`workflow`: id or name to watch only one). {{event.runId}}, {{event.workflowId}}, {{event.workflowName}}, {{event.error}}, {{event.recordId}}.",
+  },
+  "trigger.manual": {
+    label: "Manual",
+    description:
+      "Started by hand (editor, runs.start); `object`: optional editor context.",
+  },
+};
+
+export const triggerCatalog = () =>
+  triggerVariants.options.map((o) => {
+    const type = o.shape.type.value;
+    return {
+      kind: "trigger" as const,
+      type,
+      ...TRIGGERS[type]!,
+      inputSchema: z.toJSONSchema(o) as unknown,
+    };
+  });
+
 export const blocksService = {
   // Catalog with JSON schemas (UI and MCP): static blocks, connector
   // nodes (`node.<id>`); with ctx, the workspace functions as
-  // `fn.<nom>`.
+  // `fn.<nom>`. Deprecated blocks carry `deprecated` (replacement type):
+  // the editor needs them to show existing steps.
   list: async (ctx?: TenantContext) => {
     const fns = ctx
       ? (await functionsService.list(ctx)).map((f) => ({
@@ -110,9 +161,18 @@ export const blocksService = {
         description: b.description,
         branches: b.branches,
         dynamicBranches: !!b.branchesFor,
+        ...(b.deprecated ? { deprecated: b.deprecated } : {}),
         inputSchema: z.toJSONSchema(b.inputSchema) as unknown,
         outputSchema: z.toJSONSchema(b.outputSchema) as unknown,
       }))
       .concat(fns);
   },
+  // Agent-facing catalog (MCP blocks.list): blocks for new use (no
+  // deprecated ones), then the triggers with `kind: "trigger"`.
+  catalog: async (ctx?: TenantContext) => [
+    ...(await blocksService.list(ctx))
+      .filter((b) => !("deprecated" in b))
+      .map((b) => ({ kind: "block" as const, ...b })),
+    ...triggerCatalog(),
+  ],
 };

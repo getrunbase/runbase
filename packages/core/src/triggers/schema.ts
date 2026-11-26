@@ -31,9 +31,8 @@ const eventAlias = (v: unknown) => {
   return v;
 };
 
-export const triggerSchema = z.preprocess(
-  eventAlias,
-  z.discriminatedUnion("type", [
+// Trigger variants, also exposed in the blocks catalog (blocks.list).
+export const triggerVariants = z.discriminatedUnion("type", [
     z.object({ type: z.literal("trigger.record_created"), object: z.string() }),
     z.object({
       type: z.literal("trigger.record_updated"),
@@ -78,8 +77,9 @@ export const triggerSchema = z.preprocess(
       type: z.literal("trigger.manual"),
       object: z.string().optional(),
     }),
-  ]),
-);
+  ]);
+
+export const triggerSchema = z.preprocess(eventAlias, triggerVariants);
 export type Trigger = z.infer<typeof triggerSchema>;
 
 // Cron: one repeatable BullMQ job per active workflow with trigger.schedule.

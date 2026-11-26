@@ -39,9 +39,7 @@ message twice.
 
 1. Import the template from the Databases page with **Import template**, or
    with the MCP tool `template.import`.
-2. Create a Slack app with the `chat:write` bot scope, install it and invite
-   the bot to your onboarding channel.
-3. In **Settings › Secrets**, add `SLACK_BOT_TOKEN`.
-4. Open the **Welcome new customers** workflow, replace `#onboarding` with
-   your channel, adjust the message to your own voice, then activate it.
+2. In Slack, create an Incoming Webhook for your onboarding channel and copy its URL.
+3. In **Settings › Secrets**, add `SLACK_WEBHOOK_URL` with the webhook URL.
+4. Open the **Welcome new customers** workflow, adjust the message to your own voice, then activate it.
 5. Create a test customer to check the whole flow.

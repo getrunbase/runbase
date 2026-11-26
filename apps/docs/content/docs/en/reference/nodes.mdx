@@ -663,7 +663,7 @@ Branches: `ok`.
 
 ### record.delete
 
-**Delete a record**. Permanently deletes a record.
+**Delete a record**. Moves a record to the trash: its relations are removed, its timeline kept. Restorable for 30 days, then purged.
 
 Branches: `ok`, `not_found`.
 
@@ -923,35 +923,6 @@ Branches: `created`, `updated`.
 }
 ```
 
-### slack.send
-
-**Slack message**. Sends a message to Slack through an Incoming Webhook URL.
-
-Branches: `ok`, `error`.
-
-#### Input
-
-| Name         | Type   | Required | Description |
-| ------------ | ------ | -------- | ----------- |
-| `webhookUrl` | string | yes      |             |
-| `text`       | string | yes      |             |
-
-#### Output
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "type": "object",
-  "properties": {
-    "status": {
-      "type": "number"
-    }
-  },
-  "required": ["status"],
-  "additionalProperties": false
-}
-```
-
 ### stop.error
 
 **Stop with an error**. Stops the workflow with an error message; the error shows up in the error center.
@@ -1133,19 +1104,18 @@ Branches: `ok`, `error`.
 
 ## Connector nodes
 
-### node.slack.post_message
+### node.slack.send
 
-**Post a Slack message**. Posts a message to a Slack channel (or a thread reply with threadTs) as the connected bot.
+**Send a Slack message**. Sends a message to the Slack channel of an Incoming Webhook. The webhook URL can be typed or picked from the workspace secrets.
 
 Branches: `ok`.
 
 #### Input
 
-| Name       | Type   | Required | Description |
-| ---------- | ------ | -------- | ----------- |
-| `channel`  | string | yes      |             |
-| `text`     | string | yes      |             |
-| `threadTs` | string | no       |             |
+| Name         | Type   | Required | Description |
+| ------------ | ------ | -------- | ----------- |
+| `webhookUrl` | string | yes      |             |
+| `text`       | string | yes      |             |
 
 #### Output
 
@@ -1154,14 +1124,11 @@ Branches: `ok`.
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
-    "channel": {
-      "type": "string"
-    },
-    "ts": {
-      "type": "string"
+    "status": {
+      "type": "number"
     }
   },
-  "required": ["channel", "ts"],
+  "required": ["status"],
   "additionalProperties": false
 }
 ```

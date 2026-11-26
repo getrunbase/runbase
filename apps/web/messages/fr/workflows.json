@@ -247,8 +247,8 @@
       "data": "Données",
       "logic": "Logique",
       "ai": "IA",
-      "communication": "Communication",
-      "connectors": "Connecteurs",
+      "apps": "Apps",
+      "http": "HTTP et événements",
       "code": "Code",
       "other": "Autres"
     },
@@ -349,7 +349,7 @@
       },
       "delete": {
         "label": "Supprimer une fiche",
-        "description": "Supprime définitivement une fiche."
+        "description": "Place une fiche dans la corbeille. Restaurable pendant 30 jours, puis purgée."
       },
       "get": {
         "label": "Lire une fiche",
