@@ -43,7 +43,7 @@ We aim to triage new issues within 3 working days and to give a first review on 
 
 ## Contributor License Agreement
 
-Every contributor signs the [CLA](CLA.md) once. It lets MENTIONABLE SAS distribute Runbase under its current license (FSL-1.1-ALv2, see [LICENSE](LICENSE)) and under commercial terms.
+Every contributor signs the [CLA](CLA.md) once. It lets MENTIONABLE SAS distribute Runbase under its current license (AGPL-3.0-only for the core, see [LICENSE](LICENSE)) and under commercial terms.
 
 ## Code of conduct
 

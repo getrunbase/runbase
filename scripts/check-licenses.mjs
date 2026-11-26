@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Checks the license layout of the repository (see README, Licensing section):
-// - root LICENSE = FSL-1.1-ALv2;
+// - root LICENSE = AGPL-3.0-only;
 // - every workspace package.json has a "license" field consistent with its folder;
 // - every connectors/* or templates/* folder contains an MIT LICENSE.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -8,7 +8,7 @@ import { join, relative } from "node:path";
 import { argv, cwd, exit, stderr, stdout } from "node:process";
 import { fileURLToPath } from "node:url";
 
-export const FSL = "FSL-1.1-ALv2";
+export const AGPL = "AGPL-3.0-only";
 export const MIT = "MIT";
 
 // Folders whose content is MIT (SDK, kit, ui, connectors, templates).
@@ -18,7 +18,7 @@ const MIT_DIRS =
 /** Expected license for a folder relative to the root ("" = root). */
 export function expectedLicense(dir) {
   if (MIT_DIRS.test(dir)) return MIT;
-  return FSL;
+  return AGPL;
 }
 
 const isDir = (p) => existsSync(p) && statSync(p).isDirectory();
@@ -51,8 +51,8 @@ export function checkLicenses(root) {
   const errors = [];
 
   const rootLicense = read(join(root, "LICENSE"));
-  if (!rootLicense?.includes("Functional Source License, Version 1.1, ALv2")) {
-    errors.push("LICENSE: missing or not the FSL-1.1-ALv2 text");
+  if (!rootLicense?.includes("GNU AFFERO GENERAL PUBLIC LICENSE")) {
+    errors.push("LICENSE: missing or not the AGPL-3.0 text");
   } else if (/\$\{(year|licensor name)\}/.test(rootLicense)) {
     errors.push("LICENSE: unfilled ${year} / ${licensor name} placeholder");
   }

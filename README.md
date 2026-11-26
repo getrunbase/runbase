@@ -21,7 +21,7 @@ Self-host it in five minutes with Docker, unlimited workspaces for free, or
 use the managed cloud. Leave anytime: the core is open source and your data
 stays yours.
 
-[![License: FSL-1.1-ALv2](https://img.shields.io/badge/core-FSL--1.1--ALv2-blue)](LICENSE)
+[![License: AGPL-3.0](https://img.shields.io/badge/core-AGPL--3.0-blue)](LICENSE)
 [![SDK license: MIT](https://img.shields.io/badge/SDK%20%26%20connectors-MIT-green)](packages/node-sdk/LICENSE)
 [![MCP native](https://img.shields.io/badge/MCP-native-purple)](apps/docs/content/docs/en/reference/mcp/index.mdx)
 [![Self-host: Docker](https://img.shields.io/badge/self--host-Docker-2496ED)](docs/self-hosting.md)
@@ -95,31 +95,37 @@ The docs site lives in [`apps/docs`](apps/docs) (`pnpm --filter @getrunbase/docs
 Facts as of November 2026, from each vendor's public documentation. Corrections
 are welcome.
 
-|                         | Runbase                       | n8n                     | Zapier       | Make        | Activepieces            | Airtable    | Retool           |
-| ----------------------- | ----------------------------- | ----------------------- | ------------ | ----------- | ----------------------- | ----------- | ---------------- |
-| Self-host               | Yes, Docker                   | Yes                     | No           | No          | Yes                     | No          | Yes (paid plans) |
-| Source license          | FSL-1.1-ALv2, then Apache 2.0 | Sustainable Use License | Proprietary  | Proprietary | MIT (community edition) | Proprietary | Proprietary      |
-| Built through MCP       | Yes, every feature            | Partial                 | Partial      | Partial     | Partial                 | Partial     | No               |
-| Database with relations | Yes                           | Basic tables            | Basic tables | Data stores | Basic tables            | Yes         | Yes              |
-| Workflows               | Yes                           | Yes                     | Yes          | Yes         | Yes                     | Basic       | Yes              |
-| User-facing pages       | Yes                           | Forms                   | Yes          | No          | Forms                   | Yes         | Yes              |
-| Sandboxed custom code   | Yes                           | Yes                     | Yes          | Paid plans  | Yes                     | Scripts     | Yes              |
+|                         | Runbase            | n8n                     | Zapier       | Make        | Activepieces            | Airtable    | Retool           |
+| ----------------------- | ------------------ | ----------------------- | ------------ | ----------- | ----------------------- | ----------- | ---------------- |
+| Self-host               | Yes, Docker        | Yes                     | No           | No          | Yes                     | No          | Yes (paid plans) |
+| Source license          | AGPL-3.0           | Sustainable Use License | Proprietary  | Proprietary | MIT (community edition) | Proprietary | Proprietary      |
+| Built through MCP       | Yes, every feature | Partial                 | Partial      | Partial     | Partial                 | Partial     | No               |
+| Database with relations | Yes                | Basic tables            | Basic tables | Data stores | Basic tables            | Yes         | Yes              |
+| Workflows               | Yes                | Yes                     | Yes          | Yes         | Yes                     | Basic       | Yes              |
+| User-facing pages       | Yes                | Forms                   | Yes          | No          | Forms                   | Yes         | Yes              |
+| Sandboxed custom code   | Yes                | Yes                     | Yes          | Paid plans  | Yes                     | Scripts     | Yes              |
 
 "Built through MCP" means an agent can create and change the data model,
 workflows and interfaces themselves, not only trigger existing actions.
 
 ## Licensing
 
-Runbase is source-available, with open source extension points.
+Runbase is open source.
 
-| Path                                                                                              | License                                                                                                  |
-| ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Repository root, `apps/*`, `packages/core`                                                        | [FSL-1.1-ALv2](LICENSE) (Functional Source License, converts to Apache 2.0 two years after each release) |
-| `packages/sdk`, `packages/node-sdk`, `packages/kit`, `packages/ui`, `connectors/*`, `templates/*` | MIT (each folder ships its own `LICENSE`)                                                                |
+| Path                                                                                              | License                                   |
+| ------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Repository root, `apps/*`, `packages/core`                                                        | [AGPL-3.0-only](LICENSE)                  |
+| `packages/sdk`, `packages/node-sdk`, `packages/kit`, `packages/ui`, `connectors/*`, `templates/*` | MIT (each folder ships its own `LICENSE`) |
 
-The FSL allows any use except offering a competing commercial product or service; each version becomes Apache 2.0 on its second anniversary.
+The core is licensed under the GNU Affero General Public License v3.0. You can use, modify and self-host it freely. If you modify it and let third parties use it over a network (for example as a hosted service), you must publish your modifications under the same license. Code you write on top of the MIT SDK, kit, connectors and templates is not affected.
+
+Versions up to and including v0.3.0 were released under FSL-1.1-ALv2 and remain under that license.
 
 Every `package.json` declares a matching `license` field. `pnpm check:licenses` verifies the whole layout and `pnpm test:licenses` runs its tests.
+
+### Trademarks
+
+The Runbase name and logo are trademarks of MENTIONABLE SAS. The code license does not cover them; see [TRADEMARKS.md](TRADEMARKS.md).
 
 ## Telemetry
 

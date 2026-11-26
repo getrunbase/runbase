@@ -1,7 +1,7 @@
 {
   "name": "@getrunbase/worker",
   "private": true,
-  "license": "FSL-1.1-ALv2",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=../../.env src/index.ts",
