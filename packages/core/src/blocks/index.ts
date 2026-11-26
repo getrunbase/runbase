@@ -162,6 +162,7 @@ export const blocksService = {
         branches: b.branches,
         dynamicBranches: !!b.branchesFor,
         ...(b.deprecated ? { deprecated: b.deprecated } : {}),
+        ...(b.app ? { app: b.app } : {}),
         inputSchema: z.toJSONSchema(b.inputSchema) as unknown,
         outputSchema: z.toJSONSchema(b.outputSchema) as unknown,
       }))
@@ -172,7 +173,14 @@ export const blocksService = {
   catalog: async (ctx?: TenantContext) => [
     ...(await blocksService.list(ctx))
       .filter((b) => !("deprecated" in b))
-      .map((b) => ({ kind: "block" as const, ...b })),
+      // Logo left out: a data URL is token noise for an agent.
+      .map((b) => ({
+        kind: "block" as const,
+        ...b,
+        ...("app" in b && b.app
+          ? { app: { name: b.app.name, label: b.app.label } }
+          : {}),
+      })),
     ...triggerCatalog(),
   ],
 };

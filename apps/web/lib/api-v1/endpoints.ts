@@ -142,6 +142,10 @@ const CatalogConnectorSchema = named(
     slug: z.string(),
     displayName: z.string(),
     icon: z.string(),
+    logo: z
+      .string()
+      .optional()
+      .describe("Official logo as a data:image/svg+xml;base64 URL"),
     description: z.string(),
     categories: z.array(z.string()),
     triggers: z.array(operation),

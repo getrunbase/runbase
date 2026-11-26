@@ -4,7 +4,7 @@
 // run in the functions Deno sandbox: the core only knows the
 // contract, no connector-specific logic.
 import { stat, readFile } from "node:fs/promises";
-import { delimiter, dirname, join } from "node:path";
+import { basename, delimiter, dirname, join } from "node:path";
 import { z } from "zod";
 import {
   bundleConnector,
@@ -17,7 +17,8 @@ import {
   OAUTH_TOKEN_SECRET,
   type NodeManifest,
 } from "@getrunbase/node-sdk";
-import type { Block } from "./block";
+import type { Block, BlockApp } from "./block";
+import { logoDataUrl } from "../catalog/logo";
 import { execFunction } from "../functions/sandbox";
 import { decryptAll } from "../secrets";
 import { accessToken } from "../connections/tokens";
@@ -52,6 +53,7 @@ export async function connectorRoots(): Promise<string[]> {
 type Loaded = {
   info: ConnectorInfo;
   nodes: NodeManifest[];
+  app: BlockApp;
   code: () => Promise<string>;
 };
 
@@ -88,7 +90,13 @@ function load(
       fromRegistry ??
       ((await execFunction({ code: await code() }, { __runbase: "manifest" }))
         .output as NodeManifest[]);
-    return { info, nodes, code };
+    const logo = await logoDataUrl(info.dir);
+    const app = {
+      name: basename(info.dir),
+      label: info.label,
+      ...(logo && { logo }),
+    };
+    return { info, nodes, app, code };
   })();
 }
 
@@ -136,6 +144,7 @@ function nodeBlock(c: Loaded, m: NodeManifest): Block {
     outputSchema: z.fromJSONSchema(m.outputSchema as never),
     branches: m.branches,
     sideEffect: m.sideEffect,
+    app: c.app,
     // `{{secret.NAME}}` in inputs is resolved (and redacted from the output),
     // as for core blocks: a node can take a URL or a key per step.
     run: (raw, bctx) => {

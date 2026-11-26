@@ -139,6 +139,8 @@ export class CostCapExceeded extends AppError {
 // Deliberate stop (stop.error): step in error, no new attempt.
 export class StopError extends Error {}
 
+export type BlockApp = { name: string; label: string; logo?: string };
+
 export type Block<
   I extends z.ZodType = z.ZodType,
   O extends z.ZodType = z.ZodType,
@@ -162,6 +164,9 @@ export type Block<
   // Deprecated: still executes (existing workflows keep working) but is
   // hidden from the MCP catalog and the editor picker. Value: replacement.
   deprecated?: string;
+  // App the block belongs to (connector nodes): folder name, label and
+  // optional logo as a data URL.
+  app?: BlockApp;
   // Simulated result in dry run; by default, first branch and null output.
   simulate?: (input: z.infer<I>) => BlockResult<O>;
   run: (input: z.infer<I>, ctx: BlockContext) => Promise<BlockResult<O>>;

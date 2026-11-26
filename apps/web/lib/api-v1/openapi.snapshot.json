@@ -2054,6 +2054,9 @@
                     "icon": {
                       "type": "string"
                     },
+                    "logo": {
+                      "type": "string"
+                    },
                     "description": {
                       "type": "string"
                     },
@@ -2695,6 +2698,9 @@
             "type": "string"
           },
           "icon": {
+            "type": "string"
+          },
+          "logo": {
             "type": "string"
           },
           "description": {
