@@ -6,7 +6,9 @@ import { Label } from "@getrunbase/ui/components/ui/label";
 import { Button } from "@getrunbase/ui/components/ui/button";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Input } from "@getrunbase/ui/components/ui/input";
+import { notFound } from "next/navigation";
 import { getTenant } from "@/lib/tenant";
+import { isOrgAdmin } from "@/lib/settings-access";
 import { ConfirmAction } from "@/components/confirm-action";
 import { ConnectAgent } from "@/components/connect-agent";
 import {
@@ -38,6 +40,7 @@ const LIMITS = [
 // Workspace settings (DNCwy board): workspaces, AI budget, limits, MCP, danger zone.
 export default async function Settings() {
   const { ctx, role } = await getTenant();
+  if (!isOrgAdmin(role)) notFound();
   const t = await getTranslations("settings.general");
   const tc = await getTranslations("common");
   const format = await getFormatter();

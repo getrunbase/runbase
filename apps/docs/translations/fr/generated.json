@@ -512,8 +512,8 @@
     "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
   },
   "mcp.audit.list": {
-    "en": "Workspace audit log (who, what, when), most recent first. Without filter: the whole feed. Filters: `type` and `id` (one resource: record, workflow, function…), `action` (exact, or prefix ending with a dot: `record.`), `actorUserId`, `actorApiKeyId`, `from`/`to` (ISO). Returns { items, hasMore, nextCursor }; next page with `cursor` = nextCursor.",
-    "fr": "Journal d'audit de l'espace de travail (qui, quoi, quand), du plus récent au plus ancien. Sans filtre : tout le flux. Filtres : `type` et `id` (une ressource : enregistrement, workflow, fonction…), `action` (exacte, ou préfixe terminé par un point : `record.`), `actorUserId`, `actorApiKeyId`, `from`/`to` (ISO). Renvoie { items, hasMore, nextCursor } ; page suivante avec `cursor` = nextCursor."
+    "en": "Workspace audit log (who, what, when), most recent first (admin scope). Without filter: the whole feed. Filters: `type` and `id` (one resource: record, workflow, function…), `action` (exact, or prefix ending with a dot: `record.`), `actorUserId`, `actorApiKeyId`, `from`/`to` (ISO). Returns { items, hasMore, nextCursor }; next page with `cursor` = nextCursor.",
+    "fr": "Journal d'audit de l'espace de travail (qui, quoi, quand), du plus récent au plus ancien (périmètre admin). Sans filtre : tout le flux. Filtres : `type` et `id` (une ressource : enregistrement, workflow, fonction…), `action` (exacte, ou préfixe terminé par un point : `record.`), `actorUserId`, `actorApiKeyId`, `from`/`to` (ISO). Renvoie { items, hasMore, nextCursor } ; page suivante avec `cursor` = nextCursor."
   },
   "mcp.audit.list.workspace": {
     "en": "Workspace id or name (default: active workspace)",
@@ -832,8 +832,8 @@
     "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
   },
   "mcp.members.list": {
-    "en": "Lists organization members and pending invitations (pending: true): id, name, email, role.",
-    "fr": "Liste les membres de l'organisation et les invitations en attente (pending: true) : id, nom, e-mail, rôle."
+    "en": "Lists organization members and pending invitations (pending: true): id, name, email, role (admin scope).",
+    "fr": "Liste les membres de l'organisation et les invitations en attente (pending: true) : id, nom, e-mail, rôle (périmètre admin)."
   },
   "mcp.members.list.workspace": {
     "en": "Workspace id or name (default: active workspace)",
@@ -1196,8 +1196,8 @@
     "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
   },
   "mcp.quotas.get": {
-    "en": "Workspace limits and usage: records (maximum count), runsPerMinute (workflow runs per minute), apiPerMinute (MCP and ingestion calls per minute), concurrency (workflow steps and trigger events processed at the same time; extra jobs wait their turn). Beyond the first three, calls fail with a quota_exceeded error (HTTP 429).",
-    "fr": "Limites et consommation de l'espace de travail : records (nombre maximal d'enregistrements), runsPerMinute (exécutions de workflows par minute), apiPerMinute (appels MCP et d'ingestion par minute), concurrency (étapes de workflows et événements déclencheurs traités en même temps ; les tâches en surplus attendent leur tour). Au-delà des trois premières, les appels échouent avec une erreur quota_exceeded (HTTP 429)."
+    "en": "Workspace limits and usage (admin scope): records (maximum count), runsPerMinute (workflow runs per minute), apiPerMinute (MCP and ingestion calls per minute), concurrency (workflow steps and trigger events processed at the same time; extra jobs wait their turn). Beyond the first three, calls fail with a quota_exceeded error (HTTP 429).",
+    "fr": "Limites et consommation de l'espace de travail (périmètre admin) : records (nombre maximal d'enregistrements), runsPerMinute (exécutions de workflows par minute), apiPerMinute (appels MCP et d'ingestion par minute), concurrency (étapes de workflows et événements déclencheurs traités en même temps ; les tâches en surplus attendent leur tour). Au-delà des trois premières, les appels échouent avec une erreur quota_exceeded (HTTP 429)."
   },
   "mcp.quotas.get.workspace": {
     "en": "Workspace id or name (default: active workspace)",
@@ -1872,8 +1872,8 @@
     "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
   },
   "mcp.workspaces.ai_budget": {
-    "en": "Monthly AI budget of the workspace: USD cap, spend this month, exhausted or not.",
-    "fr": "Budget IA mensuel de l'espace de travail : plafond en USD, dépense du mois, épuisé ou non."
+    "en": "Monthly AI budget of the workspace (admin scope): USD cap, spend this month, exhausted or not.",
+    "fr": "Budget IA mensuel de l'espace de travail (périmètre admin) : plafond en USD, dépense du mois, épuisé ou non."
   },
   "mcp.workspaces.ai_budget.workspace": {
     "en": "Workspace id or name (default: active workspace)",

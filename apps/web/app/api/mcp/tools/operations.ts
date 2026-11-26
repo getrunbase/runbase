@@ -13,7 +13,7 @@ export function defineOperationTools(server: McpServer, ctx: TenantContext) {
     "workspaces.ai_budget",
     {
       description:
-        "Monthly AI budget of the workspace: USD cap, spend this month, exhausted or not.",
+        "Monthly AI budget of the workspace (admin scope): USD cap, spend this month, exhausted or not.",
       inputSchema: z.object({}),
     },
     () => run(() => runsService.budget(ctx)),

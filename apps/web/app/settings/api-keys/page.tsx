@@ -14,7 +14,9 @@ import {
 } from "@getrunbase/ui/components/ui/table";
 import { ConfirmAction } from "@/components/confirm-action";
 import { getFormatter, getTranslations } from "next-intl/server";
+import { notFound } from "next/navigation";
 import { getTenant } from "@/lib/tenant";
+import { isOrgAdmin } from "@/lib/settings-access";
 import { revokeApiKey } from "./actions";
 import { CreateKeyDialog } from "./create-form";
 import { SectionHead, SettingsNote, SettingsPage } from "../settings-shell";
@@ -28,6 +30,7 @@ const SCOPE_TONE = { read: "green", write: "orange", admin: "blue" } as const;
 // Organization API keys (KhoiA board): creation, scopes, revocation.
 export default async function ApiKeys() {
   const { ctx, role } = await getTenant();
+  if (!isOrgAdmin(role)) notFound();
   const [keys, workspaces, objects] = await Promise.all([
     apiKeysService.list(ctx),
     workspacesService.list(ctx),

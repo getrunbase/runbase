@@ -35,6 +35,7 @@
   "members.invitationNotFound": "Invitation introuvable",
   "members.notFound": "Membre introuvable",
   "members.ownerNotRemovable": "Le propriétaire ne peut pas être retiré",
+  "members.ownerRequired": "Réservé au propriétaire de l’organisation",
   "members.ownerRoleLocked": "Le rôle du propriétaire ne se change pas",
   "members.unknownRole": "Rôle inconnu : {role}",
   "overview.purgeConfirm": "Purge des données de test : opération irréversible, relancer avec confirm: true.",

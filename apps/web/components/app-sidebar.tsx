@@ -13,6 +13,7 @@ import { loadNavData } from "@getrunbase/core/nav";
 import type { TenantContext } from "@getrunbase/core/tenant";
 import { getTranslations } from "next-intl/server";
 import { buildNav } from "@/lib/nav";
+import { isOrgAdmin } from "@/lib/settings-access";
 
 type User = { name: string; email: string; image?: string | null };
 
@@ -27,7 +28,11 @@ export async function loadNav(
     loadNavData(ctx, role),
     getTranslations("nav"),
   ]);
-  return { workspaces, ...buildNav(data, role, t) };
+  return {
+    workspaces,
+    canManageWorkspaces: isOrgAdmin(role),
+    ...buildNav(data, role, t),
+  };
 }
 
 export type Nav = Awaited<ReturnType<typeof loadNav>>;
@@ -48,6 +53,7 @@ export function AppSidebar({
         <TeamSwitcher
           workspaces={nav.workspaces.map(({ id, name }) => ({ id, name }))}
           currentId={ctx.workspaceId}
+          canManage={nav.canManageWorkspaces}
         />
       </SidebarHeader>
       <SidebarContent>

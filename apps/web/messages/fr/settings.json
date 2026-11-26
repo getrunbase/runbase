@@ -225,6 +225,7 @@
       "pages": "Interfaces publiées"
     },
     "quota": {
+      "ask": "Limite du plan atteinte. Demandez à un propriétaire ou à un administrateur de changer de plan.",
       "link": "Changer de plan"
     },
     "plans": {

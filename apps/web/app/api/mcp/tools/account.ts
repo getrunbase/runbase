@@ -51,7 +51,7 @@ export function defineAccountTools(server: McpServer, ctx: TenantContext) {
     "members.list",
     {
       description:
-        "Lists organization members and pending invitations (pending: true): id, name, email, role.",
+        "Lists organization members and pending invitations (pending: true): id, name, email, role (admin scope).",
     },
     () => run(() => membersService.list(ctx)),
   );
@@ -82,7 +82,7 @@ export function defineAccountTools(server: McpServer, ctx: TenantContext) {
     "quotas.get",
     {
       description:
-        "Workspace limits and usage: records (maximum count), runsPerMinute (workflow runs per minute), apiPerMinute (MCP and ingestion calls per minute), concurrency (workflow steps and trigger events processed at the same time; extra jobs wait their turn). Beyond the first three, calls fail with a quota_exceeded error (HTTP 429).",
+        "Workspace limits and usage (admin scope): records (maximum count), runsPerMinute (workflow runs per minute), apiPerMinute (MCP and ingestion calls per minute), concurrency (workflow steps and trigger events processed at the same time; extra jobs wait their turn). Beyond the first three, calls fail with a quota_exceeded error (HTTP 429).",
     },
     () => run(() => quotasService.get(ctx)),
   );

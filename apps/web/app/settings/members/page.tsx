@@ -22,7 +22,9 @@ import {
 import type { Tone } from "@/components/ds/tone";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { ROLE_HINTS } from "@/lib/roles";
+import { notFound } from "next/navigation";
 import { getTenant } from "@/lib/tenant";
+import { isOrgAdmin } from "@/lib/settings-access";
 import { inviteMember, removeMember, setMemberRole } from "../../actions";
 import { SettingsPage, SettingsSection, TableHeading } from "../settings-shell";
 import { pageTitle } from "@/lib/page-title";
@@ -67,6 +69,7 @@ const initials = (s: string) =>
 // Organization members (PryyU board): list, role, invitation, removal.
 export default async function Members() {
   const { ctx, role } = await getTenant();
+  if (!isOrgAdmin(role)) notFound();
   const isAdmin = role === "owner" || role === "admin";
   const all = await membersService.list(ctx);
   const t = await getTranslations("settings");

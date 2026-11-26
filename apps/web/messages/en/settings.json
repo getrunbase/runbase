@@ -225,6 +225,7 @@
       "pages": "Published interfaces"
     },
     "quota": {
+      "ask": "Plan limit reached. Ask an owner or admin to upgrade the plan.",
       "link": "Upgrade plan"
     },
     "plans": {

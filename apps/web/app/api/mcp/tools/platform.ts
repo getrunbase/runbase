@@ -138,7 +138,7 @@ export function definePlatformTools(server: McpServer, ctx: TenantContext) {
     "audit.list",
     {
       description:
-        "Workspace audit log (who, what, when), most recent first. Without filter: the whole feed. Filters: `type` and `id` (one resource: record, workflow, function…), `action` (exact, or prefix ending with a dot: `record.`), `actorUserId`, `actorApiKeyId`, `from`/`to` (ISO). Returns { items, hasMore, nextCursor }; next page with `cursor` = nextCursor.",
+        "Workspace audit log (who, what, when), most recent first (admin scope). Without filter: the whole feed. Filters: `type` and `id` (one resource: record, workflow, function…), `action` (exact, or prefix ending with a dot: `record.`), `actorUserId`, `actorApiKeyId`, `from`/`to` (ISO). Returns { items, hasMore, nextCursor }; next page with `cursor` = nextCursor.",
       inputSchema: z.object({
         type: z.string().min(1).optional(),
         id: z.string().optional(),

@@ -18,19 +18,22 @@ import { z } from "zod";
 import { actionError, type ActionError } from "@/lib/action-error";
 import { id as idSchema, parseInput } from "@/lib/action-input";
 import { getTenant } from "@/lib/tenant";
+import { isOrgAdmin } from "@/lib/settings-access";
+import type { QuotaHint } from "@/components/quota-link";
 
 const PAGE_SIZE = 50;
 
-// quota: quota reached and Plan and usage page available (link).
-type Result<T> = { data?: T; error?: ActionError; quota?: boolean };
+// quota: quota reached and Plan and usage page available: a link for
+// owners/admins, "ask an admin" for the other roles (no billing access).
+type Result<T> = { data?: T; error?: ActionError; quota?: QuotaHint };
 async function run<T>(fn: () => Promise<T>): Promise<Result<T>> {
   try {
     return { data: await fn() };
   } catch (e) {
-    return {
-      error: actionError(e),
-      quota: isQuotaError(e) && billingService.enabled(),
-    };
+    if (!isQuotaError(e) || !billingService.enabled())
+      return { error: actionError(e) };
+    const { role } = await getTenant();
+    return { error: actionError(e), quota: isOrgAdmin(role) ? "link" : "ask" };
   }
 }
 
