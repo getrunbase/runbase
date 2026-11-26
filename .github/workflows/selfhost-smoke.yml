@@ -49,24 +49,39 @@ jobs:
             docker buildx prune -af
           done
           df -h /
-      # Each connector is bundled at runtime from its own folder: its
-      # dependencies must be installed in the image (a connector missing from
-      # the Dockerfile manifests stage breaks in production only).
-      - name: Connector dependencies are installed in the images
+      # Builds every connector inside the images, exactly as the app does at
+      # runtime (same esbuild options, no fallback resolution): a connector
+      # whose dependencies are missing from the image fails here, not in prod.
+      - name: Connectors build in the images
         run: |
           for t in web worker; do
             docker run --rm -i --entrypoint node local/runbase-$t:ci --input-type=module <<'JS'
+          import { createRequire } from "node:module";
           import { existsSync, readdirSync, readFileSync } from "node:fs";
+          const { build } = createRequire("/app/packages/node-sdk/package.json")("esbuild");
           let bad = 0;
           for (const d of readdirSync("/app/connectors", { withFileTypes: true })) {
-            const pkg = `/app/connectors/${d.name}/package.json`;
-            if (!d.isDirectory() || !existsSync(pkg)) continue;
-            const deps = Object.keys(JSON.parse(readFileSync(pkg, "utf8")).dependencies ?? {});
-            for (const dep of deps)
-              if (!existsSync(`/app/connectors/${d.name}/node_modules/${dep}/package.json`)) {
-                console.error(`${d.name}: missing ${dep} (add its package.json to the Dockerfile manifests stage)`);
-                bad++;
-              }
+            const dir = `/app/connectors/${d.name}`;
+            if (!d.isDirectory() || !existsSync(`${dir}/package.json`)) continue;
+            const pkg = JSON.parse(readFileSync(`${dir}/package.json`, "utf8"));
+            if (!pkg.runbase) continue;
+            const entry = `${dir}/${pkg.runbase.entry ?? "index.ts"}`;
+            try {
+              await build({
+                stdin: {
+                  contents: `import * as mod from ${JSON.stringify(entry)};
+          import { connectorRuntime } from "@getrunbase/node-sdk/runtime";
+          export default connectorRuntime(mod);`,
+                  resolveDir: dir, loader: "ts", sourcefile: "connector-entry.ts",
+                },
+                bundle: true, write: false, format: "esm", platform: "neutral", target: "es2022",
+                mainFields: ["module", "main"], conditions: ["import", "default"], logLevel: "silent",
+              });
+              console.log(`ok ${d.name}`);
+            } catch (e) {
+              console.error(`FAIL ${d.name}: ${e.message}`);
+              bad++;
+            }
           }
           process.exit(bad ? 1 : 0);
           JS
