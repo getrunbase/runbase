@@ -50,6 +50,9 @@ In **Google Auth Platform** (or **APIs & Services › OAuth consent screen**):
    `<BETTER_AUTH_URL>/api/connections/callback`, for example
    `https://runbase.example.com/api/connections/callback`
    (`http://localhost:7100/api/connections/callback` in development).
+   For **Sign in with Google** on the login page, also add
+   `<BETTER_AUTH_URL>/api/auth/callback/google` (same client; sign-in only asks
+   for `openid`, `email` and `profile`).
 3. Copy the client ID and the client secret.
 
 ## 4. Configure Runbase
@@ -78,7 +81,8 @@ file picker, so nobody has to copy a spreadsheet id. It needs two more values:
      development).
    - **API restrictions**: **Google Picker API** only.
 3. Find the **project number** on the project's **Dashboard** (or
-   **IAM & Admin › Settings**): digits only, not the project id. Google uses it
+   **IAM & Admin › Settings**): digits only, not the project id. It is also
+   the start of your OAuth client ID, before the first `-`. Google uses it
    to grant Runbase access to the picked file (`drive.file` scope).
 4. Add both to `.env` and restart `web`:
 

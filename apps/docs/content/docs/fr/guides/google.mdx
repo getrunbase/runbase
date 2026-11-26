@@ -53,6 +53,9 @@ Dans **Google Auth Platform** (ou **API et services › Écran de consentement O
    `<BETTER_AUTH_URL>/api/connections/callback`, par exemple
    `https://runbase.example.com/api/connections/callback`
    (`http://localhost:7100/api/connections/callback` en développement).
+   Pour **Se connecter avec Google** sur la page de connexion, ajoutez aussi
+   `<BETTER_AUTH_URL>/api/auth/callback/google` (même client ; la connexion ne
+   demande que `openid`, `email` et `profile`).
 3. Copiez l'ID client et le code secret.
 
 ## 4. Configurer Runbase
@@ -85,7 +88,8 @@ feuille. Il demande deux valeurs de plus :
 3. Relevez le **numéro du projet** dans le **Tableau de bord** du projet (ou
    **IAM et administration › Paramètres**) : des chiffres uniquement, pas l'ID
    du projet. Google s'en sert pour donner à Runbase l'accès au fichier choisi
-   (scope `drive.file`).
+   (scope `drive.file`). C'est aussi le début de votre ID client OAuth, avant
+   le premier `-`.
 4. Ajoutez les deux dans `.env` et redémarrez `web` :
 
 ```sh
