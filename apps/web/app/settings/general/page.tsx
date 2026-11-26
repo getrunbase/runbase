@@ -18,9 +18,6 @@ import {
 } from "../../actions";
 import { appUrl } from "@getrunbase/core/env";
 import { SettingsPage, SettingsSection } from "../settings-shell";
-import { aiSettingsService } from "@getrunbase/core/ai-providers";
-import { secretsService } from "@getrunbase/core/secrets";
-import { AiProviderForm } from "./ai-provider-form";
 import { CreateWorkspaceForm } from "./create-workspace-form";
 import { workspaceCount } from "@getrunbase/core/workspaces";
 import { quotaOf } from "@getrunbase/core/entitlements";
@@ -57,11 +54,9 @@ export default async function Settings() {
     workspaceCount(ctx),
   ]);
   const wsLimit = wsUsed >= wsMax ? wsMax : null;
-  const [budget, quotas, ai, secrets] = await Promise.all([
+  const [budget, quotas] = await Promise.all([
     runsService.budget(ctx),
     quotasService.get(ctx),
-    aiSettingsService.get(ctx),
-    secretsService.list(ctx),
   ]);
   return (
     <SettingsPage isAdmin={isAdmin}>
@@ -133,22 +128,6 @@ export default async function Settings() {
             {tc("save")}
           </Button>
         </form>
-      </SettingsSection>
-
-      <SettingsSection title={t("ai.title")} description={t("ai.description")}>
-        <AiProviderForm
-          presets={aiSettingsService.presets().map((p) => ({
-            id: p.id,
-            label: p.label,
-            models: p.models.map((m) => ({ id: m.id, label: m.label })),
-            keySecret: p.keySecret,
-          }))}
-          provider={ai.provider}
-          model={ai.model}
-          keySecret={ai.keySecret}
-          keys={secrets.map((s) => s.name)}
-          disabled={!isAdmin}
-        />
       </SettingsSection>
 
       <SettingsSection

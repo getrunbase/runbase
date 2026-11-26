@@ -6,7 +6,6 @@ import { eventsService } from "../events";
 import type { TenantContext } from "../tenant";
 import { workspaceSettings, type WorkspaceSettings } from "../workspaces";
 import { AppError, type ErrorInfo } from "../errors/app-error";
-import type { AiPreset } from "../ai-providers";
 
 // Services exposed to blocks, already bound to the tenant: never the raw DB.
 const scopedServices = {
@@ -63,12 +62,6 @@ export type BlockContext = {
   key?: string;
   // Run tenant: blocks that resolve other blocks (loop -> fn.*).
   tenant?: TenantContext;
-  // AI provider override (tests, dry runs); default: the tenant's settings.
-  ai?: () => Promise<{
-    preset: AiPreset;
-    model: string;
-    keySecret: string;
-  } | null>;
   // Run variables (`record`, `event`, `steps`, `now`…): loop makes them
   // available in its steps.
   scope?: Record<string, unknown>;

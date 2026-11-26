@@ -25,20 +25,6 @@
       "ariaLabel": "Budget in USD",
       "description": "Monthly spending cap for AI blocks. Beyond it, they are paused."
     },
-    "ai": {
-      "title": "AI provider",
-      "description": "Pick the AI provider used by AI blocks and pages, then paste your API key.",
-      "provider": "Provider",
-      "providerPlaceholder": "Choose a provider",
-      "model": "Model",
-      "key": "API key",
-      "keyPlaceholder": "Paste your API key",
-      "keySet": "Key saved (leave empty to keep it)",
-      "keyHint": "Stored encrypted as the {secret} secret. It is never shown again.",
-      "noKeyHint": "No key yet. It will be stored encrypted as the {secret} secret.",
-      "save": "Save",
-      "keySecret": "Secret holding the key"
-    },
     "limits": {
       "title": "Workspace limits",
       "description": "Beyond these, additions are rejected with a clear message. Empty field: default value.",
@@ -113,7 +99,7 @@
       "workflow": "workflow “{name}”",
       "function": "function “{name}”",
       "webhook": "webhook “{name}”",
-      "ai": "AI provider {name}"
+      "page": "page “{name}”"
     }
   },
   "apiKeys": {
