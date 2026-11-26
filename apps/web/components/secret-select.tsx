@@ -42,7 +42,7 @@ export const useSecretNames = () => useContext(Ctx);
 const NEW = "__new__";
 
 // Manual entry: creates the secret in the vault then returns its name.
-function NewSecretDialog({
+export function NewSecretDialog({
   open,
   onOpenChange,
   defaultName,

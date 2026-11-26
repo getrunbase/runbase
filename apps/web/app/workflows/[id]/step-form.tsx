@@ -10,6 +10,7 @@ import { formFields, showValue, type ObjectInfo } from "../graph";
 import { makeLabels } from "../labels";
 import { TRIGGER_RECORD, varObject, type VarScope } from "../variables";
 import { ObjectPicker, PillInput } from "./pickers";
+import { AiBlockConfig, type BlockAiValue } from "./ai-config";
 import { RecordFieldsForm } from "./record-fields";
 import {
   Choice,
@@ -231,7 +232,13 @@ export function SchemaForm({
               onChange={(d) => onChange({ ...value, data: d })}
             />
           )}
-          {f.kind === "json" && f.key !== "data" && (
+          {f.key === "ai" && (
+            <AiBlockConfig
+              value={value.ai as BlockAiValue | undefined}
+              onChange={(v) => set("ai", v)}
+            />
+          )}
+          {f.kind === "json" && f.key !== "data" && f.key !== "ai" && (
             <JsonInput
               key={JSON.stringify(value[f.key] ?? null)}
               value={value[f.key]}

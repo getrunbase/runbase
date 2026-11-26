@@ -102,6 +102,33 @@ const ctx = (
 const run = (type: string, input: unknown, c = ctx()) =>
   blocks[type]!.run(blocks[type]!.inputSchema.parse(input), c);
 
+test("ai.decide: block AI config overrides the workspace setting", async () => {
+  replies = [decide("yes")];
+  calls.length = 0;
+  const ok = await run(
+    "ai.decide",
+    {
+      prompt: "?",
+      branches: ["yes"],
+      ai: { provider: "anthropic", model: "claude-haiku-5-5" },
+    },
+    // Workspace on DeepSeek: ignored, the block has its own config.
+    ctx({}, { provider: "deepseek" }),
+  );
+  assert.equal(ok.branch, "yes");
+  assert.equal(calls[0]!.model, "claude-haiku-5-5");
+  // Block secret missing from the vault: explicit error naming it.
+  replies = [decide("yes")];
+  await assert.rejects(
+    run("ai.decide", {
+      prompt: "?",
+      branches: ["yes"],
+      ai: { provider: "anthropic", secret: "OTHER_KEY" },
+    }),
+    /OTHER_KEY not configured/,
+  );
+});
+
 test("ai.decide: branch outside the list -> error", async () => {
   replies = [decide("maybe")];
   await assert.rejects(

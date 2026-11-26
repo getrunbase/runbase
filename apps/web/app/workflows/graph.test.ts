@@ -11,6 +11,7 @@ import {
   branchesOf,
   connect,
   fieldAt,
+  lastAiConfig,
   disconnect,
   formFields,
   layout,
@@ -167,4 +168,19 @@ test("fieldAt follows relations: deal.contact.entreprise.taille", () => {
   assert.equal(r?.field.type, "number");
   assert.deepEqual(r?.labels, ["Contact", "Entreprise", "Taille"]);
   assert.equal(fieldAt(objects, "deal", "contact.inconnu"), undefined);
+});
+
+test("lastAiConfig: config of the last configured AI step", () => {
+  const ai = { provider: "anthropic", model: "claude-haiku-5-5", secret: "K" };
+  const def: Definition = {
+    trigger: {},
+    steps: [
+      { id: "a", type: "ai.decide", input: { ai: { provider: "openai" } } },
+      { id: "b", type: "ai.run", input: { ai } },
+      { id: "c", type: "ai.extract", input: {} },
+      { id: "d", type: "record.update", input: { ai: { provider: "x" } } },
+    ],
+  };
+  assert.deepEqual(lastAiConfig(def), ai);
+  assert.equal(lastAiConfig({ trigger: {}, steps: [{ id: "c", type: "ai.run" }] }), undefined);
 });

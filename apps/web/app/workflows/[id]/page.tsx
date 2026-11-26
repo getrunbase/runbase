@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { AI_PRESETS } from "@getrunbase/core/ai-providers";
 import { blocksService } from "@getrunbase/core/blocks";
 import { allowed } from "@getrunbase/core/filter";
 import { databasesService } from "@getrunbase/core/databases";
@@ -9,6 +10,7 @@ import { secretsService } from "@getrunbase/core/secrets";
 import { webhooksService } from "@getrunbase/core/webhooks";
 import { workflowsService } from "@getrunbase/core/workflows";
 import { SecretsProvider } from "@/components/secret-select";
+import { AiPresetsProvider } from "./ai-config";
 import { getTenant } from "@/lib/tenant";
 import type { Definition } from "../graph";
 import { localizeBlocks } from "../labels";
@@ -85,6 +87,14 @@ export default async function WorkflowPage({
   return (
     // Secret names only: block selectors.
     <SecretsProvider names={secrets.map((s) => s.name)}>
+    <AiPresetsProvider
+      presets={AI_PRESETS.map((p) => ({
+        id: p.id,
+        label: p.label,
+        models: p.models.map((m) => ({ id: m.id, label: m.label })),
+        keySecret: p.keySecret,
+      }))}
+    >
     <WorkflowEditor
       key={wf.currentVersion}
       workflow={{
@@ -116,6 +126,7 @@ export default async function WorkflowPage({
       }))}
       workflows={workflows.map((w) => ({ id: w.id, name: w.name }))}
     />
+    </AiPresetsProvider>
     </SecretsProvider>
   );
 }

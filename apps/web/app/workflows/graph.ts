@@ -135,6 +135,17 @@ export function addStep(def: Definition, type: string): Definition {
   };
 }
 
+// AI config of the last configured AI step (`input.ai`): prefills a new
+// AI block so the same provider, model and key are not picked again.
+export function lastAiConfig(def: Definition): Record<string, unknown> | undefined {
+  for (const s of [...def.steps].reverse()) {
+    const ai = s.input?.ai;
+    if (s.type.startsWith("ai.") && ai && typeof ai === "object")
+      return ai as Record<string, unknown>;
+  }
+  return undefined;
+}
+
 export function setTargets(
   def: Definition,
   source: string,

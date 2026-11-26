@@ -105,7 +105,8 @@
       "format": "Format",
       "timezone": "Time zone",
       "occurredAt": "Event date",
-      "idempotencyKey": "Unique ID"
+      "idempotencyKey": "Unique ID",
+      "ai": "AI"
     },
     "operator": {
       "eq": "equals",
@@ -533,7 +534,16 @@
     "addColumn": "Column",
     "columnDefault": "column{n}",
     "limit": "Maximum records processed",
-    "limitHelp": "Anything beyond is ignored (“truncated” output)."
+    "limitHelp": "Anything beyond is ignored (“truncated” output).",
+    "ai": {
+      "provider": "Provider",
+      "providerPlaceholder": "Choose an AI",
+      "model": "Model",
+      "key": "API key",
+      "noSecret": "No API key saved in this workspace yet.",
+      "addKey": "Add a key",
+      "fallback": "Not set: this block uses the workspace default AI."
+    }
   },
   "pickers": {
     "chooseObject": "Choose an object",

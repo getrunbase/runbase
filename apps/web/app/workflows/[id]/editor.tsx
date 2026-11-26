@@ -10,6 +10,7 @@ import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   addEntry,
   addStep,
+  lastAiConfig,
   branchesOf,
   connect,
   disconnect,
@@ -205,7 +206,12 @@ export function WorkflowEditor({
               onPick={(t) => {
                 let next = addStep(def, t);
                 const id = next.steps.at(-1)!.id;
-                next = setInput(next, id, defaults(t, record));
+                // New AI block: same AI config as the last configured one.
+                const ai = t.startsWith("ai.") ? lastAiConfig(def) : undefined;
+                next = setInput(next, id, {
+                  ...defaults(t, record),
+                  ...(ai && { ai }),
+                });
                 // Linked to the selected step (first free branch), or to the
                 // trigger if it is selected.
                 const from = def.steps.find((s) => s.id === selected);
