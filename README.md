@@ -119,7 +119,7 @@ Runbase is open source.
 
 The core is licensed under the GNU Affero General Public License v3.0. You can use, modify and self-host it freely. If you modify it and let third parties use it over a network (for example as a hosted service), you must publish your modifications under the same license. Code you write on top of the MIT SDK, kit, connectors and templates is not affected.
 
-Versions up to and including v0.3.0 were released under FSL-1.1-ALv2 and remain under that license.
+Versions up to and including v0.3.0 were released under FSL-1.1-ALv2 and remain under that license. Copyright and licensing notices are in [NOTICE](NOTICE).
 
 Every `package.json` declares a matching `license` field. `pnpm check:licenses` verifies the whole layout and `pnpm test:licenses` runs its tests.
 
