@@ -1,6 +1,6 @@
 "use client";
 
-import { SecretSelect } from "@/components/secret-select";
+import { SecretSelect, useSecretNames } from "@/components/secret-select";
 import {
   ConnectionSelect,
   useConnectionProvider,
@@ -26,7 +26,6 @@ import { OptionsSelect } from "./dynamic-options";
 import { SheetsForm } from "./sheets-form";
 import {
   Choice,
-  InsertSecret,
   JsonInput,
   opts,
   RecordField,
@@ -38,6 +37,12 @@ export { ConditionForm } from "./condition-form";
 export { ListForm } from "./list-form";
 export { MapForm } from "./map-form";
 export { SwitchForm } from "./switch-form";
+
+// Fields where a credential makes sense (URL, headers, keys, tokens): only
+// there does the insert menu offer the Credentials tab.
+const CREDENTIAL_KEY = /url|header|token|key|secret|auth|password|webhook/i;
+const credentialField = (type: string | undefined, key: string) =>
+  type === "http.request" || type === "mcp.call" || CREDENTIAL_KEY.test(key);
 
 // Local alias: the name `Input` is also the input component.
 type Input = StepInput;
@@ -72,7 +77,11 @@ export function SchemaForm({
     if (v === undefined || v === "") delete next[k];
     onChange(next);
   };
-  const fields = formFields(schema);
+  // Account first on steps that need a connection.
+  const fields = formFields(schema).sort(
+    (a, b) => +(b.key === "connection") - +(a.key === "connection"),
+  );
+  const secretNames = useSecretNames();
   const dynamic = (k: string) => options?.includes(k) ?? false;
   // Google Sheets: file picked in Drive, tab and columns from the sheet.
   if (type?.startsWith("node.google_sheets."))
@@ -161,19 +170,13 @@ export function SchemaForm({
         f.key !== "id" &&
         f.key !== "secret" &&
         f.kind === "text" && (
-          <>
-            <PillInput
-              ariaLabel={l.input(f.key)}
-              scope={scope}
-              value={String(value[f.key] ?? "")}
-              onChange={(v) => set(f.key, v)}
-            />
-            <InsertSecret
-              onPick={(n) =>
-                set(f.key, `${String(value[f.key] ?? "")}{{secret.${n}}}`)
-              }
-            />
-          </>
+          <PillInput
+            ariaLabel={l.input(f.key)}
+            scope={scope}
+            value={String(value[f.key] ?? "")}
+            onChange={(v) => set(f.key, v)}
+            secrets={credentialField(type, f.key) ? secretNames : undefined}
+          />
         )}
       {f.key === "secret" && f.kind === "text" && (
         <SecretSelect

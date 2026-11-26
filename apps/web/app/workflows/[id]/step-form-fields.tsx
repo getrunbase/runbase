@@ -1,7 +1,5 @@
 "use client";
 
-import { KeyRound } from "lucide-react";
-import { useSecretNames } from "@/components/secret-select";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@getrunbase/ui/components/ui/button";
@@ -43,29 +41,6 @@ export function Choice({
         {options.map((o) => (
           <SelectItem key={o.value} value={o.value}>
             {o.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
-
-// Inserts a `{{secret.NAME}}` reference: resolved on the server at
-// run time, the value never reaches the editor.
-export function InsertSecret({ onPick }: { onPick: (name: string) => void }) {
-  const t = useTranslations("common.secretPicker");
-  const names = useSecretNames();
-  if (!names.length) return null;
-  return (
-    <Select value="" onValueChange={onPick}>
-      <SelectTrigger size="sm" className="text-muted-foreground h-7 w-auto">
-        <KeyRound />
-        <SelectValue placeholder={t("insert")} />
-      </SelectTrigger>
-      <SelectContent>
-        {names.map((n) => (
-          <SelectItem key={n} value={n} className="font-mono">
-            {n}
           </SelectItem>
         ))}
       </SelectContent>

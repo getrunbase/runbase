@@ -588,8 +588,12 @@
     "sourceHeading": "Fiche source · {name}",
     "variable": "Variable",
     "variableTitle": "variable",
-    "pillPlaceholder": "Texte ou / pour une variable",
-    "chooseField": "Choisir un champ"
+    "pillPlaceholder": "Saisir, ou / pour une variable",
+    "chooseField": "Choisir un champ",
+    "insert": "Insérer une variable ou un identifiant",
+    "variablesTab": "Variables",
+    "credentialsTab": "Identifiants",
+    "noCredentials": "Aucun identifiant : ajoutez-en dans Paramètres › Identifiants."
   },
   "recordFields": {
     "choose": "Choisir",

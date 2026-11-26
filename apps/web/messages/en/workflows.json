@@ -588,8 +588,12 @@
     "sourceHeading": "Source record · {name}",
     "variable": "Variable",
     "variableTitle": "variable",
-    "pillPlaceholder": "Text or / for a variable",
-    "chooseField": "Choose a field"
+    "pillPlaceholder": "Type, or / for a variable",
+    "chooseField": "Choose a field",
+    "insert": "Insert a variable or a credential",
+    "variablesTab": "Variables",
+    "credentialsTab": "Credentials",
+    "noCredentials": "No credentials yet: add one in Settings › Credentials."
   },
   "recordFields": {
     "choose": "Choose",
