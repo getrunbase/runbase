@@ -29,10 +29,10 @@ const INTERVALS: Interval[] = ["month", "year"];
 export default async function Plans() {
   const { ctx, role } = await getTenant();
   if (role !== "owner" && role !== "admin") notFound();
-  const catalog = await billingService.plans(ctx);
+  const locale = await getLocale();
+  const catalog = await billingService.plans(ctx, locale);
   if (!catalog) notFound();
   const t = await getTranslations("settings.billing.plans");
-  const locale = await getLocale();
 
   const card = (plan: BillingPlan, interval: Interval) => {
     const current = plan.id === catalog.current;
