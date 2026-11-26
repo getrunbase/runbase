@@ -21,7 +21,7 @@ import {
 import { withTenant, type TenantContext, type Tx } from "../tenant";
 import { appError, errorItem } from "../errors/app-error";
 import { env } from "../env";
-import { getExtensions } from "../extensions";
+import { getExtensions, type BillingPlans } from "../extensions";
 import { touchActivitySoon } from "../workspaces/activity";
 
 export { QuotaError };
@@ -466,6 +466,14 @@ export const billingService = {
       portalUrl: account.portalUrl ?? null,
       items,
     };
+  },
+  // Settings › Plan and usage › Plans: catalog from the extension.
+  // null without extension or without plans.
+  plans: async (ctx: TenantContext): Promise<BillingPlans | null> => {
+    await requireScope(ctx, "read");
+    const res =
+      (await getExtensions().billing.plans?.(ctx.organizationId)) ?? null;
+    return res && res.plans.length > 0 ? res : null;
   },
 };
 

@@ -111,7 +111,8 @@
     "webhooks": "Webhooks",
     "workflow": "Workflow",
     "workflows": "Workflows",
-    "app": "Runbase"
+    "app": "Runbase",
+    "plans": "Plans"
   },
   "sidebar": {
     "title": "Sidebar",
