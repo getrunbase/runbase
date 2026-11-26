@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useErrorText } from "@/lib/error-text";
 import { Pencil, UserPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@getrunbase/ui/components/ui/button";
@@ -103,6 +104,8 @@ export function InviteDialog({
 }) {
   const t = useTranslations("settings");
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string>();
+  const errorText = useErrorText();
   const [role, setRole] = useState("member");
   const [all, setAll] = useState(false);
   const [ids, setIds] = useState([currentWorkspaceId]);
@@ -130,7 +133,10 @@ export function InviteDialog({
         </DialogHeader>
         <form
           action={async (f) => {
-            await inviteMember(f);
+            const res = await inviteMember(f);
+            if (res && "error" in res && res.error)
+              return setError(errorText(res.error));
+            setError(undefined);
             setOpen(false);
           }}
           className="space-y-4"
@@ -173,6 +179,7 @@ export function InviteDialog({
             ids={ids}
             setIds={setIds}
           />
+          {error && <p className="text-destructive text-sm">{error}</p>}
           <DialogFooter>
             <Button type="submit" disabled={!valid}>
               {t("members.sendInvite")}
@@ -194,6 +201,8 @@ export function EditAccessDialog({
 }) {
   const t = useTranslations("settings.members");
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string>();
+  const errorText = useErrorText();
   const [all, setAll] = useState(member.workspaceIds === null);
   const [ids, setIds] = useState(member.workspaceIds ?? []);
   const reset = (o: boolean) => {
@@ -222,7 +231,10 @@ export function EditAccessDialog({
         </DialogHeader>
         <form
           action={async (f) => {
-            await setMemberWorkspaces(f);
+            const res = await setMemberWorkspaces(f);
+            if (res && "error" in res && res.error)
+              return setError(errorText(res.error));
+            setError(undefined);
             setOpen(false);
           }}
           className="space-y-4"
@@ -236,6 +248,7 @@ export function EditAccessDialog({
             ids={ids}
             setIds={setIds}
           />
+          {error && <p className="text-destructive text-sm">{error}</p>}
           <DialogFooter>
             <Button type="submit" disabled={!all && ids.length === 0}>
               {t("save")}

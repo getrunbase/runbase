@@ -19,11 +19,13 @@ import {
   TabsList,
   TabsTrigger,
 } from "@getrunbase/ui/components/ui/tabs";
+import { isAdminRole } from "@/lib/roles";
 import { getTenant } from "@/lib/tenant";
 import { restoreFunction } from "../actions";
 import { FunctionForm } from "../function-form";
 import { TestPanel } from "../test-panel";
 import { pageTitle } from "@/lib/page-title";
+import { ActionForm } from "@/components/action-form";
 
 export const generateMetadata = pageTitle("function");
 
@@ -34,7 +36,9 @@ export default async function FunctionPage({
 }: {
   params: Promise<{ name: string }>;
 }) {
-  const { ctx } = await getTenant();
+  const { ctx, role } = await getTenant();
+  // Save, test and restore: admins only (checked by the core).
+  const isAdmin = isAdminRole(role);
   const t = await getTranslations("functions.detail");
   const tc = await getTranslations("common");
   const format = await getFormatter();
@@ -69,12 +73,15 @@ export default async function FunctionPage({
                 key={latest.version}
                 fn={latest}
                 secrets={secrets.map((s) => s.name)}
+                readOnly={!isAdmin}
               />
             </div>
           </section>
-          <section className="flex w-95 flex-col gap-2.5 self-start rounded-lg border p-4">
-            <TestPanel name={name} version={latest.version} />
-          </section>
+          {isAdmin && (
+            <section className="flex w-95 flex-col gap-2.5 self-start rounded-lg border p-4">
+              <TestPanel name={name} version={latest.version} />
+            </section>
+          )}
         </TabsContent>
         <TabsContent value="versions">
           <Table>
@@ -98,14 +105,14 @@ export default async function FunctionPage({
                     })}
                   </TableCell>
                   <TableCell className="text-right">
-                    {v.version !== latest.version && (
-                      <form action={restoreFunction}>
+                    {isAdmin && v.version !== latest.version && (
+                      <ActionForm action={restoreFunction}>
                         <input type="hidden" name="name" value={name} />
                         <input type="hidden" name="version" value={v.version} />
                         <Button size="sm" variant="secondary">
                           {tc("restore")}
                         </Button>
-                      </form>
+                      </ActionForm>
                     )}
                   </TableCell>
                 </TableRow>

@@ -5,7 +5,7 @@ import { READ_METHODS } from "@getrunbase/core/components";
 import { pagesService } from "@getrunbase/core/pages";
 import { componentCss } from "@/lib/component-css";
 import { z } from "zod";
-import { actionError } from "@/lib/action-error";
+import { actionError, runAction } from "@/lib/action-error";
 import { id as idSchema, parseInput } from "@/lib/action-input";
 import { assertShot, getTenant } from "@/lib/tenant";
 import { pageUser } from "./user";
@@ -22,27 +22,29 @@ const errorInput = z.object({
 
 // Compiled package (published, or draft if `draft`) mounted in the iframe.
 export async function pageBundle(id: string, draft = false) {
-  parseInput(pageId, id);
-  parseInput(draftFlag, draft);
-  const { ctx, shot } = await getTenant({ shot: true });
-  assertShot(shot, id);
-  const { bundle, sources, objects } = await pagesService.bundle(ctx, id, {
-    draft,
+  return runAction(async () => {
+    parseInput(pageId, id);
+    parseInput(draftFlag, draft);
+    const { ctx, shot } = await getTenant({ shot: true });
+    assertShot(shot, id);
+    const { bundle, sources, objects } = await pagesService.bundle(ctx, id, {
+      draft,
+    });
+    return { bundle, objects, css: await componentCss(sources) };
   });
-  return { bundle, objects, css: await componentCss(sources) };
 }
 
 // SDK call relayed from the iframe; capture: reads only (the rest is
 // simulated). Error returned as a value: Next hides thrown messages.
 export async function callPage(id: string, call: unknown, draft = false) {
-  parseInput(pageId, id);
-  parseInput(draftFlag, draft);
-  const { session, ctx, shot } = await getTenant({ shot: true });
-  assertShot(shot, id);
-  const method = (call as { method?: unknown } | null)?.method;
-  if (shot && !READ_METHODS.includes(String(method)))
-    return { ok: true as const, result: { simulated: true } };
   try {
+    parseInput(pageId, id);
+    parseInput(draftFlag, draft);
+    const { session, ctx, shot } = await getTenant({ shot: true });
+    assertShot(shot, id);
+    const method = (call as { method?: unknown } | null)?.method;
+    if (shot && !READ_METHODS.includes(String(method)))
+      return { ok: true as const, result: { simulated: true } };
     const result = await pagesService.call(ctx, id, call, {
       draft,
       user: pageUser(session.user),
@@ -60,39 +62,49 @@ export async function reportPageError(
   error: { message: string; stack?: string },
   draft = false,
 ) {
-  parseInput(pageId, id);
-  parseInput(draftFlag, draft);
-  const { message, stack } = parseInput(errorInput, error);
-  const { ctx, shot } = await getTenant({ shot: true, pages: true });
-  assertShot(shot, id);
-  await pagesService.reportError(ctx, id, { draft, message, stack });
+  return runAction(async () => {
+    parseInput(pageId, id);
+    parseInput(draftFlag, draft);
+    const { message, stack } = parseInput(errorInput, error);
+    const { ctx, shot } = await getTenant({ shot: true, pages: true });
+    assertShot(shot, id);
+    await pagesService.reportError(ctx, id, { draft, message, stack });
+  });
 }
 
 // Draft and history (builders: write scope checked by the core).
 export async function publishPage(id: string) {
-  parseInput(pageId, id);
-  const { ctx } = await getTenant();
-  await pagesService.publish(ctx, id);
-  revalidatePath(`/p/${id}`);
+  return runAction(async () => {
+    parseInput(pageId, id);
+    const { ctx } = await getTenant();
+    await pagesService.publish(ctx, id);
+    revalidatePath(`/p/${id}`);
+  });
 }
 export async function discardDraft(id: string) {
-  parseInput(pageId, id);
-  const { ctx } = await getTenant();
-  await pagesService.discard(ctx, id);
-  revalidatePath(`/p/${id}`);
+  return runAction(async () => {
+    parseInput(pageId, id);
+    const { ctx } = await getTenant();
+    await pagesService.discard(ctx, id);
+    revalidatePath(`/p/${id}`);
+  });
 }
 export async function pageHistory(id: string) {
-  parseInput(pageId, id);
-  const { ctx } = await getTenant();
-  return (await pagesService.versions(ctx, id)).map((v) => ({
-    version: v.version,
-    createdAt: v.createdAt,
-  }));
+  return runAction(async () => {
+    parseInput(pageId, id);
+    const { ctx } = await getTenant();
+    return (await pagesService.versions(ctx, id)).map((v) => ({
+      version: v.version,
+      createdAt: v.createdAt,
+    }));
+  });
 }
 export async function restorePage(id: string, version: number) {
-  parseInput(pageId, id);
-  parseInput(z.number().int().positive(), version);
-  const { ctx } = await getTenant();
-  await pagesService.restore(ctx, id, version);
-  revalidatePath(`/p/${id}`);
+  return runAction(async () => {
+    parseInput(pageId, id);
+    parseInput(z.number().int().positive(), version);
+    const { ctx } = await getTenant();
+    await pagesService.restore(ctx, id, version);
+    revalidatePath(`/p/${id}`);
+  });
 }

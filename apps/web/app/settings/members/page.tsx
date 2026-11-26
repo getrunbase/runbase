@@ -26,6 +26,7 @@ import { removeMember, setMemberRole } from "../../actions";
 import { EditAccessDialog, InviteDialog } from "./workspace-access";
 import { SettingsPage, SettingsSection, TableHeading } from "../settings-shell";
 import { pageTitle } from "@/lib/page-title";
+import { ActionForm } from "@/components/action-form";
 
 export const generateMetadata = pageTitle("members");
 
@@ -152,13 +153,13 @@ export default async function Members() {
               <TableCell>
                 {m.role !== "owner" && (
                   <div className="flex items-center justify-end gap-2">
-                    <form action={setMemberRole} className="flex gap-2">
+                    <ActionForm action={setMemberRole} className="flex gap-2">
                       <input type="hidden" name="id" value={m.id} />
                       <RoleSelect defaultValue={m.role} />
                       <Button type="submit" variant="secondary">
                         {t("members.change")}
                       </Button>
-                    </form>
+                    </ActionForm>
                     <ConfirmAction
                       action={removeMember}
                       fields={{ id: m.id }}

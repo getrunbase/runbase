@@ -14,6 +14,7 @@ import { filesService, type FileMeta } from "@getrunbase/core/files";
 import { viewsService, type ViewInput } from "@getrunbase/core/views";
 import type { FileInfo } from "@/lib/direct-upload";
 import { billingService, isQuotaError } from "@getrunbase/core/quotas";
+import { unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 import { actionError, type ActionError } from "@/lib/action-error";
 import { id as idSchema, parseInput } from "@/lib/action-input";
@@ -27,6 +28,7 @@ async function run<T>(fn: () => Promise<T>): Promise<Result<T>> {
   try {
     return { data: await fn() };
   } catch (e) {
+    unstable_rethrow(e);
     return {
       error: actionError(e),
       quota: isQuotaError(e) && billingService.enabled(),

@@ -14,3 +14,7 @@ export const ROLE_HINTS = {
   viewer: "roleHints.viewer",
   end_user: "roleHints.end_user",
 } as const;
+
+// Roles allowed to manage the workspace (admin scope in the core).
+export const isAdminRole = (role: string | null | undefined) =>
+  role === "owner" || role === "admin";

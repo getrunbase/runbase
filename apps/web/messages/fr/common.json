@@ -148,5 +148,6 @@
       "key": "Outils sans connexion (scripts, CI) : envoyez une clé API dans cet en-tête.",
       "keyLink": "Créez une clé dans <link>Clés API</link>."
     }
-  }
+  },
+  "adminOnly": "Seul un administrateur peut modifier ce réglage."
 }

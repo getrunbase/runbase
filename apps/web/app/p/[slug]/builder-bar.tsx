@@ -3,13 +3,15 @@
 // users nor in captures): draft, preview, publication, history.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { EyeIcon, SendIcon, Undo2Icon } from "lucide-react";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
 import { Button } from "@getrunbase/ui/components/ui/button";
 import { VersionHistory } from "@/components/version-history";
 import { TopbarActions } from "@/components/topbar-actions";
+import type { ActionError } from "@/lib/action-error";
+import { useErrorText } from "@/lib/error-text";
 import { discardDraft, pageHistory, publishPage, restorePage } from "./actions";
 
 export function BuilderBar({
@@ -29,9 +31,13 @@ export function BuilderBar({
   const t = useTranslations("pages.builder");
   const router = useRouter();
   const [pending, start] = useTransition();
-  const run = (fn: () => Promise<unknown>, href?: string) =>
+  const [error, setError] = useState<ActionError | null>(null);
+  const errorText = useErrorText();
+  const run = (fn: () => Promise<{ error?: ActionError }>, href?: string) =>
     start(async () => {
-      await fn();
+      const r = await fn();
+      setError(r.error ?? null);
+      if (r.error) return;
       if (href) router.push(href);
       router.refresh();
     });
@@ -40,6 +46,11 @@ export function BuilderBar({
   // the history remains when no draft is pending.
   return (
     <TopbarActions>
+      {error && (
+        <span role="alert" className="text-destructive text-sm">
+          {errorText(error)}
+        </span>
+      )}
       {draft && <Badge variant="secondary">{t("unpublishedDraft")}</Badge>}
       {draft && !preview && (
         <Button variant="ghost" size="sm" asChild>

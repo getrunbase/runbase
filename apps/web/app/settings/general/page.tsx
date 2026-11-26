@@ -6,7 +6,9 @@ import { Label } from "@getrunbase/ui/components/ui/label";
 import { Button } from "@getrunbase/ui/components/ui/button";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Input } from "@getrunbase/ui/components/ui/input";
+import { isAdminRole } from "@/lib/roles";
 import { getTenant } from "@/lib/tenant";
+import { ActionForm } from "@/components/action-form";
 import { ConfirmAction } from "@/components/confirm-action";
 import { ConnectAgent } from "@/components/connect-agent";
 import {
@@ -44,8 +46,9 @@ export default async function Settings() {
       currency: "USD",
       maximumFractionDigits: max,
     });
-  // Member and limit management: admins only.
-  const isAdmin = role === "owner" || role === "admin";
+  // Workspaces, budget, AI provider and limits: admins only (checked by
+  // the core); members see the values read-only.
+  const isAdmin = isAdminRole(role);
   const mcpUrl = `${appUrl()}/api/mcp`;
   const list = await workspacesService.list(ctx);
   // Workspace cap reached: the create form is disabled up front.
@@ -60,6 +63,9 @@ export default async function Settings() {
   ]);
   return (
     <SettingsPage isAdmin={isAdmin}>
+      {!isAdmin && (
+        <p className="text-muted-foreground text-sm">{tc("adminOnly")}</p>
+      )}
       <div id="workspaces" className="scroll-mt-20">
         <SettingsSection
           title={t("workspaces.title")}
@@ -67,21 +73,27 @@ export default async function Settings() {
         >
           {list.map((w) => (
             <div key={w.id} className="flex flex-wrap items-center gap-2">
-              <form
-                action={renameWorkspace}
-                className="flex min-w-full flex-1 gap-2 sm:min-w-0"
-              >
-                <input type="hidden" name="id" value={w.id} />
-                <Input
-                  name="name"
-                  defaultValue={w.name}
-                  aria-label={tc("name")}
-                />
-                <Button type="submit" variant="secondary">
-                  {t("workspaces.rename")}
-                </Button>
-              </form>
-              <form action={switchWorkspace}>
+              {isAdmin ? (
+                <ActionForm
+                  action={renameWorkspace}
+                  className="flex min-w-full flex-1 gap-2 sm:min-w-0"
+                >
+                  <input type="hidden" name="id" value={w.id} />
+                  <Input
+                    name="name"
+                    defaultValue={w.name}
+                    aria-label={tc("name")}
+                  />
+                  <Button type="submit" variant="secondary">
+                    {t("workspaces.rename")}
+                  </Button>
+                </ActionForm>
+              ) : (
+                <p className="text-foreground min-w-full flex-1 text-sm font-medium sm:min-w-0">
+                  {w.name}
+                </p>
+              )}
+              <ActionForm action={switchWorkspace}>
                 <input type="hidden" name="id" value={w.id} />
                 <Button
                   type="submit"
@@ -93,13 +105,17 @@ export default async function Settings() {
                     ? t("workspaces.active")
                     : t("workspaces.select")}
                 </Button>
-              </form>
+              </ActionForm>
             </div>
           ))}
-          <CreateWorkspaceForm
-            limit={wsLimit}
-            upgradeHref={billingService.enabled() ? "/settings/billing" : null}
-          />
+          {isAdmin && (
+            <CreateWorkspaceForm
+              limit={wsLimit}
+              upgradeHref={
+                billingService.enabled() ? "/settings/billing" : null
+              }
+            />
+          )}
         </SettingsSection>
       </div>
 
@@ -113,29 +129,34 @@ export default async function Settings() {
             t("budget.ofBudget", { budget: usd(budget.budgetUsd) })}
           {budget.exhausted && t("budget.exhausted")}
         </p>
-        <form action={setAiBudget} className="flex gap-2">
-          <Input
-            name="budget"
-            type="number"
-            min="0.01"
-            step="0.01"
-            placeholder={t("budget.unlimited")}
-            defaultValue={budget.budgetUsd ?? ""}
-            aria-label={t("budget.ariaLabel")}
-          />
-          <Button type="submit">
-            <Check />
-            {tc("save")}
-          </Button>
-        </form>
+        {isAdmin && (
+          <ActionForm action={setAiBudget} className="flex gap-2">
+            <Input
+              name="budget"
+              type="number"
+              min="0.01"
+              step="0.01"
+              placeholder={t("budget.unlimited")}
+              defaultValue={budget.budgetUsd ?? ""}
+              aria-label={t("budget.ariaLabel")}
+            />
+            <Button type="submit">
+              <Check />
+              {tc("save")}
+            </Button>
+          </ActionForm>
+        )}
       </SettingsSection>
 
       <SettingsSection
         title={t("limits.title")}
         description={t("limits.description")}
       >
-        <form action={setLimits} className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <ActionForm action={setLimits} className="flex flex-col gap-4">
+          <fieldset
+            disabled={!isAdmin}
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+          >
             {LIMITS.map((key) => (
               <div key={key} className="flex flex-col gap-1.5">
                 <Label htmlFor={`limit-${key}`}>{t(`limits.${key}`)}</Label>
@@ -154,7 +175,7 @@ export default async function Settings() {
                 />
               </div>
             ))}
-          </div>
+          </fieldset>
           <p className="text-muted-foreground text-sm">
             {t("limits.usage", {
               used: format.number(quotas.usage.records),
@@ -169,7 +190,7 @@ export default async function Settings() {
               </Button>
             </div>
           )}
-        </form>
+        </ActionForm>
       </SettingsSection>
 
       <SettingsSection
@@ -179,38 +200,40 @@ export default async function Settings() {
         <ConnectAgent mcpUrl={mcpUrl} />
       </SettingsSection>
 
-      <SettingsSection
-        title={t("danger.title")}
-        description={t("danger.description")}
-        danger
-      >
-        <div className="outline-tag-red-bg flex flex-col rounded-lg outline -outline-offset-1">
-          {list.map((w) => (
-            <div
-              key={w.id}
-              className="border-tag-red-bg flex items-center gap-4 border-b p-4 last:border-b-0"
-            >
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <p className="text-foreground text-sm font-medium">
-                  {t("danger.deleteTitle", { name: w.name })}
-                </p>
-                <p className="text-muted-foreground text-sm">
-                  {t("danger.deleteHint")}
-                </p>
+      {isAdmin && (
+        <SettingsSection
+          title={t("danger.title")}
+          description={t("danger.description")}
+          danger
+        >
+          <div className="outline-tag-red-bg flex flex-col rounded-lg outline -outline-offset-1">
+            {list.map((w) => (
+              <div
+                key={w.id}
+                className="border-tag-red-bg flex items-center gap-4 border-b p-4 last:border-b-0"
+              >
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <p className="text-foreground text-sm font-medium">
+                    {t("danger.deleteTitle", { name: w.name })}
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    {t("danger.deleteHint")}
+                  </p>
+                </div>
+                <ConfirmAction
+                  action={deleteWorkspace}
+                  fields={{ id: w.id }}
+                  label={t("danger.delete")}
+                  title={t("workspaces.deleteTitle", { name: w.name })}
+                  description={t("workspaces.deleteDescription")}
+                  confirmLabel={t("workspaces.deleteConfirm")}
+                  disabled={list.length <= 1}
+                />
               </div>
-              <ConfirmAction
-                action={deleteWorkspace}
-                fields={{ id: w.id }}
-                label={t("danger.delete")}
-                title={t("workspaces.deleteTitle", { name: w.name })}
-                description={t("workspaces.deleteDescription")}
-                confirmLabel={t("workspaces.deleteConfirm")}
-                disabled={list.length <= 1}
-              />
-            </div>
-          ))}
-        </div>
-      </SettingsSection>
+            ))}
+          </div>
+        </SettingsSection>
+      )}
     </SettingsPage>
   );
 }

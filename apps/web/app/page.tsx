@@ -38,6 +38,7 @@ import { getTenant, getSession } from "@/lib/tenant";
 import { appUrl } from "@getrunbase/core/env";
 import { decideRun } from "./approvals/actions";
 import { pageTitle } from "@/lib/page-title";
+import { ActionForm } from "@/components/action-form";
 
 export const generateMetadata = pageTitle("home");
 
@@ -305,7 +306,7 @@ export default async function Home() {
             </p>
           ) : (
             waiting.items.map((r) => (
-              <form
+              <ActionForm
                 key={r.id}
                 action={decideRun}
                 className="flex flex-col gap-2 rounded-lg border p-4"
@@ -338,7 +339,7 @@ export default async function Home() {
                     {t("approvals.reject")}
                   </Button>
                 </div>
-              </form>
+              </ActionForm>
             ))
           )}
         </section>
