@@ -38,12 +38,6 @@ export { ListForm } from "./list-form";
 export { MapForm } from "./map-form";
 export { SwitchForm } from "./switch-form";
 
-// Fields where a credential makes sense (URL, headers, keys, tokens): only
-// there does the insert menu offer the Credentials tab.
-const CREDENTIAL_KEY = /url|header|token|key|secret|auth|password|webhook/i;
-const credentialField = (type: string | undefined, key: string) =>
-  type === "http.request" || type === "mcp.call" || CREDENTIAL_KEY.test(key);
-
 // Local alias: the name `Input` is also the input component.
 type Input = StepInput;
 
@@ -175,7 +169,7 @@ export function SchemaForm({
             scope={scope}
             value={String(value[f.key] ?? "")}
             onChange={(v) => set(f.key, v)}
-            secrets={credentialField(type, f.key) ? secretNames : undefined}
+            secrets={secretNames}
           />
         )}
       {f.key === "secret" && f.kind === "text" && (

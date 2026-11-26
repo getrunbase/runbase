@@ -32,6 +32,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { useSecretNames } from "@/components/secret-select";
 import { fieldAt, type ObjectInfo } from "../graph";
 import { makeLabels, type WorkflowsT } from "../labels";
 import {
@@ -555,6 +556,8 @@ export function PillInput({
   const last = useRef<string | null>(null);
   const range = useRef<Range | null>(null);
   const [menu, setMenu] = useState(false);
+  // Every field offers the workspace credentials, in their own tab.
+  const workspaceSecrets = useSecretNames();
   // Pill labels: redraws the field when the scope changes.
   const labels = JSON.stringify(
     parseTemplate(value).flatMap((s) =>
@@ -656,7 +659,7 @@ export function PillInput({
           inline
           scope={scope}
           records={records}
-          secrets={secrets}
+          secrets={secrets ?? workspaceSecrets}
           open={menu}
           onOpenChange={setMenu}
           onPick={insert}
