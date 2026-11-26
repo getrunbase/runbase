@@ -214,16 +214,6 @@
       "change": "Change plan",
       "manage": "Manage billing"
     },
-    "usage": {
-      "title": "Usage",
-      "description": "What this account uses against its plan limits.",
-      "of": "{used} / {limit}",
-      "unlimited": "{used} · Unlimited",
-      "reached": "Limit reached",
-      "records": "Records (this workspace)",
-      "workspaces": "Workspaces",
-      "pages": "Published interfaces"
-    },
     "quota": {
       "link": "Upgrade plan"
     },
