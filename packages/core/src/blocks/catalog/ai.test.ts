@@ -15,7 +15,6 @@ import { recordsService } from "../../records";
 import { workflowsService } from "../../workflows";
 import { processStep, runsQueue, runsService, RUNS_QUEUE } from "../../runs";
 import { secretsService } from "../../secrets";
-import { resolveAi } from "../../ai-providers";
 
 type Body = {
   model: string;
@@ -85,24 +84,32 @@ const decide = (branch: string) => () => [
     input: { branch, reason: "r", confidence: 0.9 },
   },
 ];
-// Workspace on Anthropic (Sonnet: $2 / $10 per million tokens).
+// Default block AI for the tests: Anthropic (Sonnet: $2 / $10 per million
+// tokens), added to the input unless the test sets `ai` (null = none).
+const AI = new WeakMap<BlockContext, unknown>();
 const ctx = (
   services: object = {},
   ai: unknown = { provider: "anthropic" },
-): BlockContext => ({
-  services: services as BlockContext["services"],
-  depth: 0,
-  signal: new AbortController().signal,
-  ai: async () => resolveAi(ai),
-  settings: async () =>
-    settingsSchema.parse({
-      secrets: { ANTHROPIC_API_KEY: "cle-tenant", DEEPSEEK_API_KEY: "cle-ds" },
-    }),
-});
-const run = (type: string, input: unknown, c = ctx()) =>
-  blocks[type]!.run(blocks[type]!.inputSchema.parse(input), c);
+): BlockContext => {
+  const c: BlockContext = {
+    services: services as BlockContext["services"],
+    depth: 0,
+    signal: new AbortController().signal,
+    settings: async () =>
+      settingsSchema.parse({
+        secrets: { ANTHROPIC_API_KEY: "cle-tenant", DEEPSEEK_API_KEY: "cle-ds" },
+      }),
+  };
+  AI.set(c, ai);
+  return c;
+};
+const run = (type: string, input: unknown, c = ctx()) => {
+  const ai = AI.has(c) ? AI.get(c) : { provider: "anthropic" };
+  const i = { ...(ai ? { ai } : {}), ...(input as object) };
+  return blocks[type]!.run(blocks[type]!.inputSchema.parse(i), c);
+};
 
-test("ai.decide: block AI config overrides the workspace setting", async () => {
+test("ai.decide: block AI config (provider, model, secret)", async () => {
   replies = [decide("yes")];
   calls.length = 0;
   const ok = await run(
@@ -112,8 +119,7 @@ test("ai.decide: block AI config overrides the workspace setting", async () => {
       branches: ["yes"],
       ai: { provider: "anthropic", model: "claude-haiku-5-5" },
     },
-    // Workspace on DeepSeek: ignored, the block has its own config.
-    ctx({}, { provider: "deepseek" }),
+    ctx({}, null),
   );
   assert.equal(ok.branch, "yes");
   assert.equal(calls[0]!.model, "claude-haiku-5-5");
@@ -137,7 +143,7 @@ test("ai.decide: branch outside the list -> error", async () => {
   );
 });
 
-test("ai.decide: workspace provider and model, preset price, fixed cap", async () => {
+test("ai.decide: block provider and model, preset price, fixed cap", async () => {
   replies = [decide("yes")];
   calls.length = 0;
   const ok = await run("ai.decide", { prompt: "?", branches: ["yes"] });
@@ -211,7 +217,7 @@ test("lead qualification: signup -> ai.decide qualified / not qualified -> right
   const [org] =
     await sql`insert into organizations (name) values ('Acme') returning id`;
   const [ws] =
-    await sql`insert into workspaces (organization_id, name, settings) values (${org!.id}, 'Default', '{"ai":{"provider":"anthropic"}}') returning id`;
+    await sql`insert into workspaces (organization_id, name, settings) values (${org!.id}, 'Default', '{}') returning id`;
   const uid = crypto.randomUUID();
   await sql`insert into "user" (id, name, email) values (${uid}, 'M', ${uid + "@x.io"})`;
   await sql`insert into memberships (user_id, organization_id, role) values (${uid}, ${org!.id}, 'owner')`;
@@ -243,6 +249,7 @@ test("lead qualification: signup -> ai.decide qualified / not qualified -> right
             prompt: "Is this signup qualified?",
             context: "{{record.data}}",
             branches: ["qualified", "not qualified"],
+            ai: { provider: "anthropic", secret: "ANTHROPIC_API_KEY" },
           },
         },
         {
@@ -382,13 +389,19 @@ test("ai without tenant key: ai.keyMissing, no provider call", async () => {
   assert.equal(calls.length, 0);
 });
 
-// No provider chosen: no implicit DeepSeek.
-test("ai without provider: ai.providerNotConfigured, no call", async () => {
+// No AI on the block: error naming it, no implicit provider or default.
+test("ai block without config: ai.blockNotConfigured, no call", async () => {
   calls.length = 0;
   oaCalls.length = 0;
   await assert.rejects(
     run("ai.decide", { prompt: "?", branches: ["yes"] }, ctx({}, null)),
-    { code: "ai.providerNotConfigured" },
+    { code: "ai.blockNotConfigured", params: { block: "ai.decide" } },
+  );
+  const c = { ...ctx({}, null), run: { runId: "r", path: "0", n: 0, stepId: "qualify" } };
+  AI.set(c, null);
+  await assert.rejects(
+    run("ai.extract", { text: "t", fields }, c),
+    { code: "ai.blockNotConfigured", params: { block: "ai.extract (qualify)" } },
   );
   assert.equal(calls.length + oaCalls.length, 0);
 });

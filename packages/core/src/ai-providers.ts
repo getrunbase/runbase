@@ -1,15 +1,9 @@
 // AI providers: presets + two API formats (openai
 // chat/completions, anthropic messages), same output (text + token usage
 // for cost caps). Adding a provider = one line.
-import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { requireScope } from "./api-keys";
-import { audit } from "./audit";
-import { workspaces } from "./db/schema";
 import { appError } from "./errors/app-error";
-import { putSecret, secretNameSchema } from "./secrets";
-import { withTenant, type TenantContext } from "./tenant";
-import { resumeBudgetRuns } from "./runs/budget";
+import { secretNameSchema } from "./secrets";
 
 export type AiFormat = "openai" | "anthropic";
 export type AiPreset = {
@@ -60,12 +54,9 @@ export const aiModel = (p: AiPreset, id?: string): AiModel =>
 
 export type AiProviderId = (typeof AI_PRESETS)[number]["id"];
 
-// No default provider: the workspace chooses its AI.
+// No default provider: every AI block and page declares its own.
 export const preset = (id: AiProviderId): AiPreset =>
   AI_PRESETS.find((p) => p.id === id)!;
-
-export const aiNotConfigured = () =>
-  appError("ai.providerNotConfigured", "No AI provider configured. Choose one in settings.");
 
 export type AiTokens = { input: number; output: number };
 export type AiCompletion = { text: string; tokens: AiTokens };
@@ -161,121 +152,27 @@ export async function complete(
   return a.parse(JSON.parse(text) as never);
 }
 
-// Workspace AI settings (in `workspaces.settings.ai`); the key is an
-// encrypted secret named by the preset (`keySecret`).
-export const aiSettingsSchema = z.object({
-  provider: z.enum(AI_PRESETS.map((p) => p.id) as [AiProviderId, ...AiProviderId[]]),
-  model: z.string().trim().max(200).optional(),
-  // Vault secret chosen for the key; default: the preset's one.
-  keySecret: secretNameSchema.optional(),
-});
-export type AiSettings = z.infer<typeof aiSettingsSchema>;
-
-// null = no provider chosen (no fallback).
-export function resolveAi(raw: unknown) {
-  const s = aiSettingsSchema.safeParse(raw);
-  if (!s.success) return null;
-  const p = preset(s.data.provider);
-  const model = aiModel(p, s.data.model).id;
-  const keySecret = s.data.keySecret || p.keySecret;
-  return { preset: p, model, keySecret };
-}
-
-// Per-block AI config (AI workflow blocks, `input.ai`): provider, model and
-// the workspace secret holding the key. `secret` (not `keySecret`) so the
-// secret usage scan picks it up like other block secret references.
-export const blockAiSchema = z.object({
+// AI config (AI workflow blocks `input.ai`, pages `permissions.ai`):
+// provider, model and the workspace secret holding the key. `secret` (not
+// `keySecret`) so the secret usage scan picks it up like other block
+// secret references. No workspace-wide default.
+export const aiConfigSchema = z.object({
   provider: z.enum(AI_PRESETS.map((p) => p.id) as [AiProviderId, ...AiProviderId[]]),
   model: z.string().trim().max(200).optional(),
   secret: secretNameSchema.optional(),
 });
-export type BlockAi = z.infer<typeof blockAiSchema>;
+export type AiConfig = z.infer<typeof aiConfigSchema>;
+export type ResolvedAi = { preset: AiPreset; model: string; keySecret: string };
 
-// Block config first; otherwise the fallback (legacy workspace setting) so
-// blocks saved before per-block config keep running. null = none.
-export function resolveBlockAi(
-  block: unknown,
-  fallback: ReturnType<typeof resolveAi>,
-): ReturnType<typeof resolveAi> {
-  const s = blockAiSchema.safeParse(block);
-  if (!s.success) return fallback;
-  return resolveAi({
-    provider: s.data.provider,
-    model: s.data.model,
-    keySecret: s.data.secret,
-  });
+// Lenient read: unknown model = the provider's first one, no secret = the
+// preset's default secret name. null = invalid or missing config.
+export function resolveAi(raw: unknown): ResolvedAi | null {
+  const s = aiConfigSchema.safeParse(raw);
+  if (!s.success) return null;
+  const p = preset(s.data.provider);
+  return {
+    preset: p,
+    model: aiModel(p, s.data.model).id,
+    keySecret: s.data.secret || p.keySecret,
+  };
 }
-
-async function readRaw(ctx: TenantContext) {
-  const [row] = await withTenant(ctx, (tx) =>
-    tx
-      .select({ settings: workspaces.settings })
-      .from(workspaces)
-      .where(eq(workspaces.id, ctx.workspaceId)),
-  );
-  return (row?.settings ?? {}) as Record<string, unknown>;
-}
-
-export async function workspaceAi(ctx: TenantContext) {
-  return resolveAi((await readRaw(ctx)).ai);
-}
-
-// Chosen provider, otherwise ai.providerNotConfigured.
-export async function requireWorkspaceAi(ctx: TenantContext) {
-  const ai = await workspaceAi(ctx);
-  if (!ai) throw aiNotConfigured();
-  return ai;
-}
-
-export const aiSettingsService = {
-  presets: () => AI_PRESETS,
-  get: async (ctx: TenantContext) => {
-    await requireScope(ctx, "read");
-    const ai = await workspaceAi(ctx);
-    return {
-      provider: ai?.preset.id ?? null,
-      model: ai?.model ?? "",
-      keySecret: ai?.keySecret ?? "",
-    };
-  },
-  // Provider + model + referenced secret (by name); optional key
-  // (empty = unchanged) stored under that name, never read back.
-  set: async (
-    ctx: TenantContext,
-    input: { provider: string; model?: string; keySecret?: string; key?: string },
-  ) => {
-    await requireScope(ctx, "admin");
-    const s = aiSettingsSchema.safeParse({
-      ...input,
-      keySecret: input.keySecret?.trim() || undefined,
-    });
-    if (!s.success)
-      throw appError("ai.unknownProvider", "Unknown AI provider {provider}", {
-        provider: String(input.provider),
-      });
-    const p = preset(s.data.provider);
-    if (s.data.model && !p.models.some((m) => m.id === s.data.model))
-      throw appError("ai.unknownModel", "Unknown AI model {model}", { model: s.data.model });
-    const ai = {
-      provider: p.id,
-      ...(s.data.model && { model: s.data.model }),
-      ...(s.data.keySecret &&
-        s.data.keySecret !== p.keySecret && { keySecret: s.data.keySecret }),
-    };
-    const keySecret = s.data.keySecret ?? p.keySecret;
-    const settings = await readRaw(ctx);
-    await withTenant(ctx, async (tx) => {
-      if (input.key?.trim()) await putSecret(tx, ctx, keySecret, input.key.trim());
-      await tx
-        .update(workspaces)
-        .set({ settings: { ...settings, ai } })
-        .where(eq(workspaces.id, ctx.workspaceId));
-      await audit(tx, ctx, "workspace.ai_settings", { type: "workspace", id: ctx.workspaceId }, {
-        ...ai,
-        key: !!input.key?.trim(),
-      });
-    });
-    // Provider key added (any provider): runs paused on budget resume.
-    if (input.key?.trim()) await resumeBudgetRuns(ctx);
-  },
-};

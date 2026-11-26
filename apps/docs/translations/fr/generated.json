@@ -980,8 +980,8 @@
     "fr": "Icône Lucide de la page dans la navigation (kebab-case, par exemple users, shopping-cart, kanban, chart-line ; voir lucide.dev/icons). Choisissez l'icône la plus adaptée au contenu de la page. Par défaut : layout-dashboard."
   },
   "mcp.page.create.permissions": {
-    "en": "SDK permissions declared by the page",
-    "fr": "Permissions SDK déclarées par la page"
+    "en": "SDK permissions declared by the page: { objects, write, workflows, files, ai }. `ai` = AI configs for useAI: { \"default\": { provider, model, secret }, \"<name>\": {...} } (no workspace default).",
+    "fr": "Permissions SDK déclarées par la page : { objects, write, workflows, files, ai }. `ai` = configurations d'IA pour useAI : { \"default\": { provider, model, secret }, \"<name>\": {...} } (pas d'IA par défaut de l'espace de travail)."
   },
   "mcp.page.create.workspace": {
     "en": "Workspace id or name (default: active workspace)",
@@ -1148,8 +1148,8 @@
     "fr": "Identifiant de la page"
   },
   "mcp.page.update.permissions": {
-    "en": "SDK permissions declared by the page",
-    "fr": "Permissions SDK déclarées par la page"
+    "en": "SDK permissions declared by the page: { objects, write, workflows, files, ai }. `ai` = AI configs for useAI: { \"default\": { provider, model, secret }, \"<name>\": {...} } (no workspace default).",
+    "fr": "Permissions SDK déclarées par la page : { objects, write, workflows, files, ai }. `ai` = configurations d'IA pour useAI : { \"default\": { provider, model, secret }, \"<name>\": {...} } (pas d'IA par défaut de l'espace de travail)."
   },
   "mcp.page.update.review": {
     "en": "automatic review of the draft (default true, skipped on compile errors): desktop and mobile screenshots, axe-core violations and runtime errors",
@@ -1924,8 +1924,8 @@
     "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
   },
   "mcp.workspaces.set_ai_budget": {
-    "en": "Sets the monthly AI budget in USD (null = unlimited). At 100% AI blocks are blocked and runs move to paused_budget; they resume if the budget is raised. Capped by the account limit (quota:aiBudgetUsd): a higher value is refused. There is no platform AI key: without the workspace's own provider key, AI calls fail with ai.providerNotConfigured.",
-    "fr": "Définit le budget IA mensuel en USD (null = illimité). À 100 %, les blocs d'IA sont bloqués et les exécutions passent en paused_budget ; elles reprennent si le budget est relevé. Plafonné par la limite du compte (quota:aiBudgetUsd) : une valeur supérieure est refusée. Il n'existe pas de clé d'IA de la plateforme : sans clé de fournisseur propre à l'espace de travail, les appels d'IA échouent avec ai.providerNotConfigured."
+    "en": "Sets the monthly AI budget in USD (null = unlimited). At 100% AI blocks are blocked and runs move to paused_budget; they resume if the budget is raised. Capped by the account limit (quota:aiBudgetUsd): a higher value is refused. There is no platform AI key and no workspace default AI: each AI block (`ai` in its input) and each page (`permissions.ai`) names its provider, model and key secret.",
+    "fr": "Définit le budget IA mensuel en USD (null = illimité). À 100 %, les blocs d'IA sont bloqués et les exécutions passent en paused_budget ; elles reprennent si le budget est relevé. Plafonné par la limite du compte (quota:aiBudgetUsd) : une valeur supérieure est refusée. Il n'existe ni clé d'IA de la plateforme ni IA par défaut de l'espace de travail : chaque bloc d'IA (`ai` dans son entrée) et chaque page (`permissions.ai`) indique son fournisseur, son modèle et le secret de sa clé."
   },
   "mcp.workspaces.set_ai_budget.workspace": {
     "en": "Workspace id or name (default: active workspace)",
@@ -1943,6 +1943,10 @@
     "en": "The AI picks one of the declared branches and explains why.",
     "fr": "L'IA choisit l'une des branches déclarées et explique pourquoi."
   },
+  "node.ai.decide.input.ai": {
+    "en": "AI of this block (required to run): { provider, model, secret }",
+    "fr": "IA de ce bloc (obligatoire pour l'exécution) : { provider, model, secret }"
+  },
   "node.ai.decide.label": {
     "en": "AI decision",
     "fr": "Décision IA"
@@ -1951,6 +1955,10 @@
     "en": "The AI extracts structured fields from a text.",
     "fr": "L'IA extrait des champs structurés d'un texte."
   },
+  "node.ai.extract.input.ai": {
+    "en": "AI of this block (required to run): { provider, model, secret }",
+    "fr": "IA de ce bloc (obligatoire pour l'exécution) : { provider, model, secret }"
+  },
   "node.ai.extract.label": {
     "en": "AI extraction",
     "fr": "Extraction IA"
@@ -1958,6 +1966,10 @@
   "node.ai.run": {
     "en": "The AI follows an instruction and can read or update objects.",
     "fr": "L'IA suit une instruction et peut lire ou mettre à jour des objets."
+  },
+  "node.ai.run.input.ai": {
+    "en": "AI of this block (required to run): { provider, model, secret }",
+    "fr": "IA de ce bloc (obligatoire pour l'exécution) : { provider, model, secret }"
   },
   "node.ai.run.label": {
     "en": "AI agent",

@@ -25,20 +25,6 @@
       "ariaLabel": "Budget USD",
       "description": "Plafond de dépense mensuel des blocs IA. Au-delà, ils sont mis en pause."
     },
-    "ai": {
-      "title": "Fournisseur IA",
-      "description": "Choisissez le fournisseur IA utilisé par les briques et les pages IA, puis collez votre clé API.",
-      "provider": "Fournisseur",
-      "providerPlaceholder": "Choisir un fournisseur",
-      "model": "Modèle",
-      "key": "Clé API",
-      "keyPlaceholder": "Collez votre clé API",
-      "keySet": "Clé enregistrée (laisser vide pour la conserver)",
-      "keyHint": "Stockée chiffrée dans le secret {secret}. Elle n'est plus jamais affichée.",
-      "noKeyHint": "Aucune clé pour l'instant. Elle sera stockée chiffrée dans le secret {secret}.",
-      "save": "Enregistrer",
-      "keySecret": "Secret qui porte la clé"
-    },
     "limits": {
       "title": "Limites du workspace",
       "description": "Au-delà, les ajouts sont refusés avec un message clair. Champ vide : valeur par défaut.",
@@ -126,7 +112,7 @@
       "workflow": "le workflow « {name} »",
       "function": "la fonction « {name} »",
       "webhook": "le webhook « {name} »",
-      "ai": "le fournisseur IA {name}"
+      "page": "la page « {name} »"
     }
   },
   "apiKeys": {
@@ -227,16 +213,6 @@
       "change": "Changer de plan",
       "manage": "Gérer la facturation"
     },
-    "usage": {
-      "title": "Usage",
-      "description": "Ce que ce compte utilise par rapport aux limites de son offre.",
-      "of": "{used} / {limit}",
-      "unlimited": "{used} · Illimité",
-      "reached": "Limite atteinte",
-      "records": "Records (ce workspace)",
-      "workspaces": "Workspaces",
-      "pages": "Interfaces publiées"
-    },
     "quota": {
       "link": "Changer de plan"
     },
@@ -250,7 +226,11 @@
       "perYear": "/ an",
       "equivalent": "{price} / mois, facturé annuellement",
       "current": "Offre actuelle",
-      "choose": "Choisir"
+      "choose": "Choisir",
+      "compare": "Comparer les offres",
+      "feature": "Fonctionnalité",
+      "included": "Inclus",
+      "notIncluded": "Non inclus"
     }
   },
   "usage": {
@@ -260,11 +240,18 @@
     "unlimited": "{used} · Illimité",
     "reached": "Limite atteinte",
     "meters": {
-      "records": "Records (ce workspace)",
-      "runsPerMonth": "Runs ce mois-ci (tous les workspaces)",
-      "storageBytes": "Stockage de fichiers (tous les workspaces)",
-      "apiPerMinute": "Appels API cette minute (ce workspace)",
-      "workspaces": "Workspaces"
+      "records": "Records",
+      "runsPerMonth": "Runs ce mois-ci",
+      "storageBytes": "Stockage de fichiers",
+      "workspaces": "Workspaces",
+      "pages": "Interfaces publiées",
+      "aiBudgetUsd": "Dépenses IA ce mois-ci",
+      "runsPerMinute": "Runs démarrés cette minute",
+      "apiPerMinute": "Appels API cette minute"
+    },
+    "scope": {
+      "workspace": "Ce workspace",
+      "organization": "Toute l’organisation"
     }
   }
 }

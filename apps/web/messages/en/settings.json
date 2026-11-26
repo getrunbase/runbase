@@ -25,20 +25,6 @@
       "ariaLabel": "Budget in USD",
       "description": "Monthly spending cap for AI blocks. Beyond it, they are paused."
     },
-    "ai": {
-      "title": "AI provider",
-      "description": "Pick the AI provider used by AI blocks and pages, then paste your API key.",
-      "provider": "Provider",
-      "providerPlaceholder": "Choose a provider",
-      "model": "Model",
-      "key": "API key",
-      "keyPlaceholder": "Paste your API key",
-      "keySet": "Key saved (leave empty to keep it)",
-      "keyHint": "Stored encrypted as the {secret} secret. It is never shown again.",
-      "noKeyHint": "No key yet. It will be stored encrypted as the {secret} secret.",
-      "save": "Save",
-      "keySecret": "Secret holding the key"
-    },
     "limits": {
       "title": "Workspace limits",
       "description": "Beyond these, additions are rejected with a clear message. Empty field: default value.",
@@ -126,7 +112,7 @@
       "workflow": "workflow “{name}”",
       "function": "function “{name}”",
       "webhook": "webhook “{name}”",
-      "ai": "AI provider {name}"
+      "page": "page “{name}”"
     }
   },
   "apiKeys": {
@@ -227,16 +213,6 @@
       "change": "Change plan",
       "manage": "Manage billing"
     },
-    "usage": {
-      "title": "Usage",
-      "description": "What this account uses against its plan limits.",
-      "of": "{used} / {limit}",
-      "unlimited": "{used} · Unlimited",
-      "reached": "Limit reached",
-      "records": "Records (this workspace)",
-      "workspaces": "Workspaces",
-      "pages": "Published interfaces"
-    },
     "quota": {
       "link": "Upgrade plan"
     },
@@ -250,7 +226,11 @@
       "perYear": "/ year",
       "equivalent": "{price} / month, billed yearly",
       "current": "Current plan",
-      "choose": "Choose"
+      "choose": "Choose",
+      "compare": "Compare plans",
+      "feature": "Feature",
+      "included": "Included",
+      "notIncluded": "Not included"
     }
   },
   "usage": {
@@ -260,11 +240,18 @@
     "unlimited": "{used} · Unlimited",
     "reached": "Limit reached",
     "meters": {
-      "records": "Records (this workspace)",
-      "runsPerMonth": "Runs this month (all workspaces)",
-      "storageBytes": "File storage (all workspaces)",
-      "apiPerMinute": "API calls this minute (this workspace)",
-      "workspaces": "Workspaces"
+      "records": "Records",
+      "runsPerMonth": "Runs this month",
+      "storageBytes": "File storage",
+      "workspaces": "Workspaces",
+      "pages": "Published interfaces",
+      "aiBudgetUsd": "AI spending this month",
+      "runsPerMinute": "Runs started this minute",
+      "apiPerMinute": "API calls this minute"
+    },
+    "scope": {
+      "workspace": "This workspace",
+      "organization": "Whole organization"
     }
   }
 }

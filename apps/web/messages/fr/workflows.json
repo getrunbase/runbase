@@ -542,7 +542,7 @@
       "key": "Clé API",
       "noSecret": "Aucune clé API enregistrée dans ce workspace.",
       "addKey": "Ajouter une clé",
-      "fallback": "Non défini : ce bloc utilise l'IA par défaut du workspace."
+      "required": "Obligatoire : choisissez le fournisseur, le modèle et la clé utilisés par ce bloc."
     }
   },
   "pickers": {

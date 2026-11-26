@@ -66,7 +66,7 @@ common optional ones:
   (invitations, magic link) set one through the reset link.
 - **Sign-ups.** Closed by default; set `SIGNUPS_ENABLED=true` to open them, or
   create accounts with `pnpm admin:create` as above.
-- **AI blocks.** No platform key: each workspace adds its own provider key in Settings.
+- **AI blocks.** No platform key: each workspace adds its own provider key as a secret (Settings › Secrets), and every AI block and page names the provider, model and secret it uses.
 - **Code component runtime.** `NEXT_PUBLIC_RUNTIME_ORIGIN` serves the
   sandboxed iframe of code components from a second domain pointing to the same
   web container (e.g. `https://runtime.example.com`). It is baked in at build
