@@ -29,6 +29,10 @@ async function bundle(entry: string, format: "iife" | "esm") {
     // (e.g. decode-named-character-reference from react-markdown).
     conditions: format === "esm" ? ["deno"] : [],
     entryPoints: [join(root, "components/code-runtime", entry)],
+    // @getrunbase/kit only declares react, zod, recharts... as peers: a --prod
+    // install leaves them out of packages/kit/node_modules, so resolve them
+    // from the web app's dependencies.
+    nodePaths: [join(root, "node_modules")],
     bundle: true,
     write: false,
     format,
