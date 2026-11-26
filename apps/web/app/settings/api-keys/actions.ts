@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { apiKeysService } from "@getrunbase/core/api-keys";
 import type { Scope } from "@getrunbase/core/tenant";
 import { z } from "zod";
-import { actionError, type ActionError } from "@/lib/action-error";
+import { actionError, type ActionError, runAction } from "@/lib/action-error";
 import { formInput, list, parseInput, trimmed, uuid } from "@/lib/action-input";
 import { getTenant } from "@/lib/tenant";
 
@@ -45,8 +45,10 @@ export async function createApiKey(
 }
 
 export async function revokeApiKey(f: FormData) {
-  const { ctx } = await getTenant();
-  const { id } = parseInput(z.object({ id: uuid }), formInput(f));
-  await apiKeysService.revoke(ctx, id);
-  revalidatePath("/settings/api-keys");
+  return runAction(async () => {
+    const { ctx } = await getTenant();
+    const { id } = parseInput(z.object({ id: uuid }), formInput(f));
+    await apiKeysService.revoke(ctx, id);
+    revalidatePath("/settings/api-keys");
+  });
 }

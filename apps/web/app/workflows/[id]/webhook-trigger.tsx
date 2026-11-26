@@ -62,7 +62,7 @@ export function WebhookTriggerForm({
     const since = hook.sampleAt;
     let n = 0;
     const timer = setInterval(async () => {
-      const r = await webhookSample(hook.name);
+      const r = (await webhookSample(hook.name)).data;
       if (r?.at && r.at !== since) {
         setSample(r.sample);
         setListening(false);

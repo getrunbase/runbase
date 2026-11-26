@@ -12,6 +12,7 @@ import {
 } from "@getrunbase/ui/components/ui/table";
 import { ConfirmAction } from "@/components/confirm-action";
 import { getFormatter, getTranslations } from "next-intl/server";
+import { isAdminRole } from "@/lib/roles";
 import { getTenant } from "@/lib/tenant";
 import { removeSecret } from "./actions";
 import { NewSecret } from "./new-secret";
@@ -23,6 +24,8 @@ export const generateMetadata = pageTitle("secrets");
 // Workspace secrets (qglrI board): names only.
 export default async function Secrets() {
   const { ctx, role } = await getTenant();
+  // Adding and deleting secrets: admins only (checked by the core).
+  const isAdmin = isAdminRole(role);
   const [list, usage] = await Promise.all([
     secretsService.list(ctx),
     secretUsageService.all(ctx),
@@ -36,10 +39,10 @@ export default async function Secrets() {
       (usage[name] ?? []).map((u) => t(`usage.${u.type}`, { name: u.name })),
     );
   return (
-    <SettingsPage isAdmin={role === "owner" || role === "admin"}>
+    <SettingsPage isAdmin={isAdmin}>
       <div className="flex flex-col">
         <SectionHead title={t("title")} description={t("description")}>
-          <NewSecret />
+          {isAdmin && <NewSecret />}
         </SectionHead>
         {list.length === 0 ? (
           <EmptyState
@@ -78,18 +81,20 @@ export default async function Secrets() {
                     {format.relativeTime(s.updatedAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <ConfirmAction
-                      action={removeSecret}
-                      fields={{ name: s.name }}
-                      variant="ghost"
-                      label={tc("delete")}
-                      title={t("deleteTitle", { name: s.name })}
-                      description={
-                        usage[s.name]
-                          ? t("deleteUsed", { list: usedBy(s.name) })
-                          : t("deleteDescription")
-                      }
-                    />
+                    {isAdmin && (
+                      <ConfirmAction
+                        action={removeSecret}
+                        fields={{ name: s.name }}
+                        variant="ghost"
+                        label={tc("delete")}
+                        title={t("deleteTitle", { name: s.name })}
+                        description={
+                          usage[s.name]
+                            ? t("deleteUsed", { list: usedBy(s.name) })
+                            : t("deleteDescription")
+                        }
+                      />
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -97,6 +102,7 @@ export default async function Secrets() {
           </Table>
         )}
       </div>
+      {!isAdmin && <SettingsNote icon={Lock}>{tc("adminOnly")}</SettingsNote>}
       <SettingsNote icon={Lock}>
         {t.rich("note", {
           code: (c) => <code className="font-mono">{c}</code>,

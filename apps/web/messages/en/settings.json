@@ -200,8 +200,7 @@
     "context": "Context",
     "apiKey": "API key",
     "reopen": "Reopen",
-    "markDone": "Resolved",
-    "forbidden": "Platform admins only"
+    "markDone": "Resolved"
   },
   "page": {
     "title": "Settings",

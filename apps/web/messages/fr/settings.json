@@ -200,8 +200,7 @@
     "context": "Contexte",
     "apiKey": "Clé API",
     "reopen": "Rouvrir",
-    "markDone": "Traité",
-    "forbidden": "Réservé aux admins plateforme"
+    "markDone": "Traité"
   },
   "page": {
     "title": "Paramètres",

@@ -26,6 +26,7 @@ import { getTenant } from "@/lib/tenant";
 import { inviteMember, removeMember, setMemberRole } from "../../actions";
 import { SettingsPage, SettingsSection, TableHeading } from "../settings-shell";
 import { pageTitle } from "@/lib/page-title";
+import { ActionForm } from "@/components/action-form";
 
 export const generateMetadata = pageTitle("members");
 
@@ -122,13 +123,13 @@ export default async function Members() {
               <TableCell>
                 {m.role !== "owner" && (
                   <div className="flex items-center justify-end gap-2">
-                    <form action={setMemberRole} className="flex gap-2">
+                    <ActionForm action={setMemberRole} className="flex gap-2">
                       <input type="hidden" name="id" value={m.id} />
                       <RoleSelect defaultValue={m.role} />
                       <Button type="submit" variant="secondary">
                         {t("members.change")}
                       </Button>
-                    </form>
+                    </ActionForm>
                     <ConfirmAction
                       action={removeMember}
                       fields={{ id: m.id }}
@@ -182,7 +183,7 @@ export default async function Members() {
         description={t("members.inviteHint")}
       >
         {isAdmin && (
-          <form action={inviteMember} className="flex flex-wrap gap-2">
+          <ActionForm action={inviteMember} className="flex flex-wrap gap-2">
             <Input
               name="email"
               type="email"
@@ -196,7 +197,7 @@ export default async function Members() {
               <UserPlus />
               {t("members.invite")}
             </Button>
-          </form>
+          </ActionForm>
         )}
         <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
           {(Object.keys(ROLE_HINTS) as (keyof typeof ROLE_HINTS)[]).map((r) => (

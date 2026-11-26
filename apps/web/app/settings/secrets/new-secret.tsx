@@ -15,15 +15,25 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@getrunbase/ui/components/ui/input";
 import { Label } from "@getrunbase/ui/components/ui/label";
+import type { ActionError } from "@/lib/action-error";
+import { useErrorText } from "@/lib/error-text";
 import { setSecret } from "./actions";
 
 // Add / replace a secret in a dialog.
 export function NewSecret() {
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState<ActionError | null>(null);
+  const errorText = useErrorText();
   const t = useTranslations("settings.secrets");
   const tc = useTranslations("common");
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        setError(null);
+      }}
+    >
       <DialogTrigger asChild>
         <Button>
           <Plus /> {t("new")}
@@ -36,8 +46,9 @@ export function NewSecret() {
         </DialogHeader>
         <form
           action={async (f) => {
-            await setSecret(f);
-            setOpen(false);
+            const r = await setSecret(f);
+            setError(r.error ?? null);
+            if (!r.error) setOpen(false);
           }}
           className="space-y-4"
         >
@@ -55,6 +66,11 @@ export function NewSecret() {
             <Label htmlFor="secret-value">{t("value")}</Label>
             <Input id="secret-value" name="value" type="password" required />
           </div>
+          {error && (
+            <p role="alert" className="text-destructive text-sm">
+              {errorText(error)}
+            </p>
+          )}
           <DialogFooter>
             <Button type="submit">{tc("save")}</Button>
           </DialogFooter>

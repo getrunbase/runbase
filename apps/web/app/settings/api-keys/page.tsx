@@ -14,6 +14,7 @@ import {
 } from "@getrunbase/ui/components/ui/table";
 import { ConfirmAction } from "@/components/confirm-action";
 import { getFormatter, getTranslations } from "next-intl/server";
+import { isAdminRole } from "@/lib/roles";
 import { getTenant } from "@/lib/tenant";
 import { revokeApiKey } from "./actions";
 import { CreateKeyDialog } from "./create-form";
@@ -28,18 +29,26 @@ const SCOPE_TONE = { read: "green", write: "orange", admin: "blue" } as const;
 // Organization API keys (KhoiA board): creation, scopes, revocation.
 export default async function ApiKeys() {
   const { ctx, role } = await getTenant();
+  // Listing, creating and revoking keys: admins only (checked by the core).
+  const isAdmin = isAdminRole(role);
+  const tc = await getTranslations("common");
+  if (!isAdmin)
+    return (
+      <SettingsPage isAdmin={false}>
+        <SettingsNote icon={ShieldCheck}>{tc("adminOnly")}</SettingsNote>
+      </SettingsPage>
+    );
   const [keys, workspaces, objects] = await Promise.all([
     apiKeysService.list(ctx),
     workspacesService.list(ctx),
     objectsService.list(ctx),
   ]);
   const t = await getTranslations("settings.apiKeys");
-  const tc = await getTranslations("common");
   const format = await getFormatter();
   const date = (d: Date) =>
     format.dateTime(d, { dateStyle: "short", timeStyle: "short" });
   return (
-    <SettingsPage isAdmin={role === "owner" || role === "admin"}>
+    <SettingsPage isAdmin>
       <div className="flex flex-col">
         <SectionHead title={t("title")} description={t("description")}>
           <CreateKeyDialog

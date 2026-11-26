@@ -24,6 +24,7 @@ import {
 import { getFormatter, getTranslations } from "next-intl/server";
 import { toggleFeedback } from "./actions";
 import { pageTitle } from "@/lib/page-title";
+import { ActionForm } from "@/components/action-form";
 
 export const generateMetadata = pageTitle("adminFeedback");
 
@@ -127,7 +128,7 @@ export default async function AdminFeedback({
                     })}
                   </TableCell>
                   <TableCell>
-                    <form action={toggleFeedback}>
+                    <ActionForm action={toggleFeedback}>
                       <input type="hidden" name="id" value={f.id} />
                       <input
                         type="hidden"
@@ -137,7 +138,7 @@ export default async function AdminFeedback({
                       <Button size="sm" variant="outline">
                         {f.resolvedAt ? t("reopen") : t("markDone")}
                       </Button>
-                    </form>
+                    </ActionForm>
                   </TableCell>
                 </TableRow>
               ))}

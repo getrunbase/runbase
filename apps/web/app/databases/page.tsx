@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
 import { Card } from "@getrunbase/ui/components/ui/card";
+import { isAdminRole } from "@/lib/roles";
 import { getTenant } from "@/lib/tenant";
 import { ImportTemplateDialog } from "./import-template-dialog";
 import { NewDatabaseDialog } from "./new-database-dialog";
@@ -17,7 +18,9 @@ export const generateMetadata = pageTitle("databases");
 // Workspace databases.
 export default async function Databases() {
   const t = await getTranslations("databases");
-  const { ctx } = await getTenant();
+  const { ctx, role } = await getTenant();
+  // Creating databases and importing templates: admins only.
+  const isAdmin = isAdminRole(role);
   const [dbs, objects] = await Promise.all([
     databasesService.list(ctx),
     objectsService.list(ctx),
@@ -31,8 +34,8 @@ export default async function Databases() {
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:p-6">
       <PageHeader title={t("list.title")} description={t("list.description")}>
-        <ImportTemplateDialog />
-        <NewDatabaseDialog targets={targets} />
+        {isAdmin && <ImportTemplateDialog />}
+        {isAdmin && <NewDatabaseDialog targets={targets} />}
       </PageHeader>
       {dbs.length === 0 ? (
         <EmptyState
@@ -40,7 +43,7 @@ export default async function Databases() {
           title={t("list.empty")}
           description={t("list.emptyDescription")}
         >
-          <NewDatabaseDialog targets={targets} />
+          {isAdmin && <NewDatabaseDialog targets={targets} />}
         </EmptyState>
       ) : (
         <Card className="gap-0 divide-y py-0">

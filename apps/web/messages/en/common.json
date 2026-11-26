@@ -148,5 +148,6 @@
       "key": "Tools without sign-in (scripts, CI): send an API key in this header.",
       "keyLink": "Create a key in <link>API keys</link>."
     }
-  }
+  },
+  "adminOnly": "Only an administrator can change this."
 }

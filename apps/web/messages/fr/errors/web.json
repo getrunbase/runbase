@@ -3,5 +3,6 @@
   "web.shotInvalid": "Jeton de capture invalide",
   "web.shotReadOnly": "Capture : lecture seule de la page demandée",
   "web.noOrganization": "Aucune organisation",
-  "web.invalidInput": "Saisie invalide : {detail}"
+  "web.invalidInput": "Saisie invalide : {detail}",
+  "web.platformAdminRequired": "Réservé aux admins plateforme"
 }

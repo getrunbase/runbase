@@ -3,6 +3,8 @@
 // draft, and one-click restore of an older version.
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import type { ActionError, ActionResult } from "@/lib/action-error";
+import { useErrorText } from "@/lib/error-text";
 import { useFormatter, useTranslations } from "next-intl";
 import { HistoryIcon } from "lucide-react";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
@@ -27,8 +29,9 @@ export function VersionHistory({
   // Live version and possible draft.
   current: number;
   draft?: number | null;
-  load: () => Promise<VersionRow[]>;
-  restore: (version: number) => Promise<unknown>;
+  // Server actions: an expected error comes back as `{ error }`.
+  load: () => Promise<ActionResult<VersionRow[]>>;
+  restore: (version: number) => Promise<{ error?: ActionError }>;
 }) {
   const t = useTranslations("common");
   const format = useFormatter();
@@ -36,11 +39,13 @@ export function VersionHistory({
   const [rows, setRows] = useState<VersionRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  const errorText = useErrorText();
   const open = (o: boolean) => {
     if (!o) return;
     setError(null);
     load().then(
-      (r) => setRows([...r].reverse()),
+      (r) =>
+        r.data ? setRows([...r.data].reverse()) : setError(errorText(r.error)),
       () => setError(t("versions.loadError")),
     );
   };
@@ -90,7 +95,8 @@ export function VersionHistory({
                   onClick={() =>
                     start(async () => {
                       try {
-                        await restore(v.version);
+                        const r = await restore(v.version);
+                        if (r.error) return setError(errorText(r.error));
                         setRows(null);
                         open(true);
                         router.refresh();

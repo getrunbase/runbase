@@ -13,6 +13,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@getrunbase/ui/components/ui/tabs";
+import { isAdminRole } from "@/lib/roles";
 import { getTenant } from "@/lib/tenant";
 import { SchemaGraph, type SchemaObject } from "./schema-graph-lazy";
 import { NewObjectDialog } from "../../objects/new-object-dialog";
@@ -31,7 +32,9 @@ export default async function DatabasePage({
   const { slug } = await params;
   const t = await getTranslations("databases");
   const tObjects = await getTranslations("objects");
-  const { ctx } = await getTenant();
+  const { ctx, role } = await getTenant();
+  // Creating objects: admins only.
+  const isAdmin = isAdminRole(role);
   const [db, targets] = await Promise.all([
     databasesService.get(ctx, slug),
     relationTargets(ctx),
@@ -70,7 +73,7 @@ export default async function DatabasePage({
   return (
     <main className="flex flex-1 flex-col gap-5 px-10 py-8">
       <PageHeader title={db.name} description={db.description ?? undefined}>
-        <NewObjectDialog database={db.slug} targets={targets} />
+        {isAdmin && <NewObjectDialog database={db.slug} targets={targets} />}
       </PageHeader>
       <Tabs defaultValue="objects" className="gap-5">
         <TabsList>
@@ -105,19 +108,21 @@ export default async function DatabasePage({
                 </div>
               </Link>
             ))}
-            <NewObjectDialog
-              database={db.slug}
-              targets={targets}
-              trigger={
-                <button
-                  type="button"
-                  className="text-muted-foreground hover:bg-secondary flex h-32.75 flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-input text-sm"
-                >
-                  <Plus className="size-4" />
-                  {tObjects("new")}
-                </button>
-              }
-            />
+            {isAdmin && (
+              <NewObjectDialog
+                database={db.slug}
+                targets={targets}
+                trigger={
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:bg-secondary flex h-32.75 flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-input text-sm"
+                  >
+                    <Plus className="size-4" />
+                    {tObjects("new")}
+                  </button>
+                }
+              />
+            )}
           </div>
           <div className="bg-tag-purple-bg text-tag-purple-fg flex items-center gap-2.5 rounded-lg px-4 py-3 text-sm">
             <Sparkles className="size-3.75 shrink-0" />
