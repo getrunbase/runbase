@@ -1,7 +1,9 @@
 // Workflow block registry. A block = a file in
 // ./catalog exported by ./catalog/index.ts; the engine only knows this contract.
 import { z } from "zod";
-import type { Block } from "./block";
+import { blockContext, type Block, type BlockOption } from "./block";
+import { requireScope } from "../api-keys";
+import { appError } from "../errors/app-error";
 import { functionsService, runLogged, type FunctionRow } from "../functions";
 import { decryptAll } from "../secrets";
 import type { TenantContext } from "../tenant";
@@ -162,17 +164,45 @@ export const blocksService = {
         branches: b.branches,
         dynamicBranches: !!b.branchesFor,
         ...(b.deprecated ? { deprecated: b.deprecated } : {}),
+        ...(b.app ? { app: b.app } : {}),
+        ...(b.optionFields?.length ? { options: [...b.optionFields] } : {}),
         inputSchema: z.toJSONSchema(b.inputSchema) as unknown,
         outputSchema: z.toJSONSchema(b.outputSchema) as unknown,
       }))
       .concat(fns);
+  },
+  // Choices of a dynamic input (step form), loaded with the step's OAuth
+  // connection. `write`: it calls the provider with the workspace's account.
+  options: async (
+    ctx: TenantContext,
+    type: string,
+    field: string,
+    input: Record<string, unknown>,
+  ): Promise<BlockOption[]> => {
+    await requireScope(ctx, "write");
+    const b = await getBlock(ctx, type);
+    if (!b?.options || !b.optionFields?.includes(field))
+      throw appError(
+        "blocks.noOptions",
+        "{type} has no choices for {field}",
+        { type, field },
+        { kind: "not_found" },
+      );
+    return b.options(field, input, blockContext(ctx));
   },
   // Agent-facing catalog (MCP blocks.list): blocks for new use (no
   // deprecated ones), then the triggers with `kind: "trigger"`.
   catalog: async (ctx?: TenantContext) => [
     ...(await blocksService.list(ctx))
       .filter((b) => !("deprecated" in b))
-      .map((b) => ({ kind: "block" as const, ...b })),
+      // Logo left out: a data URL is token noise for an agent.
+      .map((b) => ({
+        kind: "block" as const,
+        ...b,
+        ...("app" in b && b.app
+          ? { app: { name: b.app.name, label: b.app.label } }
+          : {}),
+      })),
     ...triggerCatalog(),
   ],
 };

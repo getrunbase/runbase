@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { z } from "zod";
 import { appError, errorItem, type ErrorItem } from "../errors/app-error";
 import { templateSchema as manifestSchema } from "../templates/format";
+import { logoDataUrl } from "./logo";
 import {
   authorSchema,
   checkDescription,
@@ -98,9 +99,11 @@ async function loadConnectors(root: string, issues: ErrorItem[]) {
     });
     const isTrigger = (n: RegistryNode) =>
       (n as { kind?: string }).kind === "trigger";
+    const logo = await logoDataUrl(join(dir, entry.path));
     connectors.push(
       connectorSchema.parse({
         ...meta,
+        ...(logo && { logo }),
         triggers: nodes.filter(isTrigger).map(op),
         actions: nodes.filter((n) => !isTrigger(n)).map(op),
       }),

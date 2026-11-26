@@ -1,22 +1,43 @@
 import type { LucideIcon } from "lucide-react";
 import type { FlowNodeKind } from "@/components/ds/flow";
+import type { Tone } from "@/components/ds/tone";
+import type { BlockInfo } from "../graph";
 import type { WorkflowsT } from "../labels";
-import { metaOf } from "./block-picker";
+import { appOf, categoryTone, metaOf } from "./block-picker";
 
 // Outside canvas.tsx: the editor uses it without loading React Flow.
-// Node type by block: colour, icon and label from the board.
+// Node look by block: category colour and icon, or the app logo; the
+// small label is the app name, otherwise the category.
 export function kindOf(
   type: string,
   t: WorkflowsT,
-): { kind: FlowNodeKind; kindLabel: string; icon: LucideIcon } {
+  block?: BlockInfo,
+): {
+  kind: FlowNodeKind;
+  kindLabel: string;
+  icon: LucideIcon;
+  tone: Tone;
+  logo?: string;
+} {
   const [category, icon] = metaOf(type);
-  if (type === "condition" || type === "switch")
-    return { kind: "condition", kindLabel: t("canvas.kind.condition"), icon };
-  if (type === "human.approve")
-    return { kind: "approval", kindLabel: t("canvas.kind.approval"), icon };
-  if (category === "ai")
-    return { kind: "ai", kindLabel: t("blocks.category.ai"), icon };
-  if (category === "data")
-    return { kind: "action", kindLabel: t("blocks.category.data"), icon };
-  return { kind: "action", kindLabel: t("canvas.kind.action"), icon };
+  const kind: FlowNodeKind =
+    type === "condition" || type === "switch"
+      ? "condition"
+      : type === "human.approve"
+        ? "approval"
+        : category === "ai"
+          ? "ai"
+          : "action";
+  const tone = categoryTone[category];
+  if (category === "apps") {
+    const app = block ? appOf(block) : undefined;
+    return {
+      kind,
+      kindLabel: app?.label ?? t("blocks.category.apps"),
+      icon,
+      tone,
+      ...(app?.logo && { logo: app.logo }),
+    };
+  }
+  return { kind, kindLabel: t(`blocks.category.${category}`), icon, tone };
 }

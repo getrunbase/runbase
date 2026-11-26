@@ -26,8 +26,12 @@ export type BlockInfo = {
   dynamicBranches?: boolean;
   // Replacement type: still runs, hidden from the block picker.
   deprecated?: string;
+  // App of a connector node: logo is a data URL (official logo.svg).
+  app?: { name: string; label: string; logo?: string };
   inputSchema: unknown;
   outputSchema?: unknown;
+  // Inputs whose choices come from the connected account (dropdown).
+  options?: string[];
 };
 
 type Case = { id: string; label?: string; value?: unknown };

@@ -117,6 +117,27 @@
       "page": "page “{name}”"
     }
   },
+  "connections": {
+    "title": "Connections",
+    "description": "Accounts your workflows act as (Google…). You sign in once, Runbase keeps the access valid.",
+    "connect": "Connect",
+    "connectTitle": "Connect {provider}",
+    "connectDescription": "You will be sent to {provider} to approve access, then brought back here.",
+    "nameHint": "Optional. Leave empty to use the account email.",
+    "continue": "Continue to {provider}",
+    "service": "Service",
+    "accounts": "Connected accounts",
+    "none": "Not connected",
+    "disconnect": "Disconnect",
+    "disconnectTitle": "Disconnect “{name}”?",
+    "disconnectDescription": "Workflows that use this account will fail until it is connected again. Access is revoked at the provider.",
+    "notConfigured": "Not configured on this instance",
+    "noProvidersTitle": "No service to connect",
+    "noProvidersDescription": "Installed connectors do not use any sign-in service yet.",
+    "connected": "“{name}” is connected.",
+    "failed": "Connection failed: {detail}",
+    "note": "Your AI uses a connection by its name, never sees the access. Every change is recorded in the audit log."
+  },
   "apiKeys": {
     "title": "API keys",
     "description": "Keys let your tools call the Runbase API. They are shown only once, at creation.",

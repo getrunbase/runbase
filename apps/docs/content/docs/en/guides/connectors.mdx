@@ -58,6 +58,36 @@ export default defineNode({
 - `sideEffect` defaults to true when a domain is declared: the node is
   simulated in dry runs.
 
+## OAuth connections
+
+For services that require a sign-in (Google, Microsoft…), declare
+`auth.oauth` instead of an API key secret:
+
+```ts
+auth: {
+  domains: ["gmail.googleapis.com"],
+  oauth: {
+    provider: "google",
+    authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+    tokenUrl: "https://oauth2.googleapis.com/token",
+    revokeUrl: "https://oauth2.googleapis.com/revoke",
+    scopes: ["openid", "email", "https://www.googleapis.com/auth/gmail.send"],
+    authorizeParams: { access_type: "offline", prompt: "consent" },
+  },
+},
+```
+
+- Users connect their account in **Settings › Connections**. Runbase stores
+  the tokens encrypted and refreshes them before they expire.
+- `ctx.fetch` adds `Authorization: Bearer <token>` to requests sent to
+  `auth.domains`. The node never handles the token.
+- The node gets an optional `connection` input: the connection name, needed
+  only when the workspace has several accounts for the provider.
+- Self-hosting: create an OAuth client at the provider with the redirect URI
+  `<BETTER_AUTH_URL>/api/connections/callback`, then set
+  `OAUTH_<PROVIDER>_CLIENT_ID` and `OAUTH_<PROVIDER>_CLIENT_SECRET`
+  (for example `OAUTH_GOOGLE_CLIENT_ID`).
+
 ## Testing and publishing
 
 ```sh

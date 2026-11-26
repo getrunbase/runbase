@@ -99,6 +99,8 @@ export function FlowNode({
   branches,
   hasInput = kind !== "trigger",
   icon,
+  tone,
+  logo,
   className,
 }: {
   kind: FlowNodeKind;
@@ -110,6 +112,10 @@ export function FlowNode({
   branches?: React.ReactNode[];
   hasInput?: boolean;
   icon?: LucideIcon;
+  // Overrides the kind colour (block category).
+  tone?: Tone;
+  // App logo (image URL), shown instead of the icon tile.
+  logo?: string;
   className?: string;
 }) {
   const k = flowKind[kind];
@@ -131,7 +137,13 @@ export function FlowNode({
         <FlowHandle className="absolute -top-1.25 left-1/2 -translate-x-1/2" />
       )}
       <div className="flex items-center gap-2">
-        <IconTile icon={icon ?? k.icon} tone={k.tone} size="node" />
+        {logo ? (
+          <span className="bg-background rounded-tile inline-flex size-5 shrink-0 items-center justify-center border">
+            <img src={logo} alt="" className="size-3.5" />
+          </span>
+        ) : (
+          <IconTile icon={icon ?? k.icon} tone={tone ?? k.tone} size="node" />
+        )}
         <span className="text-subtle-foreground flex-1 text-tiny font-medium">
           {kindLabel}
         </span>

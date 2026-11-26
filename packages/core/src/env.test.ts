@@ -2,7 +2,13 @@
 // invalid value.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { authMethod, EnvError, parseEnv, placeholderSecrets } from "./env";
+import {
+  authMethod,
+  EnvError,
+  googleSignInConfigured,
+  parseEnv,
+  placeholderSecrets,
+} from "./env";
 
 const base = {
   DATABASE_URL: "postgres://u:p@localhost:5432/db",
@@ -165,4 +171,24 @@ test("env: change-me secrets refused at startup in production only", () => {
       "web",
     ),
   );
+});
+
+test("env: Sign in with Google offered only with a full Google OAuth client", () => {
+  const keys = ["OAUTH_GOOGLE_CLIENT_ID", "OAUTH_GOOGLE_CLIENT_SECRET"] as const;
+  const prev = keys.map((k) => process.env[k]);
+  try {
+    for (const k of keys) delete process.env[k];
+    assert.equal(googleSignInConfigured(), false);
+    process.env.OAUTH_GOOGLE_CLIENT_ID = "id.apps.googleusercontent.com";
+    assert.equal(googleSignInConfigured(), false);
+    process.env.OAUTH_GOOGLE_CLIENT_SECRET = "";
+    assert.equal(googleSignInConfigured(), false);
+    process.env.OAUTH_GOOGLE_CLIENT_SECRET = "secret";
+    assert.equal(googleSignInConfigured(), true);
+  } finally {
+    keys.forEach((k, i) => {
+      if (prev[i] === undefined) delete process.env[k];
+      else process.env[k] = prev[i];
+    });
+  }
 });

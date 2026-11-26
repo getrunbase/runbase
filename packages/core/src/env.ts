@@ -40,6 +40,15 @@ export const envSchema = z.object({
       error: 'expected "magic-link" or "password"',
     })
     .default("magic-link"),
+  // Google OAuth client, shared by "Sign in with Google" and the Google
+  // connectors. Sign-in with Google is enabled when both are set.
+  OAUTH_GOOGLE_CLIENT_ID: z.string().optional(),
+  OAUTH_GOOGLE_CLIENT_SECRET: z.string().optional(),
+  // Google Picker ("Choose in Drive" in Google Sheets steps): public API key
+  // restricted to the Picker API and the app's referrer, and the Google
+  // Cloud project number. The button is hidden when either is missing.
+  GOOGLE_PICKER_API_KEY: z.string().optional(),
+  GOOGLE_PICKER_APP_ID: z.string().optional(),
   PLATFORM_ADMIN_EMAILS: z
     .string()
     .default("")
@@ -247,6 +256,20 @@ export const authMethod = (): AuthMethod => env().AUTH_METHOD;
 export const emailConfigured = () => {
   const e = env();
   return !!(e.RESEND_API_KEY || e.SMTP_HOST);
+};
+
+// A Google OAuth client is configured: "Sign in with Google" is offered.
+export const googleSignInConfigured = () => {
+  const e = env();
+  return !!(e.OAUTH_GOOGLE_CLIENT_ID && e.OAUTH_GOOGLE_CLIENT_SECRET);
+};
+
+// Google Picker config (public values, sent to the browser), or null.
+export const googlePicker = () => {
+  const e = env();
+  return e.GOOGLE_PICKER_API_KEY && e.GOOGLE_PICKER_APP_ID
+    ? { apiKey: e.GOOGLE_PICKER_API_KEY, appId: e.GOOGLE_PICKER_APP_ID }
+    : null;
 };
 
 // At web and worker startup: immediate and readable failure.

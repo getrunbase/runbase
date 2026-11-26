@@ -129,3 +129,131 @@ test("runtime: manifest then execution of a node", async () => {
     /unknown node/,
   );
 });
+
+test("OAuth node: connection input added, bearer only for its domains", async () => {
+  const seen: Record<string, string | null> = {};
+  const node = defineNode({
+    id: "acme.me",
+    auth: {
+      domains: ["api.acme.com"],
+      oauth: {
+        provider: "acme",
+        authorizeUrl: "https://acme.com/authorize",
+        tokenUrl: "https://acme.com/token",
+        scopes: ["read"],
+      },
+    },
+    inputs: z.object({}),
+    outputs: z.object({ ok: z.boolean() }),
+    run: async (_, ctx) => {
+      for (const u of ["https://api.acme.com/me", "https://evil.com/x"])
+        await ctx.fetch(u);
+      return { ok: Object.keys(ctx.secrets).length === 0 };
+    },
+  });
+  const m = node.manifest();
+  assert.equal(m.auth.oauth?.provider, "acme");
+  assert.ok("connection" in (m.inputSchema.properties as object));
+  const real = globalThis.fetch;
+  globalThis.fetch = (async (req: Request) => {
+    seen[new URL(req.url).hostname] = req.headers.get("authorization");
+    return new Response("{}");
+  }) as typeof fetch;
+  try {
+    const run = connectorRuntime([node]);
+    const res = await run(
+      { __runbase: "run", node: "acme.me", input: { connection: "work" } },
+      { secrets: { __RUNBASE_OAUTH_TOKEN: "tok" } },
+    );
+    assert.deepEqual(res, { branch: "ok", output: { ok: true } });
+  } finally {
+    globalThis.fetch = real;
+  }
+  assert.equal(seen["api.acme.com"], "Bearer tok");
+  assert.equal(seen["evil.com"], null);
+});
+
+test("options: declared in the manifest, run with the OAuth token through ctx.fetch", async () => {
+  assert.throws(
+    () =>
+      defineNode({
+        id: "acme.bad",
+        inputs: z.object({ a: z.string() }),
+        outputs: z.object({}),
+        options: { nope: async () => [] },
+        run: async () => ({}),
+      }),
+    /options.nope is not an input/,
+  );
+  let seenAuth: string | null = null;
+  let seenInput: unknown;
+  const node = defineNode({
+    id: "acme.tabs",
+    auth: {
+      domains: ["api.acme.com"],
+      oauth: {
+        provider: "acme",
+        authorizeUrl: "https://acme.com/authorize",
+        tokenUrl: "https://acme.com/token",
+        scopes: ["read"],
+      },
+    },
+    inputs: z.object({ sheet: z.string(), tab: z.string() }),
+    outputs: z.object({}),
+    options: {
+      tab: async (input, ctx) => {
+        seenInput = input;
+        // The loader never sees the token.
+        assert.equal(Object.keys(ctx.secrets).length, 0);
+        const r = await ctx.fetch(`https://api.acme.com/${input.sheet}`);
+        return ((await r.json()) as string[]).map((t) => ({
+          value: t,
+          label: t.toUpperCase(),
+        }));
+      },
+    },
+    run: async () => ({}),
+  });
+  assert.deepEqual(node.manifest().options, ["tab"]);
+  assert.equal(double.manifest().options, undefined);
+  const real = globalThis.fetch;
+  globalThis.fetch = (async (req: Request) => {
+    seenAuth = req.headers.get("authorization");
+    return new Response(JSON.stringify(["a", "b"]));
+  }) as typeof fetch;
+  try {
+    const run = connectorRuntime([node]);
+    const res = await run(
+      {
+        __runbase: "options",
+        node: "acme.tabs",
+        field: "tab",
+        input: { sheet: "s1" },
+      },
+      { secrets: { __RUNBASE_OAUTH_TOKEN: "tok" } },
+    );
+    assert.deepEqual(res, [
+      { value: "a", label: "A" },
+      { value: "b", label: "B" },
+    ]);
+    await assert.rejects(
+      run(
+        { __runbase: "options", node: "acme.tabs", field: "sheet", input: {} },
+        {},
+      ),
+      /no options for "sheet"/,
+    );
+  } finally {
+    globalThis.fetch = real;
+  }
+  assert.equal(seenAuth, "Bearer tok");
+  assert.deepEqual(seenInput, { sheet: "s1" });
+  const bad = defineNode({
+    id: "acme.badopts",
+    inputs: z.object({ a: z.string() }),
+    outputs: z.object({}),
+    options: { a: async () => [{ value: 1 }] as never },
+    run: async () => ({}),
+  });
+  await assert.rejects(bad.loadOptions("a", {}), /invalid options/);
+});

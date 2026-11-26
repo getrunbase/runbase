@@ -20,6 +20,7 @@ import { errorsService } from "../errors";
 import { triggersService } from "../triggers";
 import { functionsService } from "../functions";
 import { secretsService } from "../secrets";
+import { connectionsService } from "../connections";
 import { queryService } from "../query";
 import { pagesService } from "../pages";
 import { componentsService } from "../components";
@@ -49,6 +50,7 @@ export const services = {
   triggers: triggersService,
   functions: functionsService,
   secrets: secretsService,
+  connections: connectionsService,
   query: queryService,
   pages: pagesService,
   components: componentsService,
@@ -190,6 +192,8 @@ export const mcpTools: {
     // Excluded: editor catalog (deprecated blocks included), blocks.list = catalog.
     list: null,
     catalog: "blocks.list",
+    // Excluded: step form dropdowns of the editor.
+    options: null,
   },
   runs: {
     start: "runs.start",
@@ -264,6 +268,16 @@ export const mcpTools: {
     list: "secrets.list",
     set: "secrets.set",
     remove: "secrets.delete",
+  },
+  connections: {
+    list: "connections.list",
+    providers: "connections.providers",
+    // Excluded: the OAuth flow needs a browser and a signed-in user.
+    authorizeUrl: null,
+    complete: null,
+    // Excluded: hands a token to the browser (Google Picker), never to agents.
+    accessToken: null,
+    remove: "connections.delete",
   },
   // Excluded: helper of the secrets UI (deletion confirmation).
   secretUsage: { all: null },

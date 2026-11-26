@@ -5,6 +5,7 @@
     "api_keys",
     "audit",
     "blocks",
+    "connections",
     "databases",
     "errors",
     "events",

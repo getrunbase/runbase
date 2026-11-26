@@ -44,6 +44,20 @@ test("connectors: folder and npm package loaded into the catalog without changin
   const echo = list.find((b) => b.type === "node.echo.shout");
   assert.ok(echo, "node.echo.shout missing from the catalog");
   assert.equal(echo.label, "Shout");
+  // App of the node: folder name, label and logo (logo.svg as a data URL).
+  assert.equal(echo.app?.name, "echo");
+  assert.equal(echo.app?.label, "Echo");
+  assert.match(echo.app?.logo ?? "", /^data:image\/svg\+xml;base64,/);
+  const hello0 = list.find((b) => b.type === "node.hello.hello");
+  assert.equal(hello0?.app?.logo, undefined);
+  // Agent catalog: app without the logo.
+  const inCatalog = (await blocksService.catalog()).find(
+    (b) => b.type === "node.echo.shout",
+  );
+  assert.deepEqual("app" in inCatalog! && inCatalog.app, {
+    name: "echo",
+    label: "Echo",
+  });
   assert.deepEqual(echo.branches, ["short", "long"]);
   assert.equal((echo.inputSchema as { type: string }).type, "object");
   assert.ok(list.some((b) => b.type === "node.hello.hello"));

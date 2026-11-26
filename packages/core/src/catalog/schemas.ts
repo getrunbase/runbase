@@ -39,6 +39,8 @@ export const connectorMetaSchema = z.strictObject({
 });
 
 export const connectorSchema = connectorMetaSchema.extend({
+  // From the connector's logo.svg (data URL), never entered.
+  logo: z.string().startsWith("data:image/svg+xml;base64,").optional(),
   triggers: z.array(operation),
   actions: z.array(operation),
 });

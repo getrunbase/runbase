@@ -10,6 +10,9 @@ import { secretsService } from "@getrunbase/core/secrets";
 import { webhooksService } from "@getrunbase/core/webhooks";
 import { workflowsService } from "@getrunbase/core/workflows";
 import { SecretsProvider } from "@/components/secret-select";
+import { ConnectionsProvider } from "@/components/connection-select";
+import { connectionsService } from "@getrunbase/core/connections";
+import { googlePicker } from "@getrunbase/core/env";
 import { AiPresetsProvider } from "./ai-config";
 import { getTenant } from "@/lib/tenant";
 import type { Definition } from "../graph";
@@ -71,62 +74,87 @@ export default async function WorkflowPage({
       </main>
     );
   }
-  const [blocks, objects, databases, events, webhooks, workflows, secrets] =
-    await Promise.all([
-      getTranslations("workflows").then(async (t) =>
-        localizeBlocks(await blocksService.list(ctx), t),
-      ),
-      objectsService.list(ctx),
-      databasesService.list(ctx),
-      eventsService.types(ctx),
-      webhooksService.list(ctx),
-      workflowsService.list(ctx),
-      secretsService.list(ctx),
-    ]);
+  const [
+    blocks,
+    objects,
+    databases,
+    events,
+    webhooks,
+    workflows,
+    secrets,
+    connections,
+    providers,
+  ] = await Promise.all([
+    getTranslations("workflows").then(async (t) =>
+      localizeBlocks(await blocksService.list(ctx), t),
+    ),
+    objectsService.list(ctx),
+    databasesService.list(ctx),
+    eventsService.types(ctx),
+    webhooksService.list(ctx),
+    workflowsService.list(ctx),
+    secretsService.list(ctx),
+    connectionsService.list(ctx),
+    connectionsService.providers(ctx),
+  ]);
   const db = new Map(databases.map((d) => [d.id, d]));
   return (
     // Secret names only: block selectors.
     <SecretsProvider names={secrets.map((s) => s.name)}>
-    <AiPresetsProvider
-      presets={AI_PRESETS.map((p) => ({
-        id: p.id,
-        label: p.label,
-        models: p.models.map((m) => ({ id: m.id, label: m.label })),
-        keySecret: p.keySecret,
-      }))}
-    >
-    <WorkflowEditor
-      key={wf.currentVersion}
-      workflow={{
-        id: wf.id,
-        name: wf.name,
-        status: wf.status,
-        version: wf.currentVersion,
-        updatedAt: wf.updatedAt.toISOString(),
-      }}
-      definition={wf.definition as Definition}
-      // JSON Schema as plain objects (Server -> Client props).
-      blocks={JSON.parse(JSON.stringify(blocks)) as typeof blocks}
-      objects={objects.map((o) => ({
-        slug: o.slug,
-        name: o.name,
-        database: {
-          slug: db.get(o.databaseId)?.slug ?? "",
-          name: db.get(o.databaseId)?.name ?? "",
-        },
-        fields: o.fields as Field[],
-      }))}
-      operators={allowed}
-      events={events}
-      webhooks={webhooks.map((w) => ({
-        id: w.id,
-        name: w.name,
-        sample: w.sample,
-        sampleAt: w.sampleAt?.toISOString() ?? null,
-      }))}
-      workflows={workflows.map((w) => ({ id: w.id, name: w.name }))}
-    />
-    </AiPresetsProvider>
+      <ConnectionsProvider
+        value={{
+          connections: connections.map((c) => ({
+            provider: c.provider,
+            name: c.name,
+            account: c.account,
+          })),
+          providers: Object.fromEntries(
+            providers.flatMap((p) => p.types.map((t) => [t, p.provider])),
+          ),
+          googlePicker: googlePicker(),
+        }}
+      >
+        <AiPresetsProvider
+          presets={AI_PRESETS.map((p) => ({
+            id: p.id,
+            label: p.label,
+            models: p.models.map((m) => ({ id: m.id, label: m.label })),
+            keySecret: p.keySecret,
+          }))}
+        >
+          <WorkflowEditor
+            key={wf.currentVersion}
+            workflow={{
+              id: wf.id,
+              name: wf.name,
+              status: wf.status,
+              version: wf.currentVersion,
+              updatedAt: wf.updatedAt.toISOString(),
+            }}
+            definition={wf.definition as Definition}
+            // JSON Schema as plain objects (Server -> Client props).
+            blocks={JSON.parse(JSON.stringify(blocks)) as typeof blocks}
+            objects={objects.map((o) => ({
+              slug: o.slug,
+              name: o.name,
+              database: {
+                slug: db.get(o.databaseId)?.slug ?? "",
+                name: db.get(o.databaseId)?.name ?? "",
+              },
+              fields: o.fields as Field[],
+            }))}
+            operators={allowed}
+            events={events}
+            webhooks={webhooks.map((w) => ({
+              id: w.id,
+              name: w.name,
+              sample: w.sample,
+              sampleAt: w.sampleAt?.toISOString() ?? null,
+            }))}
+            workflows={workflows.map((w) => ({ id: w.id, name: w.name }))}
+          />
+        </AiPresetsProvider>
+      </ConnectionsProvider>
     </SecretsProvider>
   );
 }

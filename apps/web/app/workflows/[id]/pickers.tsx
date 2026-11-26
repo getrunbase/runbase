@@ -11,6 +11,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  KeyRound,
   Plus,
   Workflow,
 } from "lucide-react";
@@ -31,6 +32,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { useSecretNames } from "@/components/secret-select";
 import { fieldAt, type ObjectInfo } from "../graph";
 import { makeLabels, type WorkflowsT } from "../labels";
 import {
@@ -356,40 +358,110 @@ export function VariableMenu({
   records,
   open,
   onOpenChange,
+  inline,
+  secrets,
 }: {
   scope: VarScope;
   onPick: (path: string) => void;
   records?: boolean;
   open?: boolean;
   onOpenChange?: (o: boolean) => void;
+  // `{}` icon button placed inside a field instead of "+ Variable".
+  inline?: boolean;
+  // Workspace secret names: adds a Credentials tab (`secret.<NAME>` paths).
+  secrets?: string[];
 }) {
   const t = useTranslations("workflows");
   const [own, setOwn] = useState(false);
+  const [tab, setTab] = useState<"vars" | "secrets">("vars");
   const isOpen = open ?? own;
   const setOpen = onOpenChange ?? setOwn;
+  const pick = (p: string) => {
+    onPick(p);
+    setOpen(false);
+  };
   return (
-    <Popover open={isOpen} onOpenChange={setOpen}>
+    <Popover
+      open={isOpen}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) setTab("vars");
+      }}
+    >
       <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-6 px-1.5 text-xs"
-        >
-          <Plus /> {t("pickers.variable")}
-        </Button>
+        {inline ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={t("pickers.insert")}
+            title={t("pickers.insert")}
+            className="text-muted-foreground size-7 font-mono text-xs"
+          >
+            {"{}"}
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-6 px-1.5 text-xs"
+          >
+            <Plus /> {t("pickers.variable")}
+          </Button>
+        )}
       </PopoverTrigger>
-      <PopoverContent className="w-72 p-0" align="start">
-        {isOpen && (
+      <PopoverContent className="w-72 p-0" align="end">
+        {secrets && (
+          <div className="flex gap-1 border-b p-1" role="tablist">
+            {(["vars", "secrets"] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                role="tab"
+                aria-selected={tab === k}
+                onClick={() => setTab(k)}
+                className={cn(
+                  "flex-1 rounded-sm px-2 py-1 text-xs font-medium",
+                  tab === k
+                    ? "bg-accent text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {k === "vars"
+                  ? t("pickers.variablesTab")
+                  : t("pickers.credentialsTab")}
+              </button>
+            ))}
+          </div>
+        )}
+        {isOpen && tab === "vars" && (
           <VariableList
             roots={rootsOf(scope, t)}
             objects={scope.objects}
             records={records}
-            onPick={(p) => {
-              onPick(p);
-              setOpen(false);
-            }}
+            onPick={pick}
           />
+        )}
+        {isOpen && tab === "secrets" && (
+          <div className="flex max-h-72 flex-col overflow-y-auto p-1">
+            {secrets!.length === 0 && (
+              <p className="text-muted-foreground p-2 text-xs">
+                {t("pickers.noCredentials")}
+              </p>
+            )}
+            {secrets!.map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => pick(`secret.${n}`)}
+                className="hover:bg-accent flex items-center gap-2 rounded-sm px-2 py-1.5 text-left font-mono text-xs"
+              >
+                <KeyRound className="text-muted-foreground size-3.5" />
+                {n}
+              </button>
+            ))}
+          </div>
         )}
       </PopoverContent>
     </Popover>
@@ -410,6 +482,27 @@ function pillNode(
   span.contentEditable = "false";
   span.dataset.path = path;
   span.className = PILL;
+  if (path.startsWith("secret.")) {
+    // Credential: its name, value resolved on the server at run time.
+    // Key glyph (lucide key-round path), drawn in the DOM pill.
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("class", "mr-1 inline size-3 align-[-1px]");
+    const d = document.createElementNS(ns, "path");
+    d.setAttribute(
+      "d",
+      "M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z",
+    );
+    svg.append(d);
+    span.append(svg, path.slice(7));
+    span.title = path.slice(7);
+    return span;
+  }
   span.textContent = varLabel(path, scope);
   const f = varField(path, scope);
   span.title = typeLabel(f);
@@ -441,10 +534,13 @@ export function PillInput({
   single,
   placeholder,
   ariaLabel,
+  secrets,
 }: {
   value: string;
   onChange: (v: string) => void;
   scope: VarScope;
+  // Workspace secret names: the insert menu also offers credentials.
+  secrets?: string[];
   // Records only ("Record" field).
   records?: boolean;
   // Single variable: choosing it replaces the content.
@@ -460,6 +556,8 @@ export function PillInput({
   const last = useRef<string | null>(null);
   const range = useRef<Range | null>(null);
   const [menu, setMenu] = useState(false);
+  // Every field offers the workspace credentials, in their own tab.
+  const workspaceSecrets = useSecretNames();
   // Pill labels: redraws the field when the scope changes.
   const labels = JSON.stringify(
     parseTemplate(value).flatMap((s) =>
@@ -520,50 +618,56 @@ export function PillInput({
   };
 
   return (
-    <div className="space-y-1">
-      <div className="flex min-w-0 items-start gap-1">
-        <div
-          ref={ref}
-          role="textbox"
-          aria-label={ariaLabel}
-          aria-multiline={!single}
-          contentEditable
-          suppressContentEditableWarning
-          data-placeholder={placeholder ?? t("pickers.pillPlaceholder")}
-          className={cn(
-            "border-input focus-visible:border-ring focus-visible:ring-ring/50 min-h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1.5 text-sm leading-6 break-words whitespace-pre-wrap shadow-xs outline-none focus-visible:ring-[3px]",
-            "empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]",
-          )}
-          onInput={() => {
-            saveRange();
-            emit();
-          }}
-          onBlur={saveRange}
-          onKeyDown={(e) => {
-            if (e.key === "/") {
-              e.preventDefault();
-              saveRange();
-              setMenu(true);
-            } else if (e.key === "Enter" && single) e.preventDefault();
-          }}
-          onPaste={(e) => {
-            // Plain text only (no pasted HTML).
+    // The border is on the row: the insert button sits in the flex flow,
+    // centred against the text whatever the field height.
+    <div className="border-input focus-within:border-ring focus-within:ring-ring/50 flex min-h-9 min-w-0 items-center gap-1 rounded-md border pr-1 shadow-xs focus-within:ring-[3px]">
+      <div
+        ref={ref}
+        role="textbox"
+        aria-label={ariaLabel}
+        aria-multiline={!single}
+        contentEditable
+        suppressContentEditableWarning
+        data-placeholder={placeholder ?? t("pickers.pillPlaceholder")}
+        className={cn(
+          "min-w-0 flex-1 bg-transparent py-1.5 pl-3 text-sm leading-6 break-words whitespace-pre-wrap outline-none",
+          "empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]",
+        )}
+        onInput={() => {
+          saveRange();
+          emit();
+        }}
+        onBlur={saveRange}
+        onKeyDown={(e) => {
+          if (e.key === "/") {
             e.preventDefault();
-            document.execCommand(
-              "insertText",
-              false,
-              e.clipboardData.getData("text/plain"),
-            );
-          }}
+            saveRange();
+            setMenu(true);
+          } else if (e.key === "Enter" && single) e.preventDefault();
+        }}
+        onPaste={(e) => {
+          // Plain text only (no pasted HTML).
+          e.preventDefault();
+          document.execCommand(
+            "insertText",
+            false,
+            e.clipboardData.getData("text/plain"),
+          );
+        }}
+      />
+      {/* One insert button inside the field: variables and credentials. */}
+      {/* Text line box 36px (24 + 2×6), button 28px: 4px top offset. */}
+      <div className="flex shrink-0 self-start pt-1">
+        <VariableMenu
+          inline
+          scope={scope}
+          records={records}
+          secrets={secrets ?? workspaceSecrets}
+          open={menu}
+          onOpenChange={setMenu}
+          onPick={insert}
         />
       </div>
-      <VariableMenu
-        scope={scope}
-        records={records}
-        open={menu}
-        onOpenChange={setMenu}
-        onPick={insert}
-      />
     </div>
   );
 }

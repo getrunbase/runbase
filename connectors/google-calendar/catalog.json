@@ -1,0 +1,12 @@
+{
+  "slug": "google-calendar",
+  "displayName": "Google Calendar",
+  "icon": "plug",
+  "description": "List, create, update and delete Google Calendar events.",
+  "categories": [
+    "productivity",
+    "calendar"
+  ],
+  "docsUrl": "https://developers.google.com/calendar/api",
+  "credentialType": "oauth2"
+}

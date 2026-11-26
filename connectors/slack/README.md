@@ -23,4 +23,4 @@ pnpm test        # unit tests, HTTP mocked
 pnpm runbase node test connectors/slack
 ```
 
-License: MIT.
+License: MIT. Logo: © Slack Technologies, from the Iconify logos set (CC0).

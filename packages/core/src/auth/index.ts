@@ -5,7 +5,13 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { jwt, magicLink } from "better-auth/plugins";
 import { mcp } from "@better-auth/mcp";
 import * as schema from "../db/schema";
-import { memberships, organizations, user, workspaces } from "../db/schema";
+import {
+  account as accountTable,
+  memberships,
+  organizations,
+  user,
+  workspaces,
+} from "../db/schema";
 import { emailSender } from "../email";
 import { track } from "../extensions";
 import { attributionFromCookieHeader } from "./attribution";
@@ -14,15 +20,50 @@ import {
   resetPasswordEmail,
   verifyEmailEmail,
 } from "./magic-link-email";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { db } from "../db/client";
-import { appUrl, authMethod, emailConfigured, env } from "../env";
+import {
+  appUrl,
+  authMethod,
+  emailConfigured,
+  env,
+  googleSignInConfigured,
+} from "../env";
 
 export { db };
 
 // Flag read on every request: signups closed unless SIGNUPS_ENABLED=true.
 export const signupsEnabled = () => env().SIGNUPS_ENABLED;
+
+// Signups closed: an OAuth callback (Sign in with Google) must not create a
+// new user. Existing accounts, invitees included (their user row is created
+// by the invitation), are linked or signed in instead.
+// Linking Google to an unverified account that has a password would hand
+// the address to whoever set that password: refused. Invitees (no password)
+// and verified accounts are linked.
+export async function googleLinkBlocked(userId: string) {
+  const [u] = await db
+    .select({ verified: user.emailVerified })
+    .from(user)
+    .where(eq(user.id, userId));
+  if (!u || u.verified) return false;
+  const [pw] = await db
+    .select({ id: accountTable.id })
+    .from(accountTable)
+    .where(
+      and(
+        eq(accountTable.userId, userId),
+        eq(accountTable.providerId, "credential"),
+      ),
+    )
+    .limit(1);
+  return !!pw;
+}
+
+export function oauthSignupBlocked(path: string | undefined) {
+  return !signupsEnabled() && !!path?.startsWith("/callback");
+}
 
 // MCP protected resource: audience of OAuth tokens.
 const baseURL = appUrl();
@@ -49,6 +90,7 @@ async function userExists(email: string) {
 // Sign-in method (AUTH_METHOD), fixed at server startup.
 const method = authMethod();
 const passwordMode = method === "password";
+const google = googleSignInConfigured();
 
 export const auth = betterAuth({
   baseURL,
@@ -88,6 +130,29 @@ export const auth = betterAuth({
     }),
   ],
   database: drizzleAdapter(db, { provider: "pg", schema }),
+  // Sign in with Google: only when a Google OAuth client is configured
+  // (the same client as the Google connectors). Non-sensitive scopes only.
+  socialProviders: google
+    ? {
+        google: {
+          clientId: env().OAUTH_GOOGLE_CLIENT_ID!,
+          clientSecret: env().OAUTH_GOOGLE_CLIENT_SECRET!,
+          scope: ["openid", "email", "profile"],
+          prompt: "select_account",
+        },
+      }
+    : undefined,
+  // Same verified Google email as an existing account: linked, not duplicated,
+  // even when the local email is unverified (invitees). The one unsafe case,
+  // an unverified account that has a password (someone may have pre-claimed
+  // the address), is refused by the account creation hook below.
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"],
+      requireLocalEmailVerified: false,
+    },
+  },
   // AUTH_METHOD=magic-link (default): magic link by email, signup
   // included. AUTH_METHOD=password: email + password; reset by email
   // only if a mail provider is configured.
@@ -141,13 +206,32 @@ export const auth = betterAuth({
     }),
   },
   databaseHooks: {
+    account: {
+      create: {
+        before: async (a) => {
+          if (a.providerId === "google" && (await googleLinkBlocked(a.userId)))
+            throw new APIError("FORBIDDEN", {
+              code: "account_not_linked",
+              message: "Sign in with your password first",
+            });
+          return { data: a };
+        },
+      },
+    },
     user: {
       create: {
         // Magic link without a name: derived from the email (business domain, otherwise
         // locale part). It also names the organization; editable later.
-        before: async (u) => ({
-          data: { ...u, name: u.name?.trim() || nameFromEmail(u.email) },
-        }),
+        before: async (u, ctx) => {
+          if (oauthSignupBlocked(ctx?.path))
+            throw new APIError("FORBIDDEN", {
+              code: "signup_disabled",
+              message: "Sign-ups are closed",
+            });
+          return {
+            data: { ...u, name: u.name?.trim() || nameFromEmail(u.email) },
+          };
+        },
         // Each account gets its organization (owner) and a default workspace.
         after: async (user, ctx) => {
           const organizationId = await db.transaction(async (tx) => {

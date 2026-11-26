@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { authMethod } from "@getrunbase/core/env";
+import { authMethod, googleSignInConfigured } from "@getrunbase/core/env";
 import { SignupForm } from "./signup-form";
 import { pageTitle } from "@/lib/page-title";
 
@@ -21,7 +21,7 @@ export default async function SignupPage({
   }
   return (
     <Suspense>
-      <SignupForm />
+      <SignupForm google={googleSignInConfigured()} />
     </Suspense>
   );
 }

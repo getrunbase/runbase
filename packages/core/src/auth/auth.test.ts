@@ -85,3 +85,60 @@ test("name derived from email: business domain, else local part", async () => {
   assert.equal(nameFromEmail("alex@acme.io"), "Acme");
   assert.equal(nameFromEmail("alex@gmail.com"), "Alex");
 });
+
+test("sign-ups closed: an OAuth callback (Google) cannot create a user", async () => {
+  const { auth, oauthSignupBlocked } = await import("./index");
+  process.env.SIGNUPS_ENABLED = "false";
+  assert.equal(oauthSignupBlocked("/callback/:id"), true);
+  // Other paths keep their own rules (magic link, password sign-up hook).
+  assert.equal(oauthSignupBlocked("/magic-link/verify"), false);
+  assert.equal(oauthSignupBlocked(undefined), false);
+  // Better Auth user creation hook: refused with signup_disabled, which the
+  // callback turns into ?error=signup_disabled.
+  const before = auth.options.databaseHooks!.user!.create!.before!;
+  const u = { email: "g@x.io", name: "g", emailVerified: true } as never;
+  await assert.rejects(
+    async () => before(u, { path: "/callback/:id" } as never),
+    (e: { body?: { code?: string } }) => e.body?.code === "signup_disabled",
+  );
+  // Outside a callback, the hook still only fills the name.
+  assert.ok(await before(u, { path: "/magic-link/verify" } as never));
+  process.env.SIGNUPS_ENABLED = "true";
+  assert.equal(oauthSignupBlocked("/callback/:id"), false);
+});
+
+test("Google linking: invitee without password linked, unverified account with password refused", async () => {
+  execFileSync("pnpm", ["db:migrate"], { stdio: "ignore" });
+  const { auth, googleLinkBlocked } = await import("./index");
+  const { db } = await import("../db/client");
+  const { account, user } = await import("../db/schema");
+  const mk = async (verified: boolean, password: boolean) => {
+    const id = crypto.randomUUID();
+    await db
+      .insert(user)
+      .values({ id, name: "u", email: `${id}@x.io`, emailVerified: verified });
+    if (password)
+      await db.insert(account).values({
+        id: crypto.randomUUID(),
+        userId: id,
+        accountId: id,
+        providerId: "credential",
+        password: "hash",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    return id;
+  };
+  const invitee = await mk(false, false);
+  const squatter = await mk(false, true);
+  const verified = await mk(true, true);
+  assert.equal(await googleLinkBlocked(invitee), false);
+  assert.equal(await googleLinkBlocked(verified), false);
+  assert.equal(await googleLinkBlocked(squatter), true);
+  const before = auth.options.databaseHooks!.account!.create!.before!;
+  await assert.rejects(
+    async () => before({ providerId: "google", userId: squatter } as never),
+    (e: { body?: { code?: string } }) => e.body?.code === "account_not_linked",
+  );
+  assert.ok(await before({ providerId: "google", userId: invitee } as never));
+});

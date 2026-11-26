@@ -120,6 +120,14 @@ test("the real repo (connectors/, templates/, authors/) passes validation", asyn
   const c = await loadCatalog(root);
   assert.deepEqual(c.issues, []);
   assert.ok(c.connectors.some((x) => x.slug === "slack"));
+  // Logo read from the connector's logo.svg, as a data URL.
+  const gmail = c.connectors.find((x) => x.slug === "gmail");
+  assert.match(gmail?.logo ?? "", /^data:image\/svg\+xml;base64,/);
+  assert.ok(
+    Buffer.from(gmail!.logo!.split(",")[1]!, "base64")
+      .toString()
+      .includes("<svg"),
+  );
   assert.ok(c.templates.length >= 1);
   for (const t of c.templates)
     assert.ok(c.authors.some((a) => a.username === t.authorId));

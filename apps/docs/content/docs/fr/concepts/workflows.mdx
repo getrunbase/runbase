@@ -16,6 +16,24 @@ demandent une validation humaine ou exécutent une
 Les entrées des nœuds peuvent faire référence aux variables de l'exécution :
 `{{record.email}}`, `{{event.payload.id}}`, `{{steps.<id>.output}}`, `{{now}}`.
 
+## Apps et comptes connectés
+
+Les apps (Gmail, Google Calendar, Google Sheets, Google Drive, Slack…) ajoutent
+des nœuds au sélecteur d'étapes. Celles qui demandent une connexion utilisent
+un compte connecté : choisissez-le dans le champ **Compte** de l'étape, ou
+connectez-en un nouveau dans une popup (gestion dans Paramètres › Connexions).
+Une seule connexion Google couvre toutes les apps Google ; voir
+[Connecter Google](/docs/guides/google). Les feuilles, onglets, colonnes et
+agendas se choisissent depuis le compte, sans id à copier.
+
+## Variables et identifiants
+
+Dans l'éditeur, le bouton `{}` d'un champ (ou `/`) insère une variable de
+l'exécution ou un identifiant du workspace. Un identifiant est enregistré sous
+la forme `{{secret.NAME}}` : sa valeur est résolue côté serveur à l'exécution de
+l'étape et n'est jamais affichée. **Tester l'étape** exécute une seule étape en
+simulant les effets de bord, puis pour de vrai à la demande.
+
 ## Construire sans risque
 
 1. `workflows.create` enregistre un brouillon.

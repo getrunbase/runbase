@@ -56,6 +56,8 @@
   "blocks.dateFormatInvalid": "Format de date invalide « {format} » : jeton inconnu « {token} ». Jetons pris en charge : {tokens}",
   "blocks.formatterInvalid": "Formatter {op} : entrée invalide « {input} »",
   "blocks.connectorBadResult": "{type} : le connecteur n'a renvoyé aucune branche",
+  "blocks.connectorBadOptions": "{type} : le connecteur n'a renvoyé aucun choix",
+  "blocks.noOptions": "{type} ne propose pas de choix pour {field}",
   "ai.budgetExceeded": "Budget IA dépassé pour ce workspace ({max} USD par mois)",
   "ai.providerError": "Erreur du fournisseur IA {status}",
   "ai.budgetReached": "Budget IA atteint pour ce workspace. Augmentez-le dans les Paramètres pour continuer : les runs en pause reprendront.",
@@ -99,5 +101,16 @@
   "webhooks.testFailed": "Échec du test : {detail}",
   "blocks.loopContextRequired": "loop : contexte de run requis",
   "blocks.subWorkflowUnavailable": "workflow.run : impossible de lancer un sous-workflow ici",
-  "triggers.invalidCron": "Expression cron invalide : {cron}"
+  "triggers.invalidCron": "Expression cron invalide : {cron}",
+  "blocks.connectorNoTenant": "{type} : les nœuds OAuth ont besoin d'un workspace",
+  "connections.ambiguous": "Plusieurs connexions {provider} : renseignez l'entrée connection ({names})",
+  "connections.badState": "Connexion OAuth expirée ou invalide, réessayez",
+  "connections.expired": "La connexion {provider} {name} a expiré : reconnectez-la",
+  "connections.missing": "Connectez d'abord {provider} dans Paramètres › Connexions",
+  "connections.noSecret": "BETTER_AUTH_SECRET est requis pour les connexions OAuth",
+  "connections.notConfigured": "{provider} n'est pas configuré : définissez {key}_CLIENT_ID et {key}_CLIENT_SECRET",
+  "connections.notFound": "Aucune connexion {provider} nommée {name} : connectez-la dans Paramètres › Connexions",
+  "connections.tokenFailed": "La demande de jeton {provider} a échoué ({status}) : {body}",
+  "connections.unknownProvider": "Fournisseur OAuth inconnu : {provider}",
+  "connections.userOnly": "Seul un utilisateur connecté peut connecter un compte"
 }

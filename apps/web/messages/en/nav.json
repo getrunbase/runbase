@@ -29,6 +29,7 @@
     "members": "Members",
     "apiKeys": "API keys",
     "secrets": "Credentials",
+    "connections": "Connections",
     "audit": "Audit",
     "usage": "Usage",
     "billing": "Plan"

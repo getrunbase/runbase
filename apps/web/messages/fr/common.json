@@ -76,6 +76,10 @@
     "missing": "L'identifiant {name} n'existe pas dans ce workspace.",
     "insert": "Insérer un identifiant"
   },
+  "connectionPicker": {
+    "placeholder": "Choisir un compte {provider}",
+    "new": "Connecter un compte {provider}"
+  },
   "titles": {
     "home": "Accueil",
     "adminFeedback": "Retours",
@@ -106,6 +110,7 @@
     "members": "Membres",
     "settings": "Paramètres",
     "secrets": "Identifiants",
+    "connections": "Connexions",
     "signup": "Inscription",
     "templateImport": "Importer un modèle",
     "webhooks": "Webhooks",

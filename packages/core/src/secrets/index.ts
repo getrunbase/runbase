@@ -33,7 +33,7 @@ async function unwrapDek(wrapped: string, provider: MasterKeyProvider) {
 }
 
 // DEK of the context workspace, created with the first secret.
-async function workspaceDek(tx: Tx, ctx: TenantContext) {
+export async function workspaceDek(tx: Tx, ctx: TenantContext) {
   const read = () =>
     tx
       .select({ w: workspaceKeys.dekEncrypted })

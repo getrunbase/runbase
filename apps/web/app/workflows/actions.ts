@@ -13,9 +13,12 @@ import {
   definition as definitionInput,
   dryRunInput,
   nameInput,
+  optionsInput,
   restoreInput,
   saveInput,
   statusInput,
+  testStepInput,
+  tokenInput,
 } from "./inputs";
 
 // Error -> translatable items; invalid workflow: one line per error.
@@ -135,5 +138,54 @@ export async function restoreWorkflow(id: string, version: number) {
     const input = parseInput(restoreInput, { id, version });
     await workflowsService.restore(ctx, input.id, input.version);
     revalidatePath(`/workflows/${input.id}`);
+  });
+}
+
+// Choices of a connector input (dropdown of the step form), loaded with the
+// step's connection and the inputs already filled.
+export async function stepOptions(
+  type: string,
+  field: string,
+  input: Record<string, unknown>,
+) {
+  return runAction(async () => {
+    const { ctx } = await getTenant();
+    const { blocksService } = await import("@getrunbase/core/blocks");
+    const i = parseInput(optionsInput, { type, field, input });
+    return blocksService.options(ctx, i.type, i.field, i.input);
+  });
+}
+
+// Access token of a workspace connection, for the Google Picker only: the
+// picker runs in the browser and needs the user's own token. Acceptable: it
+// requires `write` (the editor could connect that account anyway), the
+// connection must belong to the workspace, the token expires within the
+// hour and carries only the scopes granted to the connection.
+export async function pickerToken(provider: string, connection?: string) {
+  return runAction(async () => {
+    const { ctx } = await getTenant();
+    const { connectionsService } = await import("@getrunbase/core/connections");
+    const i = parseInput(tokenInput, { provider, connection });
+    return connectionsService.accessToken(
+      ctx,
+      i.provider,
+      i.connection || undefined,
+    );
+  });
+}
+
+// Step panel "Test the step": the current (unsaved) definition, side
+// effects simulated unless `live`.
+export async function testStepAction(
+  definition: Definition,
+  stepId: string,
+  live: boolean,
+) {
+  return runAction(async () => {
+    const { ctx } = await getTenant();
+    const i = parseInput(testStepInput, { stepId, live });
+    return workflowsService.testStep(ctx, definition, i.stepId, {
+      live: i.live,
+    });
   });
 }

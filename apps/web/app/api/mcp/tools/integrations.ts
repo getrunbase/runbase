@@ -4,6 +4,7 @@ import type { McpServer } from "@modelcontextprotocol/server";
 import type { TenantContext } from "@getrunbase/core/tenant";
 import { webhooksService } from "@getrunbase/core/webhooks";
 import { secretsService } from "@getrunbase/core/secrets";
+import { connectionsService } from "@getrunbase/core/connections";
 import { queryService } from "@getrunbase/core/query";
 import { run, must } from "./shared";
 
@@ -18,6 +19,32 @@ export function defineIntegrationTools(server: McpServer, ctx: TenantContext) {
       description: "Lists the workspace secret names (never the values).",
     },
     () => run(() => secretsService.list(ctx)),
+  );
+  // OAuth connections: accounts used by connector nodes, never the tokens.
+  server.registerTool(
+    "connections.list",
+    {
+      description:
+        "Lists the workspace OAuth connections (provider, name, account email). Pass the name as the `connection` input of a connector node when the workspace has several accounts for its provider. The user connects new accounts from the workflow editor or Settings › Connections.",
+    },
+    () => run(() => connectionsService.list(ctx)),
+  );
+  server.registerTool(
+    "connections.providers",
+    {
+      description:
+        "Lists the OAuth providers of the installed connectors: scopes, node types and whether an OAuth client is configured.",
+    },
+    () => run(() => connectionsService.providers(ctx)),
+  );
+  server.registerTool(
+    "connections.delete",
+    {
+      description:
+        "Disconnects an OAuth account (id from connections.list) and revokes it at the provider. Workflows using it fail until it is reconnected.",
+      inputSchema: z.object({ id: z.string() }),
+    },
+    ({ id }) => run(() => connectionsService.remove(ctx, id)),
   );
   // Signed incoming webhooks
   server.registerTool(

@@ -117,6 +117,27 @@
       "page": "la page « {name} »"
     }
   },
+  "connections": {
+    "title": "Connexions",
+    "description": "Les comptes au nom desquels vos workflows agissent (Google…). Vous vous connectez une fois, Runbase garde l'accès valide.",
+    "connect": "Connecter",
+    "connectTitle": "Connecter {provider}",
+    "connectDescription": "Vous allez être redirigé vers {provider} pour autoriser l'accès, puis ramené ici.",
+    "nameHint": "Facultatif. Laissez vide pour utiliser l'email du compte.",
+    "continue": "Continuer vers {provider}",
+    "service": "Service",
+    "accounts": "Comptes connectés",
+    "none": "Non connecté",
+    "disconnect": "Déconnecter",
+    "disconnectTitle": "Déconnecter « {name} » ?",
+    "disconnectDescription": "Les workflows qui utilisent ce compte échoueront jusqu'à sa reconnexion. L'accès est révoqué chez le fournisseur.",
+    "notConfigured": "Non configuré sur cette instance",
+    "noProvidersTitle": "Aucun service à connecter",
+    "noProvidersDescription": "Les connecteurs installés n'utilisent encore aucun service de connexion.",
+    "connected": "« {name} » est connecté.",
+    "failed": "Échec de la connexion : {detail}",
+    "note": "Votre IA utilise une connexion par son nom, sans jamais voir l'accès. Chaque modification est enregistrée dans le journal d'audit."
+  },
   "apiKeys": {
     "title": "Clés API",
     "description": "Les clés permettent à vos outils d'appeler l'API Runbase. Elles ne sont affichées qu'une seule fois à la création.",

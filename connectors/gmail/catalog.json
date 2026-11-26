@@ -1,0 +1,12 @@
+{
+  "slug": "gmail",
+  "displayName": "Gmail",
+  "icon": "plug",
+  "description": "Send emails from a Gmail account.",
+  "categories": [
+    "communication",
+    "email"
+  ],
+  "docsUrl": "https://developers.google.com/gmail/api",
+  "credentialType": "oauth2"
+}
