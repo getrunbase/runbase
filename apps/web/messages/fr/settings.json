@@ -214,16 +214,6 @@
       "change": "Changer de plan",
       "manage": "Gérer la facturation"
     },
-    "usage": {
-      "title": "Usage",
-      "description": "Ce que ce compte utilise par rapport aux limites de son offre.",
-      "of": "{used} / {limit}",
-      "unlimited": "{used} · Illimité",
-      "reached": "Limite atteinte",
-      "records": "Records (ce workspace)",
-      "workspaces": "Workspaces",
-      "pages": "Interfaces publiées"
-    },
     "quota": {
       "link": "Changer de plan"
     },
