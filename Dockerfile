@@ -19,6 +19,10 @@ COPY packages/node-sdk/package.json packages/node-sdk/
 COPY packages/sdk/package.json packages/sdk/
 COPY packages/kit/package.json packages/kit/
 COPY connectors/slack/package.json connectors/slack/
+COPY connectors/google-calendar/package.json connectors/google-calendar/
+COPY connectors/google-drive/package.json connectors/google-drive/
+COPY connectors/google-sheets/package.json connectors/google-sheets/
+COPY connectors/gmail/package.json connectors/gmail/
 
 # Runtime sources of the tsx apps (no build step): only what they import or
 # read through fs at runtime (core SQL migrations in packages/core/drizzle,
