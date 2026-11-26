@@ -4,6 +4,27 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.4.0](https://github.com/getrunbase/runbase/compare/v0.3.0...v0.4.0) (2026-11-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* relicense core under AGPL-3.0 ([#89](https://github.com/getrunbase/runbase/issues/89))
+
+### Features
+
+* **web:** edit a secret's value from the secrets settings ([#103](https://github.com/getrunbase/runbase/issues/103)) ([0d7dc4d](https://github.com/getrunbase/runbase/commit/0d7dc4dc5a63c46b1fa4d43abd94ac4cf34a6668))
+
+
+### Bug Fixes
+
+* **web:** resolve kit peer dependencies when bundling the code runtime ([#102](https://github.com/getrunbase/runbase/issues/102)) ([6ca97f3](https://github.com/getrunbase/runbase/commit/6ca97f3a6bf36b41e8a8bc89f97cf7bc8fa97c7b))
+
+
+### Miscellaneous Chores
+
+* relicense core under AGPL-3.0 ([#89](https://github.com/getrunbase/runbase/issues/89)) ([64f2117](https://github.com/getrunbase/runbase/commit/64f2117599e6c4b5ae363ee0fa93dc1828197d19))
+
 ## [0.3.0](https://github.com/getrunbase/runbase/compare/v0.2.0...v0.3.0) (2026-11-26)
 
 
