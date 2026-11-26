@@ -1,0 +1,35 @@
+# Publishes server.json to the official MCP registry
+# (registry.modelcontextprotocol.io) on every release, with the release version.
+# Auth: GitHub OIDC, valid for the io.github.getrunbase/* namespace. No secret needed.
+name: MCP registry
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish to MCP registry
+    runs-on: ubuntu-latest
+    env:
+      MCP_PUBLISHER_VERSION: v1.8.16
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Set version from the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ github.event.release.tag_name }}"
+          [ -n "$tag" ] || tag=$(gh release view --json tagName --jq .tagName)
+          jq --arg v "${tag#v}" '.version = $v' server.json > server.tmp && mv server.tmp server.json
+          cat server.json
+      - name: Install mcp-publisher
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+      - run: ./mcp-publisher login github-oidc
+      - run: ./mcp-publisher publish
