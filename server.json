@@ -1,0 +1,15 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.getrunbase/runbase",
+  "title": "Runbase",
+  "description": "Your agent builds CRMs, workflows and dashboards you keep: typed data, functions, workflows, pages.",
+  "repository": {
+    "url": "https://github.com/getrunbase/runbase",
+    "source": "github"
+  },
+  "websiteUrl": "https://getrunbase.com",
+  "version": "0.4.0",
+  "remotes": [
+    { "type": "streamable-http", "url": "https://app.getrunbase.com/api/mcp" }
+  ]
+}
