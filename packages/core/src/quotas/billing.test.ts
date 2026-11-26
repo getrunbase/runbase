@@ -59,3 +59,28 @@ test("isQuotaError", () => {
   assert.equal(isQuotaError(new Error("x")), false);
   assert.equal(isQuotaError(null), false);
 });
+
+test("plans: null without extension or without plans, catalog otherwise", async () => {
+  const ctx = await owner();
+  assert.equal(await billingService.plans(ctx), null);
+  const plan = {
+    id: "p",
+    name: "P",
+    priceMonthlyCents: 100,
+    priceYearlyCents: 1000,
+    currency: "EUR",
+    highlights: [],
+    checkoutUrl: null,
+  };
+  let plans = [plan];
+  registerExtensions({
+    billing: {
+      entitlements: async () => null,
+      reportUsage: async () => {},
+      plans: async (org) => ({ current: org === ctx.organizationId ? "p" : null, plans }),
+    },
+  });
+  assert.deepEqual(await billingService.plans(ctx), { current: "p", plans: [plan] });
+  plans = [];
+  assert.equal(await billingService.plans(ctx), null);
+});

@@ -226,6 +226,18 @@
     },
     "quota": {
       "link": "Changer de plan"
+    },
+    "plans": {
+      "title": "Offres",
+      "description": "Choisissez l'offre adaptée à votre équipe. Vous confirmez et payez à l'étape suivante.",
+      "back": "Offre et utilisation",
+      "monthly": "Mensuel",
+      "yearly": "Annuel",
+      "perMonth": "/ mois",
+      "perYear": "/ an",
+      "equivalent": "{price} / mois, facturé annuellement",
+      "current": "Offre actuelle",
+      "choose": "Choisir"
     }
   },
   "usage": {

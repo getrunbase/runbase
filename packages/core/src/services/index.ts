@@ -87,7 +87,7 @@ export const mcpTools: {
   },
   quotas: { get: "quotas.get", set: "quotas.set" },
   // Settings › Plan and usage page (UI): agents read quotas.get.
-  billing: { enabled: null, get: null },
+  billing: { enabled: null, get: null, plans: null },
   // Settings › Usage: web page only.
   usage: { get: null },
   // runbase-template.json format.

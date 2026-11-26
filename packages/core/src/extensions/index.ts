@@ -30,7 +30,31 @@ export interface BillingProvider {
   // Optional: plan shown in Settings › Plan and usage.
   // Missing or null: the page does not appear (self-host).
   account?(organizationId: string): Promise<BillingAccount | null>;
+  // Optional: plans offered in Settings › Plan and usage › Plans.
+  // Missing, null or no plans: the page does not appear (self-host).
+  plans?(organizationId: string): Promise<BillingPlans | null>;
 }
+
+// Plan catalog provided by the extension. Prices in the smallest currency
+// unit; checkoutUrl per billing interval, null when the plan cannot be
+// chosen online (e.g. free plan).
+export type BillingPlan = {
+  id: string;
+  name: string;
+  description?: string | null;
+  priceMonthlyCents: number;
+  priceYearlyCents: number;
+  currency: string;
+  highlights: string[];
+  checkoutUrl: { month: string; year: string } | null;
+};
+
+export type BillingPlans = {
+  // Plan id of the organization, null when unknown.
+  current: string | null;
+  interval?: "month" | "year";
+  plans: BillingPlan[];
+};
 
 // Plan name and links provided by the extension (no plan name or price
 // in this repo). checkoutUrl: change plan; portalUrl: billing.

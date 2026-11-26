@@ -226,6 +226,18 @@
     },
     "quota": {
       "link": "Upgrade plan"
+    },
+    "plans": {
+      "title": "Plans",
+      "description": "Pick the plan that fits your team. You confirm and pay on the next page.",
+      "back": "Plan and usage",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "perMonth": "/ month",
+      "perYear": "/ year",
+      "equivalent": "{price} / month, billed yearly",
+      "current": "Current plan",
+      "choose": "Choose"
     }
   },
   "usage": {
