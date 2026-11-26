@@ -5,7 +5,7 @@
     "pages": {
       "title": "Pages",
       "empty": "No pages",
-      "emptyDescription": "A page shows lists, records and forms. Ask your connected AI agent (MCP) to create one, for example: “create a page to track my contacts”."
+      "emptyDescription": "A page shows lists, records and forms. Ask your AI to create one, for example: “create a page to track my leads”."
     },
     "queries": {
       "title": "Saved queries",

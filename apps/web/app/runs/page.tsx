@@ -6,6 +6,7 @@ import { History } from "lucide-react";
 import { cn } from "cn";
 import { Kpi } from "@/components/ds/atoms";
 import { EmptyState } from "@/components/empty-state";
+import { AgentPrompts } from "@/components/agent-prompts";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
 import { Button } from "@getrunbase/ui/components/ui/button";
@@ -194,6 +195,7 @@ export default async function Runs({
           title={t("empty.title")}
           description={t("empty.description")}
         >
+          <AgentPrompts group="runs" />
           <Button asChild variant="outline">
             <Link href="/workflows">{t("empty.cta")}</Link>
           </Button>

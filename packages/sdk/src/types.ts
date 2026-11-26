@@ -98,8 +98,10 @@ export type Run = {
   running: boolean;
 };
 
-// useAI (`ai` permission): text completion counted against the workspace AI
-// budget; clear refusal if the budget or credit is exhausted, or the rate is exceeded.
+// useAI: text completion with an AI config declared by the page
+// (`permissions.ai`): useAI() uses `default`, useAI("name") a named config.
+// Counted against the workspace AI budget; clear refusal if the config is not
+// declared, the budget is exhausted, or the rate is exceeded.
 export type AI = {
   ask: (
     prompt: string,
@@ -119,7 +121,7 @@ export interface RunbaseSdk {
   useMutation(object?: string): Mutation;
   useUpload(): Upload;
   useRun(workflowId: string): Run;
-  useAI(): AI;
+  useAI(name?: string): AI;
   useRecord<R = Row>(
     id: string | null | undefined,
     opts?: { include?: string[] },

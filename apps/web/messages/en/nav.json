@@ -28,10 +28,10 @@
     "general": "General",
     "members": "Members",
     "apiKeys": "API keys",
-    "secrets": "Secrets",
+    "secrets": "Credentials",
     "audit": "Audit",
     "usage": "Usage",
-    "billing": "Plan & usage"
+    "billing": "Plan"
   },
   "user": {
     "signOut": "Sign out"

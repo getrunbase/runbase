@@ -1,48 +1,48 @@
 {
-  "new": "Nouvelle database",
+  "new": "Nouvelle base",
   "list": {
-    "title": "Bases de données",
-    "description": "Chaque database regroupe des objets et leurs relations.",
-    "empty": "Aucune database",
-    "emptyDescription": "Créez une database et son premier objet.",
-    "objects": "{count, plural, one {# objet} other {# objets}}"
+    "title": "Bases",
+    "description": "Vos données : contacts, entreprises, deals. Chaque base regroupe des tables liées.",
+    "empty": "Aucune base",
+    "emptyDescription": "Créez une base et sa première table, ou demandez à votre IA de la construire pour vous.",
+    "objects": "{count, plural, one {# table} other {# tables}}"
   },
   "detail": {
-    "objectsTab": "Objets",
-    "schemaTab": "Schéma",
-    "attributes": "{count, plural, one {# attribut} other {# attributs}}",
+    "objectsTab": "Tables",
+    "schemaTab": "Structure",
+    "attributes": "{count, plural, one {# champ} other {# champs}}",
     "records": "{count, plural, one {# fiche} other {# fiches}}",
-    "empty": "Aucun objet.",
-    "agentHint": "« Ajoute un objet Chantiers relié aux Devis » — votre agent IA crée l’objet, ses champs et la relation."
+    "empty": "Aucune table.",
+    "agentHint": "« Ajoute une table Projets reliée aux Deals » : votre IA crée la table, ses champs et la relation."
   },
   "graph": {
-    "noAttributes": "Aucun attribut"
+    "noAttributes": "Aucun champ"
   },
   "import": {
-    "open": "Importer un template",
-    "title": "Importer un template",
-    "description": "Chargez un fichier runbase-template.json ou collez son contenu. Objets, vues, fonctions, workflows (en brouillon) et pages sont créés dans ce workspace.",
+    "open": "Importer un modèle",
+    "title": "Importer un modèle",
+    "description": "Chargez un fichier de modèle ou collez son contenu. Tables, vues, fonctions, workflows (en brouillon) et pages sont créés dans ce workspace.",
     "file": "Fichier",
-    "json": "JSON du template",
+    "json": "Contenu du modèle",
     "submit": "Importer",
     "importing": "Import en cours…",
     "failed": "Échec de l'import",
-    "done": "« {name} » importé : {count, plural, one {# objet} other {# objets}}",
-    "missingSecrets": "Secrets à renseigner avant d'activer les workflows : {names}"
+    "done": "« {name} » importé : {count, plural, one {# table} other {# tables}}",
+    "missingSecrets": "Identifiants à ajouter avant d'activer les workflows : {names}"
   },
   "catalogImport": {
     "title": "Importer « {name} »",
-    "description": "Ce template du catalogue sera importé dans votre workspace courant. Les workflows sont créés en brouillon.",
-    "notFound": "Ce template n'est pas dans le catalogue.",
-    "open": "Ouvrir les databases",
+    "description": "Ce modèle du catalogue sera importé dans votre workspace courant. Les workflows sont créés en brouillon.",
+    "notFound": "Ce modèle n'est pas dans le catalogue.",
+    "open": "Ouvrir les bases",
     "created": "Sera créé dans l’espace",
-    "panel": "Vérifiez ce que le template ajoute avant de l’installer.",
+    "panel": "Vérifiez ce que le modèle ajoute avant de l’installer.",
     "info": "Les workflows sont installés en brouillon. Vous pourrez les tester avant de les activer.",
     "workflowDetail": "Workflow · brouillon à l’installation",
     "objectDetail": "{count, plural, one {# champ} other {# champs}}",
     "types": {
       "workflow": "Workflow",
-      "object": "Objet"
+      "object": "Table"
     }
   }
 }

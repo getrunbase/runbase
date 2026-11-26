@@ -68,20 +68,20 @@
     "restoreError": "La restauration a échoué."
   },
   "secretPicker": {
-    "placeholder": "Choisir un secret",
-    "new": "Nouveau secret…",
-    "newTitle": "Nouveau secret",
-    "newDescription": "La valeur est chiffrée dans le coffre du workspace et ne sera plus jamais affichée. Seul son nom est conservé ici.",
+    "placeholder": "Choisir un identifiant",
+    "new": "Nouvel identifiant…",
+    "newTitle": "Nouvel identifiant",
+    "newDescription": "La valeur est chiffrée et ne sera plus jamais affichée, même à votre IA. Seul son nom est conservé ici.",
     "value": "Valeur",
-    "missing": "Le secret {name} n'existe pas dans ce workspace.",
-    "insert": "Insérer un secret"
+    "missing": "L'identifiant {name} n'existe pas dans ce workspace.",
+    "insert": "Insérer un identifiant"
   },
   "titles": {
     "home": "Accueil",
     "adminFeedback": "Retours",
     "approvals": "Approbations",
-    "database": "Base de données",
-    "databases": "Bases de données",
+    "database": "Base",
+    "databases": "Bases",
     "error": "Erreur",
     "errors": "Erreurs",
     "events": "Événements",
@@ -91,8 +91,8 @@
     "invitations": "Invitations",
     "login": "Connexion",
     "oauthConsent": "Autoriser l'accès",
-    "object": "Objet",
-    "objects": "Objets",
+    "object": "Table",
+    "objects": "Tables",
     "page": "Page",
     "pages": "Pages",
     "resetPassword": "Réinitialiser le mot de passe",
@@ -105,7 +105,7 @@
     "general": "Paramètres généraux",
     "members": "Membres",
     "settings": "Paramètres",
-    "secrets": "Secrets",
+    "secrets": "Identifiants",
     "signup": "Inscription",
     "templateImport": "Importer un modèle",
     "webhooks": "Webhooks",
@@ -147,6 +147,66 @@
       "oauth": "Tout agent IA compatible MCP : collez le lien ci-dessus. Il se connecte via OAuth.",
       "key": "Outils sans connexion (scripts, CI) : envoyez une clé API dans cet en-tête.",
       "keyLink": "Créez une clé dans <link>Clés API</link>."
+    }
+  },
+  "adminOnly": "Seul un administrateur peut modifier ce réglage.",
+  "agentPrompts": {
+    "title": "Demandez à votre IA",
+    "copy": "Copier",
+    "copied": "Copié",
+    "copyLabel": "Copier cette demande : {prompt}",
+    "workflows": {
+      "p1": "Tous les matins à 9 h, envoie-moi sur Slack les leads créés hier avec un score supérieur à 70",
+      "p2": "Quand un Typeform est soumis, crée le lead et préviens #sales",
+      "p3": "Quand un deal passe en Gagné, crée le client et envoie un e-mail de bienvenue"
+    },
+    "functions": {
+      "p1": "Ajoute une fonction qui note un lead à partir du domaine de son entreprise",
+      "p2": "Ajoute une fonction qui met les numéros de téléphone au format international",
+      "p3": "Ajoute une fonction qui retrouve le nom de l'entreprise à partir d'une adresse e-mail"
+    },
+    "events": {
+      "p1": "Envoie un événement « lead.qualified » quand le score d'un lead dépasse 70",
+      "p2": "Quand un événement « payment.received » arrive, marque le deal comme payé"
+    },
+    "webhooks": {
+      "p1": "Crée un webhook pour les paiements Stripe et enregistre chaque paiement sur l'entreprise correspondante",
+      "p2": "Quand un Typeform est soumis, crée le lead et préviens #sales",
+      "p3": "Crée un webhook pour les réservations Cal.com qui ajoute le rendez-vous au contact"
+    },
+    "pages": {
+      "p1": "Crée une page pour suivre mes leads par statut, avec un formulaire pour en ajouter",
+      "p2": "Crée une page pipeline avec les deals ouverts par étape et leur montant total"
+    },
+    "queries": {
+      "p1": "Enregistre une requête du chiffre d'affaires gagné par mois",
+      "p2": "Enregistre une requête qui compte les nouveaux leads par source cette semaine"
+    },
+    "databases": {
+      "p1": "Crée un CRM avec des tables Contacts, Entreprises et Deals, reliées entre elles",
+      "p2": "Crée une table Leads avec nom, e-mail, entreprise, source et score",
+      "p3": "Importe mes contacts HubSpot dans une table Contacts"
+    },
+    "records": {
+      "p1": "Importe ce CSV de leads dans cette table, sans doublon sur l'e-mail",
+      "p2": "Ajoute 5 fiches d'exemple réalistes pour que je teste mes workflows",
+      "p3": "Crée un workflow qui renseigne l'entreprise de chaque nouvelle fiche à partir de son e-mail"
+    },
+    "runs": {
+      "p1": "Lance mon workflow de scoring sur les 10 derniers leads",
+      "p2": "Tous les lundis à 8 h, envoie-moi sur Slack un résumé des deals de la semaine dernière"
+    },
+    "approvals": {
+      "p1": "Avant d'envoyer un e-mail de prospection, demande mon accord",
+      "p2": "Quand un deal de plus de 10 k est marqué Gagné, attends mon accord avant de facturer"
+    },
+    "errors": {
+      "p1": "Vérifie mes workflows et dis-moi lesquels pourraient échouer",
+      "p2": "Si un workflow échoue, préviens-moi sur Slack avec la raison"
+    },
+    "credentials": {
+      "p1": "De quels identifiants mes workflows ont-ils besoin ? Dis-moi lesquels manquent",
+      "p2": "Mets en place la synchro HubSpot : dis-moi quelle clé ajouter ici"
     }
   }
 }

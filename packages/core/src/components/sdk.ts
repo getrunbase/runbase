@@ -5,6 +5,7 @@
 import { z } from "zod";
 import { filterSchema } from "../filter";
 import { pageAi } from "../ai";
+import { aiConfigSchema } from "../ai-providers";
 import { eventsService } from "../events";
 import { filesService } from "../files";
 import { objectsService } from "../objects";
@@ -17,6 +18,8 @@ export const MAX_CALL = 64_000;
 // useUpload: base64 file in the call, dedicated cap.
 export const MAX_UPLOAD_CALL = 7_000_000;
 
+// AI config name (permissions.ai key, useAI(name)).
+const AI_NAME = /^[A-Za-z_][A-Za-z0-9_-]{0,49}$/;
 const names = z.array(z.string().min(1).max(200)).max(100).default([]);
 // Row cap per useQuery (KPIs: prefer server-side groupBy/aggregate).
 export const MAX_QUERY_LIMIT = 1000;
@@ -34,10 +37,11 @@ export const permissionsSchema = z
     ),
     files: z.boolean().default(false).describe("may upload files (useUpload)"),
     ai: z
-      .boolean()
-      .default(false)
+      .record(z.string().regex(AI_NAME), aiConfigSchema)
+      .refine((r) => Object.keys(r).length <= 20, "at most 20 AI configs")
+      .default({})
       .describe(
-        "may call the AI (useAI); counted in the workspace AI budget, rate limited",
+        'AI configs the page may call (useAI): { default?: { provider, model, secret }, <name>: {...} }. useAI() uses `default`, useAI("<name>") a named one. Empty = no AI. The key secret is read server-side, never sent to the page. Counted in the workspace AI budget, rate limited',
       ),
   })
   .default({
@@ -45,7 +49,7 @@ export const permissionsSchema = z
     write: [],
     workflows: [],
     files: false,
-    ai: false,
+    ai: {},
   });
 export type ComponentPermissions = z.output<typeof permissionsSchema>;
 
@@ -150,6 +154,8 @@ export const sdkCallSchema = z.discriminatedUnion("method", [
     args: z.strictObject({
       prompt: z.string().min(1).max(20_000),
       system: z.string().max(4000).optional(),
+      // permissions.ai key; absent = `default`.
+      name: z.string().regex(AI_NAME).optional(),
     }),
   }),
 ]);
@@ -200,7 +206,9 @@ export function denied(p: ComponentPermissions, call: SdkCall): string | null {
     case "upload":
       return p.files ? null : "upload not allowed (permissions.files is false)";
     case "ai":
-      return p.ai ? null : "ai not allowed (permissions.ai is false)";
+      return Object.keys(p.ai).length
+        ? null
+        : "ai not allowed (permissions.ai declares no AI config)";
   }
 }
 
@@ -367,6 +375,6 @@ export async function handleSdkCall(
     case "upload":
       return filesService.upload(ctx, call.args);
     case "ai":
-      return pageAi(ctx, host.pageId ?? "-", call.args);
+      return pageAi(ctx, host.pageId ?? "-", perms.ai, call.args);
   }
 }

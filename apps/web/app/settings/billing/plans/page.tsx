@@ -1,6 +1,6 @@
 import { billingService } from "@getrunbase/core/quotas";
 import type { BillingPlan } from "@getrunbase/core/extensions";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, Minus } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -14,8 +14,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@getrunbase/ui/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@getrunbase/ui/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@getrunbase/ui/components/ui/tabs";
 import { getTenant } from "@/lib/tenant";
+import { isOrgAdmin } from "@/lib/settings-access";
 import { planPrice, type Interval } from "@/lib/plan-price";
 import { SettingsPage } from "../../settings-shell";
 import { pageTitle } from "@/lib/page-title";
@@ -28,11 +37,11 @@ const INTERVALS: Interval[] = ["month", "year"];
 // extension. Owners and admins only; no extension or no plans: no page.
 export default async function Plans() {
   const { ctx, role } = await getTenant();
-  if (role !== "owner" && role !== "admin") notFound();
-  const catalog = await billingService.plans(ctx);
+  if (!isOrgAdmin(role)) notFound();
+  const locale = await getLocale();
+  const catalog = await billingService.plans(ctx, locale);
   if (!catalog) notFound();
   const t = await getTranslations("settings.billing.plans");
-  const locale = await getLocale();
 
   const card = (plan: BillingPlan, interval: Interval) => {
     const current = plan.id === catalog.current;
@@ -112,6 +121,72 @@ export default async function Plans() {
           </TabsContent>
         ))}
       </Tabs>
+      {catalog.comparison && catalog.comparison.rows.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <h3 className="text-foreground text-base font-semibold">
+            {t("compare")}
+          </h3>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead scope="col">{t("feature")}</TableHead>
+                {catalog.plans.map((p) => (
+                  <TableHead
+                    key={p.id}
+                    scope="col"
+                    className={
+                      p.id === catalog.current
+                        ? "bg-muted text-foreground"
+                        : undefined
+                    }
+                  >
+                    {p.name}
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {catalog.comparison.rows.map((row) => (
+                <TableRow key={row.label}>
+                  <TableHead
+                    scope="row"
+                    className="text-foreground font-medium"
+                  >
+                    {row.label}
+                  </TableHead>
+                  {catalog.plans.map((p, c) => {
+                    const v = row.values[c] ?? null;
+                    return (
+                      <TableCell
+                        key={p.id}
+                        className={
+                          p.id === catalog.current
+                            ? "bg-muted tabular-nums"
+                            : "text-muted-foreground tabular-nums"
+                        }
+                      >
+                        {v === true ? (
+                          <Check
+                            className="text-primary size-4"
+                            aria-label={t("included")}
+                          />
+                        ) : v === false ? (
+                          <Minus
+                            className="text-muted-foreground size-4"
+                            aria-label={t("notIncluded")}
+                          />
+                        ) : (
+                          v
+                        )}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </section>
+      )}
     </SettingsPage>
   );
 }

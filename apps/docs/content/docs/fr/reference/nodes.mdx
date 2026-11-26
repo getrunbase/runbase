@@ -17,12 +17,12 @@ Branches : .
 
 #### Entrée
 
-| Nom        | Type   | Requis | Description |
-| ---------- | ------ | ------ | ----------- |
-| `prompt`   | string | oui    |             |
-| `context`  | any    | non    |             |
-| `ai`       | object | non    |             |
-| `branches` | array  | oui    |             |
+| Nom        | Type   | Requis | Description                                                                  |
+| ---------- | ------ | ------ | ---------------------------------------------------------------------------- |
+| `prompt`   | string | oui    |                                                                              |
+| `context`  | any    | non    |                                                                              |
+| `ai`       | object | non    | IA de ce bloc (obligatoire pour l'exécution) : \{ provider, model, secret \} |
+| `branches` | array  | oui    |                                                                              |
 
 #### Sortie
 
@@ -54,12 +54,12 @@ Branches : `ok`.
 
 #### Entrée
 
-| Nom            | Type   | Requis | Description |
-| -------------- | ------ | ------ | ----------- |
-| `text`         | string | oui    |             |
-| `fields`       | array  | oui    |             |
-| `instructions` | string | non    |             |
-| `ai`           | object | non    |             |
+| Nom            | Type   | Requis | Description                                                                  |
+| -------------- | ------ | ------ | ---------------------------------------------------------------------------- |
+| `text`         | string | oui    |                                                                              |
+| `fields`       | array  | oui    |                                                                              |
+| `instructions` | string | non    |                                                                              |
+| `ai`           | object | non    | IA de ce bloc (obligatoire pour l'exécution) : \{ provider, model, secret \} |
 
 #### Sortie
 
@@ -82,13 +82,13 @@ Branches : `ok`.
 
 #### Entrée
 
-| Nom       | Type   | Requis | Description |
-| --------- | ------ | ------ | ----------- |
-| `prompt`  | string | oui    |             |
-| `context` | any    | non    |             |
-| `ai`      | object | non    |             |
-| `objects` | array  | oui    |             |
-| `schema`  | object | non    |             |
+| Nom       | Type   | Requis | Description                                                                  |
+| --------- | ------ | ------ | ---------------------------------------------------------------------------- |
+| `prompt`  | string | oui    |                                                                              |
+| `context` | any    | non    |                                                                              |
+| `ai`      | object | non    | IA de ce bloc (obligatoire pour l'exécution) : \{ provider, model, secret \} |
+| `objects` | array  | oui    |                                                                              |
+| `schema`  | object | non    |                                                                              |
 
 #### Sortie
 

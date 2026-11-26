@@ -39,19 +39,34 @@ export function defineAccountTools(server: McpServer, ctx: TenantContext) {
     "members.invite",
     {
       description:
-        "Invites a person to the organization by email (admin scope). The invitation stays pending, with no access at all, until the invitee accepts it (email sent with the link). Roles: admin (manage everything), member (create and edit), viewer (read-only), end_user (only opens pages, no MCP). Default: member.",
+        "Invites a person to the organization by email (admin scope). The invitation stays pending, with no access at all, until the invitee accepts it (email sent with the link). Roles: admin (manage everything), member (create and edit), viewer (read-only), end_user (only opens pages, no MCP). Default: member. Access is limited to workspaceIds (default: the current workspace; null = all workspaces, including future ones). Owners and admins always access every workspace. Inviting someone already invited or already a member adds the workspaces to their access (a pending invitation also takes the new role and is resent).",
       inputSchema: z.object({
         email: z.string().email(),
         role: z.enum(ASSIGNABLE_ROLES).optional(),
+        workspaceIds: z
+          .array(z.string())
+          .min(1)
+          .nullable()
+          .optional()
+          .describe(
+            "Workspace ids from workspaces.list; null = all workspaces; omitted = the current workspace",
+          ),
       }),
     },
-    (input) => run(() => membersService.invite(ctx, input)),
+    ({ workspaceIds, ...input }) =>
+      run(() =>
+        membersService.invite(ctx, {
+          ...input,
+          workspaceIds:
+            workspaceIds === undefined ? [ctx.workspaceId] : workspaceIds,
+        }),
+      ),
   );
   server.registerTool(
     "members.list",
     {
       description:
-        "Lists organization members and pending invitations (pending: true): id, name, email, role.",
+        "Lists organization members and pending invitations (pending: true): id, name, email, role, workspaceIds (accessible workspaces; null = all) (admin scope).",
     },
     () => run(() => membersService.list(ctx)),
   );
@@ -68,6 +83,23 @@ export function defineAccountTools(server: McpServer, ctx: TenantContext) {
     ({ id, role }) => run(() => membersService.setRole(ctx, id, role)),
   );
   server.registerTool(
+    "members.set_workspaces",
+    {
+      description:
+        "Sets the workspaces a member or pending invitee can access (id from members.list, admin scope). workspaceIds replaces the current list; null = all workspaces. Owners and admins always access every workspace (null only).",
+      inputSchema: z.object({
+        id: z.string(),
+        workspaceIds: z
+          .array(z.string())
+          .min(1)
+          .nullable()
+          .describe("Workspace ids from workspaces.list, or null for all"),
+      }),
+    },
+    ({ id, workspaceIds }) =>
+      run(() => membersService.setWorkspaces(ctx, id, workspaceIds)),
+  );
+  server.registerTool(
     "members.remove",
     {
       description:
@@ -82,7 +114,7 @@ export function defineAccountTools(server: McpServer, ctx: TenantContext) {
     "quotas.get",
     {
       description:
-        "Workspace limits and usage: records (maximum count), runsPerMinute (workflow runs per minute), apiPerMinute (MCP and ingestion calls per minute), concurrency (workflow steps and trigger events processed at the same time; extra jobs wait their turn). Beyond the first three, calls fail with a quota_exceeded error (HTTP 429).",
+        "Workspace limits and usage (admin scope): records (maximum count), runsPerMinute (workflow runs per minute), apiPerMinute (MCP and ingestion calls per minute), concurrency (workflow steps and trigger events processed at the same time; extra jobs wait their turn). Beyond the first three, calls fail with a quota_exceeded error (HTTP 429).",
     },
     () => run(() => quotasService.get(ctx)),
   );

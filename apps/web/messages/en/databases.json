@@ -2,33 +2,33 @@
   "new": "New database",
   "list": {
     "title": "Databases",
-    "description": "Each database groups objects and their relations.",
+    "description": "Your data: contacts, companies, deals. Each database groups linked tables.",
     "empty": "No databases",
-    "emptyDescription": "Create a database and its first object.",
-    "objects": "{count, plural, one {# object} other {# objects}}"
+    "emptyDescription": "Create a database and its first table, or ask your AI to build it for you.",
+    "objects": "{count, plural, one {# table} other {# tables}}"
   },
   "detail": {
-    "objectsTab": "Objects",
-    "schemaTab": "Schema",
-    "attributes": "{count, plural, one {# attribute} other {# attributes}}",
+    "objectsTab": "Tables",
+    "schemaTab": "Structure",
+    "attributes": "{count, plural, one {# field} other {# fields}}",
     "records": "{count, plural, one {# record} other {# records}}",
-    "empty": "No objects.",
-    "agentHint": "“Add a Worksites object linked to Quotes”: your AI agent creates the object, its fields and the relation."
+    "empty": "No tables.",
+    "agentHint": "“Add a Projects table linked to Deals”: your AI creates the table, its fields and the link."
   },
   "graph": {
-    "noAttributes": "No attributes"
+    "noAttributes": "No fields"
   },
   "import": {
-    "open": "Import template",
+    "open": "Import a template",
     "title": "Import a template",
-    "description": "Upload an runbase-template.json file or paste its content. Objects, views, functions, workflows (as drafts) and pages are created in this workspace.",
+    "description": "Upload a template file or paste its content. Tables, views, functions, workflows (as drafts) and pages are created in this workspace.",
     "file": "File",
-    "json": "Template JSON",
+    "json": "Template content",
     "submit": "Import",
     "importing": "Importing…",
     "failed": "Import failed",
-    "done": "“{name}” imported: {count, plural, one {# object} other {# objects}}",
-    "missingSecrets": "Secrets to set before activating workflows: {names}"
+    "done": "“{name}” imported: {count, plural, one {# table} other {# tables}}",
+    "missingSecrets": "Credentials to add before turning on workflows: {names}"
   },
   "catalogImport": {
     "title": "Import “{name}”",
@@ -42,7 +42,7 @@
     "objectDetail": "{count, plural, one {# field} other {# fields}}",
     "types": {
       "workflow": "Workflow",
-      "object": "Object"
+      "object": "Table"
     }
   }
 }

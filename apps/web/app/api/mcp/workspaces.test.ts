@@ -201,9 +201,12 @@ test("members through MCP; an end user has no MCP access", async () => {
     email: string;
     pending: boolean;
     userId: string;
+    workspaceIds: string[] | null;
   }[];
   const inv = list.find((m) => m.email === email)!;
   assert.equal(inv.pending, true);
+  // No workspaceIds: limited to the current workspace.
+  assert.deepEqual(inv.workspaceIds, [o.workspaceId]);
   await sql`update memberships set accepted_at = now() where id = ${inv.id}`;
   const endUser: McpPrincipal = {
     key: `user:${inv.userId}:t`,
@@ -212,6 +215,9 @@ test("members through MCP; an end user has no MCP access", async () => {
   assert.deepEqual(await accessibleWorkspaces(endUser), []);
   await call("members.set_role", { id: inv.id, role: "viewer" });
   assert.equal((await accessibleWorkspaces(endUser)).length, 1);
+  await call("members.set_workspaces", { id: inv.id, workspaceIds: null });
+  const after = (await call("members.list")) as typeof list;
+  assert.equal(after.find((m) => m.id === inv.id)!.workspaceIds, null);
   await call("members.remove", { id: inv.id });
   assert.deepEqual(await accessibleWorkspaces(endUser), []);
 });

@@ -43,7 +43,7 @@ for (const ex of [...KIT_EXAMPLES, DASHBOARD_EXAMPLE])
       write: [],
       workflows: [],
       files: false,
-      ai: false,
+      ai: {},
       ...ex.permissions,
     };
     for (const c of out.sdkCalls)

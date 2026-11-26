@@ -6,6 +6,7 @@ import { Webhook } from "lucide-react";
 import { ConfirmAction } from "@/components/confirm-action";
 import { CopyField } from "@/components/copy-button";
 import { EmptyState } from "@/components/empty-state";
+import { AgentPrompts } from "@/components/agent-prompts";
 import { JsonView } from "@/components/json-view";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
@@ -23,6 +24,7 @@ import { clearWebhookSample, deleteWebhook } from "./actions";
 import { CreateWebhookDialog, TestWebhookForm } from "./forms";
 import { env } from "@getrunbase/core/env";
 import { pageTitle } from "@/lib/page-title";
+import { ActionForm } from "@/components/action-form";
 
 export const generateMetadata = pageTitle("webhooks");
 
@@ -57,7 +59,9 @@ export default async function Webhooks() {
           icon={Webhook}
           title={t("empty.title")}
           description={t("empty.description")}
-        />
+        >
+          <AgentPrompts group="webhooks" />
+        </EmptyState>
       ) : (
         <>
           <Table>
@@ -154,12 +158,12 @@ export default async function Webhooks() {
                     value={w.sample}
                   />
                   {isAdmin && (
-                    <form action={clearWebhookSample}>
+                    <ActionForm action={clearWebhookSample}>
                       <input type="hidden" name="id" value={w.id} />
                       <Button type="submit" size="sm" variant="ghost">
                         {t("card.clearSample")}
                       </Button>
-                    </form>
+                    </ActionForm>
                   )}
                 </div>
               ) : (

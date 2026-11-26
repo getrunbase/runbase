@@ -13,7 +13,7 @@
     "hmacLong": "HMAC signature (GitHub, Cal.com, other)"
   },
   "card": {
-    "produces": "Produces the <code>{event}</code> event, signed with the <code>{secret}</code> secret.",
+    "produces": "Produces the <code>{event}</code> event, signed with the <code>{secret}</code> credential.",
     "url": "URL to give the tool",
     "copyUrl": "Copy URL",
     "testUrl": "Test URL (runs nothing)",
@@ -38,7 +38,7 @@
     "format": "Signature format",
     "header": "Signature header",
     "secret": "Signing secret",
-    "secretHint": "Name of a secret (Secrets page) holding the key provided by the tool."
+    "secretHint": "Name of a credential (Credentials page) holding the signing key provided by the tool."
   },
   "test": {
     "label": "Send a test",

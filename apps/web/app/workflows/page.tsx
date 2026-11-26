@@ -3,6 +3,7 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { workflowsService } from "@getrunbase/core/workflows";
 import { Plus, Workflow } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
+import { AgentPrompts } from "@/components/agent-prompts";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
 import { Button } from "@getrunbase/ui/components/ui/button";
@@ -21,6 +22,7 @@ import { createWorkflow } from "./actions";
 import { makeLabels } from "./labels";
 import { workflowStatusVariant } from "./[id]/workflow-bar";
 import { pageTitle } from "@/lib/page-title";
+import { ActionForm } from "@/components/action-form";
 
 export const generateMetadata = pageTitle("workflows");
 
@@ -70,7 +72,7 @@ export default async function WorkflowsPage({
   return (
     <main className="flex flex-1 flex-col gap-6 px-12 py-8">
       <PageHeader title={t("list.title")} description={t("list.description")}>
-        <form action={createWorkflow} className="flex gap-2">
+        <ActionForm action={createWorkflow} className="flex gap-2">
           <Input
             name="name"
             placeholder={t("list.namePlaceholder")}
@@ -82,7 +84,7 @@ export default async function WorkflowsPage({
             <Plus />
             {t("list.create")}
           </Button>
-        </form>
+        </ActionForm>
       </PageHeader>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <Tabs value={filter}>
@@ -115,7 +117,9 @@ export default async function WorkflowsPage({
           icon={Workflow}
           title={t("list.emptyTitle")}
           description={t("list.emptyDescription")}
-        />
+        >
+          <AgentPrompts group="workflows" />
+        </EmptyState>
       ) : (
         <div className="flex flex-col gap-6">
           <Table>

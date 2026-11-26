@@ -17,7 +17,9 @@ import {
 import type { Tone } from "@/components/ds/tone";
 import { auditLabel } from "@/lib/audit-labels";
 import { getFormatter, getTranslations } from "next-intl/server";
+import { notFound } from "next/navigation";
 import { getTenant } from "@/lib/tenant";
+import { isOrgAdmin } from "@/lib/settings-access";
 import { SectionHead, SettingsPage } from "../settings-shell";
 import { pageTitle } from "@/lib/page-title";
 
@@ -59,6 +61,7 @@ export default async function Audit({
   searchParams: Promise<Q>;
 }) {
   const { ctx, role } = await getTenant();
+  if (!isOrgAdmin(role)) notFound();
   const q = await searchParams;
   const [{ items, nextCursor }, members] = await Promise.all([
     auditService.list(ctx, { resourceType: q.type, cursor: q.cursor }),

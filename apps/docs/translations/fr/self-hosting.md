@@ -1,4 +1,4 @@
-<!-- source-sha256: 69ef702ea5073308ddafaaf28ccb760149104e7ad64ebebde366adf37b7faad0 -->
+<!-- source-sha256: 57cd7b4b3a79784bbace4b9bb4c54d57ac35af67884b630a9eeb35300f513ce1 -->
 # Auto-hébergement
 
 Exécutez Runbase sur votre propre serveur avec Docker, à partir d'images
@@ -70,7 +70,9 @@ premier. Les paramètres facultatifs les plus courants :
 - **Inscriptions.** Fermées par défaut ; définissez `SIGNUPS_ENABLED=true` pour
   les ouvrir, ou créez les comptes avec `pnpm admin:create` comme ci-dessus.
 - **Blocs d'IA.** Aucune clé fournie par la plateforme : chaque espace de
-  travail ajoute sa propre clé de fournisseur dans les Paramètres.
+  travail ajoute sa propre clé de fournisseur en tant que secret (Paramètres ›
+  Secrets), et chaque bloc d'IA et chaque page indique le fournisseur, le modèle
+  et le secret qu'il utilise.
 - **Runtime des composants de code.** `NEXT_PUBLIC_RUNTIME_ORIGIN` sert l'iframe
   isolée des composants de code depuis un second domaine pointant vers le même
   conteneur web (par exemple `https://runtime.example.com`). Cette valeur est

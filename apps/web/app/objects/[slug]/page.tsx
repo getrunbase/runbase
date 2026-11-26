@@ -9,6 +9,7 @@ import {
   TabsTrigger,
 } from "@getrunbase/ui/components/ui/tabs";
 import { PageHeader } from "@/components/page-header";
+import { isAdminRole } from "@/lib/roles";
 import { getTenant } from "@/lib/tenant";
 import { MigrateField } from "../migrate-field";
 import { SchemaEditor } from "../schema-editor";
@@ -27,7 +28,9 @@ export default async function ObjectPage({
 }) {
   const { slug } = await params;
   const t = await getTranslations("objects.detail");
-  const { ctx } = await getTenant();
+  const { ctx, role } = await getTenant();
+  // Schema changes: admins only (checked by the core).
+  const isAdmin = isAdminRole(role);
   const object = await objectsService.get(ctx, slug);
   if (!object) notFound();
   const fields = object.fields as Field[];
@@ -50,7 +53,7 @@ export default async function ObjectPage({
       <Tabs defaultValue="records" className="gap-5">
         <TabsList>
           <TabsTrigger value="records">{t("records")}</TabsTrigger>
-          <TabsTrigger value="schema">{t("schema")}</TabsTrigger>
+          {isAdmin && <TabsTrigger value="schema">{t("schema")}</TabsTrigger>}
           <TabsTrigger value="trash">{t("trash")}</TabsTrigger>
         </TabsList>
         <TabsContent value="records">
@@ -62,18 +65,20 @@ export default async function ObjectPage({
             workflows={workflows}
           />
         </TabsContent>
-        <TabsContent value="schema" className="max-w-3xl">
-          <SchemaEditor
-            key={object.updatedAt.toISOString()}
-            object={{ id: object.id, name: object.name, fields }}
-            targets={targets}
-          />
-          <MigrateField
-            key={`m-${object.updatedAt.toISOString()}`}
-            objectId={object.id}
-            fields={fields}
-          />
-        </TabsContent>
+        {isAdmin && (
+          <TabsContent value="schema" className="max-w-3xl">
+            <SchemaEditor
+              key={object.updatedAt.toISOString()}
+              object={{ id: object.id, name: object.name, fields }}
+              targets={targets}
+            />
+            <MigrateField
+              key={`m-${object.updatedAt.toISOString()}`}
+              objectId={object.id}
+              fields={fields}
+            />
+          </TabsContent>
+        )}
         <TabsContent value="trash">
           <TrashList objectId={object.id} fields={fields} />
         </TabsContent>

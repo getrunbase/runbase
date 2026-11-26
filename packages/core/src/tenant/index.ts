@@ -195,6 +195,7 @@ const accessKey = (p: McpPrincipal) =>
 
 export function invalidateWorkspaceAccess() {
   accessCache.clear();
+  sessionCache.clear();
 }
 
 // Workspaces accessible to MCP: through memberships (user) or those of the key.

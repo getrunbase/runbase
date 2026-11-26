@@ -2,6 +2,7 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { eventsService } from "@getrunbase/core/events";
 import { Activity, ChevronDown, ChevronRight } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
+import { AgentPrompts } from "@/components/agent-prompts";
 import { FilterBar } from "@/components/filter-bar";
 import { PageHeader } from "@/components/page-header";
 import { Pager } from "@/components/pager";
@@ -51,7 +52,9 @@ export default async function Events({
           icon={Activity}
           title={t("empty.title")}
           description={t("empty.description")}
-        />
+        >
+          <AgentPrompts group="events" />
+        </EmptyState>
       ) : (
         <div className="flex flex-col">
           <div className="text-muted-foreground flex h-7.5 items-center border-y text-xs">

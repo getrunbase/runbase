@@ -5,6 +5,7 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { runsService } from "@getrunbase/core/runs";
 import { History } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
+import { AgentPrompts } from "@/components/agent-prompts";
 import { FilterBar } from "@/components/filter-bar";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
 import {
@@ -139,7 +140,9 @@ export async function RunsTab({
           icon={History}
           title={t("empty.title")}
           description={t("empty.description")}
-        />
+        >
+          <AgentPrompts group="runs" />
+        </EmptyState>
       ) : (
         <Table>
           <TableHeader>

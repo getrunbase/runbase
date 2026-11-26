@@ -10,6 +10,8 @@ import { GitBranch, RotateCcw, SquarePen } from "lucide-react";
 import { cn } from "cn";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
 import { Button } from "@getrunbase/ui/components/ui/button";
+import type { ActionError } from "@/lib/action-error";
+import { useErrorText } from "@/lib/error-text";
 import { restoreWorkflow } from "../actions";
 
 export type VersionInfo = {
@@ -77,6 +79,8 @@ export function VersionsTab({
   const now = useNow();
   const router = useRouter();
   const [pending, start] = useTransition();
+  const [error, setError] = useState<ActionError | null>(null);
+  const errorText = useErrorText();
   const rows = [...versions].reverse();
   const [selected, setSelected] = useState(current);
   const sel = versions.find((v) => v.version === selected);
@@ -100,6 +104,11 @@ export function VersionsTab({
             {t("count", { count: versions.length })}
           </span>
         </div>
+        {error && (
+          <p role="alert" className="text-destructive text-sm">
+            {errorText(error)}
+          </p>
+        )}
         <div className="flex flex-col">
           {rows.map((v) => (
             <div
@@ -139,7 +148,9 @@ export function VersionsTab({
                   onClick={(e) => {
                     e.stopPropagation();
                     start(async () => {
-                      await restoreWorkflow(id, v.version);
+                      const r = await restoreWorkflow(id, v.version);
+                      setError(r.error ?? null);
+                      if (r.error) return;
                       router.push(`/workflows/${id}`);
                     });
                   }}

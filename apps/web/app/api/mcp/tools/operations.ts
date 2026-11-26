@@ -13,7 +13,7 @@ export function defineOperationTools(server: McpServer, ctx: TenantContext) {
     "workspaces.ai_budget",
     {
       description:
-        "Monthly AI budget of the workspace: USD cap, spend this month, exhausted or not.",
+        "Monthly AI budget of the workspace (admin scope): USD cap, spend this month, exhausted or not.",
       inputSchema: z.object({}),
     },
     () => run(() => runsService.budget(ctx)),
@@ -22,7 +22,7 @@ export function defineOperationTools(server: McpServer, ctx: TenantContext) {
     "workspaces.set_ai_budget",
     {
       description:
-        "Sets the monthly AI budget in USD (null = unlimited). At 100% AI blocks are blocked and runs move to paused_budget; they resume if the budget is raised. Capped by the account limit (quota:aiBudgetUsd): a higher value is refused. There is no platform AI key: without the workspace's own provider key, AI calls fail with ai.providerNotConfigured.",
+        "Sets the monthly AI budget in USD (null = unlimited). At 100% AI blocks are blocked and runs move to paused_budget; they resume if the budget is raised. Capped by the account limit (quota:aiBudgetUsd): a higher value is refused. There is no platform AI key and no workspace default AI: each AI block (`ai` in its input) and each page (`permissions.ai`) names its provider, model and key secret.",
       inputSchema: z.object({ budgetUsd: z.number().positive().nullable() }),
     },
     ({ budgetUsd }) => run(() => runsService.setBudget(ctx, budgetUsd)),

@@ -3,28 +3,32 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { functionsService } from "@getrunbase/core/functions";
-import { actionError, type ActionError } from "@/lib/action-error";
+import { actionError, type ActionError, runAction } from "@/lib/action-error";
 import { formInput, parseInput } from "@/lib/action-input";
 import { getTenant } from "@/lib/tenant";
 import { restoreInput, saveInput, testInput } from "./inputs";
 
 // Functions: saving creates a version, so does restoring.
 export async function saveFunction(f: FormData) {
-  const { ctx } = await getTenant();
-  const { domains, secrets, ...input } = parseInput(saveInput, formInput(f));
-  const row = await functionsService.save(ctx, {
-    ...input,
-    permissions: { domains, secrets },
+  return runAction(async () => {
+    const { ctx } = await getTenant();
+    const { domains, secrets, ...input } = parseInput(saveInput, formInput(f));
+    const row = await functionsService.save(ctx, {
+      ...input,
+      permissions: { domains, secrets },
+    });
+    revalidatePath("/functions", "layout");
+    redirect(`/functions/${row.name}`);
   });
-  revalidatePath("/functions", "layout");
-  redirect(`/functions/${row.name}`);
 }
 
 export async function restoreFunction(f: FormData) {
-  const { ctx } = await getTenant();
-  const { name, version } = parseInput(restoreInput, formInput(f));
-  await functionsService.restore(ctx, name, version);
-  revalidatePath(`/functions/${name}`);
+  return runAction(async () => {
+    const { ctx } = await getTenant();
+    const { name, version } = parseInput(restoreInput, formInput(f));
+    await functionsService.restore(ctx, name, version);
+    revalidatePath(`/functions/${name}`);
+  });
 }
 
 export type TestResult = {

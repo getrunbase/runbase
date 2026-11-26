@@ -1,23 +1,23 @@
 {
-  "new": "New object",
+  "new": "New table",
   "list": {
-    "title": "Objects",
-    "description": "The workspace's data types and their fields.",
-    "empty": "No objects",
-    "emptyDescription": "Create your first object to structure your records.",
+    "title": "Tables",
+    "description": "The workspace's tables and their fields.",
+    "empty": "No tables",
+    "emptyDescription": "Create your first table to organize your records.",
     "fields": "{count, plural, one {# field} other {# fields}}"
   },
   "detail": {
     "records": "Records",
-    "schema": "Schema",
+    "schema": "Structure",
     "trash": "Trash"
   },
   "editor": {
     "defaultTitle": "Name",
     "databaseName": "Database name",
     "databasePlaceholder": "CRM",
-    "firstObject": "First object",
-    "objectName": "Object name",
+    "firstObject": "First table",
+    "objectName": "Table name",
     "firstObjectPlaceholder": "Contacts",
     "objectPlaceholder": "Companies",
     "titleHint": "The star marks the title field, shown as each record's name.",
@@ -42,7 +42,7 @@
     "optionsPlaceholder": "Options, separated, by commas",
     "addField": "Add field",
     "createDatabase": "Create database",
-    "createObject": "Create object"
+    "createObject": "Create table"
   },
   "settings": {
     "formula": "Formula",
@@ -57,7 +57,7 @@
     },
     "through": "Followed relation",
     "throughPlaceholder": "Linked records via…",
-    "ownRelations": "This object's relations",
+    "ownRelations": "This table's relations",
     "backRelations": "Records pointing to this one",
     "op": "Calculation",
     "ops": {
@@ -180,7 +180,7 @@
     "button": "Export",
     "csv": "Spreadsheet (CSV)",
     "json": "JSON",
-    "notFound": "Object not found"
+    "notFound": "Table not found"
   },
   "import": {
     "button": "Import",
@@ -241,7 +241,7 @@
     "fieldLabel": "{field}:"
   },
   "boundary": {
-    "error": "Couldn't load this object.",
-    "loading": "Loading the object…"
+    "error": "Couldn't load this table.",
+    "loading": "Loading the table…"
   }
 }

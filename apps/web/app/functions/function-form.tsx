@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { SecretMultiSelect } from "@/components/secret-select";
 import { saveFunction } from "./actions";
 import { CodeEditor } from "./code-editor";
+import { ActionForm } from "@/components/action-form";
 
 const perms = (f?: FunctionRow) =>
   f?.permissions as { domains: string[]; secrets: string[] } | undefined;
@@ -15,7 +16,10 @@ const perms = (f?: FunctionRow) =>
 export function FunctionForm({
   fn,
   secrets,
+  readOnly,
 }: {
+  // Not an admin: no save button (saving needs the admin scope).
+  readOnly?: boolean;
   fn?: FunctionRow;
   // Workspace secret names (never the values).
   secrets: string[];
@@ -29,7 +33,7 @@ export function FunctionForm({
     </div>
   );
   return (
-    <form action={saveFunction} className="flex flex-col gap-4">
+    <ActionForm action={saveFunction} className="flex flex-col gap-4">
       {fn ? (
         <input type="hidden" name="name" value={fn.name} />
       ) : (
@@ -78,9 +82,11 @@ export function FunctionForm({
           secrets={secrets}
         />,
       )}
-      <Button type="submit" className="self-start">
-        {fn ? t("saveVersion") : tc("create")}
-      </Button>
-    </form>
+      {!readOnly && (
+        <Button type="submit" className="self-start">
+          {fn ? t("saveVersion") : tc("create")}
+        </Button>
+      )}
+    </ActionForm>
   );
 }

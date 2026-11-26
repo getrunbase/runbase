@@ -27,9 +27,12 @@ type Workspace = { id: string; name: string };
 export function TeamSwitcher({
   workspaces,
   currentId,
+  canManage = false,
 }: {
   workspaces: Workspace[];
   currentId: string;
+  // Workspace management (Settings › General): owners and admins only.
+  canManage?: boolean;
 }) {
   const t = useTranslations("nav");
   const { isMobile } = useSidebar();
@@ -82,17 +85,19 @@ export function TeamSwitcher({
                 {w.id === currentId && <Check className="ml-auto size-4" />}
               </DropdownMenuItem>
             ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild className="gap-2 p-2">
-              <Link href="/settings/general">
-                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                  <Plus className="size-4" />
-                </div>
-                <div className="text-muted-foreground font-medium">
-                  {t("workspace.manage")}
-                </div>
-              </Link>
-            </DropdownMenuItem>
+            {canManage && <DropdownMenuSeparator />}
+            {canManage && (
+              <DropdownMenuItem asChild className="gap-2 p-2">
+                <Link href="/settings/general">
+                  <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                    <Plus className="size-4" />
+                  </div>
+                  <div className="text-muted-foreground font-medium">
+                    {t("workspace.manage")}
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
