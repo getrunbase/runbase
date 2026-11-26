@@ -487,7 +487,55 @@ importers:
         specifier: ^4.1.1
         version: 4.1.1
 
-  connectors/google:
+  connectors/gmail:
+    dependencies:
+      '@getrunbase/node-sdk':
+        specifier: workspace:*
+        version: link:../../packages/node-sdk
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.5
+        version: 22.20.5
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
+
+  connectors/google-calendar:
+    dependencies:
+      '@getrunbase/node-sdk':
+        specifier: workspace:*
+        version: link:../../packages/node-sdk
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.5
+        version: 22.20.5
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
+
+  connectors/google-drive:
+    dependencies:
+      '@getrunbase/node-sdk':
+        specifier: workspace:*
+        version: link:../../packages/node-sdk
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.5
+        version: 22.20.5
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
+
+  connectors/google-sheets:
     dependencies:
       '@getrunbase/node-sdk':
         specifier: workspace:*

@@ -1,12 +1,12 @@
 {
-  "name": "@getrunbase-connectors/google",
+  "name": "@getrunbase-connectors/google-calendar",
   "version": "0.1.0",
-  "description": "Send Gmail emails, manage Google Calendar events, read and write Google Sheets, upload files to Google Drive.",
+  "description": "List, create, update and delete Google Calendar events.",
   "license": "MIT",
   "type": "module",
   "runbase": {
     "entry": "index.ts",
-    "label": "Google"
+    "label": "Google Calendar"
   },
   "scripts": {
     "test": "node --import tsx --test \"*.test.ts\"",

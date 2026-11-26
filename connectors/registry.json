@@ -1,15 +1,15 @@
 {
   "connectors": [
     {
-      "name": "@getrunbase-connectors/google",
+      "name": "@getrunbase-connectors/gmail",
       "version": "0.1.0",
-      "label": "Google",
-      "description": "Send Gmail emails, manage Google Calendar events, read and write Google Sheets, upload files to Google Drive.",
-      "path": "google",
+      "label": "Gmail",
+      "description": "Send emails from a Gmail account.",
+      "path": "gmail",
       "nodes": [
         {
           "id": "gmail.send",
-          "label": "Gmail: send an email",
+          "label": "Send an email",
           "description": "Sends an email from the connected Gmail account. Give text, html or both. threadId (and the original Message-ID in inReplyTo) sends it as a reply in that thread.",
           "branches": [
             "ok"
@@ -134,10 +134,19 @@
             ],
             "additionalProperties": false
           }
-        },
+        }
+      ]
+    },
+    {
+      "name": "@getrunbase-connectors/google-calendar",
+      "version": "0.1.0",
+      "label": "Google Calendar",
+      "description": "List, create, update and delete Google Calendar events.",
+      "path": "google-calendar",
+      "nodes": [
         {
           "id": "google_calendar.list_events",
-          "label": "Google Calendar: list events",
+          "label": "List events",
           "description": "Lists the events of a calendar between two dates (recurring events expanded), sorted by start. q filters by text.",
           "branches": [
             "ok"
@@ -304,7 +313,7 @@
         },
         {
           "id": "google_calendar.create_event",
-          "label": "Google Calendar: create an event",
+          "label": "Create an event",
           "description": "Creates an event. start and end: ISO date-time, or YYYY-MM-DD for an all-day event. sendUpdates=all emails the attendees.",
           "branches": [
             "ok"
@@ -489,7 +498,7 @@
         },
         {
           "id": "google_calendar.update_event",
-          "label": "Google Calendar: update an event",
+          "label": "Update an event",
           "description": "Changes the given fields of an event (others kept). attendees replaces the whole list.",
           "branches": [
             "ok"
@@ -675,7 +684,7 @@
         },
         {
           "id": "google_calendar.delete_event",
-          "label": "Google Calendar: delete an event",
+          "label": "Delete an event",
           "description": "Deletes an event. sendUpdates=all notifies the attendees.",
           "branches": [
             "ok"
@@ -747,10 +756,119 @@
             ],
             "additionalProperties": false
           }
-        },
+        }
+      ]
+    },
+    {
+      "name": "@getrunbase-connectors/google-drive",
+      "version": "0.1.0",
+      "label": "Google Drive",
+      "description": "Create files in Google Drive.",
+      "path": "google-drive",
+      "nodes": [
+        {
+          "id": "google_drive.upload_file",
+          "label": "Create a file",
+          "description": "Creates a file in Google Drive from text (or base64 content). Runbase only sees the files it created.",
+          "branches": [
+            "ok"
+          ],
+          "sideEffect": true,
+          "auth": {
+            "secrets": [],
+            "domains": [
+              "www.googleapis.com"
+            ],
+            "oauth": {
+              "provider": "google",
+              "authorizeUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+              "tokenUrl": "https://oauth2.googleapis.com/token",
+              "revokeUrl": "https://oauth2.googleapis.com/revoke",
+              "scopes": [
+                "openid",
+                "email",
+                "https://www.googleapis.com/auth/drive.file"
+              ],
+              "authorizeParams": {
+                "access_type": "offline",
+                "prompt": "consent",
+                "include_granted_scopes": "true"
+              }
+            }
+          },
+          "inputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "content": {
+                "type": "string"
+              },
+              "encoding": {
+                "default": "text",
+                "type": "string",
+                "enum": [
+                  "text",
+                  "base64"
+                ]
+              },
+              "mimeType": {
+                "default": "text/plain",
+                "type": "string"
+              },
+              "folderId": {
+                "type": "string"
+              },
+              "connection": {
+                "description": "Name of the google connection to use",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "content"
+            ]
+          },
+          "outputSchema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "webViewLink": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "webViewLink"
+            ],
+            "additionalProperties": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "@getrunbase-connectors/google-sheets",
+      "version": "0.1.0",
+      "label": "Google Sheets",
+      "description": "Read rows, add rows and update cells in Google Sheets.",
+      "path": "google-sheets",
+      "nodes": [
         {
           "id": "google_sheets.read_rows",
-          "label": "Google Sheets: read rows",
+          "label": "Read rows",
           "description": "Reads a range (e.g. Sheet1, or Sheet1!A1:D100). headers=true: the first row gives the keys of each row object.",
           "branches": [
             "ok"
@@ -850,7 +968,7 @@
         },
         {
           "id": "google_sheets.append_rows",
-          "label": "Google Sheets: add rows",
+          "label": "Add rows",
           "description": "Adds rows after the last row of a tab. Rows as objects are matched to the header row (first row) by column name; rows as arrays are written as is.",
           "branches": [
             "ok"
@@ -956,7 +1074,7 @@
         },
         {
           "id": "google_sheets.update_rows",
-          "label": "Google Sheets: update cells",
+          "label": "Update cells",
           "description": "Overwrites a range (e.g. Sheet1!A2:C3) with the given rows of values, typed as in the sheet (formulas and dates are interpreted).",
           "branches": [
             "ok"
@@ -1037,97 +1155,6 @@
             "required": [
               "updatedRange",
               "updatedCells"
-            ],
-            "additionalProperties": false
-          }
-        },
-        {
-          "id": "google_drive.upload_file",
-          "label": "Google Drive: create a file",
-          "description": "Creates a file in Google Drive from text (or base64 content). Runbase only sees the files it created.",
-          "branches": [
-            "ok"
-          ],
-          "sideEffect": true,
-          "auth": {
-            "secrets": [],
-            "domains": [
-              "www.googleapis.com"
-            ],
-            "oauth": {
-              "provider": "google",
-              "authorizeUrl": "https://accounts.google.com/o/oauth2/v2/auth",
-              "tokenUrl": "https://oauth2.googleapis.com/token",
-              "revokeUrl": "https://oauth2.googleapis.com/revoke",
-              "scopes": [
-                "openid",
-                "email",
-                "https://www.googleapis.com/auth/drive.file"
-              ],
-              "authorizeParams": {
-                "access_type": "offline",
-                "prompt": "consent",
-                "include_granted_scopes": "true"
-              }
-            }
-          },
-          "inputSchema": {
-            "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string",
-                "minLength": 1
-              },
-              "content": {
-                "type": "string"
-              },
-              "encoding": {
-                "default": "text",
-                "type": "string",
-                "enum": [
-                  "text",
-                  "base64"
-                ]
-              },
-              "mimeType": {
-                "default": "text/plain",
-                "type": "string"
-              },
-              "folderId": {
-                "type": "string"
-              },
-              "connection": {
-                "description": "Name of the google connection to use",
-                "type": "string"
-              }
-            },
-            "required": [
-              "name",
-              "content"
-            ]
-          },
-          "outputSchema": {
-            "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "name": {
-                "type": "string"
-              },
-              "webViewLink": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              }
-            },
-            "required": [
-              "id",
-              "name",
-              "webViewLink"
             ],
             "additionalProperties": false
           }

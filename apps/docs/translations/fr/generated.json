@@ -2136,8 +2136,8 @@
     "fr": "Nom de la connexion google à utiliser"
   },
   "node.node.gmail.send.label": {
-    "en": "Gmail: send an email",
-    "fr": "Gmail : envoyer un email"
+    "en": "Send an email",
+    "fr": "Envoyer un email"
   },
   "node.node.google_calendar.create_event": {
     "en": "Creates an event. start and end: ISO date-time, or YYYY-MM-DD for an all-day event. sendUpdates=all emails the attendees.",
@@ -2164,8 +2164,8 @@
     "fr": "Fuseau horaire IANA, par ex. Europe/Paris"
   },
   "node.node.google_calendar.create_event.label": {
-    "en": "Google Calendar: create an event",
-    "fr": "Google Calendar : créer un événement"
+    "en": "Create an event",
+    "fr": "Créer un événement"
   },
   "node.node.google_calendar.delete_event": {
     "en": "Deletes an event. sendUpdates=all notifies the attendees.",
@@ -2180,8 +2180,8 @@
     "fr": "Nom de la connexion google à utiliser"
   },
   "node.node.google_calendar.delete_event.label": {
-    "en": "Google Calendar: delete an event",
-    "fr": "Google Calendar : supprimer un événement"
+    "en": "Delete an event",
+    "fr": "Supprimer un événement"
   },
   "node.node.google_calendar.list_events": {
     "en": "Lists the events of a calendar between two dates (recurring events expanded), sorted by start. q filters by text.",
@@ -2204,8 +2204,8 @@
     "fr": "Date-heure ISO, maintenant par défaut"
   },
   "node.node.google_calendar.list_events.label": {
-    "en": "Google Calendar: list events",
-    "fr": "Google Calendar : lister les événements"
+    "en": "List events",
+    "fr": "Lister les événements"
   },
   "node.node.google_calendar.update_event": {
     "en": "Changes the given fields of an event (others kept). attendees replaces the whole list.",
@@ -2232,8 +2232,8 @@
     "fr": "Fuseau horaire IANA, par ex. Europe/Paris"
   },
   "node.node.google_calendar.update_event.label": {
-    "en": "Google Calendar: update an event",
-    "fr": "Google Calendar : modifier un événement"
+    "en": "Update an event",
+    "fr": "Modifier un événement"
   },
   "node.node.google_drive.upload_file": {
     "en": "Creates a file in Google Drive from text (or base64 content). Runbase only sees the files it created.",
@@ -2244,8 +2244,8 @@
     "fr": "Nom de la connexion google à utiliser"
   },
   "node.node.google_drive.upload_file.label": {
-    "en": "Google Drive: create a file",
-    "fr": "Google Drive : créer un fichier"
+    "en": "Create a file",
+    "fr": "Créer un fichier"
   },
   "node.node.google_sheets.append_rows": {
     "en": "Adds rows after the last row of a tab. Rows as objects are matched to the header row (first row) by column name; rows as arrays are written as is.",
@@ -2264,8 +2264,8 @@
     "fr": "Id dans l'URL de la feuille : docs.google.com/spreadsheets/d/<id>/edit"
   },
   "node.node.google_sheets.append_rows.label": {
-    "en": "Google Sheets: add rows",
-    "fr": "Google Sheets : ajouter des lignes"
+    "en": "Add rows",
+    "fr": "Ajouter des lignes"
   },
   "node.node.google_sheets.read_rows": {
     "en": "Reads a range (e.g. Sheet1, or Sheet1!A1:D100). headers=true: the first row gives the keys of each row object.",
@@ -2280,8 +2280,8 @@
     "fr": "Id dans l'URL de la feuille : docs.google.com/spreadsheets/d/<id>/edit"
   },
   "node.node.google_sheets.read_rows.label": {
-    "en": "Google Sheets: read rows",
-    "fr": "Google Sheets : lire des lignes"
+    "en": "Read rows",
+    "fr": "Lire des lignes"
   },
   "node.node.google_sheets.update_rows": {
     "en": "Overwrites a range (e.g. Sheet1!A2:C3) with the given rows of values, typed as in the sheet (formulas and dates are interpreted).",
@@ -2296,8 +2296,8 @@
     "fr": "Id dans l'URL de la feuille : docs.google.com/spreadsheets/d/<id>/edit"
   },
   "node.node.google_sheets.update_rows.label": {
-    "en": "Google Sheets: update cells",
-    "fr": "Google Sheets : modifier des cellules"
+    "en": "Update cells",
+    "fr": "Modifier des cellules"
   },
   "node.node.slack.send": {
     "en": "Sends a message to the Slack channel of an Incoming Webhook. The webhook URL can be typed or picked from the workspace secrets.",

@@ -1106,7 +1106,7 @@ Branches : `ok`, `error`.
 
 ### node.gmail.send
 
-**Gmail : envoyer un email**. Envoie un email depuis le compte Gmail connecté. Donnez text, html ou les deux. threadId (et le Message-ID d'origine dans inReplyTo) l'envoie en réponse dans ce fil.
+**Envoyer un email**. Envoie un email depuis le compte Gmail connecté. Donnez text, html ou les deux. threadId (et le Message-ID d'origine dans inReplyTo) l'envoie en réponse dans ce fil.
 
 Branches : `ok`.
 
@@ -1146,7 +1146,7 @@ Branches : `ok`.
 
 ### node.google_calendar.create_event
 
-**Google Calendar : créer un événement**. Crée un événement. start et end : date-heure ISO, ou AAAA-MM-JJ pour un événement sur la journée. sendUpdates=all envoie un email aux invités.
+**Créer un événement**. Crée un événement. start et end : date-heure ISO, ou AAAA-MM-JJ pour un événement sur la journée. sendUpdates=all envoie un email aux invités.
 
 Branches : `ok`.
 
@@ -1235,7 +1235,7 @@ Branches : `ok`.
 
 ### node.google_calendar.delete_event
 
-**Google Calendar : supprimer un événement**. Supprime un événement. sendUpdates=all prévient les invités.
+**Supprimer un événement**. Supprime un événement. sendUpdates=all prévient les invités.
 
 Branches : `ok`.
 
@@ -1266,7 +1266,7 @@ Branches : `ok`.
 
 ### node.google_calendar.list_events
 
-**Google Calendar : lister les événements**. Liste les événements d'un agenda entre deux dates (événements récurrents dépliés), triés par début. q filtre par texte.
+**Lister les événements**. Liste les événements d'un agenda entre deux dates (événements récurrents dépliés), triés par début. q filtre par texte.
 
 Branches : `ok`.
 
@@ -1360,7 +1360,7 @@ Branches : `ok`.
 
 ### node.google_calendar.update_event
 
-**Google Calendar : modifier un événement**. Modifie les champs indiqués d'un événement (les autres sont conservés). attendees remplace toute la liste.
+**Modifier un événement**. Modifie les champs indiqués d'un événement (les autres sont conservés). attendees remplace toute la liste.
 
 Branches : `ok`.
 
@@ -1450,7 +1450,7 @@ Branches : `ok`.
 
 ### node.google_drive.upload_file
 
-**Google Drive : créer un fichier**. Crée un fichier dans Google Drive à partir d'un texte (ou d'un contenu base64). Runbase ne voit que les fichiers qu'il a créés.
+**Créer un fichier**. Crée un fichier dans Google Drive à partir d'un texte (ou d'un contenu base64). Runbase ne voit que les fichiers qu'il a créés.
 
 Branches : `ok`.
 
@@ -1489,7 +1489,7 @@ Branches : `ok`.
 
 ### node.google_sheets.append_rows
 
-**Google Sheets : ajouter des lignes**. Ajoute des lignes après la dernière ligne d'un onglet. Les lignes en objets sont associées à la ligne d'en-tête (première ligne) par nom de colonne ; les lignes en tableaux sont écrites telles quelles.
+**Ajouter des lignes**. Ajoute des lignes après la dernière ligne d'un onglet. Les lignes en objets sont associées à la ligne d'en-tête (première ligne) par nom de colonne ; les lignes en tableaux sont écrites telles quelles.
 
 Branches : `ok`.
 
@@ -1523,7 +1523,7 @@ Branches : `ok`.
 
 ### node.google_sheets.read_rows
 
-**Google Sheets : lire des lignes**. Lit une plage (par ex. Sheet1, ou Sheet1!A1:D100). headers=true : la première ligne donne les clés de chaque ligne.
+**Lire des lignes**. Lit une plage (par ex. Sheet1, ou Sheet1!A1:D100). headers=true : la première ligne donne les clés de chaque ligne.
 
 Branches : `ok`.
 
@@ -1574,7 +1574,7 @@ Branches : `ok`.
 
 ### node.google_sheets.update_rows
 
-**Google Sheets : modifier des cellules**. Remplace une plage (par ex. Sheet1!A2:C3) par les lignes de valeurs données, typées comme dans la feuille (formules et dates interprétées).
+**Modifier des cellules**. Remplace une plage (par ex. Sheet1!A2:C3) par les lignes de valeurs données, typées comme dans la feuille (formules et dates interprétées).
 
 Branches : `ok`.
 

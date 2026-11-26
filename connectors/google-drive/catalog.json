@@ -1,0 +1,12 @@
+{
+  "slug": "google-drive",
+  "displayName": "Google Drive",
+  "icon": "plug",
+  "description": "Create files in Google Drive.",
+  "categories": [
+    "productivity",
+    "files"
+  ],
+  "docsUrl": "https://developers.google.com/drive/api",
+  "credentialType": "oauth2"
+}

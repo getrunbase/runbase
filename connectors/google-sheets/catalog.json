@@ -1,0 +1,12 @@
+{
+  "slug": "google-sheets",
+  "displayName": "Google Sheets",
+  "icon": "plug",
+  "description": "Read rows, add rows and update cells in Google Sheets.",
+  "categories": [
+    "productivity",
+    "spreadsheets"
+  ],
+  "docsUrl": "https://developers.google.com/sheets/api",
+  "credentialType": "oauth2"
+}

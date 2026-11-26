@@ -1106,7 +1106,7 @@ Branches: `ok`, `error`.
 
 ### node.gmail.send
 
-**Gmail: send an email**. Sends an email from the connected Gmail account. Give text, html or both. threadId (and the original Message-ID in inReplyTo) sends it as a reply in that thread.
+**Send an email**. Sends an email from the connected Gmail account. Give text, html or both. threadId (and the original Message-ID in inReplyTo) sends it as a reply in that thread.
 
 Branches: `ok`.
 
@@ -1146,7 +1146,7 @@ Branches: `ok`.
 
 ### node.google_calendar.create_event
 
-**Google Calendar: create an event**. Creates an event. start and end: ISO date-time, or YYYY-MM-DD for an all-day event. sendUpdates=all emails the attendees.
+**Create an event**. Creates an event. start and end: ISO date-time, or YYYY-MM-DD for an all-day event. sendUpdates=all emails the attendees.
 
 Branches: `ok`.
 
@@ -1235,7 +1235,7 @@ Branches: `ok`.
 
 ### node.google_calendar.delete_event
 
-**Google Calendar: delete an event**. Deletes an event. sendUpdates=all notifies the attendees.
+**Delete an event**. Deletes an event. sendUpdates=all notifies the attendees.
 
 Branches: `ok`.
 
@@ -1266,7 +1266,7 @@ Branches: `ok`.
 
 ### node.google_calendar.list_events
 
-**Google Calendar: list events**. Lists the events of a calendar between two dates (recurring events expanded), sorted by start. q filters by text.
+**List events**. Lists the events of a calendar between two dates (recurring events expanded), sorted by start. q filters by text.
 
 Branches: `ok`.
 
@@ -1360,7 +1360,7 @@ Branches: `ok`.
 
 ### node.google_calendar.update_event
 
-**Google Calendar: update an event**. Changes the given fields of an event (others kept). attendees replaces the whole list.
+**Update an event**. Changes the given fields of an event (others kept). attendees replaces the whole list.
 
 Branches: `ok`.
 
@@ -1450,7 +1450,7 @@ Branches: `ok`.
 
 ### node.google_drive.upload_file
 
-**Google Drive: create a file**. Creates a file in Google Drive from text (or base64 content). Runbase only sees the files it created.
+**Create a file**. Creates a file in Google Drive from text (or base64 content). Runbase only sees the files it created.
 
 Branches: `ok`.
 
@@ -1489,7 +1489,7 @@ Branches: `ok`.
 
 ### node.google_sheets.append_rows
 
-**Google Sheets: add rows**. Adds rows after the last row of a tab. Rows as objects are matched to the header row (first row) by column name; rows as arrays are written as is.
+**Add rows**. Adds rows after the last row of a tab. Rows as objects are matched to the header row (first row) by column name; rows as arrays are written as is.
 
 Branches: `ok`.
 
@@ -1523,7 +1523,7 @@ Branches: `ok`.
 
 ### node.google_sheets.read_rows
 
-**Google Sheets: read rows**. Reads a range (e.g. Sheet1, or Sheet1!A1:D100). headers=true: the first row gives the keys of each row object.
+**Read rows**. Reads a range (e.g. Sheet1, or Sheet1!A1:D100). headers=true: the first row gives the keys of each row object.
 
 Branches: `ok`.
 
@@ -1574,7 +1574,7 @@ Branches: `ok`.
 
 ### node.google_sheets.update_rows
 
-**Google Sheets: update cells**. Overwrites a range (e.g. Sheet1!A2:C3) with the given rows of values, typed as in the sheet (formulas and dates are interpreted).
+**Update cells**. Overwrites a range (e.g. Sheet1!A2:C3) with the given rows of values, typed as in the sheet (formulas and dates are interpreted).
 
 Branches: `ok`.
 
