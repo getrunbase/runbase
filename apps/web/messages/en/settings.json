@@ -237,7 +237,11 @@
       "perYear": "/ year",
       "equivalent": "{price} / month, billed yearly",
       "current": "Current plan",
-      "choose": "Choose"
+      "choose": "Choose",
+      "compare": "Compare plans",
+      "feature": "Feature",
+      "included": "Included",
+      "notIncluded": "Not included"
     }
   },
   "usage": {
