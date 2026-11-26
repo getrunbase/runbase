@@ -1,6 +1,10 @@
 "use client";
 
 import { SecretSelect } from "@/components/secret-select";
+import {
+  ConnectionSelect,
+  useConnectionProvider,
+} from "@/components/connection-select";
 import { useTranslations } from "next-intl";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
 import { Input } from "@getrunbase/ui/components/ui/input";
@@ -32,12 +36,15 @@ type Input = StepInput;
 
 // Config panel generated from the block's inputSchema (JSON Schema).
 export function SchemaForm({
+  type,
   schema,
   value,
   onChange,
   objects,
   scope,
 }: {
+  // Block type: OAuth nodes get an account selector.
+  type?: string;
   schema: unknown;
   value: Input;
   onChange: (v: Input) => void;
@@ -47,6 +54,7 @@ export function SchemaForm({
 }) {
   const t = useTranslations("workflows");
   const l = makeLabels(t);
+  const provider = useConnectionProvider(type);
   const set = (k: string, v: unknown) => {
     const next = { ...value, [k]: v };
     if (v === undefined || v === "") delete next[k];
@@ -110,7 +118,15 @@ export function SchemaForm({
               })}
             </div>
           ) : null}
-          {f.key !== "object" &&
+          {provider && f.key === "connection" && (
+            <ConnectionSelect
+              provider={provider}
+              value={value.connection as string | undefined}
+              onChange={(n) => set("connection", n)}
+            />
+          )}
+          {!(provider && f.key === "connection") &&
+            f.key !== "object" &&
             f.key !== "objects" &&
             f.key !== "recordId" &&
             f.key !== "id" &&

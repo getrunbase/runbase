@@ -3,7 +3,12 @@
 // encrypted with the workspace DEK and refreshes them before they expire.
 // OAuth client: managed by an extension (`credentials.oauthClient`), else
 // OAUTH_<PROVIDER>_CLIENT_ID / OAUTH_<PROVIDER>_CLIENT_SECRET (self-host).
-import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import {
+  createHash,
+  createHmac,
+  randomBytes,
+  timingSafeEqual,
+} from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import type { NodeOAuth } from "@getrunbase/node-sdk";
@@ -22,8 +27,9 @@ export { accessToken, oauthClient } from "./tokens";
 
 export type Provider = Omit<NodeOAuth, "scopes"> & {
   scopes: string[];
-  // Labels of the nodes using it.
+  // Labels and block types (`node.<id>`) of the nodes using it.
   nodes: string[];
+  types: string[];
 };
 
 export const callbackUrl = () => `${appUrl()}/api/connections/callback`;
@@ -35,9 +41,15 @@ export async function providers(): Promise<Map<string, Provider>> {
     for (const m of c.nodes) {
       const o = m.auth.oauth;
       if (!o) continue;
-      const p = out.get(o.provider) ?? { ...o, scopes: [], nodes: [] };
+      const p = out.get(o.provider) ?? {
+        ...o,
+        scopes: [],
+        nodes: [],
+        types: [],
+      };
       for (const s of o.scopes) if (!p.scopes.includes(s)) p.scopes.push(s);
       p.nodes.push(m.label);
+      p.types.push(`node.${m.id}`);
       out.set(o.provider, p);
     }
   return out;
@@ -46,7 +58,11 @@ export async function providers(): Promise<Map<string, Provider>> {
 async function requireProvider(provider: string) {
   const p = (await providers()).get(provider);
   if (!p)
-    throw appError("connections.unknownProvider", "Unknown OAuth provider {provider}", { provider });
+    throw appError(
+      "connections.unknownProvider",
+      "Unknown OAuth provider {provider}",
+      { provider },
+    );
   const client = await oauthClient(provider);
   if (!client)
     throw appError(
@@ -61,7 +77,10 @@ async function requireProvider(provider: string) {
 // from the state, so it never leaves the server.
 type State = {
   provider: string;
+  // Empty: the connected account's email (or the provider) names it.
   name: string;
+  // Started from a popup (workflow editor): the callback closes it.
+  popup?: boolean;
   userId: string;
   organizationId: string;
   workspaceId: string;
@@ -71,14 +90,30 @@ type State = {
 
 const stateKey = () => {
   const k = env().BETTER_AUTH_SECRET;
-  if (!k) throw appError("connections.noSecret", "BETTER_AUTH_SECRET is required for OAuth connections");
+  if (!k)
+    throw appError(
+      "connections.noSecret",
+      "BETTER_AUTH_SECRET is required for OAuth connections",
+    );
   return k;
 };
 const b64 = (b: Buffer) => b.toString("base64url");
-const hmac = (data: string) => createHmac("sha256", stateKey()).update(data).digest();
+const hmac = (data: string) =>
+  createHmac("sha256", stateKey()).update(data).digest();
 
-export function signState(s: Omit<State, "nonce" | "exp">, ttlMs = 10 * 60_000) {
-  const body = b64(Buffer.from(JSON.stringify({ ...s, nonce: b64(randomBytes(16)), exp: Date.now() + ttlMs })));
+export function signState(
+  s: Omit<State, "nonce" | "exp">,
+  ttlMs = 10 * 60_000,
+) {
+  const body = b64(
+    Buffer.from(
+      JSON.stringify({
+        ...s,
+        nonce: b64(randomBytes(16)),
+        exp: Date.now() + ttlMs,
+      }),
+    ),
+  );
   return `${body}.${b64(hmac(body))}`;
 }
 
@@ -91,19 +126,25 @@ export function verifyState(state: string): State {
       ? (JSON.parse(Buffer.from(body, "base64url").toString()) as State)
       : null;
   if (!s || s.exp < Date.now())
-    throw appError("connections.badState", "OAuth connection expired or invalid, try again");
+    throw appError(
+      "connections.badState",
+      "OAuth connection expired or invalid, try again",
+    );
   return s;
 }
 
 const pkceVerifier = (state: string) => b64(hmac(`pkce:${state}`));
-const pkceChallenge = (verifier: string) => b64(createHash("sha256").update(verifier).digest());
+const pkceChallenge = (verifier: string) =>
+  b64(createHash("sha256").update(verifier).digest());
 
 // Email of the connected account from an OpenID id_token. Not verified:
 // display only, the token comes straight from the provider over TLS.
 export function idTokenEmail(idToken: unknown): string | null {
   if (typeof idToken !== "string") return null;
   try {
-    const claims = JSON.parse(Buffer.from(idToken.split(".")[1] ?? "", "base64url").toString());
+    const claims = JSON.parse(
+      Buffer.from(idToken.split(".")[1] ?? "", "base64url").toString(),
+    );
     return typeof claims.email === "string" ? claims.email : null;
   } catch {
     return null;
@@ -113,7 +154,10 @@ export function idTokenEmail(idToken: unknown): string | null {
 export const connectionNameSchema = z
   .string()
   .trim()
-  .regex(/^[A-Za-z0-9_-]{1,64}$/, "name: [A-Za-z0-9_-], 64 characters max");
+  .regex(
+    /^[A-Za-z0-9_.@+-]{1,100}$/,
+    "name: letters, digits and _ . @ + -, 100 characters max",
+  );
 
 const actorUser = (ctx: TenantContext) =>
   "userId" in ctx.actor ? ctx.actor.userId : undefined;
@@ -144,20 +188,36 @@ export const connectionsService = {
     await requireScope(ctx, "read");
     const out = [];
     for (const p of (await providers()).values())
-      out.push({ provider: p.provider, scopes: p.scopes, nodes: p.nodes, configured: !!(await oauthClient(p.provider)) });
+      out.push({
+        provider: p.provider,
+        scopes: p.scopes,
+        nodes: p.nodes,
+        types: p.types,
+        configured: !!(await oauthClient(p.provider)),
+      });
     return out;
   },
 
   // URL to send the user to. Only a signed-in user can connect (the
   // callback checks the session against the state).
-  authorizeUrl: async (ctx: TenantContext, provider: string, name?: string) => {
+  authorizeUrl: async (
+    ctx: TenantContext,
+    provider: string,
+    name?: string,
+    opts: { popup?: boolean } = {},
+  ) => {
     await requireScope(ctx, "admin");
     const userId = actorUser(ctx);
-    if (!userId) throw appError("connections.userOnly", "Only a signed-in user can connect an account");
+    if (!userId)
+      throw appError(
+        "connections.userOnly",
+        "Only a signed-in user can connect an account",
+      );
     const { p, client } = await requireProvider(provider);
     const state = signState({
       provider,
-      name: connectionNameSchema.parse(name || provider),
+      name: name ? connectionNameSchema.parse(name) : "",
+      ...(opts.popup && { popup: true }),
       userId,
       organizationId: ctx.organizationId,
       workspaceId: ctx.workspaceId,
@@ -180,8 +240,15 @@ export const connectionsService = {
   // Callback: `ctx` is the session of the user who started the flow.
   complete: async (ctx: TenantContext, state: string, code: string) => {
     const s = verifyState(state);
-    if (s.userId !== actorUser(ctx) || s.organizationId !== ctx.organizationId || s.workspaceId !== ctx.workspaceId)
-      throw appError("connections.badState", "OAuth connection expired or invalid, try again");
+    if (
+      s.userId !== actorUser(ctx) ||
+      s.organizationId !== ctx.organizationId ||
+      s.workspaceId !== ctx.workspaceId
+    )
+      throw appError(
+        "connections.badState",
+        "OAuth connection expired or invalid, try again",
+      );
     await requireScope(ctx, "admin");
     const { p, client } = await requireProvider(s.provider);
     const t = await tokenRequest(p, client, {
@@ -190,25 +257,41 @@ export const connectionsService = {
       redirect_uri: callbackUrl(),
       code_verifier: pkceVerifier(state),
     });
+    const account = idTokenEmail(t.id_token);
+    const name = s.name || account || s.provider;
     await withTenant(ctx, async (tx) => {
       const dek = await workspaceDek(tx, ctx);
       const v = {
         provider: s.provider,
-        account: idTokenEmail(t.id_token),
+        account,
         scopes: t.scope ?? p.scopes.join(" "),
         accessTokenEncrypted: encryptWith(dek, t.access_token),
-        refreshTokenEncrypted: t.refresh_token ? encryptWith(dek, t.refresh_token) : null,
+        refreshTokenEncrypted: t.refresh_token
+          ? encryptWith(dek, t.refresh_token)
+          : null,
         expiresAt: expiry(t.expires_in),
         updatedAt: new Date(),
       };
       const [row] = await tx
         .insert(connections)
-        .values({ organizationId: ctx.organizationId, workspaceId: ctx.workspaceId, name: s.name, ...v })
-        .onConflictDoUpdate({ target: [connections.workspaceId, connections.name], set: v })
+        .values({
+          organizationId: ctx.organizationId,
+          workspaceId: ctx.workspaceId,
+          name,
+          ...v,
+        })
+        .onConflictDoUpdate({
+          target: [connections.workspaceId, connections.name],
+          set: v,
+        })
         .returning({ id: connections.id });
-      await audit(tx, ctx, "connection.set", ref(row!.id), { provider: s.provider, name: s.name, account: v.account });
+      await audit(tx, ctx, "connection.set", ref(row!.id), {
+        provider: s.provider,
+        name,
+        account,
+      });
     });
-    return { provider: s.provider, name: s.name };
+    return { provider: s.provider, name, popup: s.popup === true };
   },
 
   // Deletes the connection; revokes the token at the provider (best effort).
@@ -217,14 +300,26 @@ export const connectionsService = {
     const row = await withTenant(ctx, async (tx) => {
       const [r] = await tx
         .delete(connections)
-        .where(and(eq(connections.workspaceId, ctx.workspaceId), eq(connections.id, id)))
+        .where(
+          and(
+            eq(connections.workspaceId, ctx.workspaceId),
+            eq(connections.id, id),
+          ),
+        )
         .returning();
-      if (r) await audit(tx, ctx, "connection.remove", ref(id), { provider: r.provider, name: r.name });
+      if (r)
+        await audit(tx, ctx, "connection.remove", ref(id), {
+          provider: r.provider,
+          name: r.name,
+        });
       return r && { ...r, dek: await workspaceDek(tx, ctx) };
     });
     const p = row && (await providers()).get(row.provider);
     if (row && p?.revokeUrl) {
-      const token = decryptWith(row.dek, row.refreshTokenEncrypted ?? row.accessTokenEncrypted);
+      const token = decryptWith(
+        row.dek,
+        row.refreshTokenEncrypted ?? row.accessTokenEncrypted,
+      );
       await fetch(p.revokeUrl, {
         method: "POST",
         headers: { "content-type": "application/x-www-form-urlencoded" },

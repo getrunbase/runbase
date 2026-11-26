@@ -13,8 +13,12 @@ export async function connect(
 ): Promise<{ url: string } | { error: ActionError }> {
   try {
     const { ctx } = await getTenant();
-    const { provider, name } = parseInput(connectInput, formInput(f));
-    return { url: await connectionsService.authorizeUrl(ctx, provider, name) };
+    const { provider, name, popup } = parseInput(connectInput, formInput(f));
+    return {
+      url: await connectionsService.authorizeUrl(ctx, provider, name, {
+        popup: popup === "1",
+      }),
+    };
   } catch (e) {
     return { error: actionError(e) };
   }

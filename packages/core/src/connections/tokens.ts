@@ -14,7 +14,9 @@ import { withTenant, type TenantContext, type Tx } from "../tenant";
 export const envKey = (provider: string) =>
   `OAUTH_${provider.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`;
 
-export async function oauthClient(provider: string): Promise<OAuthClient | null> {
+export async function oauthClient(
+  provider: string,
+): Promise<OAuthClient | null> {
   const managed = await getExtensions().credentials.oauthClient(provider);
   if (managed) return managed;
   const k = envKey(provider);
@@ -31,34 +33,58 @@ export const tokenResponse = z.object({
   id_token: z.string().optional(),
 });
 
-export async function tokenRequest(p: Pick<NodeOAuth, "provider" | "tokenUrl">, client: OAuthClient, params: Record<string, string>) {
+export async function tokenRequest(
+  p: Pick<NodeOAuth, "provider" | "tokenUrl">,
+  client: OAuthClient,
+  params: Record<string, string>,
+) {
   const res = await fetch(p.tokenUrl, {
     method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json" },
-    body: new URLSearchParams({ ...params, client_id: client.clientId, client_secret: client.clientSecret }),
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      accept: "application/json",
+    },
+    body: new URLSearchParams({
+      ...params,
+      client_id: client.clientId,
+      client_secret: client.clientSecret,
+    }),
   });
   const text = await res.text();
   if (!res.ok)
-    throw appError("connections.tokenFailed", "{provider} token request failed ({status}): {body}", {
-      provider: p.provider,
-      status: res.status,
-      body: text.slice(0, 300),
-    });
+    throw appError(
+      "connections.tokenFailed",
+      "{provider} token request failed ({status}): {body}",
+      {
+        provider: p.provider,
+        status: res.status,
+        body: text.slice(0, 300),
+      },
+    );
   return tokenResponse.parse(JSON.parse(text));
 }
 
-export const expiry = (s?: number) => (s ? new Date(Date.now() + s * 1000) : null);
+export const expiry = (s?: number) =>
+  s ? new Date(Date.now() + s * 1000) : null;
 
 export type Row = typeof connections.$inferSelect;
 
-export async function store(tx: Tx, ctx: TenantContext, row: Row, accessToken: string, t: z.infer<typeof tokenResponse>) {
+export async function store(
+  tx: Tx,
+  ctx: TenantContext,
+  row: Row,
+  accessToken: string,
+  t: z.infer<typeof tokenResponse>,
+) {
   const dek = await workspaceDek(tx, ctx);
   await tx
     .update(connections)
     .set({
       accessTokenEncrypted: encryptWith(dek, accessToken),
       // Providers may omit the refresh token on refresh: keep the old one.
-      ...(t.refresh_token && { refreshTokenEncrypted: encryptWith(dek, t.refresh_token) }),
+      ...(t.refresh_token && {
+        refreshTokenEncrypted: encryptWith(dek, t.refresh_token),
+      }),
       expiresAt: expiry(t.expires_in),
       updatedAt: new Date(),
     })
@@ -67,12 +93,26 @@ export async function store(tx: Tx, ctx: TenantContext, row: Row, accessToken: s
 
 const missing = (provider: string, name?: string) =>
   name
-    ? appError("connections.notFound", "No {provider} connection named {name}: connect it in Settings › Connections", { provider, name }, { kind: "not_found" })
-    : appError("connections.missing", "Connect {provider} first in Settings › Connections", { provider }, { kind: "not_found" });
+    ? appError(
+        "connections.notFound",
+        "No {provider} connection named {name}: connect it in Settings › Connections",
+        { provider, name },
+        { kind: "not_found" },
+      )
+    : appError(
+        "connections.missing",
+        "Connect {provider} first in Settings › Connections",
+        { provider },
+        { kind: "not_found" },
+      );
 
 // Valid access token of a connection (engine only, never exposed).
 // `name` optional when the workspace has a single connection for the provider.
-export async function accessToken(ctx: TenantContext, oauth: Pick<NodeOAuth, "provider" | "tokenUrl">, name?: string) {
+export async function accessToken(
+  ctx: TenantContext,
+  oauth: Pick<NodeOAuth, "provider" | "tokenUrl">,
+  name?: string,
+) {
   const provider = oauth.provider;
   return withTenant(ctx, async (tx) => {
     const rows = await tx
@@ -88,10 +128,14 @@ export async function accessToken(ctx: TenantContext, oauth: Pick<NodeOAuth, "pr
       .for("update");
     if (rows.length !== 1)
       throw rows.length
-        ? appError("connections.ambiguous", "Several {provider} connections: set the connection input ({names})", {
-            provider,
-            names: rows.map((r) => r.name).join(", "),
-          })
+        ? appError(
+            "connections.ambiguous",
+            "Several {provider} connections: set the connection input ({names})",
+            {
+              provider,
+              names: rows.map((r) => r.name).join(", "),
+            },
+          )
         : missing(provider, name);
     const row = rows[0]!;
     const dek = await workspaceDek(tx, ctx);
@@ -99,7 +143,11 @@ export async function accessToken(ctx: TenantContext, oauth: Pick<NodeOAuth, "pr
     if (!row.expiresAt || row.expiresAt.getTime() > Date.now() + 60_000)
       return decryptWith(dek, row.accessTokenEncrypted);
     if (!row.refreshTokenEncrypted)
-      throw appError("connections.expired", "{provider} connection {name} expired: reconnect it", { provider, name: row.name });
+      throw appError(
+        "connections.expired",
+        "{provider} connection {name} expired: reconnect it",
+        { provider, name: row.name },
+      );
     const client = await oauthClient(provider);
     if (!client)
       throw appError(
@@ -114,10 +162,13 @@ export async function accessToken(ctx: TenantContext, oauth: Pick<NodeOAuth, "pr
         refresh_token: decryptWith(dek, row.refreshTokenEncrypted),
       });
     } catch {
-      throw appError("connections.expired", "{provider} connection {name} expired: reconnect it", { provider, name: row.name });
+      throw appError(
+        "connections.expired",
+        "{provider} connection {name} expired: reconnect it",
+        { provider, name: row.name },
+      );
     }
     await store(tx, ctx, row, t.access_token, t);
     return t.access_token;
   });
 }
-

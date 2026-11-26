@@ -76,6 +76,10 @@
     "missing": "The credential {name} does not exist in this workspace.",
     "insert": "Insert a credential"
   },
+  "connectionPicker": {
+    "placeholder": "Choose a {provider} account",
+    "new": "Connect a {provider} account"
+  },
   "titles": {
     "home": "Home",
     "adminFeedback": "Feedback",

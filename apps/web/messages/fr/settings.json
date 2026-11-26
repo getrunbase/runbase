@@ -123,7 +123,7 @@
     "connect": "Connecter",
     "connectTitle": "Connecter {provider}",
     "connectDescription": "Vous allez être redirigé vers {provider} pour autoriser l'accès, puis ramené ici.",
-    "nameHint": "Facultatif. Donnez un nom à chaque compte si vous en connectez plusieurs (pro, ventes…).",
+    "nameHint": "Facultatif. Laissez vide pour utiliser l'email du compte.",
     "continue": "Continuer vers {provider}",
     "service": "Service",
     "accounts": "Comptes connectés",

@@ -10,6 +10,8 @@ import { secretsService } from "@getrunbase/core/secrets";
 import { webhooksService } from "@getrunbase/core/webhooks";
 import { workflowsService } from "@getrunbase/core/workflows";
 import { SecretsProvider } from "@/components/secret-select";
+import { ConnectionsProvider } from "@/components/connection-select";
+import { connectionsService } from "@getrunbase/core/connections";
 import { AiPresetsProvider } from "./ai-config";
 import { getTenant } from "@/lib/tenant";
 import type { Definition } from "../graph";
@@ -71,8 +73,17 @@ export default async function WorkflowPage({
       </main>
     );
   }
-  const [blocks, objects, databases, events, webhooks, workflows, secrets] =
-    await Promise.all([
+  const [
+    blocks,
+    objects,
+    databases,
+    events,
+    webhooks,
+    workflows,
+    secrets,
+    connections,
+    providers,
+  ] = await Promise.all([
       getTranslations("workflows").then(async (t) =>
         localizeBlocks(await blocksService.list(ctx), t),
       ),
@@ -82,11 +93,25 @@ export default async function WorkflowPage({
       webhooksService.list(ctx),
       workflowsService.list(ctx),
       secretsService.list(ctx),
+      connectionsService.list(ctx),
+      connectionsService.providers(ctx),
     ]);
   const db = new Map(databases.map((d) => [d.id, d]));
   return (
     // Secret names only: block selectors.
     <SecretsProvider names={secrets.map((s) => s.name)}>
+    <ConnectionsProvider
+      value={{
+        connections: connections.map((c) => ({
+          provider: c.provider,
+          name: c.name,
+          account: c.account,
+        })),
+        providers: Object.fromEntries(
+          providers.flatMap((p) => p.types.map((t) => [t, p.provider])),
+        ),
+      }}
+    >
     <AiPresetsProvider
       presets={AI_PRESETS.map((p) => ({
         id: p.id,
@@ -127,6 +152,7 @@ export default async function WorkflowPage({
       workflows={workflows.map((w) => ({ id: w.id, name: w.name }))}
     />
     </AiPresetsProvider>
+    </ConnectionsProvider>
     </SecretsProvider>
   );
 }
