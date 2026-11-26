@@ -137,7 +137,7 @@ test("connect, refresh, isolate and disconnect", async () => {
   assert.equal(calls.length, 2);
 
   // Other workspace: nothing.
-  await assert.rejects(accessToken(b, acme), /Connect acme first/);
+  await assert.rejects(accessToken(b, acme), /Connect a acme account first/);
   await assert.rejects(accessToken(a, acme, "nope"), /named nope/);
 
   // No name: the account email names the connection.
@@ -167,7 +167,7 @@ test("connect, refresh, isolate and disconnect", async () => {
   );
   await assert.rejects(
     blocksService.options(b, "node.acme.read", "tab", {}),
-    /Connect acme first/,
+    /Connect a acme account first/,
   );
   assert.equal(await svc.accessToken(a, "acme", "work"), "at2");
   await assert.rejects(svc.accessToken(b, "acme", "work"), /named work/);
