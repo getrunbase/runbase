@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@getrunbase/ui/components/ui/button";
 import {
@@ -19,8 +19,9 @@ import type { ActionError } from "@/lib/action-error";
 import { useErrorText } from "@/lib/error-text";
 import { setSecret } from "./actions";
 
-// Add / replace a secret in a dialog.
-export function NewSecret() {
+// Add a secret, or with `name` set a new value for an existing one (values are
+// never read back, so editing means replacing).
+export function NewSecret({ name }: { name?: string } = {}) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<ActionError | null>(null);
   const errorText = useErrorText();
@@ -35,14 +36,24 @@ export function NewSecret() {
       }}
     >
       <DialogTrigger asChild>
-        <Button>
-          <Plus /> {t("new")}
-        </Button>
+        {name ? (
+          <Button variant="ghost" size="sm">
+            <Pencil /> {tc("edit")}
+          </Button>
+        ) : (
+          <Button>
+            <Plus /> {t("new")}
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("new")}</DialogTitle>
-          <DialogDescription>{t("newDescription")}</DialogDescription>
+          <DialogTitle>
+            {name ? t("editTitle", { name }) : t("new")}
+          </DialogTitle>
+          <DialogDescription>
+            {name ? t("editDescription") : t("newDescription")}
+          </DialogDescription>
         </DialogHeader>
         <form
           action={async (f) => {
@@ -59,12 +70,20 @@ export function NewSecret() {
               name="name"
               placeholder={"STRIPE_API_KEY"}
               className="font-mono"
+              defaultValue={name}
+              readOnly={!!name}
               required
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="secret-value">{t("value")}</Label>
-            <Input id="secret-value" name="value" type="password" required />
+            <Input
+              id="secret-value"
+              name="value"
+              type="password"
+              autoFocus={!!name}
+              required
+            />
           </div>
           {error && (
             <p role="alert" className="text-destructive text-sm">

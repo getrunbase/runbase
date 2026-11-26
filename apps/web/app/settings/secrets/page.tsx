@@ -62,7 +62,7 @@ export default async function Secrets() {
                 <TableHead>{tc("name")}</TableHead>
                 <TableHead className="w-55">{t("value")}</TableHead>
                 <TableHead className="w-37.5">{t("modified")}</TableHead>
-                <TableHead className="w-24" />
+                <TableHead className="w-44" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -86,18 +86,21 @@ export default async function Secrets() {
                   </TableCell>
                   <TableCell className="text-right">
                     {isAdmin && (
-                      <ConfirmAction
-                        action={removeSecret}
-                        fields={{ name: s.name }}
-                        variant="ghost"
-                        label={tc("delete")}
-                        title={t("deleteTitle", { name: s.name })}
-                        description={
-                          usage[s.name]
-                            ? t("deleteUsed", { list: usedBy(s.name) })
-                            : t("deleteDescription")
-                        }
-                      />
+                      <div className="flex justify-end gap-1">
+                        <NewSecret name={s.name} />
+                        <ConfirmAction
+                          action={removeSecret}
+                          fields={{ name: s.name }}
+                          variant="ghost"
+                          label={tc("delete")}
+                          title={t("deleteTitle", { name: s.name })}
+                          description={
+                            usage[s.name]
+                              ? t("deleteUsed", { list: usedBy(s.name) })
+                              : t("deleteDescription")
+                          }
+                        />
+                      </div>
                     )}
                   </TableCell>
                 </TableRow>

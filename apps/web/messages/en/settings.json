@@ -99,6 +99,8 @@
     "description": "Keys for your tools (OpenAI, HubSpot, Stripe…), encrypted, never visible to your AI.",
     "new": "New credential",
     "newDescription": "The value is encrypted and will never be shown again. An existing name is replaced.",
+    "editTitle": "Edit {name}",
+    "editDescription": "Enter the new value. It is encrypted and replaces the current one, which cannot be shown.",
     "value": "Value",
     "modified": "Modified",
     "emptyTitle": "No credentials",
