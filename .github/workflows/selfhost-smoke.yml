@@ -7,6 +7,7 @@ on:
   pull_request:
     paths:
       - Dockerfile
+      - connectors/**
       - docker-compose.selfhost.yml
       - setup.sh
       - apps/renderer/**
@@ -48,6 +49,28 @@ jobs:
             docker buildx prune -af
           done
           df -h /
+      # Each connector is bundled at runtime from its own folder: its
+      # dependencies must be installed in the image (a connector missing from
+      # the Dockerfile manifests stage breaks in production only).
+      - name: Connector dependencies are installed in the images
+        run: |
+          for t in web worker; do
+            docker run --rm -i --entrypoint node local/runbase-$t:ci --input-type=module <<'JS'
+          import { existsSync, readdirSync, readFileSync } from "node:fs";
+          let bad = 0;
+          for (const d of readdirSync("/app/connectors", { withFileTypes: true })) {
+            const pkg = `/app/connectors/${d.name}/package.json`;
+            if (!d.isDirectory() || !existsSync(pkg)) continue;
+            const deps = Object.keys(JSON.parse(readFileSync(pkg, "utf8")).dependencies ?? {});
+            for (const dep of deps)
+              if (!existsSync(`/app/connectors/${d.name}/node_modules/${dep}/package.json`)) {
+                console.error(`${d.name}: missing ${dep} (add its package.json to the Dockerfile manifests stage)`);
+                bad++;
+              }
+          }
+          process.exit(bad ? 1 : 0);
+          JS
+          done
       - name: Compose file is valid
         run: |
           # `! cmd` does not fail a step under `set -e`: explicit checks.
