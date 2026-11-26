@@ -52,8 +52,8 @@
       "items": "éléments"
     },
     "input": {
-      "object": "Objet",
-      "objects": "Objets accessibles",
+      "object": "Table",
+      "objects": "Tables accessibles",
       "recordId": "Fiche",
       "id": "Fiche",
       "condition": "Conditions",
@@ -63,7 +63,7 @@
       "prompt": "Consigne",
       "context": "Contexte",
       "branches": "Branches",
-      "schema": "Schéma de sortie",
+      "schema": "Champs attendus",
       "text": "Texte",
       "html": "HTML",
       "body": "Corps",
@@ -82,7 +82,7 @@
       "channel": "Canal",
       "duration": "Durée",
       "timeout": "Délai maximal",
-      "secret": "Secret",
+      "secret": "Identifiant",
       "event": "Événement",
       "cron": "Planification (cron)",
       "values": "Valeurs",
@@ -259,7 +259,7 @@
       },
       "run": {
         "label": "Agent IA",
-        "description": "L’IA exécute une consigne et peut lire ou modifier des objets."
+        "description": "L’IA exécute une consigne et peut lire ou modifier des fiches."
       },
       "extract": {
         "label": "Extraction IA",
@@ -277,7 +277,7 @@
       },
       "transform": {
         "label": "Remettre en forme des données",
-        "description": "Extrait des champs d’un objet (ex. le contenu d’un événement) sous de nouveaux noms."
+        "description": "Extrait des champs d’une donnée reçue (ex. le contenu d’un événement) sous de nouveaux noms."
       }
     },
     "formatter": {
@@ -325,7 +325,7 @@
       },
       "map": {
         "label": "Transformer une liste",
-        "description": "Transforme chaque élément d’une liste en objet."
+        "description": "Transforme chaque élément d’une liste en un ensemble de champs nommés."
       },
       "sort": {
         "label": "Trier une liste",
@@ -345,7 +345,7 @@
     "record": {
       "create": {
         "label": "Créer une fiche",
-        "description": "Crée une fiche dans un objet d’une database."
+        "description": "Crée une fiche dans une table."
       },
       "delete": {
         "label": "Supprimer une fiche",
@@ -357,7 +357,7 @@
       },
       "map": {
         "label": "Copier une fiche",
-        "description": "Copie une fiche vers un objet de n’importe quelle database, champ par champ."
+        "description": "Copie une fiche vers une table de n’importe quelle base, champ par champ."
       },
       "merge": {
         "label": "Fusionner des fiches",
@@ -365,7 +365,7 @@
       },
       "search": {
         "label": "Rechercher des fiches",
-        "description": "Recherche les fiches d’un objet selon un filtre."
+        "description": "Recherche les fiches d’une table selon un filtre."
       },
       "transact": {
         "label": "Écritures groupées",
@@ -377,7 +377,7 @@
       },
       "upsert": {
         "label": "Créer ou mettre à jour une fiche",
-        "description": "Upsert par champ unique (email, domaine…) ou id externe, sans doublon."
+        "description": "Met à jour la fiche qui correspond à un champ unique (email, domaine…) ou à un id externe, ou la crée. Sans doublon."
       }
     },
     "slack": {
@@ -473,16 +473,16 @@
     "watchedWorkflow": "Workflow surveillé",
     "allWorkflows": "Tous les workflows",
     "runFailedHelp": "Ce workflow démarre quand une exécution du workflow surveillé échoue : pratique pour être alerté ou corriger automatiquement. Le nom du workflow et le message d'erreur sont disponibles dans les étapes.",
-    "object": "Objet du workflow",
-    "scheduleWithObject": "À chaque échéance, le workflow est lancé une fois pour chaque fiche de cet objet.",
-    "scheduleWithoutObject": "Sans objet, le workflow est lancé une seule fois à chaque échéance.",
-    "objectHelp": "Le workflow s'exécute pour une fiche de cet objet : ses informations sont utilisables dans chaque étape.",
-    "runOnce": "Lancer une seule fois, sans objet",
+    "object": "Table du workflow",
+    "scheduleWithObject": "À chaque échéance, le workflow est lancé une fois pour chaque fiche de cette table.",
+    "scheduleWithoutObject": "Sans table, le workflow est lancé une seule fois à chaque échéance.",
+    "objectHelp": "Le workflow s'exécute pour une fiche de cette table : ses informations sont utilisables dans chaque étape.",
+    "runOnce": "Lancer une seule fois, sans table",
     "watchedFields": "Champs surveillés (vide = tous)",
     "eventName": "Nom de l'événement",
     "eventPlaceholder": "ex. inscription, paiement_recu",
     "eventsSeen": "Déjà reçus dans ce workspace :",
-    "eventHelp": "Un événement est un signal nommé envoyé par votre application (API), par l'étape « Émettre un événement » d'un autre workflow ou par le MCP. Le workflow démarre à chaque réception de ce nom.",
+    "eventHelp": "Un événement est un signal nommé envoyé par votre application (API), par l'étape « Émettre un événement » d'un autre workflow ou par votre IA. Le workflow démarre à chaque réception de ce nom.",
     "when": "Quand ?",
     "timezone": "Fuseau horaire",
     "utc": "UTC (temps universel)"
@@ -494,16 +494,16 @@
     "recordPlaceholder": "/ pour choisir une fiche",
     "includeHelp": "Les fiches liées cochées deviennent une liste utilisable par « Filtrer une liste » ou « Transformer une liste ».",
     "listPlaceholder": "valeurs séparées par des virgules",
-    "object": "Objet",
+    "object": "Table",
     "conditionTitle": "Continuer sur « Oui » si toutes ces conditions sont vraies",
     "removeCondition": "Supprimer la condition",
     "operator": "opérateur",
     "days": "jours",
     "value": "valeur",
     "addCondition": "Condition",
-    "sourceObject": "Objet source",
+    "sourceObject": "Table source",
     "sourceRecord": "Fiche source",
-    "targetObject": "Objet cible",
+    "targetObject": "Table cible",
     "mode": "Mode",
     "modes": {
       "create": "Créer",
@@ -528,7 +528,7 @@
     "noList": "Aucune liste en amont. Ajoutez avant cette étape « Rechercher des fiches », ou « Lire une fiche » avec une relation incluse.",
     "keepWhere": "Garder les fiches où toutes ces conditions sont vraies",
     "columns": "Colonnes de chaque élément",
-    "columnsHelp": "Chaque fiche devient un objet avec ces colonnes (ex. pour un e-mail, un tableau, une IA).",
+    "columnsHelp": "Chaque fiche devient une ligne avec ces colonnes (ex. pour un e-mail, un tableau, une IA).",
     "columnName": "Nom de la colonne",
     "removeColumn": "Supprimer la colonne",
     "addColumn": "Colonne",
@@ -546,9 +546,9 @@
     }
   },
   "pickers": {
-    "chooseObject": "Choisir un objet",
-    "searchObject": "Rechercher un objet…",
-    "noObject": "Aucun objet.",
+    "chooseObject": "Choisir une table",
+    "searchObject": "Rechercher une table…",
+    "noObject": "Aucune table.",
     "searchField": "Rechercher un champ…",
     "noField": "Aucun champ.",
     "theRecord": "{label} (la fiche)",
@@ -560,13 +560,13 @@
   },
   "recordFields": {
     "choose": "Choisir",
-    "chooseFirst": "Choisissez d'abord la fiche ou l'objet.",
+    "chooseFirst": "Choisissez d'abord la fiche ou la table.",
     "addField": "Champ"
   },
   "webhook": {
     "label": "Webhook",
     "choose": "Choisir un webhook",
-    "none": "Aucun webhook : créez-en un via le MCP ({tool}).",
+    "none": "Aucun webhook : demandez à votre IA d'en créer un.",
     "copyUrl": "Copier l'URL",
     "sample": "Exemple de payload",
     "listening": "En écoute…",

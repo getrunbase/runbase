@@ -1,23 +1,23 @@
 {
-  "new": "Nouvel objet",
+  "new": "Nouvelle table",
   "list": {
-    "title": "Objets",
-    "description": "Les types de données du workspace et leurs champs.",
-    "empty": "Aucun objet",
-    "emptyDescription": "Créez un premier objet pour structurer vos records.",
+    "title": "Tables",
+    "description": "Les tables du workspace et leurs champs.",
+    "empty": "Aucune table",
+    "emptyDescription": "Créez une première table pour organiser vos fiches.",
     "fields": "{count, plural, one {# champ} other {# champs}}"
   },
   "detail": {
     "records": "Fiches",
-    "schema": "Schéma",
+    "schema": "Structure",
     "trash": "Corbeille"
   },
   "editor": {
     "defaultTitle": "Nom",
-    "databaseName": "Nom de la database",
+    "databaseName": "Nom de la base",
     "databasePlaceholder": "CRM",
-    "firstObject": "Premier objet",
-    "objectName": "Nom de l'objet",
+    "firstObject": "Première table",
+    "objectName": "Nom de la table",
     "firstObjectPlaceholder": "Contacts",
     "objectPlaceholder": "Friteries",
     "titleHint": "L'étoile désigne le champ titre, affiché comme nom de chaque fiche.",
@@ -41,8 +41,8 @@
     "options": "Options",
     "optionsPlaceholder": "Options, séparées, par des virgules",
     "addField": "Ajouter un champ",
-    "createDatabase": "Créer la database",
-    "createObject": "Créer l'objet"
+    "createDatabase": "Créer la base",
+    "createObject": "Créer la table"
   },
   "settings": {
     "formula": "Formule",
@@ -57,7 +57,7 @@
     },
     "through": "Relation suivie",
     "throughPlaceholder": "Fiches liées via…",
-    "ownRelations": "Relations de cet objet",
+    "ownRelations": "Relations de cette table",
     "backRelations": "Fiches qui pointent vers celle-ci",
     "op": "Calcul",
     "ops": {
@@ -133,11 +133,11 @@
     "filter": "Filtre",
     "columns": "Colonnes",
     "visibleColumns": "Colonnes affichées",
-    "newRecord": "Nouveau record",
+    "newRecord": "Nouvelle fiche",
     "selected": "{count, plural, one {# sélectionné} other {# sélectionnés}}",
     "runWorkflow": "Lancer un workflow",
-    "confirmTrash": "Mettre {count, plural, one {# record} other {# records}} à la corbeille ? Vous pourrez les restaurer pendant 30 jours.",
-    "empty": "Aucun record.",
+    "confirmTrash": "Mettre {count, plural, one {# fiche} other {# fiches}} à la corbeille ? Vous pourrez les restaurer pendant 30 jours.",
+    "empty": "Aucune fiche.",
     "page": "Page {page}",
     "previous": "Précédent",
     "next": "Suivant"
@@ -180,7 +180,7 @@
     "button": "Exporter",
     "csv": "Tableur (CSV)",
     "json": "JSON",
-    "notFound": "Objet introuvable"
+    "notFound": "Table introuvable"
   },
   "import": {
     "button": "Importer",
@@ -204,7 +204,7 @@
     "hint": "Les fiches supprimées restent 30 jours dans la corbeille, puis sont effacées.",
     "empty": "Vider la corbeille",
     "emptyTitle": "Vider la corbeille ?",
-    "emptyDescription": "{count, plural, one {# record sera effacé} other {# records seront effacés}} définitivement. Cette action est irréversible.",
+    "emptyDescription": "{count, plural, one {# fiche sera effacée} other {# fiches seront effacées}} définitivement. Cette action est irréversible.",
     "emptyConfirm": "Effacer définitivement",
     "isEmpty": "La corbeille est vide.",
     "record": "Fiche",
@@ -241,7 +241,7 @@
     "fieldLabel": "{field} :"
   },
   "boundary": {
-    "error": "Impossible de charger cet objet.",
-    "loading": "Chargement de l’objet…"
+    "error": "Impossible de charger cette table.",
+    "loading": "Chargement de la table…"
   }
 }

@@ -52,8 +52,8 @@
       "items": "items"
     },
     "input": {
-      "object": "Object",
-      "objects": "Accessible objects",
+      "object": "Table",
+      "objects": "Accessible tables",
       "recordId": "Record",
       "id": "Record",
       "condition": "Conditions",
@@ -63,7 +63,7 @@
       "prompt": "Instructions",
       "context": "Context",
       "branches": "Branches",
-      "schema": "Output schema",
+      "schema": "Expected fields",
       "text": "Text",
       "html": "HTML",
       "body": "Body",
@@ -82,7 +82,7 @@
       "channel": "Channel",
       "duration": "Duration",
       "timeout": "Timeout",
-      "secret": "Secret",
+      "secret": "Credential",
       "event": "Event",
       "cron": "Schedule (cron)",
       "values": "Values",
@@ -259,7 +259,7 @@
       },
       "run": {
         "label": "AI agent",
-        "description": "The AI follows an instruction and can read or update objects."
+        "description": "The AI follows an instruction and can read or update records."
       },
       "extract": {
         "label": "AI extraction",
@@ -277,7 +277,7 @@
       },
       "transform": {
         "label": "Reshape data",
-        "description": "Extracts fields from an object (e.g. an event's content) under new names."
+        "description": "Extracts fields from incoming data (e.g. an event's content) under new names."
       }
     },
     "formatter": {
@@ -325,7 +325,7 @@
       },
       "map": {
         "label": "Transform a list",
-        "description": "Turns each item of a list into an object."
+        "description": "Turns each item of a list into a set of named fields."
       },
       "sort": {
         "label": "Sort a list",
@@ -345,7 +345,7 @@
     "record": {
       "create": {
         "label": "Create a record",
-        "description": "Creates a record in an object of a database."
+        "description": "Creates a record in a table."
       },
       "delete": {
         "label": "Delete a record",
@@ -357,7 +357,7 @@
       },
       "map": {
         "label": "Copy a record",
-        "description": "Copies a record to an object in any database, field by field."
+        "description": "Copies a record to a table in any database, field by field."
       },
       "merge": {
         "label": "Merge records",
@@ -365,7 +365,7 @@
       },
       "search": {
         "label": "Search records",
-        "description": "Searches the records of an object with a filter."
+        "description": "Searches the records of a table with a filter."
       },
       "transact": {
         "label": "Batch writes",
@@ -377,7 +377,7 @@
       },
       "upsert": {
         "label": "Create or update a record",
-        "description": "Upsert by unique field (email, domain…) or external id, without duplicates."
+        "description": "Updates the record matching a unique field (email, domain…) or external ID, or creates it. No duplicates."
       }
     },
     "slack": {
@@ -473,16 +473,16 @@
     "watchedWorkflow": "Watched workflow",
     "allWorkflows": "All workflows",
     "runFailedHelp": "This workflow starts when a run of the watched workflow fails: handy for alerts or automatic fixes. The workflow name and error message are available in the steps.",
-    "object": "Workflow object",
-    "scheduleWithObject": "At each scheduled time, the workflow runs once for every record of this object.",
-    "scheduleWithoutObject": "Without an object, the workflow runs once at each scheduled time.",
-    "objectHelp": "The workflow runs for a record of this object: its data is available in every step.",
-    "runOnce": "Run once, without an object",
+    "object": "Workflow table",
+    "scheduleWithObject": "At each scheduled time, the workflow runs once for every record of this table.",
+    "scheduleWithoutObject": "Without a table, the workflow runs once at each scheduled time.",
+    "objectHelp": "The workflow runs for a record of this table: its data is available in every step.",
+    "runOnce": "Run once, without a table",
     "watchedFields": "Watched fields (empty = all)",
     "eventName": "Event name",
     "eventPlaceholder": "e.g. signup, payment_received",
     "eventsSeen": "Already received in this workspace:",
-    "eventHelp": "An event is a named signal sent by your app (API), by the “Emit event” step of another workflow, or by the MCP. The workflow starts every time this name is received.",
+    "eventHelp": "An event is a named signal sent by your app (API), by the “Emit event” step of another workflow, or by your AI. The workflow starts every time this name is received.",
     "when": "When?",
     "timezone": "Time zone",
     "utc": "UTC (universal time)"
@@ -494,16 +494,16 @@
     "recordPlaceholder": "/ to pick a record",
     "includeHelp": "Checked linked records become a list usable by “Filter list” or “Transform list”.",
     "listPlaceholder": "comma-separated values",
-    "object": "Object",
+    "object": "Table",
     "conditionTitle": "Continue on “Yes” if all these conditions are true",
     "removeCondition": "Remove condition",
     "operator": "operator",
     "days": "days",
     "value": "value",
     "addCondition": "Condition",
-    "sourceObject": "Source object",
+    "sourceObject": "Source table",
     "sourceRecord": "Source record",
-    "targetObject": "Target object",
+    "targetObject": "Target table",
     "mode": "Mode",
     "modes": {
       "create": "Create",
@@ -528,7 +528,7 @@
     "noList": "No upstream list. Add “Search records” before this step, or “Get record” with an included relation.",
     "keepWhere": "Keep records where all these conditions are true",
     "columns": "Columns for each item",
-    "columnsHelp": "Each record becomes an object with these columns (e.g. for an email, a table, an AI).",
+    "columnsHelp": "Each record becomes a row with these columns (e.g. for an email, a spreadsheet, an AI).",
     "columnName": "Column name",
     "removeColumn": "Remove column",
     "addColumn": "Column",
@@ -546,9 +546,9 @@
     }
   },
   "pickers": {
-    "chooseObject": "Choose an object",
-    "searchObject": "Search objects…",
-    "noObject": "No objects.",
+    "chooseObject": "Choose a table",
+    "searchObject": "Search tables…",
+    "noObject": "No tables.",
     "searchField": "Search fields…",
     "noField": "No fields.",
     "theRecord": "{label} (the record)",
@@ -560,13 +560,13 @@
   },
   "recordFields": {
     "choose": "Choose",
-    "chooseFirst": "Choose the record or object first.",
+    "chooseFirst": "Choose the record or table first.",
     "addField": "Field"
   },
   "webhook": {
     "label": "Webhook",
     "choose": "Choose a webhook",
-    "none": "No webhooks: create one via the MCP ({tool}).",
+    "none": "No webhooks yet: ask your AI to create one.",
     "copyUrl": "Copy URL",
     "sample": "Sample payload",
     "listening": "Listening…",

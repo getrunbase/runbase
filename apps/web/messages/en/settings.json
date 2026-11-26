@@ -34,10 +34,10 @@
       "key": "API key",
       "keyPlaceholder": "Paste your API key",
       "keySet": "Key saved (leave empty to keep it)",
-      "keyHint": "Stored encrypted as the {secret} secret. It is never shown again.",
-      "noKeyHint": "No key yet. It will be stored encrypted as the {secret} secret.",
+      "keyHint": "Stored encrypted as the {secret} credential. It is never shown again.",
+      "noKeyHint": "No key yet. It will be stored encrypted as the {secret} credential.",
       "save": "Save",
-      "keySecret": "Secret holding the key"
+      "keySecret": "Credential holding the key"
     },
     "limits": {
       "title": "Workspace limits",
@@ -50,13 +50,13 @@
     },
     "mcp": {
       "title": "Connect your AI",
-      "description": "Give your AI agent (ChatGPT, Claude, Gemini, Cursor…) access to databases, workflows, functions and interfaces."
+      "description": "Give your AI (ChatGPT, Claude, Gemini, Cursor…) access to your data, workflows, functions and pages."
     },
     "danger": {
       "title": "Danger zone",
       "description": "Irreversible actions. Only an administrator can perform them.",
       "deleteTitle": "Delete “{name}”",
-      "deleteHint": "Workflows, objects, runs and secrets will be permanently deleted.",
+      "deleteHint": "Workflows, tables, runs and credentials will be permanently deleted.",
       "delete": "Delete workspace"
     }
   },
@@ -96,19 +96,19 @@
     "inviteTitle": "Invite"
   },
   "secrets": {
-    "title": "Secrets",
-    "description": "Encrypted variables injected into workflows and functions at run time. Values are never sent back to your AI agent.",
-    "new": "New secret",
+    "title": "Credentials",
+    "description": "Keys for your tools (OpenAI, HubSpot, Stripe…), encrypted, never visible to your AI.",
+    "new": "New credential",
     "newDescription": "The value is encrypted and will never be shown again. An existing name is replaced.",
     "value": "Value",
     "modified": "Modified",
-    "emptyTitle": "No secrets",
-    "emptyDescription": "Add an API key or a token for your connectors.",
-    "deleteTitle": "Delete the secret “{name}”?",
-    "deleteDescription": "Functions that use it will fail until it is recreated. The value cannot be recovered.",
-    "note": "Read a secret in a function with <code>secrets.NAME</code>. Every change is recorded in the audit log.",
+    "emptyTitle": "No credentials",
+    "emptyDescription": "Add an API key or a token for the tools your workflows use.",
+    "deleteTitle": "Delete the credential “{name}”?",
+    "deleteDescription": "Workflows and functions that use it will fail until it is recreated. The value cannot be recovered.",
+    "note": "Your AI uses a credential by its name, never by its value. Every change is recorded in the audit log.",
     "usedBy": "Used by {list}",
-    "deleteUsed": "This secret is used by {list}. They will fail until a secret with this name is recreated. The value cannot be recovered.",
+    "deleteUsed": "This credential is used by {list}. They will fail until a credential with this name is recreated. The value cannot be recovered.",
     "usage": {
       "workflow": "workflow “{name}”",
       "function": "function “{name}”",
@@ -121,7 +121,7 @@
     "description": "Keys let your tools call the Runbase API. They are shown only once, at creation.",
     "new": "New key",
     "newTitle": "New API key",
-    "newDescription": "For the MCP, scripts and external integrations.",
+    "newDescription": "For your AI, scripts and external integrations.",
     "copyWarning": "Copy this key: it won't be shown again.",
     "namePlaceholder": "My agent key",
     "scopesLabel": "Permissions",
@@ -132,21 +132,21 @@
     },
     "workspaces": "Workspaces",
     "restrict": "Restrict access (optional)",
-    "objects": "Visible objects",
-    "objectsHint": "No box checked: all objects. Otherwise, the key only sees the checked objects and their records.",
+    "objects": "Visible tables",
+    "objectsHint": "No box checked: all tables. Otherwise, the key only sees the checked tables and their records.",
     "tools": "Allowed MCP tools",
     "toolsHint": "Empty: all tools. Otherwise, comma-separated names.",
     "submit": "Create key",
     "lastUsed": "Last used",
     "never": "Never",
-    "objectsBadge": "Objects: {list}",
+    "objectsBadge": "Tables: {list}",
     "toolsCount": "{count, plural, one {# tool} other {# tools}}",
     "revoked": "Revoked",
     "revoke": "Revoke",
     "revokeTitle": "Revoke the key “{name}”?",
     "revokeDescription": "Agents and scripts using it will lose access immediately. A revoked key cannot be reactivated.",
     "emptyTitle": "No keys",
-    "emptyDescription": "Create a key to access the API or the MCP.",
+    "emptyDescription": "Create a key to connect your AI, a script or the API.",
     "created": "Created",
     "note": "Your AI agent never has access to keys in clear text. Revoke any key you no longer use."
   },
@@ -156,14 +156,14 @@
     "filter": "Item",
     "types": {
       "record": "Records",
-      "object": "Objects",
+      "object": "Tables",
       "database": "Databases",
       "workflow": "Workflows",
       "run": "Runs",
       "function": "Functions",
       "page": "Pages",
       "webhook": "Webhooks",
-      "secret": "Secrets",
+      "secret": "Credentials",
       "api_key": "API keys",
       "member": "Members",
       "workspace": "Workspaces"
@@ -181,7 +181,7 @@
   },
   "admin": {
     "title": "Agent feedback",
-    "description": "Bugs, limits and ideas reported via the MCP (feedback.send), across all accounts.",
+    "description": "Bugs, limits and ideas reported by AI agents, across all accounts.",
     "kinds": {
       "bug": "Bug",
       "limit": "Limit",

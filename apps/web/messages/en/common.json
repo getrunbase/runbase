@@ -68,13 +68,13 @@
     "restoreError": "Restore failed."
   },
   "secretPicker": {
-    "placeholder": "Choose a secret",
-    "new": "New secret…",
-    "newTitle": "New secret",
-    "newDescription": "The value is encrypted in the workspace vault and never shown again. Only its name is kept here.",
+    "placeholder": "Choose a credential",
+    "new": "New credential…",
+    "newTitle": "New credential",
+    "newDescription": "The value is encrypted and never shown again, not even to your AI. Only its name is kept here.",
     "value": "Value",
-    "missing": "The secret {name} does not exist in this workspace.",
-    "insert": "Insert a secret"
+    "missing": "The credential {name} does not exist in this workspace.",
+    "insert": "Insert a credential"
   },
   "titles": {
     "home": "Home",
@@ -91,8 +91,8 @@
     "invitations": "Invitations",
     "login": "Sign in",
     "oauthConsent": "Authorize access",
-    "object": "Object",
-    "objects": "Objects",
+    "object": "Table",
+    "objects": "Tables",
     "page": "Page",
     "pages": "Pages",
     "resetPassword": "Reset password",
@@ -105,7 +105,7 @@
     "general": "General settings",
     "members": "Members",
     "settings": "Settings",
-    "secrets": "Secrets",
+    "secrets": "Credentials",
     "signup": "Sign up",
     "templateImport": "Import a template",
     "webhooks": "Webhooks",
@@ -147,6 +147,65 @@
       "oauth": "Any AI agent that supports MCP: paste the link above. It signs in with OAuth.",
       "key": "Tools without sign-in (scripts, CI): send an API key in this header.",
       "keyLink": "Create a key in <link>API keys</link>."
+    }
+  },
+  "agentPrompts": {
+    "title": "Ask your AI",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyLabel": "Copy this request: {prompt}",
+    "workflows": {
+      "p1": "Every morning at 9am, send me on Slack the leads created yesterday with a score above 70",
+      "p2": "When a Typeform is submitted, create the lead and notify #sales",
+      "p3": "When a deal moves to Won, create the customer and send a welcome email"
+    },
+    "functions": {
+      "p1": "Add a function that scores a lead from its company domain",
+      "p2": "Add a function that cleans up phone numbers to international format",
+      "p3": "Add a function that finds the company name from an email address"
+    },
+    "events": {
+      "p1": "Send a “lead.qualified” event when a lead's score goes above 70",
+      "p2": "When a “payment.received” event arrives, mark the deal as paid"
+    },
+    "webhooks": {
+      "p1": "Create a webhook for Stripe payments and log each payment on the matching company",
+      "p2": "When a Typeform is submitted, create the lead and notify #sales",
+      "p3": "Create a webhook for Cal.com bookings that adds the meeting to the contact"
+    },
+    "pages": {
+      "p1": "Create a page to track my leads by status, with a form to add one",
+      "p2": "Create a pipeline page showing open deals by stage and their total amount"
+    },
+    "queries": {
+      "p1": "Save a query for revenue won per month",
+      "p2": "Save a query counting new leads per source this week"
+    },
+    "databases": {
+      "p1": "Create a CRM with Contacts, Companies and Deals tables, linked together",
+      "p2": "Create a Leads table with name, email, company, source and score",
+      "p3": "Import my HubSpot contacts into a Contacts table"
+    },
+    "records": {
+      "p1": "Import this CSV of leads into this table, without duplicates on email",
+      "p2": "Add 5 realistic sample records so I can test my workflows",
+      "p3": "Create a workflow that fills the company of each new record from its email"
+    },
+    "runs": {
+      "p1": "Run my lead scoring workflow on the 10 latest leads",
+      "p2": "Every Monday at 8am, send me on Slack a summary of last week's deals"
+    },
+    "approvals": {
+      "p1": "Before sending an outreach email, ask for my approval",
+      "p2": "When a deal above 10k is marked Won, wait for my approval before invoicing"
+    },
+    "errors": {
+      "p1": "Check my workflows and tell me which ones could fail",
+      "p2": "If a workflow fails, notify me on Slack with the reason"
+    },
+    "credentials": {
+      "p1": "Which credentials do my workflows need? Tell me which ones are missing",
+      "p2": "Set up the HubSpot sync: tell me which key to add here"
     }
   }
 }

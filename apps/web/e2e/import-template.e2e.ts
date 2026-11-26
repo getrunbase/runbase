@@ -102,24 +102,24 @@ test("template import: success then error translated to FR", async () => {
 
   const submit = async (json: unknown) => {
     await page
-      .getByLabel(/Template JSON|JSON du template/)
+      .getByLabel(/Template content|Contenu du modèle/)
       .fill(JSON.stringify(json));
     await page.getByRole("button", { name: /^(Import|Importer)$/ }).click();
   };
 
-  await page.getByRole("button", { name: "Import template" }).click();
+  await page.getByRole("button", { name: "Import a template" }).click();
   await submit(valid);
   const ok = page.getByRole("alert");
-  await ok.getByText("“E2E CRM” imported: 1 object").waitFor();
+  await ok.getByText("“E2E CRM” imported: 1 table").waitFor();
   await ok
-    .getByText("Secrets to set before activating workflows: CRM_TOKEN")
+    .getByText("Credentials to add before turning on workflows: CRM_TOKEN")
     .waitFor();
 
   await page
     .context()
     .addCookies([{ name: "NEXT_LOCALE", value: "fr", url: base }]);
   await page.reload();
-  await page.getByRole("button", { name: "Importer un template" }).click();
+  await page.getByRole("button", { name: "Importer un modèle" }).click();
   await submit(invalid);
   const err = page.getByRole("alert");
   await err.getByText("Échec de l'import").waitFor();

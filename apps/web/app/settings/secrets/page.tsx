@@ -2,6 +2,7 @@ import { secretsService } from "@getrunbase/core/secrets";
 import { secretUsageService } from "@getrunbase/core/secrets/usage";
 import { Lock } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
+import { AgentPrompts } from "@/components/agent-prompts";
 import {
   Table,
   TableBody,
@@ -47,7 +48,9 @@ export default async function Secrets() {
             title={t("emptyTitle")}
             description={t("emptyDescription")}
             className="mt-6"
-          />
+          >
+            <AgentPrompts group="credentials" />
+          </EmptyState>
         ) : (
           <Table className="mt-6">
             <TableHeader>

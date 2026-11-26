@@ -3,6 +3,7 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { workflowsService } from "@getrunbase/core/workflows";
 import { Plus, Workflow } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
+import { AgentPrompts } from "@/components/agent-prompts";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
 import { Button } from "@getrunbase/ui/components/ui/button";
@@ -115,7 +116,9 @@ export default async function WorkflowsPage({
           icon={Workflow}
           title={t("list.emptyTitle")}
           description={t("list.emptyDescription")}
-        />
+        >
+          <AgentPrompts group="workflows" />
+        </EmptyState>
       ) : (
         <div className="flex flex-col gap-6">
           <Table>

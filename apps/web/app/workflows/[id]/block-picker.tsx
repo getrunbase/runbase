@@ -65,10 +65,10 @@ const META: Record<string, [Category, LucideIcon]> = {
   "event.emit": ["http", Radio],
 };
 const ORDER: Category[] = [
-  "data",
-  "logic",
   "ai",
+  "data",
   "apps",
+  "logic",
   "http",
   "code",
   "other",

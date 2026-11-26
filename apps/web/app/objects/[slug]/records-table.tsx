@@ -14,6 +14,7 @@ import { Columns3, Plus, X } from "lucide-react";
 import type { Field } from "@getrunbase/core/objects/fields";
 import { FIELD_ICONS as ICONS } from "@/lib/field-icons";
 import { QuotaLink } from "@/components/quota-link";
+import { AgentPrompts } from "@/components/agent-prompts";
 import { Button } from "@getrunbase/ui/components/ui/button";
 import {
   DropdownMenu,
@@ -432,9 +433,16 @@ export function RecordsTable({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
+                  className="h-24 whitespace-normal text-center text-muted-foreground"
                 >
-                  {pending ? tc("loading") : t("empty")}
+                  {pending ? (
+                    tc("loading")
+                  ) : (
+                    <div className="flex flex-col items-center gap-4 py-6">
+                      {t("empty")}
+                      <AgentPrompts group="records" />
+                    </div>
+                  )}
                 </TableCell>
               </TableRow>
             )}
