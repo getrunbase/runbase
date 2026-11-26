@@ -6,14 +6,15 @@ import { useTranslations } from "next-intl";
 import { Tabs, TabsList, TabsTrigger } from "@getrunbase/ui/components/ui/tabs";
 
 const TABS = [
-  { href: "/settings/general", label: "general" },
-  { href: "/settings/members", label: "members" },
+  // admin: owners and admins only (lib/settings-access.ts); usage: members too.
+  { href: "/settings/general", label: "general", admin: true },
+  { href: "/settings/members", label: "members", admin: true },
   { href: "/settings/api-keys", label: "apiKeys", admin: true },
   { href: "/settings/secrets", label: "secrets", admin: true },
-  { href: "/settings/audit", label: "audit" },
+  { href: "/settings/audit", label: "audit", admin: true },
   { href: "/settings/usage", label: "usage" },
   // Only if the billing extension provides a plan.
-  { href: "/settings/billing", label: "billing", billing: true },
+  { href: "/settings/billing", label: "billing", billing: true, admin: true },
 ] as const;
 
 export function SettingsTabs({

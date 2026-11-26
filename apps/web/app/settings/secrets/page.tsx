@@ -12,8 +12,9 @@ import {
 } from "@getrunbase/ui/components/ui/table";
 import { ConfirmAction } from "@/components/confirm-action";
 import { getFormatter, getTranslations } from "next-intl/server";
-import { isAdminRole } from "@/lib/roles";
+import { notFound } from "next/navigation";
 import { getTenant } from "@/lib/tenant";
+import { isOrgAdmin } from "@/lib/settings-access";
 import { removeSecret } from "./actions";
 import { NewSecret } from "./new-secret";
 import { SectionHead, SettingsNote, SettingsPage } from "../settings-shell";
@@ -24,8 +25,8 @@ export const generateMetadata = pageTitle("secrets");
 // Workspace secrets (qglrI board): names only.
 export default async function Secrets() {
   const { ctx, role } = await getTenant();
-  // Adding and deleting secrets: admins only (checked by the core).
-  const isAdmin = isAdminRole(role);
+  if (!isOrgAdmin(role)) notFound();
+  const isAdmin = isOrgAdmin(role);
   const [list, usage] = await Promise.all([
     secretsService.list(ctx),
     secretUsageService.all(ctx),

@@ -327,9 +327,9 @@ export const runsService = {
       input: run.input,
     });
   },
-  // Monthly AI budget: cap, month spending, exhausted or not.
+  // Monthly AI budget: cap, month spending, exhausted or not (owners/admins).
   budget: async (ctx: TenantContext) => {
-    await requireScope(ctx, "read");
+    await requireScope(ctx, "admin");
     return withTenant(ctx, (tx) => readBudget(tx, ctx.workspaceId));
   },
   // Sets the budget (null = unlimited); if it is no longer reached, the

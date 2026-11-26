@@ -7,7 +7,7 @@ description: "The audit.* tools of the Runbase MCP server, generated from their 
 
 ## audit.list
 
-Workspace audit log (who, what, when), most recent first. Without filter: the whole feed. Filters: `type` and `id` (one resource: record, workflow, function…), `action` (exact, or prefix ending with a dot: `record.`), `actorUserId`, `actorApiKeyId`, `from`/`to` (ISO). Returns \{ items, hasMore, nextCursor \}; next page with `cursor` = nextCursor.
+Workspace audit log (who, what, when), most recent first (admin scope). Without filter: the whole feed. Filters: `type` and `id` (one resource: record, workflow, function…), `action` (exact, or prefix ending with a dot: `record.`), `actorUserId`, `actorApiKeyId`, `from`/`to` (ISO). Returns \{ items, hasMore, nextCursor \}; next page with `cursor` = nextCursor.
 
 | Name            | Type    | Required | Description                                      |
 | --------------- | ------- | -------- | ------------------------------------------------ |

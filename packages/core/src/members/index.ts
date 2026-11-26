@@ -29,7 +29,8 @@ export const ASSIGNABLE_ROLES = [
 export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
 
 // Only owner/admin (or an admin key) manage members: role -> admin scope.
-const requireOrgAdmin = (ctx: TenantContext) => requireScope(ctx, "admin");
+export const requireOrgAdmin = (ctx: TenantContext) =>
+  requireScope(ctx, "admin");
 const res = (id: string) => ({ type: "membership", id });
 
 // Role of the session user (null for an API key or a non-member).
@@ -114,6 +115,14 @@ const orgName = async (organizationId: string) => {
     .where(eq(organizations.id, organizationId));
   return org?.name ?? "an organization";
 };
+
+// Organization owner only (billing portal, organization-level actions).
+// An API key has no role: refused. An OAuth token also needs the admin scope.
+export async function requireOwner(ctx: TenantContext) {
+  await requireScope(ctx, "admin");
+  if ((await roleOf(ctx)) !== "owner")
+    throw forbidden("members.ownerRequired", "Organization owner required");
+}
 
 export const membersService = {
   // Invitation scoped to workspaces. workspaceIds: explicit list, or null for
@@ -249,9 +258,10 @@ export const membersService = {
     }).finally(invalidateWorkspaceAccess);
   },
 
-  // Members and pending invitations, with name and email.
+  // Members and pending invitations, with name and email (owners/admins,
+  // or an admin-scope key).
   list: async (ctx: TenantContext) => {
-    await requireScope(ctx, "read");
+    await requireOrgAdmin(ctx);
     const rows = await withTenant(ctx, (tx) =>
       tx
         .select({

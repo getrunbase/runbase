@@ -213,6 +213,7 @@
       "manage": "Manage billing"
     },
     "quota": {
+      "ask": "Plan limit reached. Ask an owner or admin to upgrade the plan.",
       "link": "Upgrade plan"
     },
     "plans": {

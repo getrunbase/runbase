@@ -7,7 +7,7 @@ description: "Les outils audit.* du serveur MCP de Runbase, générés à partir
 
 ## audit.list
 
-Journal d'audit de l'espace de travail (qui, quoi, quand), du plus récent au plus ancien. Sans filtre : tout le flux. Filtres : `type` et `id` (une ressource : enregistrement, workflow, fonction…), `action` (exacte, ou préfixe terminé par un point : `record.`), `actorUserId`, `actorApiKeyId`, `from`/`to` (ISO). Renvoie \{ items, hasMore, nextCursor \} ; page suivante avec `cursor` = nextCursor.
+Journal d'audit de l'espace de travail (qui, quoi, quand), du plus récent au plus ancien (périmètre admin). Sans filtre : tout le flux. Filtres : `type` et `id` (une ressource : enregistrement, workflow, fonction…), `action` (exacte, ou préfixe terminé par un point : `record.`), `actorUserId`, `actorApiKeyId`, `from`/`to` (ISO). Renvoie \{ items, hasMore, nextCursor \} ; page suivante avec `cursor` = nextCursor.
 
 | Nom             | Type    | Requis | Description                                                                        |
 | --------------- | ------- | ------ | ---------------------------------------------------------------------------------- |

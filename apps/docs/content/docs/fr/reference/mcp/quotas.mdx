@@ -7,7 +7,7 @@ description: "Les outils quotas.* du serveur MCP de Runbase, générés à parti
 
 ## quotas.get
 
-Limites et consommation de l'espace de travail : records (nombre maximal d'enregistrements), runsPerMinute (exécutions de workflows par minute), apiPerMinute (appels MCP et d'ingestion par minute), concurrency (étapes de workflows et événements déclencheurs traités en même temps ; les tâches en surplus attendent leur tour). Au-delà des trois premières, les appels échouent avec une erreur quota_exceeded (HTTP 429).
+Limites et consommation de l'espace de travail (périmètre admin) : records (nombre maximal d'enregistrements), runsPerMinute (exécutions de workflows par minute), apiPerMinute (appels MCP et d'ingestion par minute), concurrency (étapes de workflows et événements déclencheurs traités en même temps ; les tâches en surplus attendent leur tour). Au-delà des trois premières, les appels échouent avec une erreur quota_exceeded (HTTP 429).
 
 | Nom         | Type   | Requis | Description                                                                        |
 | ----------- | ------ | ------ | ---------------------------------------------------------------------------------- |

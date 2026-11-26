@@ -24,6 +24,7 @@ import {
 } from "@getrunbase/ui/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@getrunbase/ui/components/ui/tabs";
 import { getTenant } from "@/lib/tenant";
+import { isOrgAdmin } from "@/lib/settings-access";
 import { planPrice, type Interval } from "@/lib/plan-price";
 import { SettingsPage } from "../../settings-shell";
 import { pageTitle } from "@/lib/page-title";
@@ -36,7 +37,7 @@ const INTERVALS: Interval[] = ["month", "year"];
 // extension. Owners and admins only; no extension or no plans: no page.
 export default async function Plans() {
   const { ctx, role } = await getTenant();
-  if (role !== "owner" && role !== "admin") notFound();
+  if (!isOrgAdmin(role)) notFound();
   const locale = await getLocale();
   const catalog = await billingService.plans(ctx, locale);
   if (!catalog) notFound();

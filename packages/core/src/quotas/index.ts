@@ -23,6 +23,7 @@ import { appError, errorItem } from "../errors/app-error";
 import { env } from "../env";
 import { getExtensions, type BillingPlans } from "../extensions";
 import { touchActivitySoon } from "../workspaces/activity";
+import { roleOf } from "../members";
 
 export { QuotaError };
 
@@ -354,9 +355,9 @@ export const exceedsLimit = (key: string, value: number, max: number) =>
   );
 
 export const quotasService = {
-  // Effective limits and current usage.
+  // Effective limits and current usage (Settings › General: owners/admins).
   get: async (ctx: TenantContext) => {
-    await requireScope(ctx, "read");
+    await requireScope(ctx, "admin");
     return withTenant(ctx, async (tx) => {
       const { limits, defaults, caps } = await capsAndLimits(tx, ctx);
       const [row] = await tx
@@ -429,8 +430,10 @@ export type UsageItem = {
 export const billingService = {
   // Does the extension provide a plan? (tab shown or not)
   enabled: () => typeof getExtensions().billing.account === "function",
+  // Owners/admins (or an admin-scope key); the billing portal link is
+  // returned to the organization owner only.
   get: async (ctx: TenantContext) => {
-    await requireScope(ctx, "read");
+    await requireScope(ctx, "admin");
     const account =
       (await getExtensions().billing.account?.(ctx.organizationId)) ?? null;
     if (!account) return null;
@@ -472,7 +475,10 @@ export const billingService = {
     return {
       plan: account.plan,
       checkoutUrl: account.checkoutUrl ?? null,
-      portalUrl: account.portalUrl ?? null,
+      portalUrl:
+        account.portalUrl && (await roleOf(ctx)) === "owner"
+          ? account.portalUrl
+          : null,
       items,
     };
   },
@@ -482,7 +488,7 @@ export const billingService = {
     ctx: TenantContext,
     locale?: string,
   ): Promise<BillingPlans | null> => {
-    await requireScope(ctx, "read");
+    await requireScope(ctx, "admin");
     const res =
       (await getExtensions().billing.plans?.(ctx.organizationId, { locale })) ??
       null;
@@ -539,8 +545,9 @@ async function publishedPagesOf(organizationId: string) {
 }
 
 export const usageService = {
+  // Owners, admins and members (write scope); viewers are refused.
   get: async (ctx: TenantContext): Promise<UsageMeter[]> => {
-    await requireScope(ctx, "read");
+    await requireScope(ctx, "write");
     const { quotas } = await entitlementsFor(ctx.organizationId);
     const cap = (k: string) => quotas[k] ?? null;
     const { limits, recordsUsed, budget } = await withTenant(

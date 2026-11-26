@@ -6,8 +6,9 @@ import { Label } from "@getrunbase/ui/components/ui/label";
 import { Button } from "@getrunbase/ui/components/ui/button";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Input } from "@getrunbase/ui/components/ui/input";
-import { isAdminRole } from "@/lib/roles";
+import { notFound } from "next/navigation";
 import { getTenant } from "@/lib/tenant";
+import { isOrgAdmin } from "@/lib/settings-access";
 import { ActionForm } from "@/components/action-form";
 import { ConfirmAction } from "@/components/confirm-action";
 import { ConnectAgent } from "@/components/connect-agent";
@@ -37,6 +38,7 @@ const LIMITS = [
 // Workspace settings (DNCwy board): workspaces, AI budget, limits, MCP, danger zone.
 export default async function Settings() {
   const { ctx, role } = await getTenant();
+  if (!isOrgAdmin(role)) notFound();
   const t = await getTranslations("settings.general");
   const tc = await getTranslations("common");
   const format = await getFormatter();
@@ -46,9 +48,9 @@ export default async function Settings() {
       currency: "USD",
       maximumFractionDigits: max,
     });
-  // Workspaces, budget, AI provider and limits: admins only (checked by
+  // Workspaces, budget and limits: admins only (checked by
   // the core); members see the values read-only.
-  const isAdmin = isAdminRole(role);
+  const isAdmin = isOrgAdmin(role);
   const mcpUrl = `${appUrl()}/api/mcp`;
   const list = await workspacesService.list(ctx);
   // Workspace cap reached: the create form is disabled up front.

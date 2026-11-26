@@ -20,8 +20,10 @@ import {
 import type { Tone } from "@/components/ds/tone";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { ROLE_HINTS } from "@/lib/roles";
+import { notFound } from "next/navigation";
 import { getTenant } from "@/lib/tenant";
 import { workspacesService } from "@getrunbase/core/workspaces";
+import { isOrgAdmin } from "@/lib/settings-access";
 import { removeMember, setMemberRole } from "../../actions";
 import { EditAccessDialog, InviteDialog } from "./workspace-access";
 import { SettingsPage, SettingsSection, TableHeading } from "../settings-shell";
@@ -68,7 +70,8 @@ const initials = (s: string) =>
 // Organization members (PryyU board): list, role, invitation, removal.
 export default async function Members() {
   const { ctx, role } = await getTenant();
-  const isAdmin = role === "owner" || role === "admin";
+  if (!isOrgAdmin(role)) notFound();
+  const isAdmin = isOrgAdmin(role);
   const [all, workspaces] = await Promise.all([
     membersService.list(ctx),
     workspacesService.list(ctx),

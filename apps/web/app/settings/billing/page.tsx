@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Button } from "@getrunbase/ui/components/ui/button";
 import { getTenant } from "@/lib/tenant";
+import { isOrgAdmin } from "@/lib/settings-access";
 import { SettingsPage, SettingsSection } from "../settings-shell";
 import { pageTitle } from "@/lib/page-title";
 
@@ -13,6 +14,7 @@ export const generateMetadata = pageTitle("billing");
 // extension (usage lives in Settings › Usage). Without an extension (self-host): no page.
 export default async function Billing() {
   const { ctx, role } = await getTenant();
+  if (!isOrgAdmin(role)) notFound();
   const billing = await billingService.get(ctx);
   if (!billing) notFound();
   const t = await getTranslations("settings.billing");

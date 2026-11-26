@@ -43,8 +43,9 @@ export type AuditFilter = {
 
 export const auditService = {
   // Workspace audit feed (most recent first), filtered, cursor-paginated.
+  // Owners/admins (or an admin-scope key) only.
   list: async (ctx: TenantContext, f: AuditFilter = {}) => {
-    await requireScope(ctx, "read");
+    await requireScope(ctx, "admin");
     const limit = Math.min(Math.max(f.limit ?? 50, 1), 200);
     const rows = await withTenant(ctx, (tx) =>
       tx
@@ -84,7 +85,8 @@ export const auditService = {
       nextCursor: hasMore ? items[items.length - 1]!.id : null,
     };
   },
-  // History of a resource: who, what, when (most recent first).
+  // History of a resource: who, what, when (most recent first). Stays
+  // readable: record history is part of the members' work.
   history: async (
     ctx: TenantContext,
     resource: { type: string; id: string },

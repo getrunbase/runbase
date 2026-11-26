@@ -2,7 +2,9 @@ import { usageService } from "@getrunbase/core/quotas";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { notFound } from "next/navigation";
 import { getTenant } from "@/lib/tenant";
+import { canSeeUsage, isOrgAdmin } from "@/lib/settings-access";
 import { SettingsPage, SettingsSection } from "../settings-shell";
 import { pageTitle } from "@/lib/page-title";
 import { formatMeter, meterPercent } from "@/lib/usage-format";
@@ -13,12 +15,14 @@ export const generateMetadata = pageTitle("usage");
 // A limit of null means unlimited (self-host default).
 export default async function Usage() {
   const { ctx, role } = await getTenant();
+  // Viewers have no usage page (the service refuses them too).
+  if (!canSeeUsage(role)) notFound();
   const meters = await usageService.get(ctx);
   const t = await getTranslations("settings.usage");
   const locale = await getLocale();
   const n = (key: string, v: number) => formatMeter(key, v, locale);
   return (
-    <SettingsPage isAdmin={role === "owner" || role === "admin"}>
+    <SettingsPage isAdmin={isOrgAdmin(role)}>
       <SettingsSection title={t("title")} description={t("description")}>
         {meters.map((it) => {
           const reached = it.limit != null && it.used >= it.limit;

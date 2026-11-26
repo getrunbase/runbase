@@ -1,6 +1,7 @@
 import type { NavEntry } from "@/components/nav-main";
 import type { NavName } from "@/lib/breadcrumbs";
 import type { T } from "@/lib/i18n-types";
+import { canSeeSettings } from "./settings-access";
 
 type Role = "owner" | "admin" | "member" | "viewer" | "end_user" | null;
 
@@ -85,9 +86,10 @@ export function buildNav(input: NavInput, role: Role, t: T<"nav">) {
     },
     { title: t("items.events"), url: "/events", icon: "events" },
   ];
-  const settings: NavEntry[] = [
-    { title: t("items.settings"), url: "/settings", icon: "settings" },
-  ];
+  // Viewers have no settings tab to open (lib/settings-access.ts).
+  const settings: NavEntry[] = canSeeSettings(role)
+    ? [{ title: t("items.settings"), url: "/settings", icon: "settings" }]
+    : [];
   index(data);
   index(activity);
   index(automations);
