@@ -5,7 +5,7 @@
     "pages": {
       "title": "Pages",
       "empty": "Aucune page",
-      "emptyDescription": "Une page affiche des listes, fiches et formulaires. Demandez à votre agent IA connecté (MCP) de la créer, par exemple : « crée une page pour suivre mes contacts »."
+      "emptyDescription": "Une page affiche des listes, fiches et formulaires. Demandez à votre IA de la créer, par exemple : « crée une page pour suivre mes leads »."
     },
     "queries": {
       "title": "Requêtes enregistrées",

@@ -3,6 +3,7 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { functionsService } from "@getrunbase/core/functions";
 import { Sparkles, SquareFunction } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
+import { AgentPrompts } from "@/components/agent-prompts";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
 import {
@@ -32,7 +33,9 @@ export default async function Functions() {
           icon={SquareFunction}
           title={t("empty.title")}
           description={t("empty.description")}
-        />
+        >
+          <AgentPrompts group="functions" />
+        </EmptyState>
       ) : (
         <Table>
           <TableHeader>

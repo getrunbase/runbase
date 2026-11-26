@@ -6,6 +6,7 @@ import { Webhook } from "lucide-react";
 import { ConfirmAction } from "@/components/confirm-action";
 import { CopyField } from "@/components/copy-button";
 import { EmptyState } from "@/components/empty-state";
+import { AgentPrompts } from "@/components/agent-prompts";
 import { JsonView } from "@/components/json-view";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
@@ -58,7 +59,9 @@ export default async function Webhooks() {
           icon={Webhook}
           title={t("empty.title")}
           description={t("empty.description")}
-        />
+        >
+          <AgentPrompts group="webhooks" />
+        </EmptyState>
       ) : (
         <>
           <Table>

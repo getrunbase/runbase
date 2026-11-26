@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { objectsService } from "@getrunbase/core/objects";
 import { Boxes } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
+import { AgentPrompts } from "@/components/agent-prompts";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
 import { Card } from "@getrunbase/ui/components/ui/card";
@@ -35,6 +36,7 @@ export default async function Objects() {
           title={t("list.empty")}
           description={t("list.emptyDescription")}
         >
+          <AgentPrompts group="databases" />
           {isAdmin && <NewObjectDialog targets={targets} />}
         </EmptyState>
       ) : (

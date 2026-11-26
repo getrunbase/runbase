@@ -4,6 +4,7 @@ import { pagesService } from "@getrunbase/core/pages";
 import { queryService } from "@getrunbase/core/query";
 import { AppWindow, Database } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
+import { AgentPrompts } from "@/components/agent-prompts";
 import { PageHeader } from "@/components/page-header";
 import { PageIcon } from "@/components/page-icon";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
@@ -35,7 +36,9 @@ export default async function Interfaces() {
             icon={AppWindow}
             title={t("pages.empty")}
             description={t("pages.emptyDescription")}
-          />
+          >
+            <AgentPrompts group="pages" />
+          </EmptyState>
         ) : (
           <Grid>
             {pages.map((p) => (
@@ -61,7 +64,9 @@ export default async function Interfaces() {
             icon={Database}
             title={t("queries.empty")}
             description={t("queries.emptyDescription")}
-          />
+          >
+            <AgentPrompts group="queries" />
+          </EmptyState>
         ) : (
           <Grid>
             {queries.map((q) => (

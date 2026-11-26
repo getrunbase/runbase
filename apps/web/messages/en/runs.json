@@ -83,7 +83,7 @@
   },
   "errors": {
     "title": "Errors",
-    "description": "Ingestion, workflow, function and MCP failures.",
+    "description": "What failed and how to run it again.",
     "filters": {
       "source": "Source",
       "status": "Status"
@@ -94,23 +94,32 @@
     },
     "empty": {
       "title": "No errors",
-      "description": "Nothing to report for these filters."
+      "description": "Nothing failed for these filters. When something does, you'll see why here and can run it again."
     },
     "detail": {
       "title": "Error {source} · {status}",
       "runRef": "run {run} · step {step}",
-      "ingestionRef": "ingestion {request}",
+      "ingestionRef": "incoming data {request}",
       "retry": "Replay",
       "resolve": "Resolve",
       "message": "Message",
-      "stack": "Stack",
-      "payload": "Payload"
+      "stack": "Stack trace",
+      "payload": "Content",
+      "technical": "Technical details",
+      "copyForAi": "Copy for my AI",
+      "aiPrompt": "A Runbase error is open ({source}, {ref}): “{message}”. Explain what went wrong, fix it, then run it again."
     },
     "table": {
       "error": "Error",
       "source": "Source",
       "status": "Status",
       "date": "Last"
+    },
+    "sources": {
+      "ingest": "Incoming data",
+      "workflow": "Workflow",
+      "function": "Function",
+      "mcp": "AI agent"
     }
   },
   "events": {
@@ -122,7 +131,7 @@
     },
     "empty": {
       "title": "No events",
-      "description": "An event is a dated fact: “payment received”, “sign-up”. It arrives through a webhook, your agent (events.push) or the API."
+      "description": "An event is a dated fact: “payment received”, “sign-up”. It arrives through a webhook, your AI or the API."
     },
     "via": "via {source}",
     "payload": "Payload",

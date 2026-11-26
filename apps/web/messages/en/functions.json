@@ -1,25 +1,25 @@
 {
   "list": {
     "title": "Functions",
-    "description": "TypeScript code created through MCP, usable as a workflow block (fn.'<name>').",
+    "description": "Custom code your AI writes for you, usable as a step in any workflow.",
     "empty": {
       "title": "No functions",
-      "description": "Functions are created through MCP (functions.create), then used as fn.'<name>' blocks in workflows."
+      "description": "Ask your AI to write a function (score a lead, clean up a phone number, call an API), then use it as a step in your workflows."
     },
     "columns": {
       "name": "Name",
       "version": "Version",
       "modified": "Modified"
     },
-    "hint": "Describe to your AI agent what the function should do: it writes the code, the tests and the input schema."
+    "hint": "Describe to your AI what the function should do: it writes the code, the tests and the expected inputs."
   },
   "form": {
     "name": "Name",
     "code": "TypeScript code",
-    "inputSchema": "input_schema (JSON)",
-    "outputSchema": "output_schema (JSON)",
+    "inputSchema": "Expected inputs (JSON)",
+    "outputSchema": "Expected output (JSON)",
     "domains": "Allowed network domains (comma-separated, * = public internet; private IPs are always blocked)",
-    "secrets": "Allowed secrets",
+    "secrets": "Allowed credentials",
     "saveVersion": "Save as new version"
   },
   "detail": {

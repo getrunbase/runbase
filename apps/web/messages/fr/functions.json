@@ -1,25 +1,25 @@
 {
   "list": {
     "title": "Fonctions",
-    "description": "Code TypeScript créé via le MCP, utilisable comme brique de workflow (fn.'<nom>').",
+    "description": "Du code sur mesure que votre IA écrit pour vous, utilisable comme étape dans n'importe quel workflow.",
     "empty": {
       "title": "Aucune fonction",
-      "description": "Les fonctions se créent via le MCP (functions.create), puis s'utilisent comme briques fn.'<nom>' dans les workflows."
+      "description": "Demandez à votre IA d'écrire une fonction (noter un lead, nettoyer un numéro, appeler une API), puis utilisez-la comme étape dans vos workflows."
     },
     "columns": {
       "name": "Nom",
       "version": "Version",
       "modified": "Modifiée"
     },
-    "hint": "Décrivez à votre agent IA ce que la fonction doit faire : il écrit le code, les tests et le schéma d'entrée."
+    "hint": "Décrivez à votre IA ce que la fonction doit faire : elle écrit le code, les tests et les entrées attendues."
   },
   "form": {
     "name": "Nom",
     "code": "Code TypeScript",
-    "inputSchema": "input_schema (JSON)",
-    "outputSchema": "output_schema (JSON)",
+    "inputSchema": "Entrées attendues (JSON)",
+    "outputSchema": "Sortie attendue (JSON)",
     "domains": "Domaines réseau autorisés (séparés par des virgules, * = internet public ; les IP privées restent bloquées)",
-    "secrets": "Secrets autorisés",
+    "secrets": "Identifiants autorisés",
     "saveVersion": "Enregistrer une version"
   },
   "detail": {

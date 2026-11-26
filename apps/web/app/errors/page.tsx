@@ -5,6 +5,7 @@ import { FilterBar } from "@/components/filter-bar";
 import { CircleCheck, CircleCheckBig, OctagonAlert } from "lucide-react";
 import { cn } from "cn";
 import { EmptyState } from "@/components/empty-state";
+import { AgentPrompts } from "@/components/agent-prompts";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@getrunbase/ui/components/ui/badge";
 import {
@@ -22,6 +23,7 @@ import { pageTitle } from "@/lib/page-title";
 export const generateMetadata = pageTitle("errors");
 
 const SOURCES = ["ingest", "workflow", "function", "mcp"] as const;
+type Source = (typeof SOURCES)[number];
 const STATUSES = ["open", "resolved"] as const;
 
 // Workspace "Errors" screen, source / status filters.
@@ -42,6 +44,8 @@ export default async function Errors({
     status,
     cursor: q.cursor,
   });
+  const sourceLabel = (s: string) =>
+    SOURCES.find((x) => x === s) ? t(`sources.${s as Source}`) : s;
   return (
     <main className="flex flex-1 flex-col gap-6 px-10 py-8">
       <PageHeader title={t("title")} description={t("description")} />
@@ -50,7 +54,10 @@ export default async function Errors({
           {
             key: "source",
             label: t("filters.source"),
-            options: SOURCES.map((s) => ({ value: s, label: s })),
+            options: SOURCES.map((s) => ({
+              value: s,
+              label: t(`sources.${s}`),
+            })),
           },
           {
             key: "status",
@@ -67,7 +74,9 @@ export default async function Errors({
           icon={CircleCheckBig}
           title={t("empty.title")}
           description={t("empty.description")}
-        />
+        >
+          <AgentPrompts group="errors" />
+        </EmptyState>
       ) : (
         <Table>
           <TableHeader>
@@ -106,7 +115,7 @@ export default async function Errors({
                     </Link>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {e.source}
+                    {sourceLabel(e.source)}
                   </TableCell>
                   <TableCell>
                     <Badge variant={open ? "red" : "green"}>

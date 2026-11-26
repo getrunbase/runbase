@@ -83,7 +83,7 @@
   },
   "errors": {
     "title": "Erreurs",
-    "description": "Échecs d'ingestion, de workflows, de fonctions et du MCP.",
+    "description": "Ce qui a échoué et comment le relancer.",
     "filters": {
       "source": "Source",
       "status": "Statut"
@@ -94,23 +94,32 @@
     },
     "empty": {
       "title": "Aucune erreur",
-      "description": "Rien à signaler pour ces filtres."
+      "description": "Rien n'a échoué pour ces filtres. Si quelque chose échoue, vous verrez pourquoi ici et pourrez le relancer."
     },
     "detail": {
       "title": "Erreur {source} · {status}",
       "runRef": "run {run} · étape {step}",
-      "ingestionRef": "ingestion {request}",
+      "ingestionRef": "données reçues {request}",
       "retry": "Rejouer",
       "resolve": "Résoudre",
       "message": "Message",
-      "stack": "Stack",
-      "payload": "Payload"
+      "stack": "Pile d'appels",
+      "payload": "Contenu",
+      "technical": "Détails techniques",
+      "copyForAi": "Copier pour mon IA",
+      "aiPrompt": "Une erreur Runbase est ouverte ({source}, {ref}) : « {message} ». Explique ce qui n'a pas marché, corrige-le, puis relance."
     },
     "table": {
       "error": "Erreur",
       "source": "Source",
       "status": "Statut",
       "date": "Dernière"
+    },
+    "sources": {
+      "ingest": "Données reçues",
+      "workflow": "Workflow",
+      "function": "Fonction",
+      "mcp": "Agent IA"
     }
   },
   "events": {
@@ -122,13 +131,13 @@
     },
     "empty": {
       "title": "Aucun événement",
-      "description": "Un événement est un fait daté : « paiement reçu », « inscription ». Il arrive par un webhook, par votre agent (events.push) ou par l'API."
+      "description": "Un événement est un fait daté : « paiement reçu », « inscription ». Il arrive par un webhook, par votre IA ou par l'API."
     },
     "via": "via {source}",
     "payload": "Contenu",
     "table": {
       "type": "Type",
-      "record": "Objet",
+      "record": "Fiche",
       "source": "Source",
       "date": "Horodatage"
     },
