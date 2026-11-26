@@ -84,3 +84,25 @@ test("plans: null without extension or without plans, catalog otherwise", async 
   plans = [];
   assert.equal(await billingService.plans(ctx), null);
 });
+
+test("plans: comparison table is passed through as provided", async () => {
+  const ctx = await owner();
+  const plan = {
+    id: "a",
+    name: "A",
+    priceMonthlyCents: 0,
+    priceYearlyCents: 0,
+    currency: "EUR",
+    highlights: [],
+    checkoutUrl: null,
+  };
+  const comparison = { rows: [{ label: "Row", values: ["1", true, null] }] };
+  registerExtensions({
+    billing: {
+      entitlements: async () => null,
+      reportUsage: async () => {},
+      plans: async () => ({ current: null, plans: [plan], comparison }),
+    },
+  });
+  assert.deepEqual((await billingService.plans(ctx))?.comparison, comparison);
+});

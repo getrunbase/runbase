@@ -58,7 +58,13 @@ export type BillingPlans = {
   current: string | null;
   interval?: "month" | "year";
   plans: BillingPlan[];
+  // Optional comparison table shown under the plan cards. Each row's values
+  // are aligned with `plans` order; true/false render a check or a dash,
+  // null an empty cell.
+  comparison?: { rows: BillingComparisonRow[] };
 };
+
+export type BillingComparisonRow = { label: string; values: (string | boolean | null)[] };
 
 // Plan name and links provided by the extension (no plan name or price
 // in this repo). checkoutUrl: change plan; portalUrl: billing.
