@@ -16,12 +16,25 @@ import {
 import { eq } from "drizzle-orm";
 
 import { db } from "../db/client";
-import { appUrl, authMethod, emailConfigured, env } from "../env";
+import {
+  appUrl,
+  authMethod,
+  emailConfigured,
+  env,
+  googleSignInConfigured,
+} from "../env";
 
 export { db };
 
 // Flag read on every request: signups closed unless SIGNUPS_ENABLED=true.
 export const signupsEnabled = () => env().SIGNUPS_ENABLED;
+
+// Signups closed: an OAuth callback (Sign in with Google) must not create a
+// new user. Existing accounts, invitees included (their user row is created
+// by the invitation), are linked or signed in instead.
+export function oauthSignupBlocked(path: string | undefined) {
+  return !signupsEnabled() && !!path?.startsWith("/callback");
+}
 
 // MCP protected resource: audience of OAuth tokens.
 const baseURL = appUrl();
@@ -48,6 +61,7 @@ async function userExists(email: string) {
 // Sign-in method (AUTH_METHOD), fixed at server startup.
 const method = authMethod();
 const passwordMode = method === "password";
+const google = googleSignInConfigured();
 
 export const auth = betterAuth({
   baseURL,
@@ -87,6 +101,29 @@ export const auth = betterAuth({
     }),
   ],
   database: drizzleAdapter(db, { provider: "pg", schema }),
+  // Sign in with Google: only when a Google OAuth client is configured
+  // (the same client as the Google connectors). Non-sensitive scopes only.
+  socialProviders: google
+    ? {
+        google: {
+          clientId: env().OAUTH_GOOGLE_CLIENT_ID!,
+          clientSecret: env().OAUTH_GOOGLE_CLIENT_SECRET!,
+          scope: ["openid", "email", "profile"],
+          prompt: "select_account",
+        },
+      }
+    : undefined,
+  // Same verified Google email as an existing account: linked, not duplicated.
+  // Magic-link mode has no passwords, so an unverified local account can only
+  // be an invitation: linking it is safe. Password mode keeps the default
+  // (local email must be verified), so nobody can pre-claim an address.
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"],
+      requireLocalEmailVerified: passwordMode,
+    },
+  },
   // AUTH_METHOD=magic-link (default): magic link by email, signup
   // included. AUTH_METHOD=password: email + password; reset by email
   // only if a mail provider is configured.
@@ -144,9 +181,16 @@ export const auth = betterAuth({
       create: {
         // Magic link without a name: derived from the email (business domain, otherwise
         // locale part). It also names the organization; editable later.
-        before: async (u) => ({
-          data: { ...u, name: u.name?.trim() || nameFromEmail(u.email) },
-        }),
+        before: async (u, ctx) => {
+          if (oauthSignupBlocked(ctx?.path))
+            throw new APIError("FORBIDDEN", {
+              code: "signup_disabled",
+              message: "Sign-ups are closed",
+            });
+          return {
+            data: { ...u, name: u.name?.trim() || nameFromEmail(u.email) },
+          };
+        },
         // Each account gets its organization (owner) and a default workspace.
         after: async (user) => {
           const organizationId = await db.transaction(async (tx) => {

@@ -40,6 +40,10 @@ export const envSchema = z.object({
       error: 'expected "magic-link" or "password"',
     })
     .default("magic-link"),
+  // Google OAuth client, shared by "Sign in with Google" and the Google
+  // connectors. Sign-in with Google is enabled when both are set.
+  OAUTH_GOOGLE_CLIENT_ID: z.string().optional(),
+  OAUTH_GOOGLE_CLIENT_SECRET: z.string().optional(),
   PLATFORM_ADMIN_EMAILS: z
     .string()
     .default("")
@@ -247,6 +251,12 @@ export const authMethod = (): AuthMethod => env().AUTH_METHOD;
 export const emailConfigured = () => {
   const e = env();
   return !!(e.RESEND_API_KEY || e.SMTP_HOST);
+};
+
+// A Google OAuth client is configured: "Sign in with Google" is offered.
+export const googleSignInConfigured = () => {
+  const e = env();
+  return !!(e.OAUTH_GOOGLE_CLIENT_ID && e.OAUTH_GOOGLE_CLIENT_SECRET);
 };
 
 // At web and worker startup: immediate and readable failure.

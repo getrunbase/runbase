@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { authMethod, emailConfigured } from "@getrunbase/core/env";
+import {
+  authMethod,
+  emailConfigured,
+  googleSignInConfigured,
+} from "@getrunbase/core/env";
 import { LoginForm } from "./login-form";
 import { pageTitle } from "@/lib/page-title";
 import { getSession } from "@/lib/tenant";
@@ -28,6 +32,7 @@ export default async function LoginPage({
       <LoginForm
         authMethod={method}
         canReset={method === "password" && emailConfigured()}
+        google={googleSignInConfigured()}
       />
     </Suspense>
   );

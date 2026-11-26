@@ -85,3 +85,24 @@ test("name derived from email: business domain, else local part", async () => {
   assert.equal(nameFromEmail("alex@acme.io"), "Acme");
   assert.equal(nameFromEmail("alex@gmail.com"), "Alex");
 });
+
+test("sign-ups closed: an OAuth callback (Google) cannot create a user", async () => {
+  const { auth, oauthSignupBlocked } = await import("./index");
+  process.env.SIGNUPS_ENABLED = "false";
+  assert.equal(oauthSignupBlocked("/callback/:id"), true);
+  // Other paths keep their own rules (magic link, password sign-up hook).
+  assert.equal(oauthSignupBlocked("/magic-link/verify"), false);
+  assert.equal(oauthSignupBlocked(undefined), false);
+  // Better Auth user creation hook: refused with signup_disabled, which the
+  // callback turns into ?error=signup_disabled.
+  const before = auth.options.databaseHooks!.user!.create!.before!;
+  const u = { email: "g@x.io", name: "g", emailVerified: true } as never;
+  await assert.rejects(
+    async () => before(u, { path: "/callback/:id" } as never),
+    (e: { body?: { code?: string } }) => e.body?.code === "signup_disabled",
+  );
+  // Outside a callback, the hook still only fills the name.
+  assert.ok(await before(u, { path: "/magic-link/verify" } as never));
+  process.env.SIGNUPS_ENABLED = "true";
+  assert.equal(oauthSignupBlocked("/callback/:id"), false);
+});

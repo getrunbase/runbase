@@ -76,3 +76,24 @@ export function followOAuth(data: unknown) {
   if (url) window.location.href = url;
   return !!url;
 }
+
+// Sign in with Google. Errors come back as /login?google=1&error=<code>
+// (Better Auth appends `error`); googleErrorKey turns them into a message key.
+export async function signInWithGoogle(t: (key: "googleFailed") => string) {
+  const { error } = await authClient.signIn.social({
+    provider: "google",
+    callbackURL: magicLinkCallback(window.location.search),
+    errorCallbackURL: "/login?google=1",
+  });
+  if (error) return error.message ?? t("googleFailed");
+}
+
+export type GoogleErrorKey = "googleClosed" | "googleNotLinked" | "googleFailed";
+export function googleErrorKey(q: URLSearchParams): GoogleErrorKey | undefined {
+  if (!q.has("google")) return undefined;
+  const error = q.get("error");
+  if (!error) return undefined;
+  if (error === "signup_disabled") return "googleClosed";
+  if (error === "account_not_linked") return "googleNotLinked";
+  return "googleFailed";
+}

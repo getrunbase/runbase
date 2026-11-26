@@ -1,4 +1,4 @@
-<!-- source-sha256: 0f45019eeb47f78ad1b26a9059a7e2ba5ca42fee0ea9f08467305640803bb92f -->
+<!-- source-sha256: 4ec6951c74243d75da0b8bfc0f04c40dff32162b87b7f7171e520be93076a1d8 -->
 # Auto-hébergement
 
 Exécutez Runbase sur votre propre serveur avec Docker, à partir d'images
@@ -69,6 +69,10 @@ premier. Les paramètres facultatifs les plus courants :
   (invitations, lien magique) en définissent un via le lien de réinitialisation.
 - **Inscriptions.** Fermées par défaut ; définissez `SIGNUPS_ENABLED=true` pour
   les ouvrir, ou créez les comptes avec `pnpm admin:create` comme ci-dessus.
+- **Connexion avec Google.** Définissez `OAUTH_GOOGLE_CLIENT_ID` et
+  `OAUTH_GOOGLE_CLIENT_SECRET` (le même client OAuth Google que les connecteurs
+  Google) pour afficher un bouton « Continuer avec Google » sur les pages de
+  connexion et d'inscription. Voir [Connexion avec Google](#connexion-avec-google).
 - **Blocs d'IA.** Aucune clé fournie par la plateforme : chaque espace de
   travail ajoute sa propre clé de fournisseur en tant que secret (Paramètres ›
   Secrets), et chaque bloc d'IA et chaque page indique le fournisseur, le modèle
@@ -114,6 +118,27 @@ est ignoré et n'affecte jamais l'application.
 
 **Désactivation :** définissez `RUNBASE_TELEMETRY=0` dans `.env`, puis
 appliquez le changement. Le worker n'envoie alors plus aucune requête.
+
+## Connexion avec Google
+
+Un seul client OAuth Google sert à la fois à la connexion et aux connecteurs
+Google.
+
+1. Dans la console Google Cloud, créez (ou réutilisez) un client OAuth de type
+   « Application Web ».
+2. Ajoutez l'URI de redirection autorisée
+   `<BETTER_AUTH_URL>/api/auth/callback/google` (par exemple
+   `https://runbase.example.com/api/auth/callback/google`), à côté de l'URI de
+   redirection des connecteurs si vous en utilisez déjà une.
+3. Définissez `OAUTH_GOOGLE_CLIENT_ID` et `OAUTH_GOOGLE_CLIENT_SECRET`, puis
+   redémarrez le conteneur `web`.
+
+La connexion ne demande que `openid`, `email` et `profile` : ces scopes ne sont
+pas sensibles, l'écran de consentement ne nécessite donc aucune validation par
+Google. Un compte Google dont l'e-mail vérifié correspond à un compte existant y
+est rattaché, sans doublon. Avec les inscriptions fermées (`SIGNUPS_ENABLED` non
+défini), la connexion avec Google ne fonctionne que pour les comptes existants
+et les membres invités.
 
 ## Reverse proxy (HTTPS)
 

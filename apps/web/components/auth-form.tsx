@@ -47,6 +47,7 @@ export function AuthForm<T extends Record<string, string>>({
   submitLabel,
   onSubmit,
   footer,
+  alternative,
 }: {
   title: string;
   description?: string;
@@ -55,6 +56,8 @@ export function AuthForm<T extends Record<string, string>>({
   submitLabel: string;
   onSubmit: (values: T) => Promise<string | void>;
   footer?: React.ReactNode;
+  // Other sign-in method shown under the form (e.g. Continue with Google).
+  alternative?: React.ReactNode;
 }) {
   const form = useForm<T>({
     resolver: zodResolver(schema),
@@ -112,6 +115,7 @@ export function AuthForm<T extends Record<string, string>>({
           </Button>
         </form>
       </Form>
+      {alternative}
     </AuthShell>
   );
 }
