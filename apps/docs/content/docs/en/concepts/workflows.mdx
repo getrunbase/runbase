@@ -14,6 +14,22 @@ records, call HTTP APIs, use AI, wait, loop, ask a human for approval, or run a
 Node inputs can reference run variables: `{{record.email}}`,
 `{{event.payload.id}}`, `{{steps.<id>.output}}`, `{{now}}`.
 
+## Apps and connected accounts
+
+Apps (Gmail, Google Calendar, Google Sheets, Google Drive, Slack…) add nodes to
+the step picker. Apps that need a sign-in use a connected account: pick one in
+the step's **Account** field, or connect a new one in a popup (manage them in
+Settings › Connections). One Google connection covers every Google app; see
+[Connect Google](/docs/guides/google). Spreadsheets, tabs, columns and
+calendars are picked from the account, no ids to copy.
+
+## Variables and credentials
+
+In the editor, the `{}` button of a field (or `/`) inserts a run variable or a
+workspace credential. A credential is stored as `{{secret.NAME}}`: its value is
+resolved on the server when the step runs and never shown. **Test the step**
+runs one step with side effects simulated, then for real on request.
+
 ## Building safely
 
 1. `workflows.create` saves a draft.
