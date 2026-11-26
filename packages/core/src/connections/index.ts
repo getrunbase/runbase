@@ -206,7 +206,8 @@ export const connectionsService = {
     name?: string,
     opts: { popup?: boolean } = {},
   ) => {
-    await requireScope(ctx, "admin");
+    // Members connect their own accounts (they build workflows too).
+    await requireScope(ctx, "write");
     const userId = actorUser(ctx);
     if (!userId)
       throw appError(
@@ -249,7 +250,8 @@ export const connectionsService = {
         "connections.badState",
         "OAuth connection expired or invalid, try again",
       );
-    await requireScope(ctx, "admin");
+    // Members connect their own accounts (they build workflows too).
+    await requireScope(ctx, "write");
     const { p, client } = await requireProvider(s.provider);
     const t = await tokenRequest(p, client, {
       grant_type: "authorization_code",

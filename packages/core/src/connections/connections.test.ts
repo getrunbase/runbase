@@ -158,3 +158,14 @@ test("connect, refresh, isolate and disconnect", async () => {
     ["ada@acme.test"],
   );
 });
+
+test("a member can connect an account, only an admin can disconnect", async () => {
+  const a = await owner("CM");
+  await sql`update memberships set role = 'member' where user_id = ${(a.actor as { userId: string }).userId}`;
+  const url = new URL(await svc.authorizeUrl(a, "acme"));
+  globalThis.fetch = (async () =>
+    Response.json({ access_token: "m1", expires_in: 3600 })) as typeof fetch;
+  await svc.complete(a, url.searchParams.get("state")!, "code");
+  const [c] = await svc.list(a);
+  await assert.rejects(svc.remove(a, c!.id), /admin/);
+});
