@@ -123,11 +123,26 @@ Events emitted today (identifiers only, never emails, names or record content):
 | ------------------ | ------------------------------------------------------- |
 | `web.started`      | none                                                    |
 | `worker.started`   | none                                                    |
-| `user.signed_up`   | `userId`, `organizationId`                              |
+| `user.signed_up`   | `userId`, `organizationId`, plus first-touch attribution keys when present (below) |
 | `workflow.created` | `organizationId`, `workspaceId`, `workflowId`           |
 | `run.started`      | `organizationId`, `workspaceId`, `workflowId`, `runId`, `test` |
 
 Offer changes are billing events: the hosted billing extension emits them itself.
+
+### Signup attribution
+
+`apps/web` stores first-touch attribution in the first-party cookie
+`runbase_attribution` (30 days, never overwritten) on the first visit whose
+URL carries one of: `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`,
+`utm_term`, `ref`, `gclid`, `fbclid`, `twclid`, `li_fat_id`, `msclkid`. At
+signup these keys are added, flat, to the `user.signed_up` props. Other keys
+are dropped, values are trimmed and cut to 200 characters, a malformed cookie
+is ignored. The core stores nothing and calls no vendor; consent is the
+extension's responsibility.
+
+A landing site on the parent domain can set the same cookie
+(`Domain=.example.com`): its value is a URL-encoded JSON object of these keys,
+for example `encodeURIComponent(JSON.stringify({ utm_source: "x" }))`.
 
 ## Inventory: what stays public
 

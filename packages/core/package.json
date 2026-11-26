@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./auth": "./src/auth/index.ts",
+    "./auth/attribution": "./src/auth/attribution.ts",
     "./tenant": "./src/tenant/index.ts",
     "./nav": "./src/nav/index.ts",
     "./env": "./src/env.ts",
