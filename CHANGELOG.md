@@ -4,6 +4,19 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.4.1](https://github.com/getrunbase/runbase/compare/v0.4.0...v0.4.1) (2026-11-26)
+
+
+### Features
+
+* **auth:** pass first-touch signup attribution to extensions ([#113](https://github.com/getrunbase/runbase/issues/113)) ([29183fc](https://github.com/getrunbase/runbase/commit/29183fc9787085ed540f1646e088c8df476bd60f))
+* Google connectors, OAuth connections and Sign in with Google ([#117](https://github.com/getrunbase/runbase/issues/117)) ([060b1cf](https://github.com/getrunbase/runbase/commit/060b1cfa9cc44b6cf8800db49c7169a0aaf6368f))
+
+
+### Bug Fixes
+
+* **ci:** quote label colors so label-sync parses them as strings ([#106](https://github.com/getrunbase/runbase/issues/106)) ([bee939a](https://github.com/getrunbase/runbase/commit/bee939a68f82fcd78108c228432783616f0708de))
+
 ## [0.4.0](https://github.com/getrunbase/runbase/compare/v0.3.0...v0.4.0) (2026-11-26)
 
 
