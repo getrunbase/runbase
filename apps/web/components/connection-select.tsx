@@ -28,14 +28,38 @@ type Ctx = {
   providers: Record<string, string>;
 };
 
-const C = createContext<Ctx>({ connections: [], providers: {} });
-export const ConnectionsProvider = ({
+// Accounts connected from any step are shared with every step of the page.
+type Shared = Ctx & { add: (c: ConnectionInfo) => void };
+const C = createContext<Shared>({
+  connections: [],
+  providers: {},
+  add: () => {},
+});
+export function ConnectionsProvider({
   value,
   children,
 }: {
   value: Ctx;
   children: React.ReactNode;
-}) => <C.Provider value={value}>{children}</C.Provider>;
+}) {
+  const [added, setAdded] = useState<ConnectionInfo[]>([]);
+  const known = new Set(value.connections.map((c) => c.name));
+  const connections = [
+    ...value.connections,
+    ...added.filter((c) => !known.has(c.name)),
+  ];
+  return (
+    <C.Provider
+      value={{
+        providers: value.providers,
+        connections,
+        add: (c) => setAdded((a) => [...a.filter((x) => x.name !== c.name), c]),
+      }}
+    >
+      {children}
+    </C.Provider>
+  );
+}
 
 export const useConnectionProvider = (blockType?: string) => {
   const { providers } = useContext(C);
@@ -56,29 +80,27 @@ export function ConnectionSelect({
 }) {
   const t = useTranslations("common.connectionPicker");
   const errorText = useErrorText();
-  const { connections } = useContext(C);
-  const [added, setAdded] = useState<ConnectionInfo[]>([]);
+  const { connections, add } = useContext(C);
   const [error, setError] = useState<string>();
-  const list = [...connections, ...added].filter(
-    (c) => c.provider === provider,
-  );
+  // Only the select that opened the popup takes its result.
+  const [waiting, setWaiting] = useState(false);
+  const list = connections.filter((c) => c.provider === provider);
 
   // Popup result (same origin only).
   useEffect(() => {
     const on = (e: MessageEvent) => {
       if (e.origin !== window.location.origin || e.data?.type !== POPUP_MESSAGE)
         return;
+      if (!waiting) return;
+      setWaiting(false);
       if (e.data.error) return setError(String(e.data.error));
       setError(undefined);
-      setAdded((a) => [
-        ...a,
-        { provider, name: e.data.name, account: e.data.name },
-      ]);
+      add({ provider, name: e.data.name, account: e.data.name });
       onChange(e.data.name);
     };
     window.addEventListener("message", on);
     return () => window.removeEventListener("message", on);
-  }, [provider, onChange]);
+  }, [provider, onChange, add, waiting]);
 
   const start = async () => {
     // Opened synchronously: popup blockers allow it only in the click.
@@ -90,8 +112,10 @@ export function ConnectionSelect({
     const f = new FormData();
     f.set("provider", provider);
     f.set("popup", "1");
+    setWaiting(true);
     const r = await connect(f);
     if ("error" in r) {
+      setWaiting(false);
       w?.close();
       return setError(errorText(r.error));
     }
