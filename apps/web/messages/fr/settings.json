@@ -99,6 +99,8 @@
     "description": "Les clés de vos outils (OpenAI, HubSpot, Stripe…), chiffrées, jamais visibles par votre IA.",
     "new": "Nouvel identifiant",
     "newDescription": "La valeur est chiffrée et ne sera plus jamais affichée. Un nom existant est remplacé.",
+    "editTitle": "Modifier {name}",
+    "editDescription": "Saisissez la nouvelle valeur. Elle est chiffrée et remplace l'actuelle, qui ne peut pas être affichée.",
     "value": "Valeur",
     "modified": "Modifié",
     "emptyTitle": "Aucun identifiant",
