@@ -618,7 +618,9 @@ export function PillInput({
   };
 
   return (
-    <div className="relative min-w-0">
+    // The border is on the row: the insert button sits in the flex flow,
+    // centred against the text whatever the field height.
+    <div className="border-input focus-within:border-ring focus-within:ring-ring/50 flex min-h-9 min-w-0 items-center gap-1 rounded-md border pr-1 shadow-xs focus-within:ring-[3px]">
       <div
         ref={ref}
         role="textbox"
@@ -628,7 +630,7 @@ export function PillInput({
         suppressContentEditableWarning
         data-placeholder={placeholder ?? t("pickers.pillPlaceholder")}
         className={cn(
-          "border-input focus-visible:border-ring focus-visible:ring-ring/50 min-h-9 w-full min-w-0 rounded-md border bg-transparent py-1.5 pr-9 pl-3 text-sm leading-6 break-words whitespace-pre-wrap shadow-xs outline-none focus-visible:ring-[3px]",
+          "min-w-0 flex-1 bg-transparent py-1.5 pl-3 text-sm leading-6 break-words whitespace-pre-wrap outline-none",
           "empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]",
         )}
         onInput={() => {
@@ -653,9 +655,9 @@ export function PillInput({
           );
         }}
       />
-      {/* One insert button inside the field: variables (and credentials). */}
-      {/* Centred on the first line (h-9 = field min height), multi-line too. */}
-      <div className="absolute top-0 right-1 flex h-9 items-center">
+      {/* One insert button inside the field: variables and credentials. */}
+      {/* Text line box 36px (24 + 2×6), button 28px: 4px top offset. */}
+      <div className="flex shrink-0 self-start pt-1">
         <VariableMenu
           inline
           scope={scope}
