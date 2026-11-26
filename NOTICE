@@ -1,0 +1,13 @@
+Runbase core
+Copyright (C) 2026 MENTIONABLE SAS
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, version 3 only (AGPL-3.0-only).
+
+The SDK, kit, ui, connectors and templates are licensed under MIT; see the
+LICENSE file in each of those folders. Versions up to and including v0.3.0
+were released under FSL-1.1-ALv2 and remain under that license.
+
+"Runbase" and the Runbase logo are trademarks of MENTIONABLE SAS; see
+TRADEMARKS.md. This license does not grant any trademark rights.
