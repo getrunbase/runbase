@@ -106,10 +106,10 @@
   "connections.ambiguous": "Plusieurs connexions {provider} : renseignez l'entrée connection ({names})",
   "connections.badState": "Connexion OAuth expirée ou invalide, réessayez",
   "connections.expired": "La connexion {provider} {name} a expiré : reconnectez-la",
-  "connections.missing": "Connectez d'abord {provider} dans Paramètres › Connexions",
+  "connections.missing": "Connectez d'abord un compte {provider}, depuis le champ Compte de l'étape ou dans Paramètres › Connexions",
   "connections.noSecret": "BETTER_AUTH_SECRET est requis pour les connexions OAuth",
   "connections.notConfigured": "{provider} n'est pas configuré : définissez {key}_CLIENT_ID et {key}_CLIENT_SECRET",
-  "connections.notFound": "Aucune connexion {provider} nommée {name} : connectez-la dans Paramètres › Connexions",
+  "connections.notFound": "Aucune connexion {provider} nommée {name} : connectez-la depuis le champ Compte de l'étape ou dans Paramètres › Connexions",
   "connections.tokenFailed": "La demande de jeton {provider} a échoué ({status}) : {body}",
   "connections.unknownProvider": "Fournisseur OAuth inconnu : {provider}",
   "connections.userOnly": "Seul un utilisateur connecté peut connecter un compte"

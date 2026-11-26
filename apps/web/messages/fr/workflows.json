@@ -564,6 +564,7 @@
     "optionsLoading": "Chargement…",
     "optionsPlaceholder": "Choisir…",
     "optionsEmpty": "Aucun choix disponible",
+    "optionsNeedAccount": "Choisissez un compte ci-dessus pour charger les choix",
     "chooseInDrive": "Choisir dans Drive",
     "changeFile": "Choisir un autre fichier",
     "pickerFailed": "Google Drive n’a pas pu s’ouvrir, réessayez",

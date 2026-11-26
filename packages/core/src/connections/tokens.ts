@@ -95,13 +95,13 @@ const missing = (provider: string, name?: string) =>
   name
     ? appError(
         "connections.notFound",
-        "No {provider} connection named {name}: connect it in Settings › Connections",
+        "No {provider} connection named {name}: connect it from the step's Account field or in Settings › Connections",
         { provider, name },
         { kind: "not_found" },
       )
     : appError(
         "connections.missing",
-        "Connect {provider} first in Settings › Connections",
+        "Connect a {provider} account first, from the step's Account field or in Settings › Connections",
         { provider },
         { kind: "not_found" },
       );

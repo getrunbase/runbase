@@ -19,6 +19,7 @@ export function useOptions(
   enabled = true,
 ) {
   const errorText = useErrorText();
+  const t = useTranslations("workflows.stepForm");
   const [state, setState] = useState<{
     key: string;
     options: Option[];
@@ -40,7 +41,14 @@ export function useOptions(
       setState({
         key,
         options: r.data ?? [],
-        ...(r.error && { error: errorText(r.error) }),
+        // No account picked and none to default to: point to the Account
+        // select of this step, not to Settings.
+        ...(r.error && {
+          error:
+            !sent.connection && r.error.code === "connections.missing"
+              ? t("optionsNeedAccount")
+              : errorText(r.error),
+        }),
       });
     });
     return () => {
