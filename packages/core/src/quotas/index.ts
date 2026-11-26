@@ -469,10 +469,14 @@ export const billingService = {
   },
   // Settings › Plan and usage › Plans: catalog from the extension.
   // null without extension or without plans.
-  plans: async (ctx: TenantContext): Promise<BillingPlans | null> => {
+  plans: async (
+    ctx: TenantContext,
+    locale?: string,
+  ): Promise<BillingPlans | null> => {
     await requireScope(ctx, "read");
     const res =
-      (await getExtensions().billing.plans?.(ctx.organizationId)) ?? null;
+      (await getExtensions().billing.plans?.(ctx.organizationId, { locale })) ??
+      null;
     return res && res.plans.length > 0 ? res : null;
   },
 };
