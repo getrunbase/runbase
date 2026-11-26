@@ -251,11 +251,18 @@
     "unlimited": "{used} · Unlimited",
     "reached": "Limit reached",
     "meters": {
-      "records": "Records (this workspace)",
-      "runsPerMonth": "Runs this month (all workspaces)",
-      "storageBytes": "File storage (all workspaces)",
-      "apiPerMinute": "API calls this minute (this workspace)",
-      "workspaces": "Workspaces"
+      "records": "Records",
+      "runsPerMonth": "Runs this month",
+      "storageBytes": "File storage",
+      "workspaces": "Workspaces",
+      "pages": "Published interfaces",
+      "aiBudgetUsd": "AI spending this month",
+      "runsPerMinute": "Runs started this minute",
+      "apiPerMinute": "API calls this minute"
+    },
+    "scope": {
+      "workspace": "This workspace",
+      "organization": "Whole organization"
     }
   }
 }
