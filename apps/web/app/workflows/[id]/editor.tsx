@@ -254,7 +254,7 @@ export function WorkflowEditor({
             onMove={(id, pos) => setDef((d) => moveNode(d, id, pos))}
           />
         </div>
-        <aside className="bg-background flex w-90 shrink-0 flex-col gap-4.5 overflow-y-auto border-l px-5 py-4.5">
+        <aside className="bg-background flex w-100 shrink-0 flex-col gap-4.5 overflow-y-auto border-l px-5 py-4.5">
           {selected === "trigger" && (
             <TriggerForm
               value={def.trigger}

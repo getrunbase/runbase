@@ -17,6 +17,7 @@ import {
   restoreInput,
   saveInput,
   statusInput,
+  testStepInput,
   tokenInput,
 } from "./inputs";
 
@@ -170,5 +171,21 @@ export async function pickerToken(provider: string, connection?: string) {
       i.provider,
       i.connection || undefined,
     );
+  });
+}
+
+// Step panel "Test the step": the current (unsaved) definition, side
+// effects simulated unless `live`.
+export async function testStepAction(
+  definition: Definition,
+  stepId: string,
+  live: boolean,
+) {
+  return runAction(async () => {
+    const { ctx } = await getTenant();
+    const i = parseInput(testStepInput, { stepId, live });
+    return workflowsService.testStep(ctx, definition, i.stepId, {
+      live: i.live,
+    });
   });
 }

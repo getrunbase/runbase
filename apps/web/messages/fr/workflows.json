@@ -477,7 +477,13 @@
     },
     "outputs": "Sorties",
     "unlinked": "Non reliée",
-    "deleteStep": "Supprimer l'étape"
+    "deleteStep": "Supprimer l'étape",
+    "testStep": "Tester l'étape",
+    "testStepLive": "Exécuter pour de vrai",
+    "testing": "Test en cours…",
+    "testResult": "Résultat",
+    "testSimulated": "Simulé : rien n'a été envoyé ni écrit. Exécutez pour de vrai pour appeler l'app.",
+    "testBranch": "Branche {branch}"
   },
   "trigger": {
     "label": "Déclencheur",

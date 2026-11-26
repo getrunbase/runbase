@@ -39,3 +39,8 @@ export const tokenInput = z.object({
   provider: z.string().min(1).max(100),
   connection: z.string().max(200).optional(),
 });
+
+export const testStepInput = z.object({
+  stepId: z.string().min(1).max(200),
+  live: z.boolean(),
+});

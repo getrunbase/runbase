@@ -477,7 +477,13 @@
     },
     "outputs": "Outputs",
     "unlinked": "Not linked",
-    "deleteStep": "Delete step"
+    "deleteStep": "Delete step",
+    "testStep": "Test the step",
+    "testStepLive": "Run for real",
+    "testing": "Testing…",
+    "testResult": "Result",
+    "testSimulated": "Simulated: nothing was sent or written. Run for real to call the app.",
+    "testBranch": "Branch {branch}"
   },
   "trigger": {
     "label": "Trigger",
