@@ -18,10 +18,10 @@ function fixture(files = {}) {
     "pnpm-workspace.yaml":
       "packages:\n  - apps/*\n  - packages/*\nallowBuilds:\n  x: true\n",
     LICENSE:
-      "# Functional Source License, Version 1.1, ALv2 Future License\nCopyright 2026 Runbase\n",
-    "package.json": { name: "root", license: "FSL-1.1-ALv2" },
-    "apps/web/package.json": { name: "web", license: "FSL-1.1-ALv2" },
-    "packages/core/package.json": { name: "core", license: "FSL-1.1-ALv2" },
+      "GNU AFFERO GENERAL PUBLIC LICENSE\nVersion 3\nCopyright 2026 Runbase\n",
+    "package.json": { name: "root", license: "AGPL-3.0-only" },
+    "apps/web/package.json": { name: "web", license: "AGPL-3.0-only" },
+    "packages/core/package.json": { name: "core", license: "AGPL-3.0-only" },
   };
   for (const [path, content] of Object.entries({ ...base, ...files })) {
     if (content === null) continue;
@@ -40,8 +40,8 @@ describe("check-licenses", () => {
   });
 
   it("maps directories to the expected license", () => {
-    assert.equal(expectedLicense(""), "FSL-1.1-ALv2");
-    assert.equal(expectedLicense("apps/worker"), "FSL-1.1-ALv2");
+    assert.equal(expectedLicense(""), "AGPL-3.0-only");
+    assert.equal(expectedLicense("apps/worker"), "AGPL-3.0-only");
     assert.equal(expectedLicense("packages/sdk"), "MIT");
     assert.equal(expectedLicense("packages/kit"), "MIT");
     assert.equal(expectedLicense("packages/node-sdk"), "MIT");
@@ -58,7 +58,7 @@ describe("check-licenses", () => {
       fixture({ "apps/web/package.json": { name: "web" } }),
     );
     assert.deepEqual(errors, [
-      'apps/web/package.json: "license" missing (expected "FSL-1.1-ALv2")',
+      'apps/web/package.json: "license" missing (expected "AGPL-3.0-only")',
     ]);
   });
 
@@ -74,7 +74,7 @@ describe("check-licenses", () => {
 
   it("requires MIT for sdk with its LICENSE file", () => {
     const errors = checkLicenses(
-      fixture({ "packages/sdk/package.json": { license: "FSL-1.1-ALv2" } }),
+      fixture({ "packages/sdk/package.json": { license: "AGPL-3.0-only" } }),
     );
     assert.equal(errors.length, 2);
     assert.match(errors[0], /expected "MIT"/);
@@ -97,14 +97,14 @@ describe("check-licenses", () => {
 
   it("checks the root license file", () => {
     const errors = checkLicenses(fixture({ LICENSE: "MIT License\n" }));
-    assert.deepEqual(errors, ["LICENSE: missing or not the FSL-1.1-ALv2 text"]);
+    assert.deepEqual(errors, ["LICENSE: missing or not the AGPL-3.0 text"]);
   });
 
   it("rejects unfilled placeholders", () => {
     const errors = checkLicenses(
       fixture({
         LICENSE:
-          "Functional Source License, Version 1.1, ALv2\nCopyright ${year} ${licensor name}\n",
+          "GNU AFFERO GENERAL PUBLIC LICENSE\nCopyright ${year} ${licensor name}\n",
       }),
     );
     assert.deepEqual(errors, [
