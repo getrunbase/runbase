@@ -1,10 +1,11 @@
 // Workspace management. Everything goes through withTenant: RLS per organization.
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
+import { db } from "../db/client";
 import { z } from "zod";
 import { requireScope } from "../api-keys";
 import { audit } from "../audit";
 import { appError } from "../errors/app-error";
-import { apiKeys, workspaces } from "../db/schema";
+import { apiKeys, memberships, workspaces } from "../db/schema";
 import {
   invalidateWorkspaceAccess,
   withTenant,
@@ -80,6 +81,23 @@ const countIn = async (tx: Tx, organizationId: string) => {
 export const workspaceCount = (ctx: TenantContext) =>
   withTenant(ctx, (tx) => countIn(tx, ctx.organizationId));
 
+async function pruneWorkspaceIds(organizationId: string, id: string) {
+  const drop = (col: typeof memberships.workspaceIds | typeof apiKeys.workspaceIds) => ({
+    set: sql`array_remove(${col}, ${id}::uuid)`,
+    has: sql`${id}::uuid = any (${col})`,
+  });
+  const m = drop(memberships.workspaceIds);
+  await db
+    .update(memberships)
+    .set({ workspaceIds: m.set })
+    .where(and(eq(memberships.organizationId, organizationId), m.has));
+  const k = drop(apiKeys.workspaceIds);
+  await db
+    .update(apiKeys)
+    .set({ workspaceIds: k.set })
+    .where(and(eq(apiKeys.organizationId, organizationId), k.has));
+}
+
 export const workspacesService = {
   // Settings: owners/admins; the audit only keeps secret names.
   setSettings: async (ctx: TenantContext, input: unknown) => {
@@ -108,11 +126,20 @@ export const workspacesService = {
     });
   },
 
-  // An API key only sees and modifies its workspaces (RLS key_workspaces).
+  // An API key only sees and modifies its workspaces (RLS key_workspaces);
+  // a user only those of their membership (workspace_ids, null = all).
   list: async (ctx: TenantContext) => {
     await requireScope(ctx, "read");
+    const member =
+      "userId" in ctx.actor
+        ? sql`exists (select 1 from memberships m
+            where m.user_id = ${ctx.actor.userId}
+            and m.organization_id = ${workspaces.organizationId}
+            and m.accepted_at is not null
+            and (m.workspace_ids is null or ${workspaces.id} = any (m.workspace_ids)))`
+        : undefined;
     return withTenant(ctx, (tx) =>
-      tx.select().from(workspaces).orderBy(workspaces.createdAt),
+      tx.select().from(workspaces).where(member).orderBy(workspaces.createdAt),
     );
   },
   // Creation, renaming and deletion: owners/admins (or admin key) only.
@@ -178,6 +205,14 @@ export const workspacesService = {
       if (rows.length)
         await audit(tx, ctx, "workspace.delete", ws(id), rows[0]);
       return rows;
-    }).finally(invalidateWorkspaceAccess);
+    })
+      .then(async (rows) => {
+        // No dangling ids: members and API keys of the organization lose the
+        // deleted workspace. Outside RLS (an admin key does not see every key),
+        // limited to the organization; idempotent.
+        if (rows.length) await pruneWorkspaceIds(ctx.organizationId, id);
+        return rows;
+      })
+      .finally(invalidateWorkspaceAccess);
   },
 };

@@ -54,7 +54,7 @@ Call **workspace.describe** first: databases, objects and fields, workflows (tri
 - References use uuids (objects.get, records.search), never slugs, unless the tool says otherwise.
 
 ## Access and limits
-- Roles (members.invite, members.set_role): admin manages everything, member creates and edits, viewer reads only, end_user only opens pages (no MCP). An invitation grants access only once accepted.
+- Roles (members.invite, members.set_role): admin manages everything, member creates and edits, viewer reads only, end_user only opens pages (no MCP). An invitation grants access only once accepted, and only to its workspaces (members.invite workspaceIds, default the current one; members.set_workspaces changes them; owners and admins access every workspace).
 - API key: limited to its workspaces; optionally to some tools (tools) and objects (objects). A tool or object outside the list is invisible.
 - Per-workspace quotas (quotas.get): number of records, workflow runs and calls per minute. quota_exceeded error: wait for the next minute or ask an admin to raise the limit (quotas.set).
 `;

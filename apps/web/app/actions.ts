@@ -20,6 +20,7 @@ import {
   nameInput,
   renameInput,
   roleInput,
+  workspacesInput,
 } from "./inputs";
 
 export async function switchWorkspace(f: FormData) {
@@ -64,8 +65,15 @@ export async function deleteWorkspace(f: FormData) {
 
 export async function inviteMember(f: FormData) {
   const { ctx } = await getTenant();
-  const { email, role } = parseInput(inviteInput, formInput(f));
-  if (email) await membersService.invite(ctx, { email, role });
+  const { email, role, workspaceIds } = parseInput(inviteInput, formInput(f));
+  if (email) await membersService.invite(ctx, { email, role, workspaceIds });
+  revalidatePath("/settings/members");
+}
+
+export async function setMemberWorkspaces(f: FormData) {
+  const { ctx } = await getTenant();
+  const { id, workspaceIds } = parseInput(workspacesInput, formInput(f));
+  await membersService.setWorkspaces(ctx, id, workspaceIds);
   revalidatePath("/settings/members");
 }
 
