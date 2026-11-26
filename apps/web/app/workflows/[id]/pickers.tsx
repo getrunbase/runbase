@@ -654,7 +654,8 @@ export function PillInput({
         }}
       />
       {/* One insert button inside the field: variables (and credentials). */}
-      <div className="absolute top-1 right-1">
+      {/* Centred on the first line (h-9 = field min height), multi-line too. */}
+      <div className="absolute top-0 right-1 flex h-9 items-center">
         <VariableMenu
           inline
           scope={scope}
