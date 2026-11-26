@@ -5,7 +5,13 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { jwt, magicLink } from "better-auth/plugins";
 import { mcp } from "@better-auth/mcp";
 import * as schema from "../db/schema";
-import { memberships, organizations, user, workspaces } from "../db/schema";
+import {
+  account as accountTable,
+  memberships,
+  organizations,
+  user,
+  workspaces,
+} from "../db/schema";
 import { emailSender } from "../email";
 import { track } from "../extensions";
 import {
@@ -13,7 +19,7 @@ import {
   resetPasswordEmail,
   verifyEmailEmail,
 } from "./magic-link-email";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { db } from "../db/client";
 import {
@@ -32,6 +38,28 @@ export const signupsEnabled = () => env().SIGNUPS_ENABLED;
 // Signups closed: an OAuth callback (Sign in with Google) must not create a
 // new user. Existing accounts, invitees included (their user row is created
 // by the invitation), are linked or signed in instead.
+// Linking Google to an unverified account that has a password would hand
+// the address to whoever set that password: refused. Invitees (no password)
+// and verified accounts are linked.
+export async function googleLinkBlocked(userId: string) {
+  const [u] = await db
+    .select({ verified: user.emailVerified })
+    .from(user)
+    .where(eq(user.id, userId));
+  if (!u || u.verified) return false;
+  const [pw] = await db
+    .select({ id: accountTable.id })
+    .from(accountTable)
+    .where(
+      and(
+        eq(accountTable.userId, userId),
+        eq(accountTable.providerId, "credential"),
+      ),
+    )
+    .limit(1);
+  return !!pw;
+}
+
 export function oauthSignupBlocked(path: string | undefined) {
   return !signupsEnabled() && !!path?.startsWith("/callback");
 }
@@ -113,15 +141,15 @@ export const auth = betterAuth({
         },
       }
     : undefined,
-  // Same verified Google email as an existing account: linked, not duplicated.
-  // Magic-link mode has no passwords, so an unverified local account can only
-  // be an invitation: linking it is safe. Password mode keeps the default
-  // (local email must be verified), so nobody can pre-claim an address.
+  // Same verified Google email as an existing account: linked, not duplicated,
+  // even when the local email is unverified (invitees). The one unsafe case,
+  // an unverified account that has a password (someone may have pre-claimed
+  // the address), is refused by the account creation hook below.
   account: {
     accountLinking: {
       enabled: true,
       trustedProviders: ["google"],
-      requireLocalEmailVerified: passwordMode,
+      requireLocalEmailVerified: false,
     },
   },
   // AUTH_METHOD=magic-link (default): magic link by email, signup
@@ -177,6 +205,18 @@ export const auth = betterAuth({
     }),
   },
   databaseHooks: {
+    account: {
+      create: {
+        before: async (a) => {
+          if (a.providerId === "google" && (await googleLinkBlocked(a.userId)))
+            throw new APIError("FORBIDDEN", {
+              code: "account_not_linked",
+              message: "Sign in with your password first",
+            });
+          return { data: a };
+        },
+      },
+    },
     user: {
       create: {
         // Magic link without a name: derived from the email (business domain, otherwise

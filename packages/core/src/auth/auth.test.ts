@@ -106,3 +106,39 @@ test("sign-ups closed: an OAuth callback (Google) cannot create a user", async (
   process.env.SIGNUPS_ENABLED = "true";
   assert.equal(oauthSignupBlocked("/callback/:id"), false);
 });
+
+test("Google linking: invitee without password linked, unverified account with password refused", async () => {
+  execFileSync("pnpm", ["db:migrate"], { stdio: "ignore" });
+  const { auth, googleLinkBlocked } = await import("./index");
+  const { db } = await import("../db/client");
+  const { account, user } = await import("../db/schema");
+  const mk = async (verified: boolean, password: boolean) => {
+    const id = crypto.randomUUID();
+    await db
+      .insert(user)
+      .values({ id, name: "u", email: `${id}@x.io`, emailVerified: verified });
+    if (password)
+      await db.insert(account).values({
+        id: crypto.randomUUID(),
+        userId: id,
+        accountId: id,
+        providerId: "credential",
+        password: "hash",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    return id;
+  };
+  const invitee = await mk(false, false);
+  const squatter = await mk(false, true);
+  const verified = await mk(true, true);
+  assert.equal(await googleLinkBlocked(invitee), false);
+  assert.equal(await googleLinkBlocked(verified), false);
+  assert.equal(await googleLinkBlocked(squatter), true);
+  const before = auth.options.databaseHooks!.account!.create!.before!;
+  await assert.rejects(
+    async () => before({ providerId: "google", userId: squatter } as never),
+    (e: { body?: { code?: string } }) => e.body?.code === "account_not_linked",
+  );
+  assert.ok(await before({ providerId: "google", userId: invitee } as never));
+});
