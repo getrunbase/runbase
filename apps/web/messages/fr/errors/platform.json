@@ -73,5 +73,8 @@
   "apiKeys.unknownWorkspace": "Workspace inconnu dans l'organisation",
   "apiKeys.workspaceNotAllowed": "Workspace non autorisé pour cette clé",
   "email.sendFailed": "Échec de l'envoi de l'e-mail ({status}) : {detail}",
-  "http.unsupportedProtocol": "Protocole non pris en charge : {protocol}"
+  "http.unsupportedProtocol": "Protocole non pris en charge : {protocol}",
+  "members.adminAllWorkspaces": "Les propriétaires et les administrateurs accèdent toujours à tous les workspaces",
+  "members.noWorkspace": "Choisissez au moins un workspace, ou tous les workspaces",
+  "members.unknownWorkspace": "Workspace inconnu dans l'organisation"
 }

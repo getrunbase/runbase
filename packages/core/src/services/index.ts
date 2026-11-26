@@ -83,6 +83,7 @@ export const mcpTools: {
     invite: "members.invite",
     list: "members.list",
     setRole: "members.set_role",
+    setWorkspaces: "members.set_workspaces",
     remove: "members.remove",
   },
   quotas: { get: "quotas.get", set: "quotas.set" },
