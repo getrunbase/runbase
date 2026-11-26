@@ -28,6 +28,7 @@ stays yours.
 [![CI](https://github.com/getrunbase/runbase/actions/workflows/ci.yml/badge.svg)](https://github.com/getrunbase/runbase/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/getrunbase/runbase)](https://github.com/getrunbase/runbase/releases)
 [![Discussions](https://img.shields.io/github/discussions/getrunbase/runbase)](https://github.com/getrunbase/runbase/discussions)
+[![Glama MCP score](https://glama.ai/mcp/servers/getrunbase/runbase/badges/score.svg)](https://glama.ai/mcp/servers/getrunbase/runbase)
 
 ## What an agent can build
 
