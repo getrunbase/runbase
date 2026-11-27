@@ -14,7 +14,10 @@
   },
   "code": {
     "leftRuntime": "The component left its runtime: rendering stopped.",
-    "previewUnavailable": "Code component: preview unavailable here."
+    "previewUnavailable": "Code component: preview unavailable here.",
+    "timeout": "SDK call took too long (max {ms} ms).",
+    "details": "Details",
+    "component": "Component: {name}"
   },
   "badge": {
     "text": "Powered by Runbase",

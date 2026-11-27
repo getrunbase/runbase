@@ -17,6 +17,7 @@ import {
   sdkGuard,
 } from "@/lib/runtime-bridge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { stackSummary } from "@/components/code-runtime/describe-error";
 
 export type CodeHost = {
   bundle: (
@@ -72,16 +73,40 @@ function writeParam(blockId: string, key: string, value: unknown) {
 }
 
 
-function withTimeout<T>(p: Promise<T>) {
+function withTimeout<T>(p: Promise<T>, message: string) {
   return Promise.race([
     p,
     new Promise<never>((_, ko) =>
-      setTimeout(
-        () => ko(new Error(`appel SDK trop long (max ${TIMEOUT_MS} ms)`)),
-        TIMEOUT_MS,
-      ),
+      setTimeout(() => ko(new Error(message)), TIMEOUT_MS),
     ),
   ]);
+}
+
+// Error banner: message, then the failing component and the first frames
+// (collapsed) so the user can diagnose without devtools.
+function ErrorBanner({ message, stack }: { message: string; stack?: string }) {
+  const t = useTranslations("pages.code");
+  const { frames, component } = stackSummary(stack);
+  return (
+    <Alert variant="destructive">
+      <AlertDescription>
+        <p>{message}</p>
+        {(component || frames.length > 0) && (
+          <details className="mt-1">
+            <summary className="cursor-pointer text-xs">{t("details")}</summary>
+            {component && (
+              <p className="mt-1 text-xs">{t("component", { name: component })}</p>
+            )}
+            {frames.length > 0 && (
+              <pre className="mt-1 overflow-x-auto font-mono text-xs whitespace-pre-wrap">
+                {frames.join("\n")}
+              </pre>
+            )}
+          </details>
+        )}
+      </AlertDescription>
+    </Alert>
+  );
 }
 
 export function CodeFrame({
@@ -107,7 +132,9 @@ export function CodeFrame({
   const mode = height ?? (host?.screen ? "screen" : "auto");
   const screen = mode === "screen";
   const [h, setH] = useState(typeof mode === "number" ? mode : 120);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ message: string; stack?: string } | null>(
+    null,
+  );
   // Render finished (`idle` message or error): awaited by page.screenshot.
   const [done, setDone] = useState(false);
   const propsRef = useRef(props);
@@ -145,7 +172,7 @@ export function CodeFrame({
     };
     // Shown and reported.
     const fail = (message: string, stack?: string) => {
-      setError(message);
+      setError({ message, stack });
       setDone(true);
       report(message, stack);
     };
@@ -241,6 +268,7 @@ export function CodeFrame({
         try {
           const result = await withTimeout(
             hostRef.current!.call(id, { method: m.method, args: m.args }),
+            tRef.current("timeout", { ms: TIMEOUT_MS }),
           );
           send.current({ type: "result", id: m.id, result });
         } catch (x) {
@@ -303,13 +331,9 @@ export function CodeFrame({
       className="flex flex-col gap-2"
       data-code-block={id}
       data-code-state={error ? "error" : done ? "ready" : "loading"}
-      data-code-error={error ?? undefined}
+      data-code-error={error?.message}
     >
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+      {error && <ErrorBanner {...error} />}
       <iframe
         ref={frame}
         src={runtimeSrc()}
