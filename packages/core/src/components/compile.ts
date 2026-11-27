@@ -219,6 +219,7 @@ export async function compileComponent(
         platform: "browser",
         target: "es2022",
         minify: true,
+        keepNames: true, // component names in React stacks
         legalComments: "none",
         logLevel: "silent",
         plugins: [plugin(opts.resolve, deps, opts.dirs ?? resolveDirs())],
@@ -306,6 +307,7 @@ export async function compilePackage(
         platform: "browser",
         target: "es2022",
         minify: true,
+        keepNames: true, // component names in React stacks
         legalComments: "none",
         logLevel: "silent",
         plugins: [

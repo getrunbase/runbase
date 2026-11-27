@@ -127,6 +127,21 @@ test("package: relative imports (with/without extension, folder index)", async (
   assert.deepEqual(idx.errors, []);
 });
 
+test("package: component names kept for React stacks", async () => {
+  const r = await compilePackage({
+    "index.tsx": `const DealsBoard = () => <div />;
+function RevenueChart() { return <DealsBoard />; }
+export default function Page() { return <RevenueChart />; }`,
+  });
+  assert.deepEqual(r.errors, []);
+  for (const name of ["DealsBoard", "RevenueChart", "Page"])
+    assert.match(r.bundle!, new RegExp(`"${name}"`));
+  const one = await compileComponent(
+    `export default function LeadCard() { return <div />; }`,
+  );
+  assert.match(one.bundle!, /"LeadCard"/);
+});
+
 test("package: cycle between files accepted", async () => {
   const r = await compilePackage({
     "index.tsx": `import { a } from "./a"; export default () => a();`,

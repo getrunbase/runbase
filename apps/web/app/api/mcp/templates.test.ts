@@ -6,7 +6,7 @@ import { client, owner, raw } from "./test-client";
 
 after(() => setImmediate(() => process.exit(0)));
 
-test("template.export -> template.import, erreurs lisibles", async () => {
+test("template.export -> template.import, readable errors", async () => {
   const src = await owner();
   const call = client(src);
   await call("objects.create", {

@@ -12,5 +12,5 @@ test("capture: waits for code blocks and skeletons, reads errors", () => {
   assert.equal(pageSettled(doc), false);
   doc.body.innerHTML = `<div data-code-block="a" data-code-state="error" data-code-error="boom"></div>`;
   assert.equal(pageSettled(doc), true);
-  assert.deepEqual(codeErrors(doc), ["composant a : boom"]);
+  assert.deepEqual(codeErrors(doc), ["component a: boom"]);
 });
