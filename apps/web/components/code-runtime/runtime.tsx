@@ -2,19 +2,24 @@
 // the component bundle through postMessage from the parent, renders it, and exposes the SDK
 // whose every call is relayed to the parent (which passes it to the server services).
 import {
-  Component,
   createElement,
   useCallback,
   useEffect,
   useRef,
   useState,
   useSyncExternalStore,
-  type ReactNode,
 } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { Boundary } from "./boundary";
+import { describeConsoleArgs, describeError } from "./describe-error";
 import { format, setFormatLocale } from "./format";
 import { lazyChunks, modules } from "./modules";
-import { createStore, keyOf, type RunbaseSdk, type Snap } from "@getrunbase/sdk";
+import {
+  createStore,
+  keyOf,
+  type RunbaseSdk,
+  type Snap,
+} from "@getrunbase/sdk";
 
 // WebRTC removed before any bundle: the connect-src CSP does not cover
 // RTCPeerConnection (UDP/STUN to the network, exfiltration).
@@ -302,19 +307,6 @@ const sdk = {
 } as unknown as RunbaseSdk;
 (globalThis as Msg).__vendor = { ...modules, "@getrunbase/sdk": sdk };
 
-class Boundary extends Component<{ children: ReactNode }, { error?: string }> {
-  state: { error?: string } = {};
-  static getDerivedStateFromError(e: Error) {
-    return { error: e.message };
-  }
-  componentDidCatch(e: Error) {
-    post({ type: "error", message: e.message, stack: e.stack });
-  }
-  render() {
-    return this.state.error ? null : this.props.children;
-  }
-}
-
 let root: Root | undefined;
 let C: unknown;
 let latestProps: unknown;
@@ -330,7 +322,7 @@ const draw = (props: unknown) =>
   root!.render(
     createElement(
       Boundary,
-      null,
+      { onError: (e) => post({ type: "error", ...e }) },
       createElement(C as never, (props ?? {}) as never),
     ),
   );
@@ -405,34 +397,19 @@ addEventListener("message", (e) => {
     else p?.ok(m.result);
   }
 });
-addEventListener("error", (e) =>
-  post({
-    type: "error",
-    message: String(e.message),
-    stack: (e.error as Error | undefined)?.stack,
-  }),
-);
+addEventListener("error", (e) => {
+  const d = describeError(e.error ?? e.message);
+  post({ type: "error", message: d.message, stack: d.stack });
+});
 // Non-blocking errors: reported to the server without hiding the page.
 addEventListener("unhandledrejection", (e) => {
-  const r = e.reason as Error | undefined;
-  post({
-    type: "report",
-    message: String(r?.message ?? r),
-    stack: r?.stack,
-  });
+  const d = describeError(e.reason);
+  post({ type: "report", message: d.message, stack: d.stack });
 });
 const consoleError = console.error.bind(console);
 console.error = (...args: unknown[]) => {
   consoleError(...args);
-  const err = args.find((a): a is Error => a instanceof Error);
-  post({
-    type: "report",
-    message: args
-      .map((a) => (a instanceof Error ? a.message : String(a)))
-      .join(" ")
-      .slice(0, 1_000),
-    stack: err?.stack ?? new Error().stack,
-  });
+  post({ type: "report", ...describeConsoleArgs(args) });
 };
 new ResizeObserver(() =>
   post({ type: "resize", height: document.documentElement.scrollHeight }),

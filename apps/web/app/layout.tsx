@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { IBM_Plex_Mono, Inter } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
+import { UiLabelsProvider } from "@/components/ui-labels-provider";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AppSidebar, loadNav } from "@/components/app-sidebar";
 import { AppShell } from "@/components/app-shell";
@@ -49,7 +50,7 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen">
         <NextIntlClientProvider>
-          {" "}
+          <UiLabelsProvider>
           <TooltipProvider>
             {ctx && nav ? (
               <AppShell
@@ -62,6 +63,7 @@ export default async function RootLayout({
               children
             )}
           </TooltipProvider>
+          </UiLabelsProvider>
         </NextIntlClientProvider>
       </body>
     </html>

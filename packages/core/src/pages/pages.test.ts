@@ -251,7 +251,10 @@ test("quota:pages caps first publishes across the organization; unlimited by def
   for (const n of ["u1", "u2", "u3"]) await pg.publish(a, (await mk(a, n)).id);
   registerExtensions({
     billing: {
-      entitlements: async () => ({ features: [], quotas: { "quota:pages": 4 } }),
+      entitlements: async () => ({
+        features: [],
+        quotas: { "quota:pages": 4 },
+      }),
       reportUsage: async () => {},
     },
   });
@@ -262,11 +265,17 @@ test("quota:pages caps first publishes across the organization; unlimited by def
     const p5 = await mk(a2, "p5");
     await rejectsCode(pg.publish(a2, p5.id), "quotas.limit");
     await rejectsCode(
-      pg.create(a, { name: "p6", files: { "index.tsx": code("p6") }, publish: true }),
+      pg.create(a, {
+        name: "p6",
+        files: { "index.tsx": code("p6") },
+        publish: true,
+      }),
       "quotas.limit",
     );
     // Republishing an already published page is not a new interface.
-    await pg.patchFiles(a2, p4.id, [{ op: "write", path: "index.tsx", source: code("v2") }]);
+    await pg.patchFiles(a2, p4.id, [
+      { op: "write", path: "index.tsx", source: code("v2") },
+    ]);
     assert.equal((await pg.publish(a2, p4.id))!.currentVersion, 2);
     // Deleting a published page frees a slot.
     assert.equal(await pg.remove(a2, p4.id), true);

@@ -46,5 +46,9 @@ for (const ex of EXAMPLES)
         b,
       );
     for (const c of out.sdkCalls)
-      assert.equal(denied(ex.permissions, parseCall(c)), null, JSON.stringify(c));
+      assert.equal(
+        denied(ex.permissions, parseCall(c)),
+        null,
+        JSON.stringify(c),
+      );
   });

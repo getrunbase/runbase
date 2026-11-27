@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { AppError } from "@getrunbase/core/app-error";
 import { READ_METHODS } from "@getrunbase/core/components";
 import { pagesService } from "@getrunbase/core/pages";
 import { componentCss } from "@/lib/component-css";
@@ -51,6 +52,9 @@ export async function callPage(id: string, call: unknown, draft = false) {
     });
     return { ok: true as const, result };
   } catch (e) {
+    // Unexpected errors (bugs) are logged before being turned into a value:
+    // otherwise nothing keeps a trace of them.
+    if (!(e instanceof AppError)) console.error("page call failed", { page: id }, e);
     return { ok: false as const, error: actionError(e) };
   }
 }
