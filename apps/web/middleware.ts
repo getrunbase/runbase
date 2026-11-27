@@ -68,7 +68,10 @@ async function route(req: NextRequest): Promise<Response> {
     return (await guardApi(req)) ?? NextResponse.next();
   if (
     PUBLIC_PAGES.some((p) => pathname === p || pathname.startsWith(`${p}/`)) ||
-    hasSessionCookie(req)
+    hasSessionCookie(req) ||
+    // ponytail: optimistic check (header present) for page.screenshot;
+    // /p/[slug] re-verifies the token (getTenant({ shot: true })).
+    (pathname.startsWith("/p/") && req.headers.has("x-screenshot-token"))
   )
     return NextResponse.next();
   const url = new URL("/login", req.url);

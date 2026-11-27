@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc",
-    "test": "TSX_TSCONFIG_PATH=tsconfig.test.json node --env-file-if-exists=../../.env --import tsx --import ../../packages/core/src/test-setup.ts --test \"app/**/*.test.ts\" \"app/**/*.test.tsx\" \"components/**/*.test.ts\" \"lib/**/*.test.ts\" \"i18n/**/*.test.ts\" messages.test.ts",
+    "test": "TSX_TSCONFIG_PATH=tsconfig.test.json node --env-file-if-exists=../../.env --import tsx --import ../../packages/core/src/test-setup.ts --test \"app/**/*.test.ts\" \"app/**/*.test.tsx\" \"components/**/*.test.ts\" \"lib/**/*.test.ts\" \"i18n/**/*.test.ts\" messages.test.ts middleware.test.ts",
     "test:e2e": "TSX_TSCONFIG_PATH=tsconfig.test.json node --env-file-if-exists=../../.env --import tsx --test --test-concurrency=1 --test-timeout=300000 \"e2e/**/*.e2e.ts\""
   },
   "dependencies": {
