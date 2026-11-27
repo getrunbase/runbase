@@ -4,6 +4,17 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.4.2](https://github.com/getrunbase/runbase/compare/v0.4.1...v0.4.2) (2026-11-27)
+
+
+### Bug Fixes
+
+* **docker:** install Google connector dependencies in the images ([#122](https://github.com/getrunbase/runbase/issues/122)) ([bd131bd](https://github.com/getrunbase/runbase/commit/bd131bd58a39b4ef56b5751fca13c3f74ab082ae))
+* **web:** accept capture token on /api/live and keep page component names ([#128](https://github.com/getrunbase/runbase/issues/128)) ([ee5da61](https://github.com/getrunbase/runbase/commit/ee5da61062d68e64e1b39c33e164725ae8d5fa5a))
+* **web:** keep next-intl out of customer pages and make runtime errors readable ([#127](https://github.com/getrunbase/runbase/issues/127)) ([ef18afe](https://github.com/getrunbase/runbase/commit/ef18afed1ede25608fb05dafd481026452ab4676))
+* **web:** let page.screenshot token through the sign-in wall ([#126](https://github.com/getrunbase/runbase/issues/126)) ([ef203ab](https://github.com/getrunbase/runbase/commit/ef203ab5a197d4576d08a1d31a03fbe1e2e4f134))
+* **workflows:** point dynamic fields to the step's Account select ([#123](https://github.com/getrunbase/runbase/issues/123)) ([9a1053d](https://github.com/getrunbase/runbase/commit/9a1053d33f259210b9ca202c1abd9cde2bf6b3f6))
+
 ## [0.4.1](https://github.com/getrunbase/runbase/compare/v0.4.0...v0.4.1) (2026-11-26)
 
 
