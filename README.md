@@ -24,7 +24,7 @@ git clone https://github.com/getrunbase/runbase && cd runbase && ./run.sh
 [![Self-host: Docker](https://img.shields.io/badge/self--host-Docker-2496ED)](docs/self-hosting.md)
 [![Release](https://img.shields.io/github/v/release/getrunbase/runbase)](https://github.com/getrunbase/runbase/releases)
 [![Glama MCP score](https://glama.ai/mcp/servers/getrunbase/runbase/badges/score.svg)](https://glama.ai/mcp/servers/getrunbase/runbase)
-[![GitHub stars](https://img.shields.io/github/stars/getrunbase/runbase?style=social)](https://github.com/getrunbase/runbase/stargazers)
+[![GitHub stars](https://img.shields.io/github/stars/getrunbase/runbase?style=social)](https://github.com/getrunbase/runbase)
 
 ## How it works
 
