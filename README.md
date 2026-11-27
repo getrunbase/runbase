@@ -22,11 +22,8 @@ git clone https://github.com/getrunbase/runbase && cd runbase && ./run.sh
 [![SDK license: MIT](https://img.shields.io/badge/SDK%20%26%20connectors-MIT-green)](packages/node-sdk/LICENSE)
 [![MCP native](https://img.shields.io/badge/MCP-native-purple)](apps/docs/content/docs/en/reference/mcp/index.mdx)
 [![Self-host: Docker](https://img.shields.io/badge/self--host-Docker-2496ED)](docs/self-hosting.md)
-[![CI](https://github.com/getrunbase/runbase/actions/workflows/ci.yml/badge.svg)](https://github.com/getrunbase/runbase/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/getrunbase/runbase)](https://github.com/getrunbase/runbase/releases)
-[![Discussions](https://img.shields.io/github/discussions/getrunbase/runbase)](https://github.com/getrunbase/runbase/discussions)
 [![Glama MCP score](https://glama.ai/mcp/servers/getrunbase/runbase/badges/score.svg)](https://glama.ai/mcp/servers/getrunbase/runbase)
-[![Version](https://img.shields.io/github/package-json/v/getrunbase/runbase)](https://github.com/getrunbase/runbase/releases)
 [![GitHub stars](https://img.shields.io/github/stars/getrunbase/runbase?style=social)](https://github.com/getrunbase/runbase/stargazers)
 
 ## How it works
@@ -87,6 +84,24 @@ _For ops and customer success._
 The workflow pauses on a human approval step. The run waits in the Approvals inbox until someone approves or rejects it, then carries on.
 
 <img src="docs/readme-assets/motion/usecase-approval.webp" alt="Animation: a won deal starts an onboarding workflow that waits for a manager to approve">
+
+## How it compares
+
+Facts as of November 2026, from each vendor's public documentation. Corrections
+are welcome.
+
+|                         | Runbase            | n8n                     | Zapier       | Make        | Activepieces            | Airtable    | Retool           |
+| ----------------------- | ------------------ | ----------------------- | ------------ | ----------- | ----------------------- | ----------- | ---------------- |
+| Self-host               | Yes, Docker        | Yes                     | No           | No          | Yes                     | No          | Yes (paid plans) |
+| Source license          | AGPL-3.0           | Sustainable Use License | Proprietary  | Proprietary | MIT (community edition) | Proprietary | Proprietary      |
+| Built through MCP       | Yes, every feature | Partial                 | Partial      | Partial     | Partial                 | Partial     | No               |
+| Database with relations | Yes                | Basic tables            | Basic tables | Data stores | Basic tables            | Yes         | Yes              |
+| Workflows               | Yes                | Yes                     | Yes          | Yes         | Yes                     | Basic       | Yes              |
+| User-facing pages       | Yes                | Forms                   | Yes          | No          | Forms                   | Yes         | Yes              |
+| Sandboxed custom code   | Yes                | Yes                     | Yes          | Paid plans  | Yes                     | Scripts     | Yes              |
+
+"Built through MCP" means an agent can create and change the data model,
+workflows and interfaces themselves, not only trigger existing actions.
 
 ## See it in the app
 
@@ -179,24 +194,6 @@ ChatGPT (web): chatgpt.com/plugins → Add custom MCP server. Any other MCP clie
 the URL with OAuth, or an API key as `Authorization: Bearer <key>`.
 
 HTTPS, backups and upgrades: [self-hosting guide](docs/self-hosting.md).
-
-## How it compares
-
-Facts as of November 2026, from each vendor's public documentation. Corrections
-are welcome.
-
-|                         | Runbase            | n8n                     | Zapier       | Make        | Activepieces            | Airtable    | Retool           |
-| ----------------------- | ------------------ | ----------------------- | ------------ | ----------- | ----------------------- | ----------- | ---------------- |
-| Self-host               | Yes, Docker        | Yes                     | No           | No          | Yes                     | No          | Yes (paid plans) |
-| Source license          | AGPL-3.0           | Sustainable Use License | Proprietary  | Proprietary | MIT (community edition) | Proprietary | Proprietary      |
-| Built through MCP       | Yes, every feature | Partial                 | Partial      | Partial     | Partial                 | Partial     | No               |
-| Database with relations | Yes                | Basic tables            | Basic tables | Data stores | Basic tables            | Yes         | Yes              |
-| Workflows               | Yes                | Yes                     | Yes          | Yes         | Yes                     | Basic       | Yes              |
-| User-facing pages       | Yes                | Forms                   | Yes          | No          | Forms                   | Yes         | Yes              |
-| Sandboxed custom code   | Yes                | Yes                     | Yes          | Paid plans  | Yes                     | Scripts     | Yes              |
-
-"Built through MCP" means an agent can create and change the data model,
-workflows and interfaces themselves, not only trigger existing actions.
 
 ## Documentation
 
