@@ -19,6 +19,9 @@ import {
 import { handleSdkCall, permissionsSchema } from "../components/sdk";
 import { parseIcon } from "./icon";
 
+// Marker the web runtime puts before the React component stack.
+const COMPONENT_STACK = "Component stack:";
+
 export { DEFAULT_PAGE_ICON, parseIcon, toIconName } from "./icon";
 export type { PageFiles } from "../db/schema";
 
@@ -43,9 +46,13 @@ function checkPermissions(raw: Record<string, unknown> | undefined) {
   if (raw === undefined) return;
   const r = permissionsSchema.safeParse(raw);
   if (!r.success)
-    throw appError("pages.invalidPermissions", "Invalid page permissions:\n{detail}", {
-      detail: z.prettifyError(r.error),
-    });
+    throw appError(
+      "pages.invalidPermissions",
+      "Invalid page permissions:\n{detail}",
+      {
+        detail: z.prettifyError(r.error),
+      },
+    );
 }
 
 function checkFiles(files: PageFiles, entry: string) {
@@ -502,10 +509,14 @@ export const pagesService = {
         .where(
           and(eq(pageErrors.pageId, id), lt(pageErrors.lastSeen, expiry())),
         );
+      // Never replace a stack carrying the React component stack with a
+      // poorer one (console.error report of the same error).
       const bump = {
         count: sql`${pageErrors.count} + 1`,
         lastSeen: now,
-        stack,
+        stack: stack?.includes(COMPONENT_STACK)
+          ? stack
+          : sql`case when ${pageErrors.stack} like ${"%" + COMPONENT_STACK + "%"} then ${pageErrors.stack} else ${stack} end`,
       };
       const key = and(
         eq(pageErrors.pageId, id),

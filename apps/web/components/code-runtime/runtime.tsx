@@ -11,10 +11,15 @@ import {
 } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { Boundary } from "./boundary";
-import { describeError } from "./describe-error";
+import { describeConsoleArgs, describeError } from "./describe-error";
 import { format, setFormatLocale } from "./format";
 import { lazyChunks, modules } from "./modules";
-import { createStore, keyOf, type RunbaseSdk, type Snap } from "@getrunbase/sdk";
+import {
+  createStore,
+  keyOf,
+  type RunbaseSdk,
+  type Snap,
+} from "@getrunbase/sdk";
 
 // WebRTC removed before any bundle: the connect-src CSP does not cover
 // RTCPeerConnection (UDP/STUN to the network, exfiltration).
@@ -404,15 +409,7 @@ addEventListener("unhandledrejection", (e) => {
 const consoleError = console.error.bind(console);
 console.error = (...args: unknown[]) => {
   consoleError(...args);
-  const err = args.find((a): a is Error => a instanceof Error);
-  post({
-    type: "report",
-    message: args
-      .map((a) => (a instanceof Error ? a.message : String(a)))
-      .join(" ")
-      .slice(0, 1_000),
-    stack: err?.stack ?? new Error().stack,
-  });
+  post({ type: "report", ...describeConsoleArgs(args) });
 };
 new ResizeObserver(() =>
   post({ type: "resize", height: document.documentElement.scrollHeight }),

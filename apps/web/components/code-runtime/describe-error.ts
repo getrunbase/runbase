@@ -59,3 +59,37 @@ export function stackSummary(
     .find((n) => n && n !== "Boundary");
   return component ? { frames, component } : { frames };
 }
+
+export function hasComponentStack(stack: string | undefined): boolean {
+  return !!stack?.includes(COMPONENT_STACK);
+}
+
+// console.error(...args): Error args go through describeError, so an empty
+// `throw new Error()` gives the same message as the boundary report.
+export function describeConsoleArgs(args: unknown[]): {
+  message: string;
+  stack?: string;
+} {
+  const err = args.find((a): a is Error => a instanceof Error);
+  return {
+    message: args
+      .map((a) => (a instanceof Error ? describeError(a).message : String(a)))
+      .join(" ")
+      .slice(0, 1_000),
+    stack: err?.stack ?? new Error().stack,
+  };
+}
+
+// Once per message, except that a later report carrying the React
+// component stack replaces an earlier one without it (console.error
+// usually arrives before the boundary report).
+export function reportDeduper(): (message: string, stack?: string) => boolean {
+  const seen = new Map<string, boolean>();
+  return (message, stack) => {
+    const rich = hasComponentStack(stack);
+    const prev = seen.get(message);
+    if (prev === true || (prev === false && !rich)) return false;
+    seen.set(message, rich);
+    return true;
+  };
+}

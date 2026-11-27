@@ -75,3 +75,17 @@ test("expiry: an error seen more than 24 h ago disappears", async () => {
     await sql`select count(*)::int as n from page_errors where page_id = ${page.id}`;
   assert.equal(row!.n, 1);
 });
+
+test("dedup: a later stack without component stack keeps the richer one", async () => {
+  const ctx = await owner("PageErrorsRich");
+  const page = await pg.create(ctx, { name: "P", files, publish: true });
+  const stack = await stackOf();
+  const rich = `${stack}\n\nComponent stack:\n    at Bad (runbase-page.js:1:1)`;
+  await pg.reportError(ctx, page.id, { message: "kaboom", stack });
+  await pg.reportError(ctx, page.id, { message: "kaboom", stack: rich });
+  await pg.reportError(ctx, page.id, { message: "kaboom", stack });
+  const errs = await pg.errors(ctx, page.id);
+  assert.equal(errs.length, 1);
+  assert.equal(errs[0]!.count, 3);
+  assert.match(errs[0]!.stack!, /Component stack:/);
+});

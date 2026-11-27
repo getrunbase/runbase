@@ -17,7 +17,10 @@ import {
   sdkGuard,
 } from "@/lib/runtime-bridge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { stackSummary } from "@/components/code-runtime/describe-error";
+import {
+  reportDeduper,
+  stackSummary,
+} from "@/components/code-runtime/describe-error";
 
 export type CodeHost = {
   bundle: (
@@ -72,7 +75,6 @@ function writeParam(blockId: string, key: string, value: unknown) {
   history.replaceState(history.state, "", url);
 }
 
-
 function withTimeout<T>(p: Promise<T>, message: string) {
   return Promise.race([
     p,
@@ -95,7 +97,9 @@ function ErrorBanner({ message, stack }: { message: string; stack?: string }) {
           <details className="mt-1">
             <summary className="cursor-pointer text-xs">{t("details")}</summary>
             {component && (
-              <p className="mt-1 text-xs">{t("component", { name: component })}</p>
+              <p className="mt-1 text-xs">
+                {t("component", { name: component })}
+              </p>
             )}
             {frames.length > 0 && (
               <pre className="mt-1 overflow-x-auto font-mono text-xs whitespace-pre-wrap">
@@ -132,9 +136,10 @@ export function CodeFrame({
   const mode = height ?? (host?.screen ? "screen" : "auto");
   const screen = mode === "screen";
   const [h, setH] = useState(typeof mode === "number" ? mode : 120);
-  const [error, setError] = useState<{ message: string; stack?: string } | null>(
-    null,
-  );
+  const [error, setError] = useState<{
+    message: string;
+    stack?: string;
+  } | null>(null);
   // Render finished (`idle` message or error): awaited by page.screenshot.
   const [done, setDone] = useState(false);
   const propsRef = useRef(props);
@@ -158,13 +163,12 @@ export function CodeFrame({
     let bundle: string | null = null;
     let css = "";
     let objects: string[] = [];
-    const reported = new Set<string>();
-    // Reported to the server once per message, rate-capped (error
+    const fresh = reportDeduper();
+    // Reported to the server once per message (richer stack kept), rate-capped (error
     // loop); a send failure is logged, never swallowed.
     const reports = limiter(MAX_REPORTS_PER_SEC);
     const report = (message: string, stack?: string) => {
-      if (reported.has(message) || !reports()) return false;
-      reported.add(message);
+      if (!fresh(message, stack) || !reports()) return false;
       hostRef.current
         ?.report?.(id, { message, stack })
         .catch((x: unknown) => console.warn("page error report failed", x));
