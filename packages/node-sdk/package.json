@@ -1,6 +1,6 @@
 {
   "name": "@getrunbase/node-sdk",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "SDK and CLI to build Runbase workflow connectors (defineNode).",
   "license": "MIT",
   "repository": {
