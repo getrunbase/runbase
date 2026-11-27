@@ -16,10 +16,7 @@ git clone https://github.com/getrunbase/runbase && cd runbase && ./run.sh
 
 [Quickstart](#quickstart) · [Use cases](#what-teams-build-with-it) · [Screenshots](#see-it-in-the-app) · [Docs](#documentation) · [Discussions](https://github.com/getrunbase/runbase/discussions)
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/readme-assets/motion/hero-dark.gif">
-  <img src="docs/readme-assets/motion/hero-light.gif" alt="Animation: a prompt to an AI agent becomes a working CRM, workflow and dashboard in Runbase">
-</picture>
+<img src="docs/readme-assets/motion/hero-light.gif" alt="Animation: a prompt to an AI agent becomes a working CRM, workflow and dashboard in Runbase">
 
 [![License: AGPL-3.0](https://img.shields.io/badge/core-AGPL--3.0-blue)](LICENSE)
 [![SDK license: MIT](https://img.shields.io/badge/SDK%20%26%20connectors-MIT-green)](packages/node-sdk/LICENSE)
@@ -41,10 +38,7 @@ git clone https://github.com/getrunbase/runbase && cd runbase && ./run.sh
 3. **Your team uses it** in the app, and it keeps running: workflows run on
    triggers, retry on failure and wait for approvals when you ask them to.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/readme-assets/motion/how-it-works-dark.gif">
-  <img src="docs/readme-assets/motion/how-it-works-light.gif" alt="Diagram: your prompt goes to an AI agent, which builds data, workflows and pages in Runbase through MCP">
-</picture>
+<img src="docs/readme-assets/motion/how-it-works-light.gif" alt="Diagram: your prompt goes to an AI agent, which builds data, workflows and pages in Runbase through MCP">
 
 Self-host it with Docker, with unlimited workspaces for free, or use the
 managed cloud. Leave anytime: the core is open source and your data stays
@@ -62,10 +56,7 @@ _For sales and growth teams._
 
 The agent creates the objects with typed fields and relations, writes a `score-lead` function, wires a workflow that scores every new contact, and publishes a kanban of deals by stage.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/readme-assets/motion/usecase-crm-dark.gif">
-  <img src="docs/readme-assets/motion/usecase-crm-light.gif" alt="Animation: an agent prompt turns into a contacts table, a lead scoring workflow and a pipeline kanban">
-</picture>
+<img src="docs/readme-assets/motion/usecase-crm-light.gif" alt="Animation: an agent prompt turns into a contacts table, a lead scoring workflow and a pipeline kanban">
 
 ### Inbound lead routing
 
@@ -75,10 +66,7 @@ _For marketing ops and RevOps._
 
 A signed webhook turns each form submission into a deduplicated event and a contact record. The workflow scores the lead, branches on the score and updates the record. Every run is logged and can be replayed.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/readme-assets/motion/usecase-webhook-dark.gif">
-  <img src="docs/readme-assets/motion/usecase-webhook-light.gif" alt="Animation: a webhook payload arrives, a workflow scores the lead and routes it to hot or nurture">
-</picture>
+<img src="docs/readme-assets/motion/usecase-webhook-light.gif" alt="Animation: a webhook payload arrives, a workflow scores the lead and routes it to hot or nurture">
 
 ### A pipeline and revenue dashboard
 
@@ -88,10 +76,7 @@ _For founders, sales leads and RevOps._
 
 The agent writes a page with KPI cards and charts on top of your live data, then checks it with a screenshot before publishing it.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/readme-assets/motion/usecase-dashboard-dark.gif">
-  <img src="docs/readme-assets/motion/usecase-dashboard-light.gif" alt="Animation: KPI cards and charts of the deal pipeline build up on a dashboard page">
-</picture>
+<img src="docs/readme-assets/motion/usecase-dashboard-light.gif" alt="Animation: KPI cards and charts of the deal pipeline build up on a dashboard page">
 
 ### Client onboarding with human approval
 
@@ -101,57 +86,36 @@ _For ops and customer success._
 
 The workflow pauses on a human approval step. The run waits in the Approvals inbox until someone approves or rejects it, then carries on.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/readme-assets/motion/usecase-approval-dark.gif">
-  <img src="docs/readme-assets/motion/usecase-approval-light.gif" alt="Animation: a won deal starts an onboarding workflow that waits for a manager to approve">
-</picture>
+<img src="docs/readme-assets/motion/usecase-approval-light.gif" alt="Animation: a won deal starts an onboarding workflow that waits for a manager to approve">
 
 ## See it in the app
 
 <table>
 <tr>
 <td width="33%" valign="top">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/readme-assets/screens/data-table-dark.png">
-  <img src="docs/readme-assets/screens/data-table-light.png" alt="Contacts table with company relations, source, lead score and status">
-</picture>
+<img src="docs/readme-assets/screens/data-table-light.png" alt="Contacts table with company relations, source, lead score and status">
 <br><sub><b>Data</b>: typed fields, relations and a lead score</sub>
 </td>
 <td width="33%" valign="top">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/readme-assets/screens/record-detail-dark.png">
-  <img src="docs/readme-assets/screens/record-detail-light.png" alt="Contact side panel with fields and an event timeline">
-</picture>
+<img src="docs/readme-assets/screens/record-detail-light.png" alt="Contact side panel with fields and an event timeline">
 <br><sub><b>Records</b>: fields, timeline, runs and history</sub>
 </td>
 <td width="33%" valign="top">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/readme-assets/screens/workflow-editor-dark.png">
-  <img src="docs/readme-assets/screens/workflow-editor-light.png" alt="Workflow canvas: webhook trigger, scoring function, switch and record updates">
-</picture>
+<img src="docs/readme-assets/screens/workflow-editor-light.png" alt="Workflow canvas: webhook trigger, scoring function, switch and record updates">
 <br><sub><b>Workflows</b>: visual editor, versioned and validated</sub>
 </td>
 </tr>
 <tr>
 <td width="33%" valign="top">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/readme-assets/screens/runs-history-dark.png">
-  <img src="docs/readme-assets/screens/runs-history-light.png" alt="Runs list with 24-hour success and waiting counts">
-</picture>
+<img src="docs/readme-assets/screens/runs-history-light.png" alt="Runs list with 24-hour success and waiting counts">
 <br><sub><b>Runs</b>: every execution logged, retry or replay</sub>
 </td>
 <td width="33%" valign="top">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/readme-assets/screens/approval-run-dark.png">
-  <img src="docs/readme-assets/screens/approval-run-light.png" alt="Run waiting for a human approval, with Approve and Reject buttons">
-</picture>
+<img src="docs/readme-assets/screens/approval-run-light.png" alt="Run waiting for a human approval, with Approve and Reject buttons">
 <br><sub><b>Approvals</b>: a person signs off before the run continues</sub>
 </td>
 <td width="33%" valign="top">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/readme-assets/screens/webhook-events-dark.png">
-  <img src="docs/readme-assets/screens/webhook-events-light.png" alt="Events received from a signed webhook, one payload expanded">
-</picture>
+<img src="docs/readme-assets/screens/webhook-events-light.png" alt="Events received from a signed webhook, one payload expanded">
 <br><sub><b>Events</b>: signed webhooks, deduplicated events</sub>
 </td>
 </tr>
