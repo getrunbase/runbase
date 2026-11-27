@@ -7,37 +7,136 @@
 
 **Stop renting tools that almost fit.**
 
-Describe the CRM, workflow or dashboard you need. Your agent builds it on
-Runbase, and it runs from day one: your data, your rules, no per-seat pricing
-on your own tools.
+Describe the CRM, workflow or dashboard you need. Your AI agent builds it on
+Runbase, and it keeps running: your data, your rules, no per-seat pricing.
 
-Runbase is the open source platform behind it. Connect Claude Code, Codex,
-Cursor or any MCP client: the agent configures stable building blocks through
-one MCP server (typed data, events and webhooks, sandboxed functions, durable
-workflows, pages and dashboards). Every change is validated, versioned and
-reversible before it goes live.
+```sh
+git clone https://github.com/getrunbase/runbase && cd runbase && ./run.sh
+```
 
-Self-host it in five minutes with Docker, unlimited workspaces for free, or
-use the managed cloud. Leave anytime: the core is open source and your data
-stays yours.
+[Quickstart](#quickstart) · [Use cases](#what-teams-build-with-it) · [Screenshots](#see-it-in-the-app) · [Docs](#documentation) · [Discussions](https://github.com/getrunbase/runbase/discussions)
+
+<img src="docs/readme-assets/motion/hero.webp" alt="Animation: a prompt to an AI agent becomes a working CRM, workflow and dashboard in Runbase">
 
 [![License: AGPL-3.0](https://img.shields.io/badge/core-AGPL--3.0-blue)](LICENSE)
 [![SDK license: MIT](https://img.shields.io/badge/SDK%20%26%20connectors-MIT-green)](packages/node-sdk/LICENSE)
 [![MCP native](https://img.shields.io/badge/MCP-native-purple)](apps/docs/content/docs/en/reference/mcp/index.mdx)
 [![Self-host: Docker](https://img.shields.io/badge/self--host-Docker-2496ED)](docs/self-hosting.md)
-[![CI](https://github.com/getrunbase/runbase/actions/workflows/ci.yml/badge.svg)](https://github.com/getrunbase/runbase/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/getrunbase/runbase)](https://github.com/getrunbase/runbase/releases)
-[![Discussions](https://img.shields.io/github/discussions/getrunbase/runbase)](https://github.com/getrunbase/runbase/discussions)
 [![Glama MCP score](https://glama.ai/mcp/servers/getrunbase/runbase/badges/score.svg)](https://glama.ai/mcp/servers/getrunbase/runbase)
+[![GitHub stars](https://img.shields.io/github/stars/getrunbase/runbase?style=social)](https://github.com/getrunbase/runbase)
 
-## What an agent can build
+## How it works
 
-> "Build a small CRM: companies and contacts, a lead score, a workflow that
-> scores new contacts, and a pipeline page."
+1. **You describe the tool** to Claude Code, Codex, Cursor or any MCP client.
+2. **The agent builds it** through one MCP server: data model, events and
+   webhooks, functions, workflows and pages. Every change is validated,
+   versioned and reversible before it goes live.
+3. **Your team uses it** in the app, and it keeps running: workflows run on
+   triggers, retry on failure and wait for approvals when you ask them to.
 
-From that prompt the agent creates the objects, imports sample data, writes a
-scoring function, wires a workflow, publishes a kanban page and checks it with
-a screenshot. Every step is a typed, versioned and reversible MCP tool call.
+<img src="docs/readme-assets/motion/how-it-works.webp" alt="Diagram: your prompt goes to an AI agent, which builds data, workflows and pages in Runbase through MCP">
+
+Self-host it with Docker, with unlimited workspaces for free, or use the
+managed cloud. Leave anytime: the core is open source and your data stays
+yours.
+
+## What teams build with it
+
+Each example below starts from the prompt shown.
+
+### A lightweight CRM with lead scoring
+
+_For sales and growth teams._
+
+> "Build a small CRM: companies and contacts, a lead score, a workflow that scores new contacts, and a pipeline page."
+
+The agent creates the objects with typed fields and relations, writes a `score-lead` function, wires a workflow that scores every new contact, and publishes a kanban of deals by stage.
+
+<img src="docs/readme-assets/motion/usecase-crm.webp" alt="Animation: an agent prompt turns into a contacts table, a lead scoring workflow and a pipeline kanban">
+
+### Inbound lead routing
+
+_For marketing ops and RevOps._
+
+> "When a lead comes in from our form, score it, mark hot leads for sales and keep the others in nurture."
+
+A signed webhook turns each form submission into a deduplicated event and a contact record. The workflow scores the lead, branches on the score and updates the record. Every run is logged and can be replayed.
+
+<img src="docs/readme-assets/motion/usecase-webhook.webp" alt="Animation: a webhook payload arrives, a workflow scores the lead and routes it to hot or nurture">
+
+### A pipeline and revenue dashboard
+
+_For founders, sales leads and RevOps._
+
+> "Give me a dashboard of our deals: total deals, open pipeline, won revenue, average deal size, and deals by stage and by owner."
+
+The agent writes a page with KPI cards and charts on top of your live data, then checks it with a screenshot before publishing it.
+
+<img src="docs/readme-assets/motion/usecase-dashboard.webp" alt="Animation: KPI cards and charts of the deal pipeline build up on a dashboard page">
+
+### Client onboarding with human approval
+
+_For ops and customer success._
+
+> "When a deal is won, prepare the client onboarding, but wait for a manager to approve before anything goes out."
+
+The workflow pauses on a human approval step. The run waits in the Approvals inbox until someone approves or rejects it, then carries on.
+
+<img src="docs/readme-assets/motion/usecase-approval.webp" alt="Animation: a won deal starts an onboarding workflow that waits for a manager to approve">
+
+## How it compares
+
+Facts as of November 2026, from each vendor's public documentation. Corrections
+are welcome.
+
+|                         | Runbase            | n8n                     | Zapier       | Make        | Activepieces            | Airtable    | Retool           |
+| ----------------------- | ------------------ | ----------------------- | ------------ | ----------- | ----------------------- | ----------- | ---------------- |
+| Self-host               | Yes, Docker        | Yes                     | No           | No          | Yes                     | No          | Yes (paid plans) |
+| Source license          | AGPL-3.0           | Sustainable Use License | Proprietary  | Proprietary | MIT (community edition) | Proprietary | Proprietary      |
+| Built through MCP       | Yes, every feature | Partial                 | Partial      | Partial     | Partial                 | Partial     | No               |
+| Database with relations | Yes                | Basic tables            | Basic tables | Data stores | Basic tables            | Yes         | Yes              |
+| Workflows               | Yes                | Yes                     | Yes          | Yes         | Yes                     | Basic       | Yes              |
+| User-facing pages       | Yes                | Forms                   | Yes          | No          | Forms                   | Yes         | Yes              |
+| Sandboxed custom code   | Yes                | Yes                     | Yes          | Paid plans  | Yes                     | Scripts     | Yes              |
+
+"Built through MCP" means an agent can create and change the data model,
+workflows and interfaces themselves, not only trigger existing actions.
+
+## See it in the app
+
+<table>
+<tr>
+<td width="33%" valign="top">
+<img src="docs/readme-assets/screens/data-table-light.png" alt="Contacts table with company relations, source, lead score and status">
+<br><sub><b>Data</b>: typed fields, relations and a lead score</sub>
+</td>
+<td width="33%" valign="top">
+<img src="docs/readme-assets/screens/record-detail-light.png" alt="Contact side panel with fields and an event timeline">
+<br><sub><b>Records</b>: fields, timeline, runs and history</sub>
+</td>
+<td width="33%" valign="top">
+<img src="docs/readme-assets/screens/workflow-editor-light.png" alt="Workflow canvas: webhook trigger, scoring function, switch and record updates">
+<br><sub><b>Workflows</b>: visual editor, versioned and validated</sub>
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
+<img src="docs/readme-assets/screens/runs-history-light.png" alt="Runs list with 24-hour success and waiting counts">
+<br><sub><b>Runs</b>: every execution logged, retry or replay</sub>
+</td>
+<td width="33%" valign="top">
+<img src="docs/readme-assets/screens/approval-run-light.png" alt="Run waiting for a human approval, with Approve and Reject buttons">
+<br><sub><b>Approvals</b>: a person signs off before the run continues</sub>
+</td>
+<td width="33%" valign="top">
+<img src="docs/readme-assets/screens/webhook-events-light.png" alt="Events received from a signed webhook, one payload expanded">
+<br><sub><b>Events</b>: signed webhooks, deduplicated events</sub>
+</td>
+</tr>
+</table>
+
+## Building blocks
 
 - **Data**: databases, objects with typed fields and relations, records with
   history, trash, merge and safe bulk edits. Read-only SQL included.
@@ -52,19 +151,36 @@ a screenshot. Every step is a typed, versioned and reversible MCP tool call.
 - **Workspaces**: as many as you want, free. One per client or per project,
   fully isolated, each with its own keys and quotas.
 
-## Quickstart (self-host, under 5 minutes)
+## Quickstart
 
 Requirements: Docker with the Compose plugin and `openssl`.
 
 ```sh
 git clone https://github.com/getrunbase/runbase runbase && cd runbase
+./run.sh you@example.com
+```
+
+`run.sh` writes `.env` on first run (through `./setup.sh`), starts the stack,
+creates your admin account and prints the sign-in URL and the MCP commands.
+Without email set up, the sign-in link appears in
+`docker compose -f docker-compose.selfhost.yml logs web`.
+
+<details>
+<summary>Manual steps</summary>
+
+```sh
 ./setup.sh
 docker compose -f docker-compose.selfhost.yml up -d --wait
 docker compose -f docker-compose.selfhost.yml exec worker pnpm admin:create you@example.com
 ```
 
-Open `http://localhost:3000/login`, then connect your AI agent with the URL
-`http://localhost:3000/api/mcp` (sign-in through the browser):
+Then open `http://localhost:3000/login`.
+
+</details>
+
+### Connect your AI agent
+
+Use the URL `http://localhost:3000/api/mcp` (sign-in through the browser):
 
 ```sh
 claude mcp add --transport http runbase http://localhost:3000/api/mcp   # Claude Code, then /mcp
@@ -91,23 +207,11 @@ The docs site lives in [`apps/docs`](apps/docs) (`pnpm --filter @getrunbase/docs
   [MCP tools](apps/docs/content/docs/en/reference/mcp/index.mdx),
   [workflow nodes](apps/docs/content/docs/en/reference/nodes.mdx)
 
-## How it compares
+## Community
 
-Facts as of November 2026, from each vendor's public documentation. Corrections
-are welcome.
-
-|                         | Runbase            | n8n                     | Zapier       | Make        | Activepieces            | Airtable    | Retool           |
-| ----------------------- | ------------------ | ----------------------- | ------------ | ----------- | ----------------------- | ----------- | ---------------- |
-| Self-host               | Yes, Docker        | Yes                     | No           | No          | Yes                     | No          | Yes (paid plans) |
-| Source license          | AGPL-3.0           | Sustainable Use License | Proprietary  | Proprietary | MIT (community edition) | Proprietary | Proprietary      |
-| Built through MCP       | Yes, every feature | Partial                 | Partial      | Partial     | Partial                 | Partial     | No               |
-| Database with relations | Yes                | Basic tables            | Basic tables | Data stores | Basic tables            | Yes         | Yes              |
-| Workflows               | Yes                | Yes                     | Yes          | Yes         | Yes                     | Basic       | Yes              |
-| User-facing pages       | Yes                | Forms                   | Yes          | No          | Forms                   | Yes         | Yes              |
-| Sandboxed custom code   | Yes                | Yes                     | Yes          | Paid plans  | Yes                     | Scripts     | Yes              |
-
-"Built through MCP" means an agent can create and change the data model,
-workflows and interfaces themselves, not only trigger existing actions.
+Questions, ideas and show-and-tell go to
+[GitHub Discussions](https://github.com/getrunbase/runbase/discussions). Bugs
+go to [issues](https://github.com/getrunbase/runbase/issues).
 
 ## Licensing
 
