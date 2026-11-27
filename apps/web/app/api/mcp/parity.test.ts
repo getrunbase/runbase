@@ -31,7 +31,7 @@ test("every service has an MCP tool", () => {
       const tool = tools[method];
       if (tool === null) continue;
       if (!tool || !registered.has(tool))
-        missing.push(`${name}.${method} -> ${tool ?? "aucun outil"}`);
+        missing.push(`${name}.${method} -> ${tool ?? "no tool"}`);
     }
   }
   assert.deepEqual(missing, []);

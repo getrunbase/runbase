@@ -269,7 +269,7 @@ export function pageSettled(doc: Document = document) {
 export function codeErrors(doc: Document = document) {
   return [...doc.querySelectorAll("[data-code-error]")].map(
     (e) =>
-      `composant ${e.getAttribute("data-code-block")} : ${e.getAttribute("data-code-error")}`,
+      `component ${e.getAttribute("data-code-block")}: ${e.getAttribute("data-code-error")}`,
   );
 }
 const SETTLE_MS = 8_000;

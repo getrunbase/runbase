@@ -11,7 +11,7 @@ test("workflow created, tested in dry run then activated through MCP", async () 
 
   const blocks = await call("blocks.list");
   const cond = blocks.find((b: { type: string }) => b.type === "condition");
-  assert.ok(cond?.inputSchema, "schéma d'input de la brique condition");
+  assert.ok(cond?.inputSchema, "condition block input schema");
 
   await call("objects.create", {
     slug: "lead",

@@ -78,7 +78,7 @@ after(() => {
 });
 
 test(
-  "page.screenshot via MCP : job traité par le renderer, PNG renvoyé",
+  "page.screenshot via MCP: job handled by the renderer, PNG returned",
   { skip: !browser && "Chromium unavailable" },
   async () => {
     const ctx = await owner();
