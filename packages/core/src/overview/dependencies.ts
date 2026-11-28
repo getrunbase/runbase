@@ -215,6 +215,35 @@ export function buildDependencyMap(input: {
         domains.push(...(fnByName.get(name)?.domains ?? []));
         continue;
       }
+      // `{{record.id}}` as a whole value: the step targets the run's record.
+      const isRunId = (v: unknown) =>
+        typeof v === "string" && /^\{\{\s*record\.id\s*\}\}$/.test(v.trim());
+      if (s.type === "record.transact") {
+        const ops = Array.isArray(inp.ops) ? inp.ops.filter(isRec) : [];
+        for (const op of ops) {
+          const keys = isRec(op.data) ? Object.keys(op.data) : [];
+          const t =
+            resolve(op.object) ??
+            (isRunId(op.id) ? subject : undefined) ??
+            (op.op === "update" ? guess(keys) : undefined);
+          if (!t) continue;
+          if (op.op === "delete") {
+            note(objects, who, t, ["*"], "writes");
+            continue;
+          }
+          note(objects, who, t, keys, "writes");
+          if (typeof op.match === "string")
+            note(objects, who, t, [op.match], "reads");
+        }
+        continue;
+      }
+      if (s.type === "record.merge") {
+        // Writes the `keep` record and deletes the `merge` records.
+        const t =
+          resolve(inp.object) ?? (isRunId(inp.keep) ? subject : undefined);
+        if (t) note(objects, who, t, ["*"], "writes");
+        continue;
+      }
       const data = isRec(inp.data)
         ? Object.keys(inp.data)
         : isRec(inp.mapping)

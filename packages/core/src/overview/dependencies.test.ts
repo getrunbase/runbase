@@ -161,3 +161,55 @@ test("dependenciesOf answers one entity", () => {
   assert.equal(dependenciesOf(map, "nope"), null);
   assert.equal(dependenciesOf(map, "workflow:nope"), null);
 });
+
+test("record.transact ops and record.merge count as writers", () => {
+  const m = buildDependencyMap({
+    objects,
+    workflows: [
+      {
+        id: "w3",
+        name: "batch",
+        status: "active",
+        definition: {
+          trigger: { type: "trigger.record_created", object: "leads" },
+          steps: [
+            {
+              id: "tx",
+              type: "record.transact",
+              input: {
+                ops: [
+                  { op: "update", id: "{{record.id}}", data: { status: "x" } },
+                  {
+                    op: "upsert",
+                    object: "companies",
+                    match: "domain",
+                    data: { domain: "a.com" },
+                  },
+                  { op: "delete", id: "{{steps.x.output.id}}" },
+                ],
+              },
+            },
+            {
+              id: "dedupe",
+              type: "record.merge",
+              input: {
+                keep: "{{record.id}}",
+                merge: ["{{steps.f.output.id}}"],
+              },
+            },
+          ],
+        },
+      },
+    ],
+    functions: [],
+    pages: [],
+  });
+  assert.deepEqual(m.fields["leads.status"]?.writers, ["workflow:batch#tx"]);
+  assert.deepEqual(m.fields["companies.domain"], {
+    writers: ["workflow:batch#tx"],
+    readers: ["workflow:batch#tx"],
+  });
+  const wf = m.workflows[0]!;
+  assert.ok(wf.objects.leads?.writes.includes("*"));
+  assert.ok(wf.objects.leads?.writes.includes("status"));
+});
