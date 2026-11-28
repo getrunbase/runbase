@@ -22,7 +22,8 @@ import { requireScope } from "../api-keys";
 import { audit } from "../audit";
 import { db } from "../db/client";
 import { webhooks } from "../db/schema";
-import { eventsService } from "../events";
+import { eventsService, publishEvent } from "../events";
+import { hasFailedFanOut } from "../errors/record";
 import { decryptAll, decryptSecret, secretNameSchema } from "../secrets";
 import { withTenant, type TenantContext } from "../tenant";
 import { appError, notFound } from "../errors/app-error";
@@ -261,9 +262,13 @@ export type WebhookResponse = { status: number; body: unknown };
 export function splitPayload(payload: unknown, splitPath?: string) {
   const list = splitPath ? pick(payload, splitPath) : payload;
   if (splitPath && !Array.isArray(list))
-    throw appError("webhooks.splitPathNotArray", "splitPath {path}: not an array", {
-      path: splitPath,
-    });
+    throw appError(
+      "webhooks.splitPathNotArray",
+      "splitPath {path}: not an array",
+      {
+        path: splitPath,
+      },
+    );
   return Array.isArray(list) ? list : [payload];
 }
 
@@ -347,7 +352,13 @@ export async function receiveWebhook(
       source: `webhook:${hook.name}`,
       idempotencyKey: key,
     });
-    out.push({ event_id: event.id, duplicate: event.duplicate });
+    // Resend of an event whose fan-out failed: replayed, not deduplicated.
+    let duplicate = event.duplicate;
+    if (duplicate && (await hasFailedFanOut(ctx, event.id))) {
+      duplicate = false;
+      await publishEvent(ctx, {}, { id: event.id });
+    }
+    out.push({ event_id: event.id, duplicate });
   }
   const duplicate = out.every((e) => e.duplicate);
   // Sample for the mapping: last new one received (a replay does not overwrite it).

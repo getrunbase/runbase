@@ -21,6 +21,7 @@
   "workflows.invalidField": "{path} : {message}",
   "workflows.stepError": "{step} : {message}",
   "workflows.unknownTriggerObject": "trigger.object : objet inconnu {object}",
+  "triggers.mappingEmpty": "Aucune valeur exploitable dans le payload : {problem}",
   "workflows.unknownWebhook": "trigger.webhook : webhook inconnu {webhook}",
   "workflows.mappingNeedsObject": "trigger.object : requis avec un mapping",
   "workflows.unknownMappingField": "trigger.mapping : champ inconnu {field}",

@@ -29,6 +29,10 @@ export type BusJob = TenantContext & {
   // Unique id of the publication: the created runs carry its
   // trace, a replayed job (retry) does not create them twice.
   key?: string;
+  // Follow-up or error retry: only this workflow is resolved.
+  only?: string;
+  // Follow-ups already queued for this trigger (active run on the record).
+  followups?: number;
   // Counted in the tenant backlog (queues/fair).
   fq?: 1;
 };
