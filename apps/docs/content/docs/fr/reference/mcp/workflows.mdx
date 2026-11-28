@@ -55,6 +55,15 @@ Exécute une définition sans jamais rien écrire : écritures, envois, appels e
 | `ai`         | boolean | non    | true : exécute réellement les blocs d'IA (payant)                                  |
 | `workspace`  | string  | non    | Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif) |
 
+## workflows.examples
+
+Workflows de référence (inbound-lead, company-enrichment, weekly-digest). Sans `name` : liste \{name, description\}. Avec `name` : l'ensemble complet (secrets, objets, webhooks, fonctions, définition du workflow) à créer dans cet ordre avec secrets.set, objects.create, webhooks.create, functions.save et workflows.create. Adaptez les slugs, les clés de champs et les domaines à l'espace de travail.
+
+| Nom         | Type   | Requis | Description                                                                        |
+| ----------- | ------ | ------ | ---------------------------------------------------------------------------------- |
+| `name`      | string | non    |                                                                                    |
+| `workspace` | string | non    | Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif) |
+
 ## workflows.get
 
 Lit un workflow et la définition de sa version courante.
@@ -62,6 +71,14 @@ Lit un workflow et la définition de sa version courante.
 | Nom         | Type   | Requis | Description                                                                        |
 | ----------- | ------ | ------ | ---------------------------------------------------------------------------------- |
 | `id`        | string | oui    | Identifiant du workflow                                                            |
+| `workspace` | string | non    | Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif) |
+
+## workflows.guide
+
+Guide des workflows et des fonctions, à lire avant de construire un workflow : bloc natif ou fonction, une fonction = une tâche de moins de 10 s, déclencheurs sur enregistrement ou webhook plutôt que des crons qui interrogent en boucle, les erreurs font échouer l'exécution, schémas d'entrée et de sortie déclarés, domaines explicites, exécutions de test plutôt que des indicateurs de simulation, conventions de nommage.
+
+| Nom         | Type   | Requis | Description                                                                        |
+| ----------- | ------ | ------ | ---------------------------------------------------------------------------------- |
 | `workspace` | string | non    | Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif) |
 
 ## workflows.list

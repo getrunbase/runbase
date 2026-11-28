@@ -55,6 +55,15 @@ Runs a definition without ever writing anything: writes, sends, external calls, 
 | `ai`         | boolean | no       | true: really runs the AI blocks (paid)           |
 | `workspace`  | string  | no       | Workspace id or name (default: active workspace) |
 
+## workflows.examples
+
+Reference workflows (inbound-lead, company-enrichment, weekly-digest). Without `name`: list \{name, description\}. With `name`: the full set (secrets, objects, webhooks, functions, workflow definition) to create in that order with secrets.set, objects.create, webhooks.create, functions.save and workflows.create. Adapt slugs, field keys and domains to the workspace.
+
+| Name        | Type   | Required | Description                                      |
+| ----------- | ------ | -------- | ------------------------------------------------ |
+| `name`      | string | no       |                                                  |
+| `workspace` | string | no       | Workspace id or name (default: active workspace) |
+
 ## workflows.get
 
 Reads a workflow and the definition of its current version.
@@ -62,6 +71,14 @@ Reads a workflow and the definition of its current version.
 | Name        | Type   | Required | Description                                      |
 | ----------- | ------ | -------- | ------------------------------------------------ |
 | `id`        | string | yes      | Workflow id                                      |
+| `workspace` | string | no       | Workspace id or name (default: active workspace) |
+
+## workflows.guide
+
+Workflow and function guide, to read before building a workflow: native block versus function, one function = one job under 10 s, record or webhook triggers instead of polling crons, errors fail the run, declared input/output schemas, explicit domains, test runs instead of simulation flags, naming conventions.
+
+| Name        | Type   | Required | Description                                      |
+| ----------- | ------ | -------- | ------------------------------------------------ |
 | `workspace` | string | no       | Workspace id or name (default: active workspace) |
 
 ## workflows.list

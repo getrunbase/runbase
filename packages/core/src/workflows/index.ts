@@ -22,6 +22,8 @@ import {
 import { AppError, type ErrorItem } from "../errors/app-error";
 import { isUuid } from "../lib/uuid";
 export { normalizeGraph, targetsOf, type Graph } from "./graph";
+export { WORKFLOWS_GUIDE } from "./guide";
+export { WORKFLOW_EXAMPLES, type WorkflowExample } from "./examples";
 
 const node = z.record(z.string(), z.unknown());
 // next[step][branch]: list of targets (several = parallel paths);
