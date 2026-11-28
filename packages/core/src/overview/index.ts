@@ -10,6 +10,7 @@ import { errorsService } from "../errors";
 import { requireConfirm } from "../errors/app-error";
 import { functionsService } from "../functions";
 import { objectsService } from "../objects";
+import { notesService, type NoteSummary } from "../notes";
 import { pagesService } from "../pages";
 import { queryService } from "../query";
 import { removeInTx, recordsService } from "../records";
@@ -25,7 +26,7 @@ const PURGE_BATCH = 5_000;
 export const overviewService = {
   describe: async (ctx: TenantContext) => {
     await requireScope(ctx, "read");
-    const [dbs, objs, wfs, fns, hooks, pages, secrets, sqlViews] =
+    const [dbs, objs, wfs, fns, hooks, pages, secrets, sqlViews, allNotes] =
       await Promise.all([
         databasesService.list(ctx),
         objectsService.list(ctx),
@@ -35,7 +36,15 @@ export const overviewService = {
         pagesService.list(ctx),
         secretsService.list(ctx),
         queryService.views(ctx),
+        notesService.list(ctx),
       ]);
+    // Note titles per entity (no body: notes.get loads it on demand).
+    const notesOf = (type: string, id: string) =>
+      allNotes
+        .filter(
+          (n: NoteSummary) => n.entity.type === type && n.entity.id === id,
+        )
+        .map((n) => ({ id: n.id, title: n.title, stale: n.stale }));
     const counts = await withTenant(ctx, async (tx) => {
       const perObject = await tx
         .select({
@@ -80,6 +89,7 @@ export const overviewService = {
           version: w.currentVersion,
           trigger: def.trigger ?? null,
           steps: (def.steps ?? []).map((s) => ({ id: s.id, type: s.type })),
+          notes: notesOf("workflow", w.id),
         };
       }),
     );
@@ -94,6 +104,7 @@ export const overviewService = {
             name: o.name,
             fields: o.fields,
             records: recordsOf(o.id),
+            notes: notesOf("object", o.id),
           })),
       })),
       workflows,
@@ -104,10 +115,13 @@ export const overviewService = {
         outputSchema: f.outputSchema,
         permissions: f.permissions,
         limits: f.limits,
+        notes: notesOf("function", f.name),
       })),
       // Without the last received payload (large): webhooks.list gives it.
       webhooks: hooks.map((h) => ({ ...h, sample: undefined })),
-      pages,
+      pages: pages.map((p) => ({ ...p, notes: notesOf("page", p.id) })),
+      // Workspace-level notes (conventions, decisions).
+      notes: notesOf("workspace", ctx.workspaceId),
       secrets: secrets.map((s) => s.name),
       // Views readable by query.sql: name, columns, types.
       sqlViews,

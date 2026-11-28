@@ -26,6 +26,7 @@ import { pagesService } from "../pages";
 import { componentsService } from "../components";
 import { webhooksService } from "../webhooks";
 import { viewsService } from "../views";
+import { notesService } from "../notes";
 import { filesService } from "../files";
 import { billingService, quotasService, usageService } from "../quotas";
 import { overviewService } from "../overview";
@@ -56,6 +57,7 @@ export const services = {
   components: componentsService,
   webhooks: webhooksService,
   views: viewsService,
+  notes: notesService,
   files: filesService,
   quotas: quotasService,
   billing: billingService,
@@ -254,6 +256,12 @@ export const mcpTools: {
     get: "views.get",
     save: "views.save",
     remove: "views.delete",
+  },
+  notes: {
+    list: "notes.list",
+    get: "notes.get",
+    save: "notes.save",
+    remove: "notes.delete",
   },
   files: {
     upload: "files.upload",
