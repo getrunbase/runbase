@@ -396,7 +396,7 @@ export const WORKFLOW_EXAMPLES: WorkflowExample[] = [
           },
         ],
         next: {
-          open_deals: { found: ["pipeline_total"] },
+          open_deals: { found: ["pipeline_total"], empty: [] },
           pipeline_total: { ok: ["post_digest"] },
         },
       },

@@ -16,6 +16,7 @@ test("migrate schema matches the core MigrateOp", () => {
     "change_type",
     "delete",
     "rename",
+    "rename_slug",
     "require",
     "update",
   ]);
@@ -25,7 +26,7 @@ test("promotion, test flag and filter errors through MCP", async () => {
   const ctx = await owner();
   const call = client(ctx);
   await call("objects.create", {
-    slug: "leads",
+    slug: "lead",
     name: "Leads",
     fields: [
       { key: "email", label: "Email", type: "email", unique: true },
@@ -34,13 +35,13 @@ test("promotion, test flag and filter errors through MCP", async () => {
     ],
   });
   const a = await call("records.upsert", {
-    object: "leads",
+    object: "lead",
     match: "email",
     test: true,
     data: { email: "a@x.io", stage: "Won", since: "2026-05-10" },
   });
   await call("records.upsert", {
-    object: "leads",
+    object: "lead",
     match: "email",
     test: true,
     data: { email: "b@x.io", stage: "lost", since: "2026-03-10" },
@@ -63,7 +64,7 @@ test("promotion, test flag and filter errors through MCP", async () => {
 
   // between on a date field.
   const found = await call("records.search", {
-    object: "leads",
+    object: "lead",
     filter: {
       field: "since",
       op: "between",
@@ -78,13 +79,13 @@ test("promotion, test flag and filter errors through MCP", async () => {
   // update_where with test: true leaves the test record purgeable.
   const filter = { field: "email", op: "eq", value: "b@x.io" };
   await call("records.update_where", {
-    object: "leads",
+    object: "lead",
     filter,
     data: { stage: "lost" },
     dryRun: true,
   });
   const bulk = await call("records.update_where", {
-    object: "leads",
+    object: "lead",
     filter,
     data: { stage: "Lost" },
     expected: 1,
@@ -97,7 +98,7 @@ test("promotion, test flag and filter errors through MCP", async () => {
   // Invalid regex: invalid_input naming the pattern and the dialect.
   await assert.rejects(
     call("records.search", {
-      object: "leads",
+      object: "lead",
       filter: { field: "stage", op: "regex", value: "(" },
     }),
     /\[invalid_input\].*"\(".*POSIX/,
@@ -105,7 +106,7 @@ test("promotion, test flag and filter errors through MCP", async () => {
 
   // change_type with map + caseInsensitive, then op update.
   await call("objects.migrate", {
-    object: "leads",
+    object: "lead",
     operation: {
       op: "change_type",
       field: "stage",
@@ -115,10 +116,10 @@ test("promotion, test flag and filter errors through MCP", async () => {
     },
   });
   await call("objects.migrate", {
-    object: "leads",
+    object: "lead",
     operation: { op: "update", field: "stage", label: "Pipeline stage" },
   });
-  const schema = await call("objects.get", { object: "leads" });
+  const schema = await call("objects.get", { object: "lead" });
   const stage = schema.fields.find((f: { key: string }) => f.key === "stage");
   assert.equal(stage.label, "Pipeline stage");
   assert.equal(stage.type, "select");
