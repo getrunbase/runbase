@@ -15,6 +15,7 @@ test("OAuth token: several workspaces, default, parameter, refusal outside the o
   const p: McpPrincipal = {
     key: `user:${(o.actor as { userId: string }).userId}:cli`,
     actor: { ...o.actor, scopes: ["read", "write", "admin"] },
+    session: "oauth-1",
   };
   const call = client(p);
   const active = async () =>
@@ -64,7 +65,7 @@ test("API key limited to its workspaces", async () => {
   assert.deepEqual(
     ids.map((w) => [w.id, w.active]),
     [
-      [o.workspaceId, true],
+      [o.workspaceId, false],
       [b!.id, false],
     ],
   );
