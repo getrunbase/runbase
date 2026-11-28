@@ -71,6 +71,47 @@ const workspaceParam = z
   .optional()
   .describe("Workspace id or name (default: active workspace)");
 
+// Unwraps optional/nullable/default wrappers down to the inner schema.
+function inner(s: z.ZodType): z.ZodType {
+  let cur = s as z.ZodType & { def: { innerType?: z.ZodType } };
+  while (cur.def.innerType) cur = cur.def.innerType as typeof cur;
+  return cur;
+}
+
+// Path of a nested field named `key` (e.g. `pins` -> `definition.pins`).
+export function nestedPath(
+  schema: z.ZodType,
+  key: string,
+  prefix = "",
+  depth = 0,
+): string | undefined {
+  const s = inner(schema);
+  if (!(s instanceof z.ZodObject) || depth > 3) return;
+  const shape = s.shape as Record<string, z.ZodType>;
+  if (prefix && key in shape) return prefix + key;
+  for (const [k, v] of Object.entries(shape)) {
+    const found = nestedPath(v, key, `${prefix}${k}.`, depth + 1);
+    if (found) return found;
+  }
+}
+
+// Strict input schema: an unknown key is refused (never silently dropped),
+// with a hint when the key exists deeper in the schema.
+export function strictInput(schema: z.ZodObject) {
+  const shape = { ...schema.shape, workspace: workspaceParam };
+  const strict: z.ZodObject = z.strictObject(shape, {
+    error: (iss) => {
+      if (iss.code !== "unrecognized_keys") return undefined;
+      const hints = iss.keys.map((k) => {
+        const path = nestedPath(strict, k);
+        return path ? `${k} (did you mean ${path}?)` : k;
+      });
+      return `Unknown parameter${hints.length > 1 ? "s" : ""}: ${hints.join(", ")}. Accepted: ${Object.keys(shape).join(", ")}`;
+    },
+  });
+  return strict;
+}
+
 // Definitions (~150 tools), built once per process.
 export const toolBuilds = { count: 0 };
 let defs: Map<string, Def> | undefined;
@@ -85,9 +126,7 @@ function definitions() {
           out.set(name, {
             cfg: {
               ...cfg,
-              inputSchema: (cfg.inputSchema ?? z.object({})).extend({
-                workspace: workspaceParam,
-              }),
+              inputSchema: strictInput(cfg.inputSchema ?? z.object({})),
             },
             fn,
           }),
@@ -125,7 +164,7 @@ export function registerTools(server: McpServer) {
     "workspaces.use",
     {
       description: "Sets the default workspace for this client's next calls.",
-      inputSchema: z.object({
+      inputSchema: z.strictObject({
         workspace: z.string().describe("Workspace id or name"),
       }),
     },
@@ -167,14 +206,22 @@ export function registerTools(server: McpServer) {
           content?: { text?: string }[];
         };
         if (!res?.isError && isWriteTool(name) && Array.isArray(res?.content)) {
-          // Resolved workspace of a write: the agent sees where it wrote.
-          const ws = (await accessibleWorkspaces(p).catch(() => [])).find(
-            (w) => w.id === ctx.workspaceId,
-          );
-          res.content.push({
-            type: "text",
-            text: `workspace: ${JSON.stringify(ws?.name ?? ctx.workspaceId)} (${ctx.workspaceId})`,
-          } as { text: string });
+          // Workspace the call actually used: the agent sees where it wrote.
+          const list = await accessibleWorkspaces(p).catch(() => []);
+          const label = (id: string, name?: string) =>
+            `${JSON.stringify(name ?? list.find((w) => w.id === id)?.name ?? id)} (${id})`;
+          const used = label(ctx.workspaceId);
+          let text = `workspace: ${used}`;
+          if (name === "workspaces.create") {
+            // The new workspace does not become the active one.
+            const created = parseJson(res.content[0]?.text) as {
+              id?: string;
+              name?: string;
+            } | null;
+            if (created?.id)
+              text = `workspace: created ${label(created.id, created.name)}; active is still ${used}`;
+          }
+          res.content.push({ type: "text", text } as { text: string });
         }
         const text = res?.isError ? (res.content?.[0]?.text ?? "") : null;
         const code = text?.match(/^\[([a-z_]+)\]/)?.[1] ?? "error";
@@ -189,6 +236,14 @@ export function registerTools(server: McpServer) {
         return res as never;
       },
     );
+  }
+}
+
+function parseJson(text?: string): unknown {
+  try {
+    return text ? JSON.parse(text) : null;
+  } catch {
+    return null;
   }
 }
 
