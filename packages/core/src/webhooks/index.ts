@@ -70,6 +70,8 @@ const optionsSchema = z.object({
   splitPath: z.string().min(1).optional(),
   storeSample: z.boolean().optional(),
   dedupe: z.enum(["id", "id+hash", "none"]).optional(),
+  // Reception refused (422) when a trigger's match field does not resolve.
+  rejectUnmapped: z.boolean().optional(),
 });
 type WebhookOptions = z.infer<typeof optionsSchema>;
 
@@ -279,11 +281,21 @@ const asObject = (v: unknown) =>
 
 // Public reception. The webhook is read without tenant (unguessable id), everything
 // else goes through its creator's context. `test`: nothing is pushed.
+// Synchronous mapping check injected by the HTTP route (triggers).
+export type MappingCheck = (
+  ctx: TenantContext,
+  hookName: string,
+  items: unknown[],
+) => Promise<{
+  missing: { field: string; path: string | null }[];
+  warnings: string[];
+}>;
+
 export async function receiveWebhook(
   id: string,
   body: string,
   headers: Headers,
-  opts: { test?: boolean } = {},
+  opts: { test?: boolean; check?: MappingCheck } = {},
 ): Promise<WebhookResponse> {
   if (!z.uuid().safeParse(id).success)
     return { status: 404, body: { error: "Webhook not found" } };
@@ -328,6 +340,27 @@ export async function receiveWebhook(
     return { status: 422, body: { error: (e as Error).message } };
   }
   const batch = items.length > 1 || !!o.splitPath || Array.isArray(payload);
+  const warnings: string[] = [];
+  if (opts.check) {
+    const c = await opts.check(ctx, hook.name, items);
+    if (c.missing.length && o.rejectUnmapped)
+      return {
+        status: 422,
+        body: {
+          error: "Match field not found in the payload",
+          missing: c.missing,
+        },
+      };
+    warnings.push(
+      ...c.missing.map(
+        (m) =>
+          `match field ${m.field}: path ${m.path ?? "(unmapped)"} resolved to nothing`,
+      ),
+      ...c.warnings,
+    );
+  }
+  // `x-runbase-test: 1`: test event, its record and runs are test too.
+  const test = headers["x-runbase-test"] === "1";
   const out = [];
   for (const [i, item] of items.entries()) {
     // Header id (standard) takes precedence outside batches; in a batch, the
@@ -351,6 +384,7 @@ export async function receiveWebhook(
       payload: asObject(item),
       source: `webhook:${hook.name}`,
       idempotencyKey: key,
+      ...(test && { test: true }),
     });
     // Resend of an event whose fan-out failed: replayed, not deduplicated.
     let duplicate = event.duplicate;
@@ -363,11 +397,15 @@ export async function receiveWebhook(
   const duplicate = out.every((e) => e.duplicate);
   // Sample for the mapping: last new one received (a replay does not overwrite it).
   if (!duplicate && o.storeSample !== false) await saveSample();
+  const extra = {
+    ...(test && { test: true }),
+    ...(warnings.length && { warnings }),
+  };
   return {
     status: 200,
     body: batch
-      ? { events: out, duplicate }
-      : { event_id: out[0]?.event_id, duplicate },
+      ? { events: out, duplicate, ...extra }
+      : { event_id: out[0]?.event_id, duplicate, ...extra },
   };
 }
 
@@ -387,6 +425,7 @@ const parseConfig = (config: WebhookInput["config"]) => ({
     splitPath: config.splitPath,
     storeSample: config.storeSample,
     dedupe: config.dedupe,
+    rejectUnmapped: config.rejectUnmapped,
   }),
 });
 
@@ -429,7 +468,11 @@ export const webhooksService = {
   // revoking the key or removing the member cuts the webhook.
   create: async (ctx: TenantContext, input: WebhookInput) => {
     await requireScope(ctx, "admin");
-    const config = parseConfig(input.config);
+    // New hooks refuse unresolved match fields unless told otherwise.
+    const config = {
+      ...parseConfig(input.config),
+      rejectUnmapped: input.config.rejectUnmapped ?? true,
+    };
     const secretName = secretNameSchema.parse(input.secretName);
     const a = ctx.actor;
     return withTenant(ctx, async (tx) => {
