@@ -20,6 +20,9 @@ export type TenantContext = {
   // Context of a test run (A4): writes (records, events) and descendant
   // runs flagged as test by default, deleted by workspace.purge_test.
   test?: boolean;
+  // Writes made by a run: id of its workflow (its own record triggers skip
+  // them, see triggers/resolve).
+  viaWorkflow?: string;
 };
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];

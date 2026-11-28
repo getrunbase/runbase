@@ -120,6 +120,8 @@ async function runStep(job: Job<StepJob>) {
   if (!run || FINISHED.includes(run.status) || run.status === "paused") return;
   // Test run: writes and descendant runs flagged as test (A4).
   if (run.isTest) ctx = { ...ctx, test: true };
+  // Record writes of this run: skipped by the workflow's own record triggers.
+  ctx = { ...ctx, viaWorkflow: run.workflowId };
   const paths = run.paths as Paths;
   const p = paths[path];
   if (!p || p.n !== n || p.status !== "running") {

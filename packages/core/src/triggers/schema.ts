@@ -32,8 +32,9 @@ const eventAlias = (v: unknown) => {
 };
 
 // Delivery while a run of the workflow is active on the same record:
-// `latest` (default) coalesces them into one follow-up that replays the
-// latest one (older ones are marked superseded), `each` queues every one.
+// `latest` coalesces them into one follow-up that replays the latest one
+// (older ones are marked superseded), `each` queues every one. Default:
+// `each` for trigger.webhook (no delivery dropped), `latest` otherwise.
 const queueMode = z.enum(["latest", "each"]).optional();
 
 // Trigger variants, also exposed in the blocks catalog (blocks.list).
@@ -48,6 +49,10 @@ export const triggerVariants = z.discriminatedUnion("type", [
     object: z.string(),
     // Empty or missing: any change triggers.
     fields: z.array(z.string()).optional(),
+    // Value filter: field -> expected new value (e.g. { status: "Qualified" }).
+    // Triggers only when each listed field changed in this write and now
+    // equals its value.
+    to: z.record(z.string(), z.unknown()).optional(),
     queue: queueMode,
   }),
   z.object({
