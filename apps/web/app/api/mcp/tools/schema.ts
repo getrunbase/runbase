@@ -2,13 +2,16 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
 import type { TenantContext } from "@getrunbase/core/tenant";
-import { databasesService } from "@getrunbase/core/databases";
+import { databasesService, DEFAULT_DATABASE } from "@getrunbase/core/databases";
 import { fieldSchema, objectsService } from "@getrunbase/core/objects";
 import { filterSchema } from "@getrunbase/core/filter";
 import { notFound } from "@getrunbase/core/errors";
 import { catalogService, submissionSchema } from "@getrunbase/core/catalog";
 import { viewsService } from "@getrunbase/core/views";
-import { MAX_SAMPLE_RECORDS, templatesService } from "@getrunbase/core/templates";
+import {
+  MAX_SAMPLE_RECORDS,
+  templatesService,
+} from "@getrunbase/core/templates";
 import { lintObject } from "@getrunbase/core/lint";
 import { run, getObject, objectId, slug, linted } from "./shared";
 
@@ -121,9 +124,19 @@ export function defineSchemaTools(server: McpServer, ctx: TenantContext) {
       }),
     },
     (input) =>
-      run(() =>
-        linted(ctx, lintObject(input), () => objectsService.create(ctx, input)),
-      ),
+      run(async () => {
+        // No database given and none exists yet: the default one is created.
+        const fresh =
+          !input.database && !(await databasesService.list(ctx)).length;
+        const out = await linted(ctx, lintObject(input), () =>
+          objectsService.create(ctx, input),
+        );
+        if (!fresh) return out;
+        const notice = `No database given: created the default database "${DEFAULT_DATABASE.slug}". Pass \`database\` (see databases.create) to group objects.`;
+        return out && typeof out === "object" && !Array.isArray(out)
+          ? { ...out, notice }
+          : { result: out, notice };
+      }),
   );
   server.registerTool(
     "objects.update_schema",
