@@ -430,3 +430,55 @@ test("active run: self-trigger skipped quietly, external write queues one follow
   assert.equal((await errs()).length, 0);
   await busQueue().obliterate({ force: true });
 });
+
+test("record_updated: `to` filter and writes of the workflow's own run skipped", async () => {
+  await busQueue().obliterate({ force: true });
+  const ctx = await owner("ToFilter");
+  const obj = await objectsService.create(ctx, {
+    slug: "lead",
+    name: "Lead",
+    fields: [
+      { key: "name", label: "Name", type: "text" },
+      { key: "status", label: "Status", type: "text" },
+    ],
+  });
+  const wf = await workflowsService.create(ctx, {
+    name: "Qualified",
+    definition: {
+      trigger: {
+        type: "trigger.record_updated",
+        object: "lead",
+        to: { status: "Qualified" },
+      },
+      steps,
+    },
+  });
+  await workflowsService.update(ctx, wf.id, { status: "active" });
+  const { record } = await recordsService.upsert(ctx, {
+    objectId: obj.id,
+    data: { name: "Ann", status: "New" },
+  });
+  const updated = (changed: string[], c: TenantContext = ctx) =>
+    resolve({ name: "record.updated", data: { ...c, id: record.id, changed } });
+  // Status is New: no run.
+  assert.equal((await updated(["status"])).length, 0);
+  await recordsService.update(ctx, record.id, { status: "Qualified" });
+  // Another field changed while already Qualified: no run.
+  assert.equal((await updated(["name"])).length, 0);
+  // Write made by a run of this same workflow: skipped.
+  assert.equal(
+    (await updated(["status"], { ...ctx, viaWorkflow: wf.id })).length,
+    0,
+  );
+  // Write made by another workflow's run, or a person: one run.
+  assert.equal(
+    (
+      await updated(["status"], {
+        ...ctx,
+        viaWorkflow: crypto.randomUUID(),
+      })
+    ).length,
+    1,
+  );
+  await busQueue().obliterate({ force: true });
+});

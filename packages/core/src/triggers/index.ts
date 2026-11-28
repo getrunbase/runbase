@@ -433,6 +433,9 @@ export async function resolve(job: { name: BusEvent; data: BusJob }) {
   const { id, changed = [], depth = 0, key, only, ...base } = job.data;
   delete base.fq;
   delete base.followups;
+  // Workflow whose run made this record write: its own record triggers skip it.
+  const via = base.viaWorkflow;
+  delete base.viaWorkflow;
   let ctx: TenantContext = base;
   if (job.name === "record.deleted") return [];
   // Paused workspace: triggers stop (the event or record itself is kept).
@@ -442,6 +445,7 @@ export async function resolve(job: { name: BusEvent; data: BusJob }) {
   let recordId: string | undefined;
   let eventType: string | undefined;
   let ev: typeof events.$inferSelect | undefined;
+  let data: Record<string, unknown> = {};
   if (job.name === "event.received") {
     [ev] = await withTenant(ctx, (tx) =>
       tx.select().from(events).where(eq(events.id, id)),
@@ -454,6 +458,7 @@ export async function resolve(job: { name: BusEvent; data: BusJob }) {
     const r = await recordsService.get(ctx, id);
     objectId = r.objectId;
     recordId = id;
+    data = (r.data ?? {}) as Record<string, unknown>;
     if (r.isTest) ctx = { ...ctx, test: true };
   }
   // Batch preload: triggers and referenced objects, constant number
@@ -479,6 +484,8 @@ export async function resolve(job: { name: BusEvent; data: BusJob }) {
   for (const { id: wfId, trigger: t } of triggers) {
     // Follow-up or error retry: only the targeted workflow.
     if (only && wfId !== only) continue;
+    // Record write made by a run of this workflow: re-triggering would loop.
+    if (via === wfId && job.name !== "event.received") continue;
     const match =
       (job.name === "record.created" &&
         t.type === "trigger.record_created" &&
@@ -486,6 +493,7 @@ export async function resolve(job: { name: BusEvent; data: BusJob }) {
       (job.name === "record.updated" &&
         t.type === "trigger.record_updated" &&
         (!t.fields?.length || t.fields.some((f) => changed.includes(f))) &&
+        changedTo(t.to, changed, data) &&
         slugs(t.object)) ||
       (t.type === "trigger.event" && t.event === eventType) ||
       (t.type === "trigger.webhook" && ev?.source === `webhook:${t.webhook}`);
@@ -542,11 +550,32 @@ export async function resolve(job: { name: BusEvent; data: BusJob }) {
         event: ev && withEventMeta(ev, ev.recordId ?? target),
         key: key && `bus:${key}`,
         origin: job,
-        each: "queue" in t && t.queue === "each",
+        each: queueEach(t),
       }),
     );
   }
   return runs.filter(Boolean).map((r) => r!.id);
+}
+
+// Follow-up mode of a trigger: webhooks keep every delivery unless
+// `queue: "latest"`, other triggers coalesce unless `queue: "each"`.
+export function queueEach(t: Trigger) {
+  const queue = (t as { queue?: string }).queue;
+  return t.type === "trigger.webhook" ? queue !== "latest" : queue === "each";
+}
+
+// `to` filter of trigger.record_updated: each field changed in this write
+// and now holds the expected value. No filter: true.
+export function changedTo(
+  to: Record<string, unknown> | undefined,
+  changed: string[],
+  data: Record<string, unknown>,
+) {
+  if (!to) return true;
+  return Object.entries(to).every(
+    ([f, v]) =>
+      changed.includes(f) && JSON.stringify(data[f]) === JSON.stringify(v),
+  );
 }
 
 // Event payload enriched with `recordId` (linked record) when it is an object

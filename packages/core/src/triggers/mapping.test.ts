@@ -3,11 +3,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { z } from "zod";
 import {
+  changedTo,
   errorText,
   mapPayload,
   mappedValueProblems,
   mappingProblem,
   pickMapped,
+  queueEach,
   supersededPayload,
 } from "./index";
 
@@ -78,5 +80,35 @@ test("mappedValueProblems: invalid email, unknown option, unknown field", () => 
   assert.deepEqual(
     mappedValueProblems(fields as never, { email: "a@x.io", plan: "a" }),
     [],
+  );
+});
+
+test("queueEach: webhooks keep every delivery by default, others coalesce", () => {
+  assert.equal(queueEach({ type: "trigger.webhook", webhook: "h" }), true);
+  assert.equal(
+    queueEach({ type: "trigger.webhook", webhook: "h", queue: "latest" }),
+    false,
+  );
+  assert.equal(
+    queueEach({ type: "trigger.record_updated", object: "deal" }),
+    false,
+  );
+  assert.equal(
+    queueEach({ type: "trigger.event", event: "e", queue: "each" }),
+    true,
+  );
+  assert.equal(queueEach({ type: "trigger.manual" }), false);
+});
+
+test("changedTo: field must change in this write and equal the value", () => {
+  assert.equal(changedTo(undefined, [], {}), true);
+  const to = { status: "Qualified" };
+  assert.equal(changedTo(to, ["status"], { status: "Qualified" }), true);
+  assert.equal(changedTo(to, ["status"], { status: "Lost" }), false);
+  // Already Qualified, another field changed: no trigger.
+  assert.equal(changedTo(to, ["name"], { status: "Qualified" }), false);
+  assert.equal(
+    changedTo({ n: 3, ok: true }, ["n", "ok"], { n: 3, ok: true }),
+    true,
   );
 });
