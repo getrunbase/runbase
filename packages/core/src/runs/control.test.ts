@@ -278,6 +278,11 @@ test("retry per step, continueOnFail, timeout, loop without replaying iterations
   assert.ok(done!.steps[0]!.startedAt);
   // continueOnFail: the next step reads the failure in steps.b.output.error.
   assert.deepEqual(done!.steps[2]!.input, { key: "failure dead #1" });
+  // Handled by the error branch: no error center entry.
+  assert.equal(
+    (await errorsService.list(ctx, { runId: r!.id })).items.length,
+    0,
+  );
 
   // Configuration error: no new attempt despite the retry policy, no stack.
   const conf = await workflowsService.create(ctx, {

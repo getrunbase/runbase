@@ -39,10 +39,15 @@ export function defineRunTools(server: McpServer, ctx: TenantContext) {
     "workflows.run_manual",
     {
       description:
-        "trigger.manual: starts a workflow on a record or a selection of records (no record = one run without a record). Records that already have an active run are skipped.",
-      inputSchema: z.object({ id: wfId, recordIds: z.array(z.string()) }),
+        "trigger.manual: starts a workflow on a record or a selection of records (no record = one run without a record). Records that already have an active run are skipped. test: true flags the runs as test (deleted by workspace.purge_test).",
+      inputSchema: z.object({
+        id: wfId,
+        recordIds: z.array(z.string()),
+        test: z.boolean().optional(),
+      }),
     },
-    ({ id, recordIds }) => run(() => triggersService.manual(ctx, id, recordIds)),
+    ({ id, recordIds, test }) =>
+      run(() => triggersService.manual(ctx, id, recordIds, { test })),
   );
   server.registerTool(
     "runs.list",
@@ -166,7 +171,7 @@ export function defineRunTools(server: McpServer, ctx: TenantContext) {
     "runs.decide",
     {
       description:
-        "Approves or rejects a paused run (human.approve): it resumes on the approved or rejected branch. not_found error (unknown run) or not_waiting (run or path not waiting, with the reason).",
+        "Approves or rejects a paused run (human.approve): it resumes on the approved or rejected branch. Returns { runId, branch, status }; the step output carries { message, approved, by, decidedAt, comment? }. not_found error (unknown run) or not_waiting (run or path not waiting, with the reason).",
       inputSchema: z.object({
         id: z.string().describe("Run id"),
         approved: z.boolean(),
@@ -174,11 +179,22 @@ export function defineRunTools(server: McpServer, ctx: TenantContext) {
           .string()
           .optional()
           .describe("Waiting path to decide (default: the first)"),
+        comment: z
+          .string()
+          .optional()
+          .describe("Reason for the decision, stored in the step output"),
       }),
     },
-    ({ id, approved, path }) =>
+    ({ id, approved, path, comment }) =>
       run(async () => {
-        if (await runsService.decide(ctx, id, approved, path)) return true;
+        const decided = await runsService.decide(
+          ctx,
+          id,
+          approved,
+          path,
+          comment,
+        );
+        if (decided) return decided;
         const r = await runsService.get(ctx, id);
         if (!r)
           throw notFound(

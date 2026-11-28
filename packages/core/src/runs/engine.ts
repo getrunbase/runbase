@@ -292,13 +292,20 @@ async function runStep(job: Job<StepJob>) {
       const branch = next?.error?.length
         ? "error"
         : (block.branches[0] ?? "ok");
-      await recordError(ctx, {
-        source: "workflow",
-        runId,
-        stepId: p.step,
-        message: `${message} (the run continues)`,
-        payload: { input },
-      });
+      // Handled by a connected error branch: expected, logged only.
+      // Without one the run continues on the default branch: error center.
+      if (branch === "error")
+        console.info(
+          `[runs] ${runId} ${p.step}: ${message} (handled by the error branch)`,
+        );
+      else
+        await recordError(ctx, {
+          source: "workflow",
+          runId,
+          stepId: p.step,
+          message: `${message} (the run continues)`,
+          payload: { input },
+        });
       await advance(
         ctx,
         ref,
@@ -333,7 +340,13 @@ async function runStep(job: Job<StepJob>) {
     // (or the expiry). The other paths continue.
     // Expiry due date registered with the wait (survives Redis).
     const expire = await onPath(ctx, ref, async (tx, _r, q, all) => {
-      all[path] = { ...q, status: "waiting" };
+      const shown = (result.output as { message?: unknown } | null)?.message;
+      all[path] = {
+        ...q,
+        status: "waiting",
+        ...(step.type === "human.approve" &&
+          typeof shown === "string" && { message: shown }),
+      };
       return {
         out: result.expireMs
           ? [

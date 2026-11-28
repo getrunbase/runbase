@@ -25,6 +25,21 @@ test("config and auth errors are not retried", () => {
   assert.ok(!isNonRetryable(new Error("network down")));
 });
 
+test("validation errors (match, required, schema) are not retried", () => {
+  for (const code of [
+    "records.fieldRequired",
+    "blocks.matchOrExternalIdRequired",
+    "pages.editNoMatch",
+    "catalog.slugMismatch",
+    "functions.invalidInput",
+    "blocks.mapInvalidValue",
+    "function.emptyOutputSchema",
+  ])
+    assert.ok(isNonRetryable(appError(code, "x")), code);
+  assert.ok(isNonRetryable(z.object({ a: z.string() }).safeParse({}).error));
+  assert.ok(!isNonRetryable(appError("blocks.mcpTimeout", "x")));
+});
+
 test("zod issues become `field: message` lines", () => {
   const r = z.object({ email: z.string(), n: z.number() }).safeParse({});
   assert.equal(
