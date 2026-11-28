@@ -129,6 +129,50 @@ async function refreshFormulas(
   }
 }
 
+async function refuseTypeChangeWithData(
+  tx: Tx,
+  ctx: TenantContext,
+  id: string,
+  next: unknown,
+) {
+  const [row] = await tx
+    .select({ fields: objects.fields })
+    .from(objects)
+    .where(inWs(ctx, id));
+  if (!row) return;
+  const old = fieldsSchema.parse(row.fields);
+  const parsed = fieldsSchema.safeParse(next);
+  if (!parsed.success) return;
+  for (const f of parsed.data) {
+    const o = old.find((x) => x.key === f.key);
+    if (!o || o.type === f.type || COMPUTED.includes(o.type)) continue;
+    const [c] = await tx
+      .select({ n: count() })
+      .from(records)
+      .where(
+        and(
+          eq(records.objectId, id),
+          sql`${records.data} ->> ${f.key} is not null`,
+        ),
+      );
+    if (c?.n)
+      throw appError(
+        "objects.typeChangeHasData",
+        "Field {field} holds data in {count} record(s): changing its type from {from} to {to} would leave invalid values. Use objects.migrate with op change_type (dryRun first), or pass force: true",
+        { field: f.key, count: c.n, from: o.type, to: f.type },
+      );
+  }
+}
+const COMPUTED = [
+  "formula",
+  "lookup",
+  "rollup",
+  "created_at",
+  "updated_at",
+  "created_by",
+  "autonumber",
+];
+
 // Relation target: slug or uuid accepted as input, slug stored (the rest of the
 // code compares slugs). Unknown target = error. `self`: object being created.
 async function normalizeRefs(
@@ -163,7 +207,11 @@ const EXPORT_PAGE = 1000;
 // - change_type: values converted (text -> number, etc.), failures reported;
 // - add: new field, `default` written into existing records;
 // - require: field made mandatory, `default` for empty records;
-// - delete: field removed from the schema and from all records.
+// - delete: field removed from the schema and from all records;
+// - update: properties merged into one field (label, options, formula
+//   expression, validation), existing values checked against them.
+// change_type: `map` rewrites values before conversion ({"Won": "won"}),
+// `caseInsensitive` matches `map` keys and select options ignoring case.
 export type MigrateOp =
   | { op: "rename"; field: string; to: string; label?: string }
   | {
@@ -172,6 +220,25 @@ export type MigrateOp =
       type: Field["type"];
       options?: string[];
       object?: string;
+      dropInvalid?: boolean;
+      map?: Record<string, unknown>;
+      caseInsensitive?: boolean;
+    }
+  | {
+      op: "update";
+      field: string;
+      label?: string;
+      options?: string[];
+      // Formula expression (alias: formula).
+      expression?: string;
+      formula?: string;
+      validation?: {
+        pattern?: string | null;
+        min?: number | null;
+        max?: number | null;
+        minLength?: number | null;
+        maxLength?: number | null;
+      };
       dropInvalid?: boolean;
     }
   | { op: "add"; field: Field; default?: unknown }
@@ -330,12 +397,13 @@ export function migrationPlan(before: Field[], op: MigrateOp) {
         ...(op.options && { options: op.options }),
         ...(op.object && { object: op.object }),
       });
+      const remap = valueMapper(f, op.map, op.caseInsensitive);
       return {
         field: f.key,
         fields: before.map((x) => (x.key === f.key ? f : x)),
         apply: (d: Data): Change => {
           if (d[f.key] == null) return null;
-          const v = convertValue(d[f.key], f);
+          const v = remap(convertValue(remap(d[f.key]), f));
           const error = checkValue(f, v);
           if (error) return { data: without(d, f.key), error };
           return isDeepStrictEqual(v, d[f.key])
@@ -344,7 +412,59 @@ export function migrationPlan(before: Field[], op: MigrateOp) {
         },
       };
     }
+    case "update": {
+      const old = fieldOf(before, op.field);
+      const next: Record<string, unknown> = { ...old };
+      if (op.label !== undefined) next.label = op.label;
+      if (op.options !== undefined) next.options = op.options;
+      const formula = op.expression ?? op.formula;
+      if (formula !== undefined) {
+        if (old.type !== "formula")
+          throw appError(
+            "objects.migrateNotFormula",
+            "Field {field} is not a formula: an expression applies to formula fields only",
+            { field: old.key },
+          );
+        next.formula = formula;
+      }
+      for (const [k, v] of Object.entries(op.validation ?? {}))
+        if (v === null) delete next[k];
+        else if (v !== undefined) next[k] = v;
+      const f = fieldSchema.parse(next);
+      return {
+        field: f.key,
+        fields: before.map((x) => (x.key === f.key ? f : x)),
+        apply: (d: Data): Change => {
+          if (f.type === "formula" || d[f.key] == null) return null;
+          const error = checkValue(f, d[f.key]);
+          return error ? { data: without(d, f.key), error } : null;
+        },
+      };
+    }
   }
+}
+
+// Value rewriting for change_type: explicit `map`, then (caseInsensitive)
+// select options matched ignoring case. Arrays are mapped item by item.
+function valueMapper(
+  f: Field,
+  map: Record<string, unknown> | undefined,
+  caseInsensitive: boolean | undefined,
+) {
+  const norm = (s: string) => (caseInsensitive ? s.trim().toLowerCase() : s);
+  const entries = new Map(
+    Object.entries(map ?? {}).map(([k, v]) => [norm(k), v]),
+  );
+  const options = "options" in f ? f.options : [];
+  const one = (x: unknown): unknown => {
+    if (typeof x !== "string") return x;
+    const k = norm(x);
+    if (entries.has(k)) return entries.get(k);
+    if (caseInsensitive) return options.find((o) => norm(o) === k) ?? x;
+    return x;
+  };
+  if (!entries.size && !caseInsensitive) return (v: unknown) => v;
+  return (v: unknown) => (Array.isArray(v) ? v.map(one) : one(v));
 }
 
 // Deletion of an object in a transaction: its records (and its trash)
@@ -443,13 +563,18 @@ export const objectsService = {
       return row!;
     });
   },
+  // A type change on a field that holds data is refused (values would be
+  // left invalid) unless `force`: objects.migrate change_type converts them.
   update: async (
     ctx: TenantContext,
     id: string,
     patch: Partial<Omit<ObjectInput, "slug" | "database">>,
+    opts: { force?: boolean } = {},
   ) => {
     await requireScope(ctx, "admin");
     return withTenant(ctx, async (tx) => {
+      if (patch.fields && !opts.force)
+        await refuseTypeChangeWithData(tx, ctx, id, patch.fields);
       const set = {
         ...patch,
         ...(patch.fields && {
@@ -580,6 +705,9 @@ export const objectsService = {
         touched: 0,
         invalid: 0,
         samples: [] as { id: string; value: unknown; error: string }[],
+        // Up to 5 changed records: value of the field before and after
+        // (normalized, or recomputed for a formula).
+        examples: [] as { id: string; before: unknown; after: unknown }[],
       };
       const writes: { id: string; data: Record<string, unknown> }[] = [];
       for (let last = ""; ;) {
@@ -599,9 +727,18 @@ export const objectsService = {
         for (const r of rows) {
           report.records++;
           const out = plan.apply(r.data);
-          if (!out) continue;
+          // Computed fields (formulas) follow the new schema: a record
+          // whose formula result changes counts as touched.
+          const data = applyComputed(after, out?.data ?? r.data);
+          if (!out && isDeepStrictEqual(data, r.data)) continue;
           report.touched++;
-          if (out.error) {
+          if (report.examples.length < 5)
+            report.examples.push({
+              id: r.id,
+              before: r.data[plan.field] ?? null,
+              after: data[op.op === "rename" ? op.to : plan.field] ?? null,
+            });
+          if (out?.error) {
             report.invalid++;
             if (report.samples.length < 10)
               report.samples.push({
@@ -610,11 +747,13 @@ export const objectsService = {
                 error: out.error,
               });
           }
-          writes.push({ id: r.id, data: out.data });
+          writes.push({ id: r.id, data });
         }
       }
       if (opts.dryRun) return { dryRun: true, ...report };
-      if (report.invalid && !(op.op === "change_type" && op.dropInvalid)) {
+      const canDrop =
+        (op.op === "change_type" || op.op === "update") && op.dropInvalid;
+      if (report.invalid && !canDrop) {
         const p = {
           count: report.invalid,
           samples: report.samples
@@ -622,7 +761,7 @@ export const objectsService = {
             .map((x) => `${x.id}: ${x.error}`)
             .join("; "),
         };
-        throw op.op === "change_type"
+        throw op.op === "change_type" || op.op === "update"
           ? appError(
               "objects.migrateInvalidValues",
               "{count} invalid record(s) after migration (e.g. {samples}): fix the values or pass dropInvalid",
@@ -690,7 +829,10 @@ export const objectsService = {
     const existing = await workspaceIndexes(
       (await objectsService.list(ctx)).map((o) => o.id),
     );
-    if (!existing.includes(name) && existing.length >= MAX_INDEXES_PER_WORKSPACE)
+    if (
+      !existing.includes(name) &&
+      existing.length >= MAX_INDEXES_PER_WORKSPACE
+    )
       throw appError(
         "objects.indexQuota",
         "Index limit reached for this workspace ({max})",
