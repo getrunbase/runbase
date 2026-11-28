@@ -130,6 +130,10 @@
   "workflows.stepRefNotOutput": "{step} : {variable} : les valeurs d'une étape se lisent sous steps.{source}.output",
   "workflows.unknownEventPath": "{step} : {variable} absent de l'échantillon du webhook (event est le payload lui-même)",
   "workflows.switchNoDefault": "{step} : le switch n'a pas de branche par défaut (else) connectée",
-  "workflows.unhandledBranch": "{step} : la branche {branch} n'est pas connectée, l'exécution s'y arrête sans bruit",
-  "workflows.domainNotAllowed": "{step} : {host} n'est pas dans les domaines autorisés de l'espace, la requête sera refusée"
+  "workflows.unhandledBranch": "{step} : la branche {branch} n'est pas connectée, l'exécution s'y arrête sans bruit (next.{step}.{branch}: [] pour terminer volontairement)",
+  "workflows.domainNotAllowed": "{step} : {host} n'est pas dans les domaines autorisés de l'espace, la requête sera refusée",
+  "workflows.missingAiConfig": "{step} : aucun fournisseur IA défini (input.ai { provider, model, secret }) : il n'y a pas de fournisseur par défaut",
+  "workflows.missingSecretHandled": "Secret manquant {name} : {steps} prendra la branche error tant qu'il n'est pas défini",
+  "workflows.unknownStepObject": "{step} : objet inconnu {object}",
+  "workflows.computedFieldWrite": "{step} : {field} est un champ calculé ({type}) de {object}, sa valeur ne peut pas être écrite"
 }

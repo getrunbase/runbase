@@ -338,12 +338,15 @@ const unknownFunction = (name: string, version?: number) =>
         { name },
       );
 
-// Keys declared in outputSchema.properties but absent from a returned object.
+// Keys listed in outputSchema.required but absent from a returned object
+// (optional properties may be omitted).
 export function missingOutputKeys(schema: unknown, output: unknown): string[] {
-  const props = (schema as { properties?: unknown } | null)?.properties;
-  if (!props || typeof props !== "object") return [];
+  const required = (schema as { required?: unknown } | null)?.required;
+  if (!Array.isArray(required)) return [];
   if (!output || typeof output !== "object" || Array.isArray(output)) return [];
-  return Object.keys(props).filter((k) => !(k in output));
+  return required.filter(
+    (k): k is string => typeof k === "string" && !(k in output),
+  );
 }
 
 export const functionsService = {

@@ -12,6 +12,7 @@ Goal: a workspace another person can read, debug and extend. The rules below are
 4. functions.save, then functions.test { dryRun: true } on every function.
 5. workflows.create, workflows.validate (errors and warnings empty), workflows.dry_run, runs.start { test: true }, runs.get. Fix and repeat, then workflows.activate.
 6. workspace.purge_test to remove test data.
+7. notes.save on each workflow and function you built: the why (decisions, local conventions, known pitfalls), not the structure. The next agent reads it with notes.list.
 
 ## Native block or function
 - Use a native block when one exists: record.search, record.upsert, record.update, condition, switch, list.*, data.transform, date, http.request, event.emit, ai.*, human.approve, wait, workflow.run, stop.error.
@@ -28,6 +29,7 @@ Goal: a workspace another person can read, debug and extend. The rules below are
 ## Triggers: react, do not poll
 - Work on a record when it changes: trigger.record_created, trigger.record_updated { fields: [...] } (list the fields, otherwise every change triggers).
 - External systems: webhooks.create + trigger.webhook (mapping + match on a unique field) instead of a cron that polls an API.
+- Test a webhook before mapping it: webhooks.test sends a signed sample payload (or have the sender call the test URL, testPath, which stores the sample without starting a run), then webhooks.list shows the sample to write mapping and match. Never guess payload paths.
 - Never chain staggered crons that read a status set by another cron ("every 5 min, pick rows where status = to_enrich"). Use record or event triggers, or event.emit to hand off to the next workflow.
 - trigger.schedule is for time-based jobs only: digests, reports, reminders, cleanups. Set timezone.
 - Several runs on the same record or account: set concurrencyKey ("{{record.id}}").
@@ -37,7 +39,11 @@ Goal: a workspace another person can read, debug and extend. The rules below are
 - Never write an error message into a record field (notes, status text, last_error) and return success. Never swallow an exception with an empty catch.
 - Expected business outcomes are branches, not errors: declare \`branch\` with an enum in the outputSchema (for example ["found", "not_found"]) and connect each branch in \`next\`.
 - Use stop.error in the workflow to fail a run on purpose with a clear message.
-- For optional steps only, retry.continueOnFail: true with the \`error\` branch connected.
+- For optional steps only, retry.continueOnFail: true with the \`error\` branch connected. Never write {{steps.<id>.output.error}} into a record field.
+- Connect every empty / not_found / false branch. To end the run there on purpose, write it explicitly: \`next: { find: { empty: [] } }\`.
+- human.approve with a timeout: the \`expired\` branch must change state (record.update a status, event.emit, stop.error).
+- ai.* steps always set input.ai (provider, model, secret): there is no default provider.
+- Never write computed fields (formula, lookup, rollup, autonumber, created_at...): the platform sets them.
 
 ## Tests: use the platform, not flags
 - Test with functions.test, workflows.dry_run, workflows.test_step and runs.start { test: true }. Data written in a test run is marked test and removed by workspace.purge_test.

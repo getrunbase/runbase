@@ -5,6 +5,7 @@ import { getBlock } from "../blocks";
 import { validateCondition } from "../blocks/catalog/condition";
 import { assertAllowed } from "../blocks/catalog/external";
 import { objectsService } from "../objects";
+import { isComputed, type Field } from "../objects/fields";
 import { paths } from "../runs/templates";
 import type { TenantContext } from "../tenant";
 import type { Trigger } from "../triggers/schema";
@@ -189,21 +190,20 @@ export async function filterChecks(
   }
 }
 
-// Unhandled outcomes: a switch without its default (`else`) branch, and,
-// in a webhook-triggered workflow, an unconnected empty / false /
-// not_found branch (the run ends silently on it).
+// Unhandled outcomes: a switch without its default (`else`) branch, and
+// an unconnected empty / false / not_found branch (the run ends silently
+// on it), whatever the trigger. `next.X.empty: []` is an explicit end.
 export async function branchWarnings(
   ctx: TenantContext,
   steps: Step[],
   next: Record<string, Record<string, string[]>>,
-  webhook: boolean,
   warnings: ErrorItem[],
 ) {
   for (const s of steps) {
     const block = await getBlock(ctx, s.type);
     if (!block) continue;
     const out = next[s.id] ?? {};
-    if (s.type === "switch" && Object.keys(out).length && !out.else?.length)
+    if (s.type === "switch" && Object.keys(out).length && !("else" in out))
       warnings.push(
         errorItem(
           "workflows.switchNoDefault",
@@ -211,24 +211,78 @@ export async function branchWarnings(
           { step: s.id },
         ),
       );
-    if (
-      !webhook ||
-      !(
-        s.type === "record.search" ||
-        s.type === "condition" ||
-        s.type.startsWith("fn.")
-      )
-    )
+    if (!(
+      s.type === "record.search" ||
+      s.type === "record.get" ||
+      s.type === "condition" ||
+      s.type.startsWith("fn.")
+    ))
       continue;
     for (const b of branchesOf(s, block))
-      if (["empty", "false", "not_found"].includes(b) && !out[b]?.length)
+      if (["empty", "false", "not_found"].includes(b) && !(b in out))
         warnings.push(
           errorItem(
             "workflows.unhandledBranch",
-            "{step}: branch {branch} is not connected, the run ends there silently",
+            "{step}: branch {branch} is not connected, the run ends there silently (set next.{step}.{branch}: [] to end on purpose)",
             { step: s.id, branch: b },
           ),
         );
+  }
+}
+
+// Record steps: a literal object slug must exist, and the data must not
+// write computed fields (formula, lookup, rollup, autonumber...), whose
+// value the platform sets. record.update is checked against the trigger
+// object when it updates {{record.id}}.
+export async function recordWriteChecks(
+  ctx: TenantContext,
+  triggerObject: string | undefined,
+  steps: Step[],
+  errors: ErrorItem[],
+) {
+  const objects = await objectsService.list(ctx);
+  const find = (ref: string) =>
+    objects.find((o) => o.slug === ref || o.id === ref);
+  for (const s of flatSteps(steps)) {
+    if (!s.type.startsWith("record.")) continue;
+    const i = (s.input ?? {}) as {
+      object?: unknown;
+      recordId?: unknown;
+      data?: unknown;
+    };
+    let ref: string | undefined;
+    if (typeof i.object === "string" && !isTemplate(i.object)) {
+      ref = i.object;
+      if (!find(ref)) {
+        errors.push(
+          errorItem(
+            "workflows.unknownStepObject",
+            "{step}: unknown object {object}",
+            { step: s.id, object: ref },
+          ),
+        );
+        continue;
+      }
+    } else if (
+      s.type === "record.update" &&
+      typeof i.recordId === "string" &&
+      /^\{\{\s*record\.id\s*\}\}$/.test(i.recordId)
+    )
+      ref = triggerObject;
+    const object = ref ? find(ref) : undefined;
+    if (!object || !i.data || typeof i.data !== "object") continue;
+    const fields = (object.fields ?? []) as Field[];
+    for (const key of Object.keys(i.data)) {
+      const f = fields.find((x) => x.key === key);
+      if (f && isComputed(f))
+        errors.push(
+          errorItem(
+            "workflows.computedFieldWrite",
+            "{step}: {field} is a computed field ({type}) of {object}, its value cannot be written",
+            { step: s.id, field: key, type: f.type, object: object.slug },
+          ),
+        );
+    }
   }
 }
 

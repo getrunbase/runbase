@@ -25,7 +25,7 @@ test("keys: snake_case English passes, kebab/camel/French warn", () => {
 
 test("objects: slug, keys and select options", () => {
   const ws = lintObject({
-    slug: "contacts",
+    slug: "contact",
     fields: [
       { key: "email", type: "email" },
       { key: "statut", type: "select", options: ["New", "🔥 Hot", "2. Won"] },
@@ -123,4 +123,94 @@ test("enforceLint: blocks only in strict mode", () => {
       e.code === "lint.failed" &&
       e.kind === "invalid_input",
   );
+});
+
+test("objects: plural slugs warn, singular words ending in s pass", () => {
+  assert.deepEqual(codes(lintObject({ slug: "contacts" })), ["key.pluralSlug"]);
+  assert.match(lintObject({ slug: "companies" })[0]!.hint, /company/);
+  for (const slug of ["status", "address", "deal_status", "business", "news"])
+    assert.deepEqual(lintObject({ slug }), [], slug);
+});
+
+test("functions: boolean outcome without a branch enum warns", () => {
+  const fn = (props: object) =>
+    codes(
+      lintFunction({
+        code: "x",
+        outputSchema: { type: "object", properties: props },
+      }),
+    );
+  assert.deepEqual(fn({ found: { type: "boolean" } }), [
+    "function.booleanOutcome",
+  ]);
+  assert.deepEqual(fn({ is_valid: { type: "boolean" } }), [
+    "function.booleanOutcome",
+  ]);
+  assert.deepEqual(fn({ score: { type: "number" } }), []);
+  assert.deepEqual(
+    fn({
+      found: { type: "boolean" },
+      branch: { type: "string", enum: ["found", "not_found"] },
+    }),
+    [],
+  );
+});
+
+test("workflows: error written into a record warns", () => {
+  const def = (data: object) => ({
+    steps: [
+      { id: "call", type: "http.request", retry: { continueOnFail: true } },
+      { id: "save", type: "record.update", input: { recordId: "x", data } },
+    ],
+    next: { call: { ok: [], error: ["save"] } },
+  });
+  assert.deepEqual(
+    codes(lintWorkflow(def({ note: "{{steps.call.output.error}}" }))),
+    ["workflow.errorInRecord"],
+  );
+  assert.deepEqual(
+    codes(lintWorkflow(def({ note: "Failed: {{steps.call.error.message}}" }))),
+    ["workflow.errorInRecord"],
+  );
+  assert.deepEqual(
+    lintWorkflow(def({ note: "{{steps.call.output.body}}" })),
+    [],
+  );
+});
+
+test("workflows: continueOnFail without an error branch warns", () => {
+  const steps = [
+    { id: "call", type: "http.request", retry: { continueOnFail: true } },
+    { id: "b", type: "wait" },
+  ];
+  assert.deepEqual(
+    codes(lintWorkflow({ steps, next: { call: { ok: ["b"] } } })),
+    ["workflow.continueOnFailNoErrorBranch"],
+  );
+  assert.deepEqual(
+    lintWorkflow({ steps, next: { call: { ok: ["b"], error: ["b"] } } }),
+    [],
+  );
+});
+
+test("workflows: human.approve expired branch that changes nothing warns", () => {
+  const steps = [
+    { id: "ask", type: "human.approve", input: { timeout: "2d" } },
+    { id: "pause", type: "wait" },
+    { id: "mark", type: "record.update" },
+  ];
+  assert.deepEqual(
+    codes(lintWorkflow({ steps, next: { ask: { expired: ["pause"] } } })),
+    ["workflow.approveExpiredNoop"],
+  );
+  assert.deepEqual(
+    codes(lintWorkflow({ steps, next: { ask: { expired: [] } } })),
+    ["workflow.approveExpiredNoop"],
+  );
+  assert.deepEqual(
+    lintWorkflow({ steps, next: { ask: { expired: ["mark"] } } }),
+    [],
+  );
+  // Not connected: the path fails, nothing silent.
+  assert.deepEqual(lintWorkflow({ steps, next: {} }), []);
 });

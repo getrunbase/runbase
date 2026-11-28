@@ -417,11 +417,15 @@ export const workflowsService = {
     const id = (await resolveId(ctx, ref)) ?? ref;
     const definition =
       patch.definition && (await validate(ctx, patch.definition));
-    // An invalid workflow cannot be activated.
+    // An invalid workflow cannot be activated; its remaining warnings are
+    // returned with the activated workflow.
+    const activationWarnings: ErrorItem[] = [];
     if (patch.status === "active") {
       const current =
         definition ?? (await workflowsService.get(ctx, id))?.definition;
-      const errors = current ? await validateItems(ctx, current) : [];
+      const errors = current
+        ? await validateItems(ctx, current, activationWarnings)
+        : [];
       if (errors.length) throw new InvalidWorkflow(errors);
     }
     const row = await withTenant(ctx, async (tx) => {
@@ -445,8 +449,9 @@ export const workflowsService = {
     });
     if (!row) return null;
     await syncTrigger(ctx, row);
-    return definition
-      ? { ...row, ...(await validationOf(ctx, definition)) }
+    if (definition) return { ...row, ...(await validationOf(ctx, definition)) };
+    return patch.status === "active"
+      ? { ...row, warnings: activationWarnings.map((e) => e.message) }
       : row;
   },
   // Agent (MCP) update with the test gate. A workflow that is or becomes
@@ -514,7 +519,12 @@ export const workflowsService = {
       throw untested(id, target);
     if (!draft) return workflowsService.update(ctx, id, patch);
     // Promote the tested draft and activate in one transaction.
-    const errors = await validateItems(ctx, draft.definition as Definition);
+    const warnings: ErrorItem[] = [];
+    const errors = await validateItems(
+      ctx,
+      draft.definition as Definition,
+      warnings,
+    );
     if (errors.length) throw new InvalidWorkflow(errors);
     const row = await withTenant(ctx, async (tx) => {
       const [row] = await tx
@@ -533,7 +543,11 @@ export const workflowsService = {
       return row!;
     });
     await syncTrigger(ctx, row);
-    return { ...row, promoted: draft.version };
+    return {
+      ...row,
+      promoted: draft.version,
+      warnings: warnings.map((e) => e.message),
+    };
   },
   activate: (ctx: TenantContext, id: string) =>
     workflowsService.update(ctx, id, { status: "active" }),

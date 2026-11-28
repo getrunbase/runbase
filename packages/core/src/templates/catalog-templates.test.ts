@@ -121,9 +121,14 @@ for (const slug of slugs)
       assert.equal(wf.status, "draft");
       const { errors } = await workflowsService.check(ctx, wf.definition);
       assert.deepEqual(
-        // OAuth connections are made by the user after import (README).
+        // OAuth connections and the AI provider are set by the user after
+        // import (README).
         errors
-          .filter((e) => e.code !== "workflows.missingConnection")
+          .filter(
+            (e) =>
+              e.code !== "workflows.missingConnection" &&
+              e.code !== "workflows.missingAiConfig",
+          )
           .map((e) => e.message),
         [],
         `${slug} / ${wf.name}`,

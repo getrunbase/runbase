@@ -343,14 +343,18 @@ test("clean function error: no ANSI or /tmp/fn- path", async () => {
 
 test("ok:false surfaces error before a strict outputSchema", async () => {
   await assert.rejects(
-    run(`export default () => ({ ok: false, error: "quota exceeded" })`, {}, {
-      outputSchema: {
-        type: "object",
-        properties: { n: { type: "number" } },
-        required: ["n"],
-        additionalProperties: false,
+    run(
+      `export default () => ({ ok: false, error: "quota exceeded" })`,
+      {},
+      {
+        outputSchema: {
+          type: "object",
+          properties: { n: { type: "number" } },
+          required: ["n"],
+          additionalProperties: false,
+        },
       },
-    }),
+    ),
     (e: Error & { code?: string }) => {
       assert.equal(e.message, "quota exceeded");
       assert.equal(e.code, "functions.failed");
