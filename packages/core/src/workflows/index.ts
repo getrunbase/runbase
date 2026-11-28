@@ -19,6 +19,7 @@ import { checkCronInterval } from "../triggers/cron-interval";
 import { withTenant, type TenantContext, type Tx } from "../tenant";
 import { durationSchema } from "../blocks/duration";
 import {
+  coverageOf,
   dryRun,
   testStep,
   validateDefinition,
@@ -56,7 +57,12 @@ export const definitionSchema = z.object({
   pins: z
     .record(
       z.string(),
-      z.object({ output: z.unknown(), branch: z.string().optional() }),
+      z.object({
+        output: z.unknown().optional(),
+        branch: z.string().optional(),
+        // Forces the step to fail with this message (error branches).
+        error: z.string().optional(),
+      }),
     )
     .optional(),
   // Node positions in the editor; ignored by the engine.
@@ -330,6 +336,8 @@ export const workflowsService = {
     return dryRun(ctx, definitionSchema.parse(raw), recordIds, opts);
   },
   // A single step with a provided input (otherwise the definition's).
+  // `raw` = a definition, or `{ workflow }` (id or name): its staged draft,
+  // else its live version.
   testStep: async (
     ctx: TenantContext,
     raw: unknown,
@@ -337,6 +345,15 @@ export const workflowsService = {
     opts: Parameters<typeof testStep>[3] = {},
   ) => {
     await requireScope(ctx, opts.live ? "write" : "read");
+    const ref = (raw as { workflow?: unknown } | null)?.workflow;
+    if (typeof ref === "string" && !(raw as { steps?: unknown }).steps) {
+      const definition = await workflowsService.definitionOf(ctx, ref);
+      if (!definition)
+        throw notFound("workflows.notFound", "Workflow {id} not found", {
+          id: ref,
+        });
+      return testStep(ctx, definition, stepId, opts);
+    }
     return testStep(ctx, definitionSchema.parse(raw), stepId, opts);
   },
   list: async (ctx: TenantContext) => {
@@ -576,7 +593,23 @@ export const workflowsService = {
       ...opts,
       workflowId: wf.id,
     });
-    const tested = results.every((r) => !r.error && !r.skipped);
+    // Not tested: validation errors (activation would refuse it anyway),
+    // a failing or skipped run, or runs that stop at their first condition.
+    const blocking = [
+      ...(await validateItems(ctx, definition)).map((e) => e.message),
+      ...results.flatMap((r) => [
+        ...(r.error ? [r.error] : []),
+        ...(r.skipped ? [r.skipped] : []),
+      ]),
+    ];
+    const stopped = results.filter((r) => r.untested);
+    if (stopped.length === results.length && stopped.length)
+      blocking.push(...new Set(stopped.map((r) => r.untested!)));
+    const coverage = coverageOf(
+      definition.steps as { id: string; type: string }[],
+      results.map((r) => r.path),
+    );
+    const tested = blocking.length === 0;
     const hash = definitionHash(definition);
     if (tested)
       await withTenant(ctx, (tx) =>
@@ -590,6 +623,8 @@ export const workflowsService = {
       version: v,
       liveVersion: wf.currentVersion,
       tested,
+      ...(!tested && { blocking }),
+      coverage,
       ...(tested &&
         !live && {
           next:

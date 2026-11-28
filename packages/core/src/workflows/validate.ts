@@ -29,6 +29,7 @@ import {
 } from "./validate-runtime";
 
 export {
+  coverageOf,
   dryRun,
   testStep,
   type DryRunOptions,
