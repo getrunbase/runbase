@@ -176,6 +176,15 @@ test("workflows: error written into a record warns", () => {
     lintWorkflow(def({ note: "{{steps.call.output.body}}" })),
     [],
   );
+  // The error branch ends in stop.error: the run still fails visibly.
+  const stopped = def({ note: "{{steps.call.output.error}}" });
+  stopped.steps.push({
+    id: "fail",
+    type: "stop.error",
+    input: { message: "x" },
+  } as never);
+  (stopped.next as Record<string, unknown>).save = { ok: ["fail"] };
+  assert.deepEqual(lintWorkflow(stopped), []);
 });
 
 test("workflows: continueOnFail without an error branch warns", () => {

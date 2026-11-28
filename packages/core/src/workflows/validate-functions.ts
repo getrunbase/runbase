@@ -45,7 +45,14 @@ function outputKeys(block: Block, fnSchema?: JsonSchema) {
 }
 
 // Known output keys of a step (block or function); undefined = unknown.
+// continueOnFail adds `error` (the engine outputs { error } on failure).
 export async function stepOutputKeys(ctx: TenantContext, src: Step) {
+  const keys = await declaredOutputKeys(ctx, src);
+  if (keys && src.retry?.continueOnFail) keys.add("error");
+  return keys;
+}
+
+async function declaredOutputKeys(ctx: TenantContext, src: Step) {
   const block = await getBlock(ctx, src.type);
   if (!block) return undefined;
   const fnOut = src.type.startsWith("fn.")

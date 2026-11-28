@@ -33,6 +33,7 @@ export {
   coverageOf,
   dryRun,
   testStep,
+  unreachedWrites,
   type DryRunOptions,
   type DryRunPath,
   type DryRunStep,
