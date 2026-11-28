@@ -5,7 +5,10 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
 import type { TenantContext } from "@getrunbase/core/tenant";
 import { notFound, requireConfirm } from "@getrunbase/core/errors";
-import { functionInputSchema, functionsService } from "@getrunbase/core/functions";
+import {
+  functionInputSchema,
+  functionsService,
+} from "@getrunbase/core/functions";
 import {
   editsSchema,
   componentsGuide,
@@ -63,7 +66,9 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
     },
     (input) =>
       run(() =>
-        linted(ctx, lintFunction(input), () => functionsService.save(ctx, input)),
+        linted(ctx, lintFunction(input), () =>
+          functionsService.save(ctx, input),
+        ),
       ),
   );
   server.registerTool(
@@ -76,7 +81,9 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
     },
     (input) =>
       run(() =>
-        linted(ctx, lintFunction(input), () => functionsService.create(ctx, input)),
+        linted(ctx, lintFunction(input), () =>
+          functionsService.create(ctx, input),
+        ),
       ),
   );
   server.registerTool(
@@ -88,7 +95,9 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
     },
     (input) =>
       run(() =>
-        linted(ctx, lintFunction(input), () => functionsService.update(ctx, input)),
+        linted(ctx, lintFunction(input), () =>
+          functionsService.update(ctx, input),
+        ),
       ),
   );
   server.registerTool(
@@ -137,16 +146,19 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
     "functions.test",
     {
       description:
-        "Really runs a function, outside any workflow: returns output and logs. Without dryRun, its writes (records, events) and network calls happen. dryRun: true: real reads, records/events writes simulated (not made) and listed in `writes` [{ method, args }]; network calls still go out.",
+        "Really runs a function, outside any workflow: returns output and logs. Without dryRun, its writes (records, events) and network calls happen. dryRun: true: real reads, records/events writes simulated (not made) and listed in `writes` [{ method, args }]; network calls still go out. test: true runs it as test data: the `test` context key is true and records/events it writes are marked test (deleted by workspace.purge_test, and existing test records stay test).",
       inputSchema: z.object({
         name: fnName,
         input: z.record(z.string(), z.unknown()).default({}),
         version: z.number().int().min(1).optional(),
         dryRun: z.boolean().optional(),
+        test: z.boolean().optional(),
       }),
     },
-    ({ name, input, version, dryRun }) =>
-      run(() => functionsService.test(ctx, name, input, version, { dryRun })),
+    ({ name, input, version, dryRun, test }) =>
+      run(() =>
+        functionsService.test(ctx, name, input, version, { dryRun, test }),
+      ),
   );
   server.registerTool(
     "functions.logs",

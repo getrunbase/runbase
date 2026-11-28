@@ -307,6 +307,9 @@ export const overviewService = {
           ...(await count()),
           errors: e?.n ?? 0,
           keptLive: kept.map((k) => k.id),
+          ...(kept.length && {
+            hint: "keptLive: test records adopted as live by a write without test: true; they are not purged. To purge them, re-flag each with records.update { id, data: {}, test: true }, or delete them with records.delete.",
+          }),
         };
       });
     requireConfirm(opts.confirm, "overview.purgeConfirm", "Test data purge");

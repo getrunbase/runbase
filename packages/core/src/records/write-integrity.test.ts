@@ -158,6 +158,58 @@ test("live write promotes a test record: purge_test keeps it", async () => {
   assert.equal(left!.n, 2);
 });
 
+test("merge keeps test data test; merging live data promotes", async () => {
+  const ctx = await owner("Merge test flag");
+  const o = await contacts(ctx);
+  const up = (email: string, test?: boolean) =>
+    recordsService.upsert(ctx, { objectId: o.id, data: { email }, test });
+  const a = await up("a@x.io", true);
+  const b = await up("b@x.io", true);
+  const m1 = await recordsService.merge(ctx, a.record.id, [b.record.id]);
+  assert.equal(m1.record.isTest, true);
+  assert.equal(m1.promoted, false);
+  assert.equal("warning" in m1, false);
+  const c = await up("c@x.io");
+  const m2 = await recordsService.merge(ctx, a.record.id, [c.record.id]);
+  assert.equal(m2.record.isTest, false);
+  assert.equal(m2.promoted, true);
+  assert.match((m2 as { warning?: string }).warning ?? "", /test:true/);
+});
+
+test("test: true re-flags a live record so purge_test deletes it", async () => {
+  const ctx = await owner("Reflag");
+  const o = await contacts(ctx);
+  const a = await recordsService.upsert(ctx, {
+    objectId: o.id,
+    data: { email: "a@x.io" },
+    test: true,
+  });
+  await recordsService.update(ctx, a.record.id, { score: 1 });
+  const kept = await overviewService.purgeTest(ctx, { dryRun: true });
+  assert.match((kept as { hint?: string }).hint ?? "", /test: true/);
+  // No data change, only the flag: by update and by upsert match.
+  const u = await recordsService.update(ctx, a.record.id, {}, "merge", {
+    test: true,
+  });
+  assert.equal(u.record.isTest, true);
+  const b = await recordsService.upsert(ctx, {
+    objectId: o.id,
+    data: { email: "b@x.io" },
+  });
+  const r = await recordsService.upsert(ctx, {
+    objectId: o.id,
+    data: { email: "b@x.io" },
+    match: "email",
+    test: true,
+  });
+  assert.equal(r.record.id, b.record.id);
+  assert.equal(r.record.isTest, true);
+  await overviewService.purgeTest(ctx, { confirm: true });
+  const [left] =
+    await sql`select count(*)::int n from records where workspace_id = ${ctx.workspaceId}`;
+  assert.equal(left!.n, 0);
+});
+
 test("import: empty match key is counted, skipped or failed", async () => {
   const ctx = await owner("Empty match");
   const o = await contacts(ctx);

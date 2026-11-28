@@ -191,6 +191,32 @@ test("records SDK in the sandbox: read/write gated by permissions.records", asyn
   await assert.rejects(fn.test(a, "none", { o: o.id }), /permissions\.records/);
 });
 
+test("functions.test { test: true } tags its writes as test data", async () => {
+  const { objectsService } = await import("../objects");
+  const { recordsService } = await import("../records");
+  const a = await owner("FT");
+  const o = await objectsService.create(a, {
+    slug: "company",
+    name: "Company",
+    fields: [{ key: "name", label: "Nom", type: "text" }],
+  });
+  await fn.save(a, {
+    name: "mk",
+    code: `export default async (i, { test }) => {
+      const { record } = await records.upsert({ objectId: i.o, data: { name: "T" } });
+      return { id: record.id, test };
+    }`,
+    permissions: { domains: [], secrets: [], records: "write" },
+  });
+  const t = await fn.test(a, "mk", { o: o.id }, undefined, { test: true });
+  const out = t.output as { id: string; test: boolean };
+  assert.equal(out.test, true);
+  assert.equal((await recordsService.get(a, out.id)).isTest, true);
+  const live = await fn.test(a, "mk", { o: o.id });
+  const id = (live.output as { id: string }).id;
+  assert.equal((await recordsService.get(a, id)).isTest, false);
+});
+
 test("events SDK in the sandbox: push and list gated by permissions.events", async () => {
   const a = await owner("FE");
   const code = `export default async () => {
