@@ -5,7 +5,7 @@ import { z } from "zod";
 import { requireScope } from "../api-keys";
 import { execFunction } from "../functions/sandbox";
 import type { TenantContext } from "../tenant";
-import { compileComponent, type CompileError } from "./compile";
+import { compileComponent, compilePackage, type CompileError } from "./compile";
 import {
   denied,
   handleSdkCall,
@@ -18,6 +18,8 @@ import {
 export {
   compileComponent,
   compilePackage,
+  formatCompileError,
+  stripInternalPaths,
   MAX_BUNDLE,
   MAX_SOURCE,
   type ComponentDep,
@@ -60,9 +62,13 @@ export function applyEdits(
   return edits.reduce((src, e, i) => {
     const at = src.indexOf(e.old);
     if (at < 0)
-      throw appError("pages.editOldNotFound", "edits[{index}]: `old` not found", {
-        index: i,
-      });
+      throw appError(
+        "pages.editOldNotFound",
+        "edits[{index}]: `old` not found",
+        {
+          index: i,
+        },
+      );
     if (src.indexOf(e.old, at + 1) >= 0)
       throw appError(
         "pages.editOldAmbiguous",
@@ -108,6 +114,8 @@ export const componentsService = {
     ctx: TenantContext,
     input: {
       source?: string;
+      files?: Record<string, string>;
+      entry?: string;
       edits?: { old: string; new: string }[];
       props?: Record<string, unknown>;
       data?: Record<string, unknown>;
@@ -133,24 +141,44 @@ export const componentsService = {
       sdkCalls: markDenied(perms, out.sdkCalls),
     };
   },
-  // Compiles a component (saved or `source`) for test or capture:
-  // bundle, sources (CSS) and effective permissions.
+  // Compiles a component (`source`) or a page package (`files` + `entry`,
+  // same browser build as page.create) for test or capture: bundle,
+  // sources (CSS) and effective permissions.
   prepare: async (
     ctx: TenantContext,
     input: {
       source?: string;
+      files?: Record<string, string>;
+      entry?: string;
       edits?: { old: string; new: string }[];
       permissions?: ComponentPermissions;
     },
   ) => {
     await requireScope(ctx, "admin");
-    let source = input.source;
     const perms =
       input.permissions && permissionsSchema.parse(input.permissions);
-    if (!source) throw appError("pages.sourceRequired", "source required");
+    const p = perms ?? permissionsSchema.parse(undefined);
+    if (input.files) {
+      if (input.source)
+        throw appError(
+          "pages.sourceOrFiles",
+          "pass either source or files, not both",
+        );
+      const r = await compilePackage(input.files, input.entry);
+      return r.bundle
+        ? {
+            bundle: r.bundle,
+            sources: Object.values(input.files),
+            errors: [],
+            perms: p,
+          }
+        : { bundle: undefined, sources: [], errors: r.errors, perms: p };
+    }
+    let source = input.source;
+    if (!source)
+      throw appError("pages.sourceRequired", "source or files required");
     if (input.edits) source = applyEdits(source, input.edits);
     const r = await compileComponent(source);
-    const p = perms ?? permissionsSchema.parse(undefined);
     return r.bundle
       ? { bundle: r.bundle, sources: r.sources, errors: [], perms: p }
       : { bundle: undefined, sources: [], errors: r.errors, perms: p };

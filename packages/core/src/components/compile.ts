@@ -186,12 +186,26 @@ function plugin(
   };
 }
 
+// Internal paths (absolute, node_modules) are server details the author can
+// not act on: keep the package-relative part only.
+const NODE_MODULES =
+  /(?:[^\s"'`()]*[\\/])?node_modules[\\/](?:\.pnpm[\\/][^\\/\s]+[\\/]node_modules[\\/])?/g;
+export const stripInternalPaths = (s: string) => s.replace(NODE_MODULES, "");
+
 const toError = (m: Message): CompileError => ({
-  ...(m.location?.file ? { file: m.location.file.replace(/^pkg:/, "") } : {}),
+  ...(m.location?.file
+    ? { file: stripInternalPaths(m.location.file.replace(/^pkg:/, "")) }
+    : {}),
   line: m.location?.line,
   col: m.location?.column,
-  text: m.text,
+  text: stripInternalPaths(m.text),
 });
+
+// "file:line:col text" (or the bare text without location), for agents.
+export const formatCompileError = (e: CompileError) =>
+  e.line
+    ? `${e.file ? `${e.file}:` : ""}${e.line}:${e.col ?? 0} ${e.text}`
+    : e.text;
 
 export async function compileComponent(
   source: string,

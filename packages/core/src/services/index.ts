@@ -212,7 +212,8 @@ export const mcpTools: {
     // Excluded: front-end record page view, runs.get covers the detail.
     forRecord: null,
     // Excluded: counter for the front-end home KPIs.
-    countSince: null,    statusCounts: null,
+    countSince: null,
+    statusCounts: null,
     decide: "runs.decide",
     cancel: "runs.cancel",
     cancelBulk: "runs.cancel_bulk",
@@ -318,6 +319,9 @@ export const mcpTools: {
     discard: "page.discard",
     patchFiles: "page.update",
     errors: "page.errors",
+    // Helpers of every page.* tool (id or name, compile status).
+    resolveId: null,
+    bundleStatus: null,
     // Called by the page iframe (server action), not by an agent.
     reportError: null,
     // Excluded: rendering of /p/[slug] (iframe), not an MCP tool.

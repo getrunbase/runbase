@@ -5,12 +5,16 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
 import type { TenantContext } from "@getrunbase/core/tenant";
 import { notFound, requireConfirm } from "@getrunbase/core/errors";
-import { functionInputSchema, functionsService } from "@getrunbase/core/functions";
+import {
+  functionInputSchema,
+  functionsService,
+} from "@getrunbase/core/functions";
 import {
   editsSchema,
   componentsGuide,
   componentsService,
   EXAMPLES,
+  formatCompileError,
   permissionsSchema,
 } from "@getrunbase/core/components";
 import { runtimeCsp, runtimeHtml, testHarness } from "@/lib/code-runtime";
@@ -63,7 +67,9 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
     },
     (input) =>
       run(() =>
-        linted(ctx, lintFunction(input), () => functionsService.save(ctx, input)),
+        linted(ctx, lintFunction(input), () =>
+          functionsService.save(ctx, input),
+        ),
       ),
   );
   server.registerTool(
@@ -76,7 +82,9 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
     },
     (input) =>
       run(() =>
-        linted(ctx, lintFunction(input), () => functionsService.create(ctx, input)),
+        linted(ctx, lintFunction(input), () =>
+          functionsService.create(ctx, input),
+        ),
       ),
   );
   server.registerTool(
@@ -88,7 +96,9 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
     },
     (input) =>
       run(() =>
-        linted(ctx, lintFunction(input), () => functionsService.update(ctx, input)),
+        linted(ctx, lintFunction(input), () =>
+          functionsService.update(ctx, input),
+        ),
       ),
   );
   server.registerTool(
@@ -175,7 +185,20 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
         'With `screenshot`: real rendering in headless Chromium (iframe runtime, compiled CSS, effects run, no network) and returns one PNG image per viewport × theme, then {errors, console, sdkCalls}. `screenshot.data`: "mock" (default, serves `data`) or "live" (real workspace reads with the permissions; actions, workflows and writes simulated). Always look at the desktop AND mobile screenshots.',
       ].join("\n"),
       inputSchema: z.object({
-        source: z.string().describe("TSX to test"),
+        source: z
+          .string()
+          .optional()
+          .describe("TSX to test (a single component); or pass `files`"),
+        files: z
+          .record(z.string(), z.string())
+          .optional()
+          .describe(
+            'TSX package to test, same shape as page.create: {"index.tsx": "…", "components/card.tsx": "…"}; built with the same browser config as page.create',
+          ),
+        entry: z
+          .string()
+          .optional()
+          .describe("entry file of `files` (default index.tsx)"),
         edits: editsSchema
           .optional()
           .describe("{old, new} replacements applied to `source`"),
@@ -214,9 +237,7 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
         if (!c.bundle)
           return {
             shots: [],
-            errors: c.errors.map((e) =>
-              e.line ? `${e.line}:${e.col ?? 0} ${e.text}` : e.text,
-            ),
+            errors: c.errors.map(formatCompileError),
             console: [],
           };
         // Rendered by the renderer service; it serves the SDK calls itself.
