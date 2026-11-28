@@ -38,6 +38,7 @@
   "workflows.reasonAwaitingApproval": "en attente d'une approbation humaine",
   "workflows.reasonSimulated": "simulé (aucun effet de bord)",
   "workflows.reasonBranch": "branche {branch}",
+  "switch.matched": "{reason}",
   "blocks.mapUnknownTarget": "{step} : objet cible inconnu : {object}",
   "blocks.mapRecordIdRequired": "{step} : recordId requis en mode update",
   "blocks.mapKeyRequired": "{step} : key requise en mode upsert",

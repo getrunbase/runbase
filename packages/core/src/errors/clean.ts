@@ -15,6 +15,48 @@ const SANDBOX_PATH =
   /(?:file:\/\/)?\/[^\s()'"`]*?\/fn-[A-Za-z0-9_]+\/([\w.-]+)/g;
 export const normalizePaths = (s: string) => s.replace(SANDBOX_PATH, "$1");
 
+// Server absolute paths in a stack (/home/app/packages/core/src/x.ts:3:9,
+// file:///srv/…/node_modules/pkg/y.js) -> path from the repository root or
+// node_modules, otherwise the file name: no host layout leaked.
+const ABS_PATH =
+  /(?:file:\/\/)?(?:\/[^\s()'"`:/]+)+\/([^\s()'"`:/]+)/g;
+const ROOTS = /\/((?:node_modules|packages|apps)\/.*)$/;
+export const stripServerPaths = (s: string) =>
+  s.replace(ABS_PATH, (m, file: string) => {
+    const rel = m.replace(/^file:\/\//, "").match(ROOTS);
+    return rel ? rel[1]! : file;
+  });
+
+// Stack ready to store or show: sandbox and server paths removed, bounded.
+export const cleanStack = (s: string) =>
+  truncateStack(stripServerPaths(normalizePaths(stripAnsi(s))));
+
+// A zod error message is the JSON dump of its issues: rendered as
+// `field: message` lines. Any other message is returned unchanged.
+export function formatIssues(message: string): string {
+  if (!message.trimStart().startsWith("[")) return message;
+  try {
+    const issues = JSON.parse(message) as unknown;
+    if (
+      !Array.isArray(issues) ||
+      !issues.length ||
+      !issues.every(
+        (i) =>
+          i && typeof i.message === "string" && Array.isArray(i.path),
+      )
+    )
+      return message;
+    return (issues as { path: (string | number)[]; message: string }[])
+      .map(
+        (i) =>
+          `${i.path.length ? i.path.join(".") : "(root)"}: ${i.message.replace(/^Invalid input: /, "")}`,
+      )
+      .join("\n");
+  } catch {
+    return message;
+  }
+}
+
 export const STACK_LIMITS = { lines: 20, bytes: 4096 };
 
 export function truncateStack(

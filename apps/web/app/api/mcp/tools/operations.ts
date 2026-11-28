@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
 import type { TenantContext } from "@getrunbase/core/tenant";
 import { runsService } from "@getrunbase/core/runs";
-import { errorsService } from "@getrunbase/core/errors";
+import { cleanStack, errorsService } from "@getrunbase/core/errors";
 import { overviewService } from "@getrunbase/core/overview";
 import { workspacesService } from "@getrunbase/core/workspaces";
 import { run } from "./shared";
@@ -78,7 +78,7 @@ export function defineOperationTools(server: McpServer, ctx: TenantContext) {
     "errors.list",
     {
       description:
-        "Lists the workspace errors (ingest, workflow, function = function call from a page, mcp = failing MCP tool, component = code component failing in a user's browser; payload {page, block}), most recent first. Filters: source, status, run, workflow, record, period (from/to ISO). Returns { items, hasMore, nextCursor }: pass nextCursor back as cursor for the next page.",
+        "Lists the workspace errors (ingest, workflow, function = function call from a page, mcp = failing MCP tool, component = code component failing in a user's browser; payload {page, block}), most recent first. Without `source`, mcp errors (your own failed tool calls) are left out. No stack: read it with errors.get. Filters: source, status, run, workflow, record, period (from/to ISO). Returns { items, hasMore, nextCursor }: pass nextCursor back as cursor for the next page.",
       inputSchema: z.object({
         source: z
           .enum(["ingest", "workflow", "function", "mcp", "component"])
@@ -106,13 +106,18 @@ export function defineOperationTools(server: McpServer, ctx: TenantContext) {
       }),
     },
     ({ from, to, ...f }) =>
-      run(() =>
-        errorsService.list(ctx, {
+      run(async () => {
+        const page = await errorsService.list(ctx, {
           ...f,
+          excludeSources: ["mcp"],
           from: from ? new Date(from) : undefined,
           to: to ? new Date(to) : undefined,
-        }),
-      ),
+        });
+        return {
+          ...page,
+          items: page.items.map((e) => ({ ...e, stack: undefined })),
+        };
+      }),
   );
   server.registerTool(
     "errors.get",
@@ -120,7 +125,12 @@ export function defineOperationTools(server: McpServer, ctx: TenantContext) {
       description: "Reads an error: reference, message, payload, stack.",
       inputSchema: z.object({ id: errorId }),
     },
-    ({ id }) => run(() => errorsService.get(ctx, id)),
+    ({ id }) =>
+      run(async () => {
+        const e = await errorsService.get(ctx, id);
+        // Rows stored before path cleanup: no server path in the payload.
+        return e && { ...e, stack: e.stack ? cleanStack(e.stack) : e.stack };
+      }),
   );
   server.registerTool(
     "errors.retry",
