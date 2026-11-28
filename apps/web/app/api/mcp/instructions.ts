@@ -6,11 +6,12 @@ Data, automation and interface platform, split into workspaces. Every tool takes
 
 ## Getting started
 Call **workspace.describe** first: databases, objects and fields, workflows (trigger, status), functions, webhooks, pages, secret names and counters, in one call, plus note titles per entity: read the relevant ones with notes.get before changing that entity, and record decisions, conventions and pitfalls with notes.save.
+Before building a workflow or a function, read **workflows.guide** and a reference from **workflows.examples**. Before building a page, read **page.guide** and **page.examples**. Their rules are strict.
 
 ## In 10 minutes: data, workflow, view
 1. **Data**: databases.create, objects.create (typed fields, a unique field such as email), records.upsert_batch with \`test: true\` for sample data.
 2. **Logic**: functions.save when a computation or an external call is needed (secrets.set first), functions.test { dryRun: true } to see planned writes without making them.
-3. **Workflow**: workflows.create (trigger + blocks, fn.<name> included), workflows.validate, workflows.dry_run, workflows.activate; runs.start { test: true } for a real trial, runs.get for details (function logs included).
+3. **Workflow**: workflows.guide and workflows.examples first, then workflows.create (trigger + blocks, fn.<name> included), workflows.validate, workflows.dry_run, workflows.activate; runs.start { test: true } for a real trial, runs.get for details (function logs included).
 4. **View**: page.create (TSX package: {files, entry}) (dashboards: KpiCard and ChartCard from @getrunbase/kit), then page.screenshot to check and page.errors for browser runtime errors (file:line). page.update writes a draft hidden from users (file patch \`changes\`: write, edit old/new, rename, delete; returns compile errors): page.screenshot {draft: true}, then page.publish (or \`publish: true\` on page.update).
 5. **Clean up**: workspace.purge_test { dryRun: true } then { confirm: true } deletes test records, events and runs.
 

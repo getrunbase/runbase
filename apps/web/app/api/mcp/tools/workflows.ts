@@ -2,12 +2,53 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
 import type { TenantContext } from "@getrunbase/core/tenant";
-import { definitionSchema, workflowsService } from "@getrunbase/core/workflows";
-import { requireConfirm } from "@getrunbase/core/errors";
+import {
+  definitionSchema,
+  workflowsService,
+  WORKFLOW_EXAMPLES,
+  WORKFLOWS_GUIDE,
+} from "@getrunbase/core/workflows";
+import { notFound, requireConfirm } from "@getrunbase/core/errors";
 import { lintWorkflow } from "@getrunbase/core/lint";
 import { run, must, wfId, linted } from "./shared";
 
 export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
+  // Guide and reference examples, to read before building a workflow.
+  server.registerTool(
+    "workflows.guide",
+    {
+      description:
+        "Workflow and function guide, to read before building a workflow: native block versus function, one function = one job under 10 s, record or webhook triggers instead of polling crons, errors fail the run, declared input/output schemas, explicit domains, test runs instead of simulation flags, naming conventions.",
+    },
+    () => run(async () => ({ guide: WORKFLOWS_GUIDE })),
+  );
+  server.registerTool(
+    "workflows.examples",
+    {
+      description:
+        "Reference workflows (inbound-lead, company-enrichment, weekly-digest). Without `name`: list {name, description}. With `name`: the full set (secrets, objects, webhooks, functions, workflow definition) to create in that order with secrets.set, objects.create, webhooks.create, functions.save and workflows.create. Adapt slugs, field keys and domains to the workspace.",
+      inputSchema: z.object({ name: z.string().optional() }),
+    },
+    ({ name }) =>
+      run(async () => {
+        if (!name)
+          return {
+            total: WORKFLOW_EXAMPLES.length,
+            items: WORKFLOW_EXAMPLES.map(({ name, description }) => ({
+              name,
+              description,
+            })),
+          };
+        const ex = WORKFLOW_EXAMPLES.find((e) => e.name === name);
+        if (!ex)
+          throw notFound(
+            "mcp.workflowExampleNotFound",
+            "Unknown workflow example: {name}. See workflows.examples.",
+            { name },
+          );
+        return ex;
+      }),
+  );
   // Workflows
   server.registerTool(
     "workflows.list",

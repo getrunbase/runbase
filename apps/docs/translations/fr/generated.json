@@ -1811,6 +1811,14 @@
     "en": "Workspace id or name (default: active workspace)",
     "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
   },
+  "mcp.workflows.examples": {
+    "en": "Reference workflows (inbound-lead, company-enrichment, weekly-digest). Without `name`: list {name, description}. With `name`: the full set (secrets, objects, webhooks, functions, workflow definition) to create in that order with secrets.set, objects.create, webhooks.create, functions.save and workflows.create. Adapt slugs, field keys and domains to the workspace.",
+    "fr": "Workflows de référence (inbound-lead, company-enrichment, weekly-digest). Sans `name` : liste {name, description}. Avec `name` : l'ensemble complet (secrets, objets, webhooks, fonctions, définition du workflow) à créer dans cet ordre avec secrets.set, objects.create, webhooks.create, functions.save et workflows.create. Adaptez les slugs, les clés de champs et les domaines à l'espace de travail."
+  },
+  "mcp.workflows.examples.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
   "mcp.workflows.get": {
     "en": "Reads a workflow and the definition of its current version.",
     "fr": "Lit un workflow et la définition de sa version courante."
@@ -1820,6 +1828,14 @@
     "fr": "Identifiant du workflow"
   },
   "mcp.workflows.get.workspace": {
+    "en": "Workspace id or name (default: active workspace)",
+    "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
+  },
+  "mcp.workflows.guide": {
+    "en": "Workflow and function guide, to read before building a workflow: native block versus function, one function = one job under 10 s, record or webhook triggers instead of polling crons, errors fail the run, declared input/output schemas, explicit domains, test runs instead of simulation flags, naming conventions.",
+    "fr": "Guide des workflows et des fonctions, à lire avant de construire un workflow : bloc natif ou fonction, une fonction = une tâche de moins de 10 s, déclencheurs sur enregistrement ou webhook plutôt que des crons qui interrogent en boucle, les erreurs font échouer l'exécution, schémas d'entrée et de sortie déclarés, domaines explicites, exécutions de test plutôt que des indicateurs de simulation, conventions de nommage."
+  },
+  "mcp.workflows.guide.workspace": {
     "en": "Workspace id or name (default: active workspace)",
     "fr": "Identifiant ou nom de l'espace de travail (par défaut : l'espace de travail actif)"
   },
