@@ -34,6 +34,17 @@ export const cleanText = (s: string) => normalizePaths(stripAnsi(s));
 // Storable error message: cleaned and bounded.
 export const cleanError = (s: string) => truncateStack(cleanText(s));
 
+// User-facing message of an uncaught Deno error: the thrown message only,
+// without the "error: Uncaught (in promise) Error:" prefix nor the stack
+// (the stack stays in the logs). Null when stderr holds no uncaught error.
+const UNCAUGHT =
+  /(?:^|\s)error: Uncaught(?: \(in promise\))?(?: [A-Za-z]*Error:)? ?(.*)$/m;
+export function thrownMessage(stderr: string): string | null {
+  const m = UNCAUGHT.exec(cleanText(stderr));
+  const msg = m?.[1]?.trim();
+  return msg ? truncateStack(msg) : null;
+}
+
 // Fingerprint: cleaned message without identifiers (uuid, hex, numbers),
 // lowercased, whitespace collapsed. Two occurrences of the same failure share it.
 export function fingerprint(message: string): string {

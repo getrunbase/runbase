@@ -53,3 +53,14 @@ test("fingerprint: identical despite ids, numbers, paths, colors", () => {
   assert.notEqual(a, fingerprint("Another failure"));
   assert.match(a, /^[0-9a-f]{32}$/);
 });
+
+test("thrownMessage: thrown message only, no Deno prefix nor stack", async () => {
+  const { thrownMessage } = await import("./clean");
+  assert.equal(thrownMessage(DENO), "boom");
+  assert.equal(
+    thrownMessage("error: Uncaught TypeError: x is not a function\n    at a"),
+    "x is not a function",
+  );
+  assert.equal(thrownMessage('error: Uncaught "plain string"'), '"plain string"');
+  assert.equal(thrownMessage("Killed"), null);
+});
