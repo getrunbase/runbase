@@ -151,6 +151,7 @@ export const bulkOps = {
       mapping: Record<string, string>;
       match?: string;
       dryRun?: boolean;
+      test?: boolean;
     },
   ) => {
     await requireScope(ctx, "write");
@@ -204,6 +205,7 @@ export const bulkOps = {
                 objectId,
                 data: coerceValues(fields, data),
                 match,
+                test: input.test,
               });
             }),
           );

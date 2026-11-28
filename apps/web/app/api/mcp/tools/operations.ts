@@ -5,6 +5,7 @@ import type { TenantContext } from "@getrunbase/core/tenant";
 import { runsService } from "@getrunbase/core/runs";
 import { errorsService } from "@getrunbase/core/errors";
 import { overviewService } from "@getrunbase/core/overview";
+import { workspacesService } from "@getrunbase/core/workspaces";
 import { run } from "./shared";
 
 export function defineOperationTools(server: McpServer, ctx: TenantContext) {
@@ -26,6 +27,17 @@ export function defineOperationTools(server: McpServer, ctx: TenantContext) {
       inputSchema: z.object({ budgetUsd: z.number().positive().nullable() }),
     },
     ({ budgetUsd }) => run(() => runsService.setBudget(ctx, budgetUsd)),
+  );
+
+  // Workspace settings
+  server.registerTool(
+    "workspace.settings",
+    {
+      description:
+        "Workspace settings: `allowedDomains` (hostnames that http and other external blocks may call; empty = none), MCP server names, `lintStrict` (lint warnings block saves). Read it before adding an http block to an unknown domain; changing it is done by an admin in the UI (hand that step back).",
+      inputSchema: z.object({}),
+    },
+    () => run(() => workspacesService.getSettings(ctx)),
   );
 
   // Overview and test data

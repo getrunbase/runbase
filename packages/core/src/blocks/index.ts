@@ -114,7 +114,7 @@ const TRIGGERS: Record<string, { label: string; description: string }> = {
   "trigger.webhook": {
     label: "Incoming webhook",
     description:
-      "Starts a run on each valid reception of webhook `webhook` (name). With `object` + `mapping` (field -> payload path), the record is created or updated first (`match`: unique field) and the run targets it.",
+      "Starts a run on each valid reception of webhook `webhook` (name). With `object` + `mapping` (field -> path relative to the body root, e.g. { email: \"email\", city: \"address.city\" }), the record is created or updated first (`match`: unique field) and the run targets it. {{event.x}} is the flattened body: body field `x`, no `payload.` prefix.",
   },
   "trigger.run_failed": {
     label: "Workflow failed",

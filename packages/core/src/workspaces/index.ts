@@ -113,6 +113,23 @@ export async function lintStrict(ctx: TenantContext) {
 }
 
 export const workspacesService = {
+  // Readable settings (no secrets): allowed domains of external blocks,
+  // MCP server names, strict lint.
+  getSettings: async (ctx: TenantContext) => {
+    await requireScope(ctx, "read");
+    const [row] = await withTenant(ctx, (tx) =>
+      tx
+        .select({ settings: workspaces.settings })
+        .from(workspaces)
+        .where(eq(workspaces.id, ctx.workspaceId)),
+    );
+    const s = settingsSchema.parse(row?.settings ?? {});
+    return {
+      allowedDomains: s.allowedDomains,
+      mcpServers: Object.keys(s.mcpServers),
+      lintStrict: s.lintStrict,
+    };
+  },
   // Settings: owners/admins; the audit only keeps secret names.
   setSettings: async (ctx: TenantContext, input: unknown) => {
     await requireScope(ctx, "admin");

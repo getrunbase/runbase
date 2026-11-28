@@ -78,6 +78,7 @@ export const mcpTools: {
     create: "workspaces.create",
     rename: "workspaces.rename",
     remove: "workspaces.delete",
+    getSettings: "workspace.settings",
     // Excluded: carries secrets, set by an admin outside MCP.
     setSettings: null,
   },

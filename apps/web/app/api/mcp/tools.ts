@@ -166,6 +166,16 @@ export function registerTools(server: McpServer) {
           isError?: boolean;
           content?: { text?: string }[];
         };
+        if (!res?.isError && isWriteTool(name) && Array.isArray(res?.content)) {
+          // Resolved workspace of a write: the agent sees where it wrote.
+          const ws = (await accessibleWorkspaces(p).catch(() => [])).find(
+            (w) => w.id === ctx.workspaceId,
+          );
+          res.content.push({
+            type: "text",
+            text: `workspace: ${JSON.stringify(ws?.name ?? ctx.workspaceId)} (${ctx.workspaceId})`,
+          } as { text: string });
+        }
         const text = res?.isError ? (res.content?.[0]?.text ?? "") : null;
         const code = text?.match(/^\[([a-z_]+)\]/)?.[1] ?? "error";
         if (text !== null && !SILENT.has(code))
@@ -182,10 +192,12 @@ export function registerTools(server: McpServer) {
   }
 }
 
-// Read tools keep the first-workspace fallback; any other tool is a write and
-// needs an explicit workspace when several are accessible.
+// Read-only tools: they keep the first-workspace fallback and their response
+// does not carry the workspace line. Any other tool is a write and needs an
+// explicit workspace when several are accessible. `.test` stays a write
+// because functions.test can write.
 const READ_VERBS =
-  /\.(list|get|describe|search|history|logs|versions|types|funnel|export|errors|guide|examples|screenshot|saved|sql|waiting|providers|ai_budget|trash|validate|dry_run|test_step)$/;
+  /\.(list|get|describe|search|dependencies|settings|history|logs|versions|types|funnel|export|download|errors|guide|examples|screenshot|saved|sql|waiting|providers|ai_budget|trash|validate|dry_run|test_step)$/;
 export const isWriteTool = (name: string) => !READ_VERBS.test(name);
 
 function defineTools(server: McpServer, ctx: TenantContext) {
