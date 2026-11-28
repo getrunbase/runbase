@@ -3,8 +3,14 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
 import type { TenantContext } from "@getrunbase/core/tenant";
 import { definitionSchema, workflowsService } from "@getrunbase/core/workflows";
-import { requireConfirm } from "@getrunbase/core/errors";
+import { appError, requireConfirm } from "@getrunbase/core/errors";
 import { run, must, wfId } from "./shared";
+
+const missingDryRunTarget = () =>
+  appError(
+    "workflows.dryRunTarget",
+    "workflows.dry_run needs `definition` or `workflow` (saved workflow id)",
+  );
 
 export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
   // Workflows
@@ -50,9 +56,16 @@ export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
     "workflows.dry_run",
     {
       description:
-        "Runs a definition without ever writing anything: writes, sends, external calls, loops and functions with network or 'write' permissions are simulated (first branch, null output); reads are real. AI blocks (ai.*) simulated by default, real and billed only with ai: true. One run per record in `records`; without records, a single run without a record (useful for a workflow triggered by an event or webhook); `event` = payload of the triggering event ({{event.…}}). Pinned outputs (`definition.pins[stepId] = { output, branch? }`) replayed instead of running the step. A `join: true` step runs once, after the other paths. Returns per run the paths taken (`paths`, one per parallel execution branch; `path`: all steps flattened), with for each step input, output, branch and reason.",
+        "Runs a definition (or, with `workflow`, the current version of a saved workflow) without ever writing anything: writes, sends, external calls, loops and functions with network or 'write' permissions are simulated (first branch, null output); reads are real. AI blocks (ai.*) simulated by default, real and billed only with ai: true. One run per record in `records`; without records, a single run without a record (useful for a workflow triggered by an event or webhook); `event` = payload of the triggering event ({{event.…}}). Pinned outputs (`definition.pins[stepId] = { output, branch? }`) replayed instead of running the step. A `join: true` step runs once, after the other paths. Returns per run the paths taken (`paths`, one per parallel execution branch; `path`: all steps flattened), with for each step input, output, branch and reason. With `workflow`: returns { version, tested, results }; tested = no failing path, which unlocks workflows.activate for that version.",
       inputSchema: z.object({
-        definition: definitionSchema,
+        definition: definitionSchema
+          .optional()
+          .describe("Definition to run (ignored with `workflow`)"),
+        workflow: wfId
+          .optional()
+          .describe(
+            "Saved workflow id: runs its current version and records the test",
+          ),
         records: z
           .array(z.string())
           .max(100)
@@ -68,10 +81,24 @@ export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
           .describe("true: really runs the AI blocks (paid)"),
       }),
     },
-    ({ definition, records, event, ai }) =>
-      run(() =>
-        workflowsService.dryRun(ctx, definition, records ?? [], { ai, event }),
-      ),
+    ({ definition, workflow, records, event, ai }) =>
+      run(async () => {
+        if (workflow)
+          return must(
+            workflowsService.dryRunWorkflow(ctx, workflow, records ?? [], {
+              ai,
+              event,
+            }),
+            "Workflow",
+            workflow,
+            "See workflows.list.",
+          );
+        if (!definition) throw missingDryRunTarget();
+        return workflowsService.dryRun(ctx, definition, records ?? [], {
+          ai,
+          event,
+        });
+      }),
   );
   server.registerTool(
     "workflows.test_step",
@@ -115,7 +142,15 @@ export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
         definition: definitionSchema.optional(),
       }),
     },
-    ({ id, ...patch }) => run(() => workflowsService.update(ctx, id, patch)),
+    ({ id, ...patch }) =>
+      run(async () => {
+        // Same test gate as workflows.activate.
+        if (patch.status === "active")
+          await workflowsService.requireTested(ctx, id, {
+            newDefinition: Boolean(patch.definition),
+          });
+        return workflowsService.update(ctx, id, patch);
+      }),
   );
   server.registerTool(
     "workflows.restore",
@@ -131,10 +166,10 @@ export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
     "workflows.activate",
     {
       description:
-        "Activates a workflow (refused if its definition is invalid): its triggers fire.",
+        "Activates a workflow: its triggers fire. Refused if its definition is invalid or if its current version was never tested: first run workflows.dry_run { workflow: id } with no failing path, or a test run runs.start { id, test: true } that succeeds. Use these native test modes ({{run.test}} in a test run) rather than a home-made simulation flag read from a settings object.",
       inputSchema: z.object({ id: wfId }),
     },
-    ({ id }) => run(() => workflowsService.activate(ctx, id)),
+    ({ id }) => run(() => workflowsService.activateTested(ctx, id)),
   );
   server.registerTool(
     "workflows.deactivate",

@@ -131,3 +131,25 @@ test("condition: validated against the object schema and evaluated", async () =>
     "false",
   );
 });
+
+test("activation gate: requires a clean dry run or a succeeded test run", async () => {
+  const a = await owner("Gate");
+  const w = await wf.create(a, { name: "Gate", definition: def(1) });
+  await assert.rejects(wf.activateTested(a, w.id), /never been tested/);
+
+  // A succeeded test run on the current version unlocks it.
+  await sql`insert into workflow_runs (organization_id, workspace_id, workflow_id, version, actor, input, status, is_test)
+    values (${a.organizationId}, ${a.workspaceId}, ${w.id}, 1, '{}', '{}', 'succeeded', true)`;
+  assert.equal((await wf.activateTested(a, w.id))!.status, "active");
+
+  // New version: untested again until a clean dry run.
+  await wf.update(a, w.id, { definition: def(2) });
+  await assert.rejects(
+    wf.requireTested(a, w.id),
+    /Version 2 .*never been tested/,
+  );
+  const dry = await wf.dryRunWorkflow(a, w.id);
+  assert.equal(dry!.tested, true);
+  await wf.requireTested(a, w.id);
+  assert.equal(await wf.dryRunWorkflow(a, crypto.randomUUID()), null);
+});

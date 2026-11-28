@@ -112,5 +112,6 @@
   "connections.notFound": "Aucune connexion {provider} nommée {name} : connectez-la depuis le champ Compte de l'étape ou dans Paramètres › Connexions",
   "connections.tokenFailed": "La demande de jeton {provider} a échoué ({status}) : {body}",
   "connections.unknownProvider": "Fournisseur OAuth inconnu : {provider}",
-  "connections.userOnly": "Seul un utilisateur connecté peut connecter un compte"
+  "connections.userOnly": "Seul un utilisateur connecté peut connecter un compte",
+  "workflows.untested": "La version {version} du workflow {id} n'a jamais été testée. Lancer workflows.dry_run { workflow: \"{id}\" } sans chemin en échec, ou une exécution de test runs.start { id: \"{id}\", test: true } réussie, puis réactiver."
 }

@@ -55,8 +55,10 @@ test("function written, tested then used in a workflow through MCP", async () =>
     next: { s: { hot: ["hot"], cold: ["cold"] } },
   };
   const wf = await call("workflows.create", { name: "Score", definition });
-  const [dry] = await call("workflows.dry_run", {
-    definition,
+  const {
+    results: [dry],
+  } = await call("workflows.dry_run", {
+    workflow: wf.id,
     records: [lead.record.id],
   });
   assert.deepEqual(
