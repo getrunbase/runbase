@@ -376,6 +376,7 @@ export function evaluateValue(
   raw: unknown,
   value?: unknown,
   now = new Date(),
+  flags = "",
 ): boolean {
   const type = ["before", "after", "older_than", "within"].includes(op)
     ? "date"
@@ -390,11 +391,23 @@ export function evaluateValue(
             ? "bool"
             : "text";
   const f = { key: "value", label: "value", type } as Field;
-  return evalCondition(f, { field: "value", op, value } as Condition, raw, now);
+  return evalCondition(
+    f,
+    { field: "value", op, value } as Condition,
+    raw,
+    now,
+    flags,
+  );
 }
 
 const DAY = 86_400_000;
-function evalCondition(f: Field, c: Condition, raw: unknown, now: Date) {
+function evalCondition(
+  f: Field,
+  c: Condition,
+  raw: unknown,
+  now: Date,
+  flags = "",
+) {
   const empty =
     raw == null || raw === "" || (Array.isArray(raw) && raw.length === 0);
   if (c.op === "is_empty") return empty;
@@ -449,7 +462,7 @@ function evalCondition(f: Field, c: Condition, raw: unknown, now: Date) {
     case "ends_with":
       return String(raw).toLowerCase().endsWith(String(v).toLowerCase());
     case "regex":
-      return new RegExp(String(v)).test(String(raw));
+      return new RegExp(String(v), flags).test(String(raw));
   }
   return false;
 }

@@ -443,6 +443,12 @@ export const workflowsService = {
       const errors = current
         ? await validateItems(ctx, current, activationWarnings)
         : [];
+      // A placeholder recipient (example.com) blocks activation.
+      errors.push(
+        ...activationWarnings.filter(
+          (w) => w.code === "workflows.placeholderRecipient",
+        ),
+      );
       if (errors.length) throw new InvalidWorkflow(errors);
     }
     const row = await withTenant(ctx, async (tx) => {

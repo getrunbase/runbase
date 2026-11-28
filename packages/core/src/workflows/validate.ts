@@ -1,5 +1,5 @@
 // Validation and dry run of a workflow.
-import { getBlock } from "../blocks";
+import { blocksService, getBlock } from "../blocks";
 import { isValueMode, validateCondition } from "../blocks/catalog/condition";
 import { validateMapping } from "../blocks/catalog/record-map";
 import { caseFilter, switchRecordInput } from "../blocks/catalog/switch";
@@ -28,6 +28,13 @@ import {
   templateRefChecks,
   webhookMappingChecks,
 } from "./validate-runtime";
+import {
+  dateChecks,
+  orphanUpsertWarnings,
+  placeholderRecipientChecks,
+  regexChecks,
+  unknownBlockError,
+} from "./validate-hints";
 
 export {
   coverageOf,
@@ -94,6 +101,9 @@ export async function validateDefinition(
   return (await validateItems(ctx, definition)).map((i) => i.message);
 }
 
+const FILTER_HINT =
+  "Filter shape: {field, op, value}, {all: [...]} or {any: [...]}; older_than and within take an integer number of days (e.g. 30)";
+
 // Field error (zod): path + message.
 const fieldError = (path: string, message: string) =>
   errorItem("workflows.invalidField", "{path}: {message}", { path, message });
@@ -126,9 +136,20 @@ export async function validateItems(
       errors.push(
         fieldError(
           `trigger${i.path.length ? `.${i.path.join(".")}` : ""}`,
-          i.message,
+          i.path[0] === "filter" ? `${i.message}. ${FILTER_HINT}` : i.message,
         ),
       );
+  else if (
+    trigger.data.type === "trigger.schedule" &&
+    trigger.data.filter &&
+    !trigger.data.object
+  )
+    errors.push(
+      errorItem(
+        "workflows.scheduleFilterNeedsObject",
+        "trigger.filter: requires trigger.object (the filter selects records of that object)",
+      ),
+    );
   else if (
     "object" in trigger.data &&
     trigger.data.object &&
@@ -214,15 +235,12 @@ export async function validateItems(
         ),
       );
 
+  let known: string[] | undefined;
   for (const s of steps) {
     const block = await getBlock(ctx, s.type);
     if (!block) {
-      errors.push(
-        errorItem("workflows.unknownBlock", "{step}: unknown block {type}", {
-          step: s.id,
-          type: s.type,
-        }),
-      );
+      known ??= (await blocksService.list(ctx)).map((b) => b.type);
+      errors.push(unknownBlockError(s.id, s.type, known));
       continue;
     }
     templateErrors(s, ids, errors);
@@ -341,6 +359,14 @@ export async function validateItems(
     errors,
   );
   await branchWarnings(ctx, steps, next, warnings);
+  regexChecks(steps, errors);
+  dateChecks(steps, errors);
+  placeholderRecipientChecks(steps, warnings);
+  orphanUpsertWarnings(
+    trigger.success ? trigger.data : undefined,
+    steps,
+    warnings,
+  );
   await httpDomainChecks(ctx, steps, warnings);
   for (const id of Object.keys(next))
     if (!ids.has(id))

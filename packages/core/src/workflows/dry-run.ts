@@ -1,5 +1,11 @@
 // Dry run of a workflow and single-step test (no side effects by default).
-import { getBlock, blockContext, type BlockResult } from "../blocks";
+import {
+  blocksService,
+  getBlock,
+  blockContext,
+  type BlockResult,
+} from "../blocks";
+import { suggestBlock } from "./validate-hints";
 import { blockEngine } from "../blocks/engine";
 import { assertAiAllowed, chargeAi } from "../runs/budget";
 import { recordsService } from "../records";
@@ -104,10 +110,21 @@ async function execStep(
   o: { ai?: boolean; live?: boolean; input?: unknown } = {},
 ) {
   const block = await getBlock(ctx, step.type);
-  if (!block)
+  if (!block) {
+    const suggestion = suggestBlock(
+      step.type,
+      (await blocksService.list(ctx)).map((b) => b.type),
+    );
+    if (suggestion)
+      throw notFound(
+        "workflows.unknownBlockDidYouMean",
+        "Unknown block: {type}, did you mean {suggestion}?",
+        { type: step.type, suggestion },
+      );
     throw notFound("workflows.unknownBlock", "Unknown block: {type}", {
       type: step.type,
     });
+  }
   const raw = new Set(block.raw);
   const input = await stepInput(ctx, o.input ?? step.input, raw, scope);
   const warnings = await emptyRefs(ctx, o.input ?? step.input, raw, scope);

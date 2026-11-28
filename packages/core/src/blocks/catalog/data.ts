@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { appError } from "../../errors/app-error";
 import { defineBlock, StopError } from "../block";
+import { parseDate } from "../../workflows/validate-hints";
 
 // Value at the given path (`a.b.0.c`); empty path = the value itself.
 export const at = (v: unknown, path?: string) =>
@@ -54,9 +55,10 @@ const UNITS = { minutes: 60_000, hours: 3_600_000, days: 86_400_000 };
 const unit = z.enum(["minutes", "hours", "days", "weeks", "months"]);
 type Unit = z.infer<typeof unit>;
 
+// ISO date, or `now` / `today` (start of the UTC day).
 function toDate(v: string) {
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) throw appError("blocks.invalidDate", "Invalid date: {value}", { value: v });
+  const d = parseDate(v);
+  if (!d) throw appError("blocks.invalidDate", "Invalid date: {value}", { value: v });
   return d;
 }
 
