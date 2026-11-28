@@ -55,3 +55,52 @@ export function sdkGuard(now: () => number = Date.now) {
     return null;
   };
 }
+
+// External link requested by a page (SDK `openUrl` or a `target="_blank"`
+// link): absolute https URL only, no credentials, no control or space
+// characters, bounded length. Returns the normalised URL or null.
+export const MAX_URL_LENGTH = 2_048;
+export function externalUrl(raw: unknown): URL | null {
+  if (typeof raw !== "string" || raw.length > MAX_URL_LENGTH) return null;
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000- \u007f-\u009f\\]/.test(raw)) return null;
+  if (!/^https:\/\//i.test(raw)) return null;
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:" || !url.hostname) return null;
+  if (url.username || url.password) return null;
+  return url;
+}
+
+// Host-side gate for an `openUrl` message: it must come from this block's
+// iframe, follow a recent user activation (a click in the iframe activates the
+// parent window too, so `navigator.userActivation.isActive` is checked in the
+// app window, where the page cannot fake it) and stay under 1 per second.
+export function openUrlGate(now: () => number = Date.now) {
+  const rate = limiter(1, now);
+  return (
+    e: { source: unknown; data: unknown },
+    frame: unknown,
+    activation: { isActive: boolean } | undefined,
+  ): URL | null => {
+    if (!frame || e.source !== frame) return null;
+    const m = e.data as Record<string, unknown> | null;
+    if (!m || typeof m !== "object" || m.type !== "openUrl") return null;
+    const url = externalUrl(m.url);
+    if (!url || !activation?.isActive || !rate()) return null;
+    return url;
+  };
+}
+
+// Opens the link in a new tab, without opener or referrer.
+export function openExternal(
+  url: URL,
+  open: (u: string, target: string, features: string) => unknown = (...a) =>
+    window.open(...a),
+) {
+  open(url.href, "_blank", "noopener,noreferrer");
+}

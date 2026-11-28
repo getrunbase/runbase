@@ -7,16 +7,31 @@
 // (component permissions), with a timeout and a per-second call cap.
 // The parent also relays: toasts, navigation (validated), persistent state in
 // the URL (`c.<block>.<key>`) and live changes of readable objects.
+// External links (SDK openUrl, `<a target="_blank">`): validated by
+// openUrlGate, confirmed in a dialog, opened with noopener,noreferrer. The
+// sandbox keeps no allow-popups.
 import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { errorText } from "@/lib/error-text";
 import {
   acceptOrigin,
   limiter,
+  openExternal,
+  openUrlGate,
   runtimeSrc,
   sdkGuard,
 } from "@/lib/runtime-bridge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   reportDeduper,
   stackSummary,
@@ -142,6 +157,12 @@ export function CodeFrame({
   } | null>(null);
   // Render finished (`idle` message or error): awaited by page.screenshot.
   const [done, setDone] = useState(false);
+  // External link waiting for the user's confirmation.
+  const [leaving, setLeaving] = useState<URL | null>(null);
+  // While the dialog is open, new requests are ignored: the page cannot swap
+  // the link the user is reading for another one before they click Open.
+  const leavingRef = useRef<URL | null>(null);
+  leavingRef.current = leaving;
   const propsRef = useRef(props);
   propsRef.current = props;
   const send = useRef<(m: object) => void>(() => {});
@@ -181,6 +202,7 @@ export function CodeFrame({
       report(message, stack);
     };
     const guard = sdkGuard();
+    const openGate = openUrlGate();
     started.current = false;
     // Opaque origin: only the "*" target is possible; we only write to our
     // iframe, stopped if it navigates elsewhere (second `load`).
@@ -249,7 +271,19 @@ export function CodeFrame({
           page: m.page,
           recordId: m.recordId as string | undefined,
         });
-      else if (m.type === "chunk" && (m.id === "tiptap" || m.id === "maplibre"))
+      else if (m.type === "openUrl") {
+        if (leavingRef.current) return;
+        const url = openGate(
+          e,
+          el.contentWindow,
+          (navigator as { userActivation?: { isActive: boolean } })
+            .userActivation,
+        );
+        if (url) setLeaving(url);
+      } else if (
+        m.type === "chunk" &&
+        (m.id === "tiptap" || m.id === "maplibre")
+      )
         fetch(`/c/runtime/chunk/${m.id}`)
           .then((r) => {
             if (!r.ok) throw new Error(`chunk ${m.id}: ${r.status}`);
@@ -338,6 +372,32 @@ export function CodeFrame({
       data-code-error={error?.message}
     >
       {error && <ErrorBanner {...error} />}
+      <AlertDialog
+        open={!!leaving}
+        onOpenChange={(open) => !open && setLeaving(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="break-all">
+              {t("leaving", { host: leaving?.host ?? "" })}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="break-all">
+              {leaving?.href}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("leavingCancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (leaving) openExternal(leaving);
+                setLeaving(null);
+              }}
+            >
+              {t("leavingOpen")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <iframe
         ref={frame}
         src={runtimeSrc()}

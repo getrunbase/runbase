@@ -17,7 +17,10 @@
     "previewUnavailable": "Code component: preview unavailable here.",
     "timeout": "SDK call took too long (max {ms} ms).",
     "details": "Details",
-    "component": "Component: {name}"
+    "component": "Component: {name}",
+    "leaving": "You are leaving Runbase: {host}",
+    "leavingOpen": "Open link",
+    "leavingCancel": "Cancel"
   },
   "badge": {
     "text": "Powered by Runbase",

@@ -47,7 +47,7 @@ Data-bound blocks, built on the SDK and @ui. Each one handles its own loading, e
 - \`useRecord(id, {include?})\`, \`useTimeline(recordId)\`, \`useObject(id)\` (fields, labels, options), \`useUser()\`.
 - \`useMutation(object)\` returns \`{create, update, remove, pending}\`; optimistic by default, rolled back with an error toast if the server refuses.
 - Reads reload on their own when data changes (other users, workflows, mutations).
-- \`toast(text, kind)\`, \`navigate({page, recordId?})\`, \`useParam(key, fallback)\` (state in the URL), \`startWorkflow(id, {recordId?})\`, \`format.date/currency/number/percent/relative\`.
+- \`toast(text, kind)\`, \`navigate({page, recordId?})\`, \`openUrl(url)\` (external https link in a new tab after a confirm, from a click only; \`<a target="_blank">\` does the same), \`useParam(key, fallback)\` (state in the URL), \`startWorkflow(id, {recordId?})\`, \`format.date/currency/number/percent/relative\`.
 
 ## Design rules (strict)
 - **Spacing**: 4/8 px grid only. Page \`p-4 md:p-6\`, sections \`gap-6\`, inside a card \`gap-4\`, inline \`gap-2\`. No arbitrary values (\`p-[13px]\`).
