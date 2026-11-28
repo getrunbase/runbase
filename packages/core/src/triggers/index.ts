@@ -122,8 +122,10 @@ async function isSelfTrigger(
 }
 
 // Delayed replay of the origin job, restricted to this workflow. Job id per
-// workflow, record and attempt: several writes during one run give one
-// follow-up. false when the attempts are exhausted.
+// workflow, record and attempt: several triggers during one run coalesce into
+// one follow-up that replays the latest one (its data replaces the queued
+// job's), and `coalesced` keeps the ids of every trigger folded into it.
+// false when the attempts are exhausted.
 async function followUp(
   ctx: TenantContext,
   workflowId: string,
@@ -132,19 +134,115 @@ async function followUp(
 ) {
   const n = (origin.data.followups ?? 0) + 1;
   if (n > MAX_FOLLOWUPS) return false;
-  const data = { ...origin.data };
+  const data: FollowUpJob = { ...origin.data };
   delete data.fq;
-  await busQueue().add(
-    origin.name,
-    { ...data, only: workflowId, followups: n, key: undefined },
-    {
-      delay: FOLLOWUP_DELAY_MS,
-      jobId: `followup-${ctx.workspaceId}-${workflowId}-${recordId}-${n}`,
-      removeOnComplete: true,
-      removeOnFail: 100,
-    },
-  );
+  const jobId = `followup-${ctx.workspaceId}-${workflowId}-${recordId}-${n}`;
+  const queued = await busQueue().getJob(jobId);
+  const prev = (queued?.data as FollowUpJob | undefined)?.coalesced ?? [];
+  const next: FollowUpJob = {
+    ...data,
+    only: workflowId,
+    followups: n,
+    key: undefined,
+    coalesced: [...new Set([...prev, ...(data.coalesced ?? []), data.id])],
+  };
+  if (queued && (await queued.isDelayed())) {
+    await queued.updateData(next);
+    return true;
+  }
+  await busQueue().add(origin.name, next, {
+    delay: FOLLOWUP_DELAY_MS,
+    jobId,
+    removeOnComplete: true,
+    removeOnFail: 100,
+  });
   return true;
+}
+
+// Follow-up job data: ids (events or records) of the triggers it coalesces.
+type FollowUpJob = BusJob & { coalesced?: string[] };
+
+export type PendingFollowUp = {
+  status: "pending";
+  workflowId: string;
+  recordId: string | null;
+  // Trigger that the follow-up replays (the latest one received).
+  replays: string;
+  // Every trigger coalesced into this follow-up, oldest first.
+  coalesced: string[];
+  attempt: number;
+  runAt: Date;
+};
+
+// Follow-ups waiting for an active run to end (one run plus one follow-up
+// per workflow and record), shown as pending runs.
+export async function pendingFollowUps(
+  ctx: TenantContext,
+  filter: { workflowId?: string; recordId?: string } = {},
+): Promise<PendingFollowUp[]> {
+  const prefix = `followup-${ctx.workspaceId}-`;
+  const out: PendingFollowUp[] = [];
+  for (const job of await busQueue().getDelayed()) {
+    if (!job.id?.startsWith(prefix)) continue;
+    const d = job.data as FollowUpJob;
+    if (d.workspaceId !== ctx.workspaceId || !d.only) continue;
+    const recordId = job.id
+      .slice(prefix.length + d.only.length + 1)
+      .replace(/-\d+$/, "");
+    if (filter.workflowId && filter.workflowId !== d.only) continue;
+    if (filter.recordId && filter.recordId !== recordId) continue;
+    out.push({
+      status: "pending",
+      workflowId: d.only,
+      recordId: recordId || null,
+      replays: d.id,
+      coalesced: d.coalesced ?? [d.id],
+      attempt: d.followups ?? 1,
+      runAt: new Date(job.timestamp + (job.opts.delay ?? 0)),
+    });
+  }
+  return out;
+}
+
+// Synchronous check at webhook reception: for each active trigger.webhook of
+// this hook with a mapping, `missing` lists the items whose match field does
+// not resolve (the upsert would create a duplicate), `warnings` the other
+// unresolved paths.
+export async function checkWebhookMapping(
+  ctx: TenantContext,
+  hookName: string,
+  items: unknown[],
+) {
+  const missing: {
+    workflowId: string;
+    field: string;
+    path: string | null;
+    item: number;
+  }[] = [];
+  const warnings: string[] = [];
+  for (const { id, trigger: t } of await activeTriggers(ctx)) {
+    if (t.type !== "trigger.webhook" || t.webhook !== hookName) continue;
+    if (!t.object || !t.mapping) continue;
+    for (const [i, item] of items.entries()) {
+      const data = mapPayload(t.mapping, item);
+      const at = items.length > 1 ? ` (item ${i})` : "";
+      if (t.match && empty(data[t.match])) {
+        missing.push({
+          workflowId: id,
+          field: t.match,
+          path: t.mapping[t.match] ?? null,
+          item: i,
+        });
+        continue;
+      }
+      for (const [field, path] of Object.entries(t.mapping))
+        if (empty(data[field]))
+          warnings.push(
+            `path ${path} resolved to nothing (field ${field})${at}`,
+          );
+    }
+  }
+  return { missing, warnings };
 }
 
 // Active workflows and current definition, in one query (no more
@@ -348,7 +446,7 @@ export async function resolve(job: { name: BusEvent; data: BusJob }) {
         depth,
         // {{event.recordId}} (A10): record linked to the event, unless the payload
         // already carries that field.
-        event: ev && withRecordId(ev.payload, ev.recordId ?? target),
+        event: ev && withEventMeta(ev, ev.recordId ?? target),
         key: key && `bus:${key}`,
         origin: job,
       }),
@@ -363,6 +461,22 @@ export function withRecordId(payload: unknown, recordId?: string | null) {
   if (!recordId || !payload || typeof payload !== "object") return payload;
   if (Array.isArray(payload) || "recordId" in payload) return payload;
   return { ...payload, recordId };
+}
+
+// {{event.…}} context: payload plus `recordId`, `id`, `type` and
+// `occurredAt` of the stored event, without overwriting payload fields.
+export function withEventMeta(
+  ev: { id: string; type: string; occurredAt: Date; payload: unknown },
+  recordId?: string | null,
+) {
+  const p = withRecordId(ev.payload, recordId);
+  if (!p || typeof p !== "object" || Array.isArray(p)) return p;
+  const meta = {
+    id: ev.id,
+    type: ev.type,
+    occurredAt: ev.occurredAt.toISOString(),
+  };
+  return { ...meta, ...p };
 }
 
 // Error text for the error center: Zod issues as `field: message` lines.
