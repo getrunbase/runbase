@@ -163,7 +163,7 @@ export function defineRecordTools(server: McpServer, ctx: TenantContext) {
     "records.upsert",
     {
       description:
-        "Creates or updates a record, validated against the object's schema. Key: `externalId`, or `match` = key of a `unique: true` field (email, domain); without a key, always creates. `test: true`: test record (on creation), deleted by workspace.purge_test. Updating an existing test record without `test: true` adopts it as live (returns promoted: true and a warning).",
+        "Creates or updates a record, validated against the object's schema. Key: `externalId`, or `match` = key of a `unique: true` field (email, domain); without a key, always creates. `test: true`: test record (on creation), deleted by workspace.purge_test. Updating an existing test record without `test: true` adopts it as live (returns promoted: true and a warning): workspace.purge_test no longer deletes it. Pass `test: true` on every write to keep it purgeable; `test: true` on a live record re-flags it as test.",
       inputSchema: upsertItem.extend({ object: slug }),
     },
     ({ object, ...input }) =>
@@ -253,7 +253,7 @@ export function defineRecordTools(server: McpServer, ctx: TenantContext) {
     "records.merge",
     {
       description:
-        "Merges duplicates into `keep`, atomically: its values win, empty fields are filled, the merged records' relations (ref/refs) and events move to `keep`, then they are deleted.",
+        "Merges duplicates into `keep`, atomically: its values win, empty fields are filled, the merged records' relations (ref/refs) and events move to `keep`, then they are deleted. The result stays test data only if `keep` and every merged record are test; merging any live record promotes a test `keep` to live (promoted: true and a warning).",
       inputSchema: z.object({
         keep: z.string(),
         merge: z.array(z.string()).min(1),
@@ -307,7 +307,7 @@ export function defineRecordTools(server: McpServer, ctx: TenantContext) {
     "records.update",
     {
       description:
-        "Updates a record by id (merge by default, or replace). Updating a test record without `test: true` adopts it as live data (returns promoted: true and a warning): workspace.purge_test no longer deletes it. Pass `test: true` to keep it purgeable.",
+        "Updates a record by id (merge by default, or replace). Updating a test record without `test: true` adopts it as live data (returns promoted: true and a warning): workspace.purge_test no longer deletes it. Pass `test: true` to keep it purgeable (also re-flags a live record as test).",
       inputSchema: z.object({
         id: z.string(),
         data,
@@ -439,7 +439,7 @@ export function defineRecordTools(server: McpServer, ctx: TenantContext) {
     "records.import_csv",
     {
       description:
-        'Imports a CSV (1st line = headers, max 10000 lines). mapping { column: field key }; match = unique field (e.g. email) to update the existing record instead of creating a duplicate. Lists: JSON or values separated by ";". Each line is independent: returns { total, created, updated, unchanged, failed: [{ line, field, value, message }] (first 50), failedCount, emptyMatchKey, skipped, warnings }. onEmptyMatch (create | skip | fail, default create): what to do with a row whose match column is empty. dryRun: true to check without writing. test: true marks created records as test data (workspace.purge_test).',
+        'Imports a CSV (1st line = headers, max 10000 lines). mapping { column: field key }; match = unique field (e.g. email) to update the existing record instead of creating a duplicate. Lists: JSON or values separated by ";". Each line is independent: returns { total, created, updated, unchanged, failed: [{ line, field, value, message }] (first 50), failedCount, emptyMatchKey, skipped, warnings }. onEmptyMatch (create | skip | fail, default create): what to do with a row whose match column is empty. dryRun: true to check without writing. test: true marks created records as test data (workspace.purge_test); without it, a matched test record is updated as live and adopted (no longer purged). Pass test: true to keep test records purgeable.',
       inputSchema: z.object({
         object: slug,
         csv: z.string().min(1),

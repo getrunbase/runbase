@@ -485,9 +485,11 @@ export const functionsService = {
     name: string,
     input: unknown,
     version?: number,
-    opts: { dryRun?: boolean } = {},
+    // test: true tags the run's writes as test data (ctx.test).
+    opts: { dryRun?: boolean; test?: boolean } = {},
   ) => {
     await requireScope(ctx, "admin");
+    if (opts.test) ctx = { ...ctx, test: true };
     const f = await withTenant(ctx, (tx) => find(tx, ctx, name, version));
     if (!f) throw unknownFunction(name, version);
     const writes = opts.dryRun ? ([] as PlannedWrite[]) : undefined;
