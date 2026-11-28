@@ -50,6 +50,7 @@
     "./retention": "./src/retention/index.ts",
     "./usage": "./src/usage/index.ts",
     "./views": "./src/views/index.ts",
+    "./notes": "./src/notes/index.ts",
     "./templates": "./src/templates/index.ts",
     "./files": "./src/files/index.ts",
     "./pages": "./src/pages/index.ts",

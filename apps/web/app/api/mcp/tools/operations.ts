@@ -33,7 +33,7 @@ export function defineOperationTools(server: McpServer, ctx: TenantContext) {
     "workspace.describe",
     {
       description:
-        "The whole workspace in one call: databases > objects (fields, record count), workflows (trigger, steps, status), functions (schemas, permissions, limits), webhooks, pages, secret names, SQL views readable by query.sql (name, columns, types), counters (records, events, active runs, open errors). Call it first to discover a workspace.",
+        "The whole workspace in one call: databases > objects (fields, record count), workflows (trigger, steps, status), functions (schemas, permissions, limits), webhooks, pages, secret names, SQL views readable by query.sql (name, columns, types), counters (records, events, active runs, open errors), note titles per entity (notes: id, title, stale; bodies via notes.get). Call it first to discover a workspace.",
       inputSchema: z.object({}),
     },
     () => run(() => overviewService.describe(ctx)),

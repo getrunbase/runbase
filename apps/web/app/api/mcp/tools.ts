@@ -24,6 +24,7 @@ import { defineIntegrationTools } from "./tools/integrations";
 import { definePageTools } from "./tools/pages";
 import { defineRunTools } from "./tools/runs";
 import { defineOperationTools } from "./tools/operations";
+import { defineNoteTools } from "./tools/notes";
 
 export { errorCode } from "./tools/shared";
 
@@ -190,4 +191,5 @@ function defineTools(server: McpServer, ctx: TenantContext) {
   definePageTools(server, ctx);
   defineRunTools(server, ctx);
   defineOperationTools(server, ctx);
+  defineNoteTools(server, ctx);
 }
