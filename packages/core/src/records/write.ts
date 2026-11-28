@@ -139,6 +139,8 @@ export async function upsertInTx(tx: Tx, ctx: TenantContext, raw: UpsertInput) {
   }
 
   let changed: string[];
+  // A test record adopted as live by this write (see below).
+  let promoted = false;
   if (existing) {
     const before = existing.data;
     const data = recompute(
@@ -158,7 +160,8 @@ export async function upsertInTx(tx: Tx, ctx: TenantContext, raw: UpsertInput) {
     // workspace.purge_test must not delete it.
     const promote = existing.isTest && !(input.test ?? ctx.test ?? false);
     if (!changed.length && !promote)
-      return { record: existing, created: false, changed };
+      return { record: existing, created: false, changed, promoted: false };
+    promoted = promote;
     [record] = await tx
       .update(records)
       .set({ data, updatedAt: new Date(), ...(promote && { isTest: false }) })
@@ -187,7 +190,7 @@ export async function upsertInTx(tx: Tx, ctx: TenantContext, raw: UpsertInput) {
       changed,
       input.test || record!.isTest,
     );
-  return { record: record!, created: !existing, changed };
+  return { record: record!, created: !existing, changed, promoted };
 }
 
 export async function updateInTx(
@@ -196,6 +199,8 @@ export async function updateInTx(
   id: string,
   data: Data,
   mode: "merge" | "replace" = "merge",
+  // test: true keeps a test record purgeable (no promotion to live).
+  opts: { test?: boolean } = {},
 ) {
   if (!isUuid(id)) throw notFound("records.notFound", "Record not found");
   const [row] = await tx
@@ -220,9 +225,9 @@ export async function updateInTx(
   const changed = changedFields(before, next);
   await checkRefs(tx, ctx, fields, pick(next, changed));
   // Live write on a test record: promote it (see upsertInTx).
-  const promote = row.record.isTest && !ctx.test;
+  const promote = row.record.isTest && !(opts.test ?? ctx.test ?? false);
   if (!changed.length && !promote)
-    return { record: row.record, created: false, changed };
+    return { record: row.record, created: false, changed, promoted: false };
   const [record] = await tx
     .update(records)
     .set({
@@ -251,7 +256,16 @@ export async function updateInTx(
     changed,
     record!.isTest,
   );
-  return { record: record!, created: false, changed };
+  return { record: record!, created: false, changed, promoted: promote };
+}
+
+// Warning returned when a live write adopted a test record.
+export const PROMOTED_WARNING =
+  "test record adopted as live; pass test:true to keep it purgeable";
+
+// Adds `warning` to a write result whose test record was promoted.
+export function withPromotion<T extends { promoted: boolean }>(r: T) {
+  return r.promoted ? { ...r, warning: PROMOTED_WARNING } : r;
 }
 
 // References (ref/refs) of workspace records to `ids` (records of

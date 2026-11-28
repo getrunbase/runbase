@@ -8,8 +8,10 @@ import {
   compileFilter,
   evaluateFilter,
   validateFilter,
+  operatorsDoc,
   type Filter,
 } from "./index";
+import { AppError } from "../errors/app-error";
 
 const fields: Field[] = [
   { key: "name", label: "Name", type: "text" },
@@ -189,4 +191,35 @@ test("not_in, ends_with, regex operators: interpreter and SQL", () => {
   );
   assert.match(q.sql, / ~ \$/);
   assert.match(q.sql, /not in/);
+});
+
+test("between on a date field takes an ISO tuple", () => {
+  const f: Filter = {
+    field: "since",
+    op: "between",
+    value: ["2026-05-01", "2026-05-31"],
+  };
+  assert.doesNotThrow(() => validateFilter(fields, f));
+  assert.equal(ev(f), true);
+  assert.equal(
+    ev({ field: "since", op: "between", value: ["2026-04-01", "2026-04-30"] }),
+    false,
+  );
+  assert.throws(() =>
+    validateFilter(fields, { field: "since", op: "between", value: [1, 2] }),
+  );
+  assert.match(operatorsDoc, /date\/datetime: [^;]*between/);
+});
+
+test("invalid regex names the pattern and the dialect, kind invalid_input", () => {
+  try {
+    validateFilter(fields, { field: "name", op: "regex", value: "(" });
+    assert.fail("should throw");
+  } catch (e) {
+    assert.ok(e instanceof AppError);
+    assert.equal(e.code, "filter.invalidRegex");
+    assert.equal(e.kind, "invalid_input");
+    assert.match(e.message, /"\("/);
+    assert.match(e.message, /POSIX/);
+  }
 });

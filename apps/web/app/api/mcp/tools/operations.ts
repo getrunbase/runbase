@@ -63,7 +63,7 @@ export function defineOperationTools(server: McpServer, ctx: TenantContext) {
     "workspace.purge_test",
     {
       description:
-        "Deletes test data (created with test: true): records (trash then purge, relations removed), finished events and runs (a still-active run is kept: runs.cancel first). dryRun: true returns the counts without deleting anything; otherwise confirm: true required. hasMore: call again for the next batch.",
+        "Deletes test data (created with test: true): records (trash then purge, relations removed), finished events and runs (a still-active run is kept: runs.cancel first). dryRun: true returns the counts without deleting anything; otherwise confirm: true required. hasMore: call again for the next batch. A test record updated without test: true is adopted as live (promoted) and no longer purged here.",
       inputSchema: z.object({
         dryRun: z.boolean().optional(),
         confirm: z.boolean().optional(),

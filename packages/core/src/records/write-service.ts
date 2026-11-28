@@ -17,6 +17,7 @@ import {
   rewriteRefs,
   updateInTx,
   upsertInTx,
+  withPromotion,
 } from "./write";
 
 export const writeOps = {
@@ -39,13 +40,14 @@ export const writeOps = {
     id: string,
     data: Data,
     mode: "merge" | "replace" = "merge",
+    opts: { test?: boolean } = {},
   ) => {
     await requireScope(ctx, "write");
     const result = await withTenant(ctx, (tx) =>
-      updateInTx(tx, ctx, id, data, mode),
+      updateInTx(tx, ctx, id, data, mode, opts),
     );
     await publishUpsert(ctx, {}, result);
-    return result;
+    return withPromotion(result);
   },
 
   // Atomic merge (contacts, companies): `keep` absorbs `merge`. Its
@@ -221,7 +223,7 @@ export const writeOps = {
     await requireScope(ctx, "write");
     const result = await withTenant(ctx, (tx) => upsertInTx(tx, ctx, input));
     await publishUpsert(ctx, input, result);
-    return result;
+    return withPromotion(result);
   },
 
   // Upsert of several records of an object in a single transaction: one invalid

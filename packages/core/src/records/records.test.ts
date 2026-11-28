@@ -97,7 +97,15 @@ test("a record mutation produces exactly one job on the bus", async () => {
       data: { name },
     });
   const jobsFor = async (id: string) =>
-    (await busQueue().getJobs(["waiting", "prioritized", "delayed", "active", "completed"]))
+    (
+      await busQueue().getJobs([
+        "waiting",
+        "prioritized",
+        "delayed",
+        "active",
+        "completed",
+      ])
+    )
       .filter((j) => j?.data.id === id)
       .map((j) => j.name);
 
@@ -156,7 +164,15 @@ test("remove: audit and record.deleted; object deletion publishes each record", 
       .then((r) => r.record.id);
   const [a, b, c] = [await mk("a"), await mk("b"), await mk("c")];
   const deletedJobs = async () =>
-    (await busQueue().getJobs(["waiting", "prioritized", "active", "completed", "failed"]))
+    (
+      await busQueue().getJobs([
+        "waiting",
+        "prioritized",
+        "active",
+        "completed",
+        "failed",
+      ])
+    )
       .filter(
         (j) =>
           j?.name === "record.deleted" &&
