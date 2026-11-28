@@ -4,6 +4,18 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.4.3](https://github.com/getrunbase/runbase/compare/v0.4.2...v0.4.3) (2026-11-28)
+
+
+### Features
+
+* **templates:** add 30 Google Workspace and Slack templates with closed categories ([#131](https://github.com/getrunbase/runbase/issues/131)) ([70642b9](https://github.com/getrunbase/runbase/commit/70642b974a3f4b2bee981512b3edce444b496b16))
+
+
+### Bug Fixes
+
+* **core:** use the manifest description for catalog excerpts ([#129](https://github.com/getrunbase/runbase/issues/129)) ([a0d705e](https://github.com/getrunbase/runbase/commit/a0d705ee024d37211f9a4bfee9a17d688714f0ae))
+
 ## [0.4.2](https://github.com/getrunbase/runbase/compare/v0.4.1...v0.4.2) (2026-11-27)
 
 

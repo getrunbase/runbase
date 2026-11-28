@@ -1,6 +1,6 @@
 {
   "name": "@getrunbase/sdk",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "React hooks SDK for Runbase code components: live queries, optimistic mutations, keyset pagination.",
   "license": "MIT",
   "repository": {
