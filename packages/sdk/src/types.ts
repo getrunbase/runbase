@@ -1,10 +1,14 @@
 // Public API of `@getrunbase/sdk` as seen by a code component (hooks
 // provided by the iframe runtime).
-export type Row = {
+// One record shape everywhere (useQuery, useInfiniteQuery, useRecord,
+// mutations): fields always live under `data`, never flat on the row.
+// `D` types the fields: useQuery<Deal>() returns Row<Deal>[].
+export type Fields = Record<string, unknown>;
+export type Row<D = Fields> = {
   id: string;
   objectId: string;
-  data: Record<string, unknown>;
-} & Record<string, unknown>;
+  data: D;
+};
 
 export type Filter = Record<string, unknown>;
 export type Sort = { field: string; dir?: "asc" | "desc" }[];
@@ -115,17 +119,17 @@ export type AI = {
 export type User = { id: string; name?: string; email?: string } | null;
 
 export interface RunbaseSdk {
-  useQuery<R = Row>(args: QueryArgs): QueryResult<R>;
-  useInfiniteQuery<R = Row>(args: QueryArgs): InfiniteQueryResult<R>;
+  useQuery<D = Fields>(args: QueryArgs): QueryResult<Row<D>>;
+  useInfiniteQuery<D = Fields>(args: QueryArgs): InfiniteQueryResult<Row<D>>;
   useAggregate<R = Record<string, unknown>>(args: AggregateArgs): Loadable<R[]>;
   useMutation(object?: string): Mutation;
   useUpload(): Upload;
   useRun(workflowId: string): Run;
   useAI(name?: string): AI;
-  useRecord<R = Row>(
+  useRecord<D = Fields>(
     id: string | null | undefined,
     opts?: { include?: string[] },
-  ): Loadable<R | undefined>;
+  ): Loadable<Row<D> | undefined>;
   useTimeline<E = Record<string, unknown>>(
     recordId: string | null | undefined,
   ): Loadable<E[]>;

@@ -3,7 +3,11 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
 import type { TenantContext } from "@getrunbase/core/tenant";
 import { notFound } from "@getrunbase/core/errors";
-import { compilePackage } from "@getrunbase/core/components";
+import {
+  compilePackage,
+  formatLintWarning,
+  lintPackage,
+} from "@getrunbase/core/components";
 import { render, reviewPage } from "@getrunbase/core/render";
 import { appUrl, shotToken } from "@/lib/screenshot-token";
 import { pagesService } from "@getrunbase/core/pages";
@@ -157,7 +161,7 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
     "page.create",
     {
       description:
-        "Creates a page from a TSX package (draft; `publish: true` publishes right away). Shared components are files of the package (e.g. components/card.tsx).",
+        "Creates a page from a TSX package (draft; `publish: true` publishes right away). Shared components are files of the package (e.g. components/card.tsx). Returns the page and `warnings` (static checks, file:line [rule]: arbitrary Tailwind values, palette classes, hard-coded select options, client-side grouping, `any` around SDK results, missing loading/empty/error states): fix them with page.update.",
       inputSchema: z.object({
         name: z.string().min(1),
         icon: pageIcon,
@@ -168,7 +172,11 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
         publish: z.boolean().optional(),
       }),
     },
-    (input) => run(() => pagesService.create(ctx, input)),
+    (input) =>
+      run(async () => ({
+        ...(await pagesService.create(ctx, input)),
+        warnings: lintPackage(input.files).map(formatLintWarning),
+      })),
   );
   const fileOp = z.discriminatedUnion("op", [
     z.object({ op: z.literal("write"), path: filePath, source: z.string() }),
@@ -185,7 +193,7 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
     "page.update",
     {
       description:
-        "Updates a page. Name and icon apply immediately. `changes` is a file patch applied in order to the draft, all or nothing: {op: write, path, source} creates or replaces a file, {op: edit, path, old, new} replaces text matching once, {op: rename, from, to} (the entry follows), {op: delete, path} (not the entry). `files` replaces the whole package. Draft changes are invisible to users until page.publish (`publish: true` publishes right away). The package is recompiled: returns {page, errors} (compile errors, file:line), then, unless `review: false` or compile errors, `review` = {a11y (axe violations), pageErrors (runtime errors), renderErrors, warnings} followed by desktop and mobile screenshots of the draft.",
+        "Updates a page. Name and icon apply immediately. `changes` is a file patch applied in order to the draft, all or nothing: {op: write, path, source} creates or replaces a file, {op: edit, path, old, new} replaces text matching once, {op: rename, from, to} (the entry follows), {op: delete, path} (not the entry). `files` replaces the whole package. Draft changes are invisible to users until page.publish (`publish: true` publishes right away). The package is recompiled: returns {page, errors, warnings} (compile errors and static-check warnings, file:line), then, unless `review: false` or compile errors, `review` = {a11y (axe violations), pageErrors (runtime errors), renderErrors, warnings} followed by desktop and mobile screenshots of the draft.",
       inputSchema: z.object({
         id: pageId,
         name: z.string().min(1).optional(),
@@ -220,6 +228,7 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
               ? `${e.file ?? ""}:${e.line}:${e.col ?? 0} ${e.text}`
               : e.text,
           ),
+          warnings: lintPackage(page.files).map(formatLintWarning),
         };
       } catch (e) {
         return run(() => Promise.reject(e));

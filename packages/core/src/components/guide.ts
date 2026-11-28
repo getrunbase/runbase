@@ -44,6 +44,7 @@ Data-bound blocks, built on the SDK and @ui. Each one handles its own loading, e
   - \`limit\`: 50 by default, 1000 max. \`after\`: keyset pagination. \`enabled: false\`: no request.
   - KPIs and charts: \`groupBy\` and \`aggregate: [{op: "count"|"sum"|"avg"|"min"|"max", field?, as}]\`, never by loading every row.
   - Filter: \`{field, op, value}\`, \`{all: [...]}\` or \`{any: [...]}\`. Operators: eq, neq, in, contains, starts_with, gt, gte, lt, lte, between, before, after, within, older_than, is_empty, is_not_empty.
+- Every record (useQuery, useInfiniteQuery, useRecord, mutation results) has one shape: \`{id, objectId, data}\`, fields under \`data\`. Type it: \`useQuery<Deal>(...)\` returns \`Row<Deal>[]\`, \`useRecord<Deal>(id)\` a \`Row<Deal>\`. Never \`any\` around SDK results, never \`r.data ?? r\`.
 - \`useRecord(id, {include?})\`, \`useTimeline(recordId)\`, \`useObject(id)\` (fields, labels, options), \`useUser()\`.
 - \`useMutation(object)\` returns \`{create, update, remove, pending}\`; optimistic by default, rolled back with an error toast if the server refuses.
 - Reads reload on their own when data changes (other users, workflows, mutations).

@@ -23,6 +23,12 @@ export {
   type ComponentDep,
 } from "./compile";
 export {
+  formatLintWarning,
+  lintPackage,
+  type LintRule,
+  type LintWarning,
+} from "./lint";
+export {
   denied,
   handleSdkCall,
   parseCall,
