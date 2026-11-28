@@ -5,7 +5,12 @@ import { z } from "zod";
 import { requireScope } from "../api-keys";
 import { audit } from "../audit";
 import { track } from "../extensions";
-import { workflows, workflowVersions } from "../db/schema";
+import {
+  auditLog,
+  workflowRuns,
+  workflows,
+  workflowVersions,
+} from "../db/schema";
 import { isValueMode, validateCondition } from "../blocks/catalog/condition";
 import { objectsService } from "../objects";
 import { syncSchedule, triggerSchema } from "../triggers/schema";
@@ -19,7 +24,7 @@ import {
   validateItems,
   type DryRunOptions,
 } from "./validate";
-import { AppError, type ErrorItem } from "../errors/app-error";
+import { AppError, appError, type ErrorItem } from "../errors/app-error";
 import { isUuid } from "../lib/uuid";
 export { normalizeGraph, targetsOf, type Graph } from "./graph";
 export { WORKFLOWS_GUIDE } from "./guide";
@@ -147,6 +152,45 @@ async function syncTrigger(
   );
   if (trigger.success) await syncSchedule(ctx, wf, trigger.data);
 }
+
+// True when `v` of the workflow passed a clean dry run (audited by
+// workflowsService.dryRunWorkflow) or a succeeded test run.
+async function isTested(tx: Tx, ctx: TenantContext, id: string, v: number) {
+  const [dry] = await tx
+    .select({ id: auditLog.id })
+    .from(auditLog)
+    .where(
+      and(
+        eq(auditLog.workspaceId, ctx.workspaceId),
+        eq(auditLog.action, "workflow.dry_run"),
+        eq(auditLog.resourceType, "workflow"),
+        eq(auditLog.resourceId, id),
+        sql`(${auditLog.diff}->>'version')::int = ${v}`,
+      ),
+    )
+    .limit(1);
+  if (dry) return true;
+  const [run] = await tx
+    .select({ id: workflowRuns.id })
+    .from(workflowRuns)
+    .where(
+      and(
+        eq(workflowRuns.workflowId, id),
+        eq(workflowRuns.version, v),
+        eq(workflowRuns.isTest, true),
+        eq(workflowRuns.status, "succeeded"),
+      ),
+    )
+    .limit(1);
+  return Boolean(run);
+}
+
+const untested = (id: string, version: number) =>
+  appError(
+    "workflows.untested",
+    'Version {version} of workflow {id} has never been tested. Run workflows.dry_run { workflow: "{id}" } with no failing path, or a test run runs.start { id: "{id}", test: true } that succeeds, then activate again.',
+    { id, version },
+  );
 
 export const workflowsService = {
   // Validation errors (graph, branches, inputs, conditions); [] = valid.
@@ -291,6 +335,52 @@ export const workflowsService = {
   },
   activate: (ctx: TenantContext, id: string) =>
     workflowsService.update(ctx, id, { status: "active" }),
+  // Dry run of the current version of a saved workflow. A run without any
+  // failing path marks that version as tested (audit `workflow.dry_run`).
+  dryRunWorkflow: async (
+    ctx: TenantContext,
+    id: string,
+    recordIds: string[] = [],
+    opts: DryRunOptions = {},
+  ) => {
+    const wf = await workflowsService.get(ctx, id);
+    if (!wf) return null;
+    const results = await workflowsService.dryRun(
+      ctx,
+      wf.definition,
+      recordIds,
+      opts,
+    );
+    const tested = results.every((r) => !r.error);
+    if (tested)
+      await withTenant(ctx, (tx) =>
+        audit(tx, ctx, "workflow.dry_run", res(id), {
+          version: wf.currentVersion,
+        }),
+      );
+    return { version: wf.currentVersion, tested, results };
+  },
+  // Throws `workflows.untested` unless the current version (or the new
+  // definition, which would be a new untested version) passed a test.
+  requireTested: async (
+    ctx: TenantContext,
+    id: string,
+    opts: { newDefinition?: boolean } = {},
+  ) => {
+    await requireScope(ctx, "read");
+    const wf = await withTenant(ctx, (tx) => load(tx, ctx, id));
+    if (!wf) return;
+    if (opts.newDefinition) throw untested(id, wf.currentVersion + 1);
+    const ok = await withTenant(ctx, (tx) =>
+      isTested(tx, ctx, id, wf.currentVersion),
+    );
+    if (!ok) throw untested(id, wf.currentVersion);
+  },
+  // Activation gate for AI agents (MCP): validation plus a passed test.
+  activateTested: async (ctx: TenantContext, id: string) => {
+    await workflowsService.requireTested(ctx, id);
+    return workflowsService.activate(ctx, id);
+  },
   deactivate: (ctx: TenantContext, id: string) =>
     workflowsService.update(ctx, id, { status: "paused" }),
   // Deletes the workflow, its versions and its runs (cascade); removes its cron.

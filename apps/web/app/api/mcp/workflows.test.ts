@@ -59,10 +59,23 @@ test("workflow created, tested in dry run then activated through MCP", async () 
   const wf = await call("workflows.create", { name: "Qualif", definition });
   assert.equal(wf.status, "draft");
 
-  const dry = await call("workflows.dry_run", {
-    definition: (await call("workflows.get", { id: wf.id })).definition,
+  // Never tested: activation refused with the step to run.
+  await assert.rejects(
+    call("workflows.activate", { id: wf.id }),
+    /never been tested.*workflows\.dry_run/,
+  );
+  await assert.rejects(
+    call("workflows.update", { id: wf.id, status: "active" }),
+    /never been tested/,
+  );
+
+  const tested = await call("workflows.dry_run", {
+    workflow: wf.id,
     records: [hot.record.id, cold.record.id],
   });
+  assert.equal(tested.version, 1);
+  assert.equal(tested.tested, true);
+  const dry = tested.results;
   assert.deepEqual(
     dry.map((r: { path: { stepId: string }[] }) => r.path.map((p) => p.stepId)),
     [
@@ -82,6 +95,24 @@ test("workflow created, tested in dry run then activated through MCP", async () 
     "active",
   );
   assert.equal((await call("workflows.list"))[0].status, "active");
+  // A new definition is a new, untested version.
+  await assert.rejects(
+    call("workflows.update", { id: wf.id, definition, status: "active" }),
+    /Version 2 .* never been tested/,
+  );
+  // Same without status: an active workflow cannot get an untested version.
+  await assert.rejects(
+    call("workflows.update", { id: wf.id, definition }),
+    /Version 2 .* never been tested/,
+  );
+  assert.equal((await call("workflows.get", { id: wf.id })).currentVersion, 1);
+  // Already active, unrelated change: no gate.
+  const renamed = await call("workflows.update", {
+    id: wf.id,
+    name: "Qualif",
+    status: "active",
+  });
+  assert.equal(renamed.status, "active");
 
   const runs = await call("workflows.run_manual", {
     id: wf.id,
