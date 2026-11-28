@@ -271,6 +271,9 @@ test("CSV import: mapping, dedup on unique field, failed rows, dryRun", async ()
       unchanged: 0,
       failed: [5],
       failedCount: 1,
+      emptyMatchKey: 0,
+      skipped: 0,
+      warnings: [],
     },
   );
   const names = (await recordsService.search(ctx, contacts.id))

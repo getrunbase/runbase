@@ -6,7 +6,7 @@ import { anyUuid } from "../db/any";
 import { requireScope } from "../api-keys";
 import { audit } from "../audit";
 import { databasesService } from "../databases";
-import { events, records, workflowRuns } from "../db/schema";
+import { errors, events, records, workflowRuns } from "../db/schema";
 import { errorsService } from "../errors";
 import { notFound, requireConfirm } from "../errors/app-error";
 import { functionsService } from "../functions";
@@ -267,7 +267,41 @@ export const overviewService = {
           ),
         };
       });
-    if (opts.dryRun) return { dryRun: true, ...(await count()) };
+    // Errors of the test runs that would be purged (run_id has no FK).
+    const purgeableRuns = sql`(select ${workflowRuns.id} from ${workflowRuns} where ${workflowRuns.workspaceId} = ${ctx.workspaceId} and ${workflowRuns.isTest} and ${workflowRuns.status} not in (${sql.join(
+      ACTIVE_RUN_STATUSES.map((s) => sql`${s}`),
+      sql`, `,
+    )}))`;
+    const runErrors = and(
+      eq(errors.workspaceId, ctx.workspaceId),
+      sql`${errors.runId} in ${purgeableRuns}`,
+    );
+    if (opts.dryRun)
+      return withTenant(ctx, async (tx) => {
+        // Created as test, then adopted by a live write (isTest cleared):
+        // kept by the purge. Listed so nothing disappears by surprise.
+        const kept = await tx
+          .select({ id: records.id })
+          .from(records)
+          .where(
+            and(
+              ws(records),
+              eq(records.isTest, false),
+              sql`exists (select 1 from ${events} where ${events.recordId} = ${records.id} and ${events.type} = 'record.created' and ${events.isTest})`,
+            ),
+          )
+          .limit(50);
+        const [e] = await tx
+          .select({ n: sql<number>`count(*)`.mapWith(Number) })
+          .from(errors)
+          .where(runErrors);
+        return {
+          dryRun: true,
+          ...(await count()),
+          errors: e?.n ?? 0,
+          keptLive: kept.map((k) => k.id),
+        };
+      });
     requireConfirm(opts.confirm, "overview.purgeConfirm", "Test data purge");
     const out = await withTenant(ctx, async (tx) => {
       const ids = (
@@ -289,6 +323,10 @@ export const overviewService = {
         )
         .returning({ id: events.id });
       for (const id of ids) await removeInTx(tx, ctx, id);
+      const errs = await tx
+        .delete(errors)
+        .where(runErrors)
+        .returning({ id: errors.id });
       const runs = await tx
         .delete(workflowRuns)
         .where(
@@ -305,15 +343,21 @@ export const overviewService = {
         ctx,
         "workspace.purge_test",
         { type: "workspace", id: ctx.workspaceId },
-        { records: ids.length, events: ev.length, runs: runs.length },
+        {
+          records: ids.length,
+          events: ev.length,
+          runs: runs.length,
+          errors: errs.length,
+        },
       );
-      return { ids, events: ev.length, runs: runs.length };
+      return { ids, events: ev.length, runs: runs.length, errors: errs.length };
     });
     if (out.ids.length) await recordsService.purge(ctx, { ids: out.ids });
     return {
       records: out.ids.length,
       events: out.events,
       runs: out.runs,
+      errors: out.errors,
       hasMore: out.ids.length === PURGE_BATCH,
     };
   },

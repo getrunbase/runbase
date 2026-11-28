@@ -154,10 +154,14 @@ export async function upsertInTx(tx: Tx, ctx: TenantContext, raw: UpsertInput) {
     );
     changed = changedFields(before, data);
     await checkRefs(tx, ctx, objectFields, pick(data, changed));
-    if (!changed.length) return { record: existing, created: false, changed };
+    // A live (non-test) write adopts a test record: it is live data now and
+    // workspace.purge_test must not delete it.
+    const promote = existing.isTest && !(input.test ?? ctx.test ?? false);
+    if (!changed.length && !promote)
+      return { record: existing, created: false, changed };
     [record] = await tx
       .update(records)
-      .set({ data, updatedAt: new Date() })
+      .set({ data, updatedAt: new Date(), ...(promote && { isTest: false }) })
       .where(eq(records.id, existing.id))
       .returning();
   } else changed = changedFields({}, record!.data);
@@ -215,10 +219,17 @@ export async function updateInTx(
   );
   const changed = changedFields(before, next);
   await checkRefs(tx, ctx, fields, pick(next, changed));
-  if (!changed.length) return { record: row.record, created: false, changed };
+  // Live write on a test record: promote it (see upsertInTx).
+  const promote = row.record.isTest && !ctx.test;
+  if (!changed.length && !promote)
+    return { record: row.record, created: false, changed };
   const [record] = await tx
     .update(records)
-    .set({ data: next, updatedAt: new Date() })
+    .set({
+      data: next,
+      updatedAt: new Date(),
+      ...(promote && { isTest: false }),
+    })
     .where(eq(records.id, id))
     .returning();
   if (fields.some((f) => f.unique && changed.includes(f.key)))
@@ -238,7 +249,7 @@ export async function updateInTx(
     before,
     next,
     changed,
-    row.record.isTest,
+    record!.isTest,
   );
   return { record: record!, created: false, changed };
 }

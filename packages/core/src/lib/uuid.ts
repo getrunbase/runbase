@@ -36,6 +36,25 @@ export function dataException(e: unknown): string | undefined {
 // is returned as is.
 export function mapDbError(e: unknown): unknown {
   if (!dataException(e)) return e;
+  // Name the offending value from the Postgres message (`invalid input
+  // syntax for type uuid: "abc"`): it is the caller's own argument.
+  for (let c: unknown = e, i = 0; c && i < 3; i++) {
+    const msg = (c as { message?: unknown }).message;
+    const m =
+      typeof msg === "string"
+        ? /invalid input (?:syntax|value) for (?:type )?(\w+): "([^"]*)"/.exec(
+            msg,
+          )
+        : null;
+    if (m)
+      return appError(
+        "common.invalidValueOf",
+        "Invalid {type} value: “{value}”. Check the id or field passed with that value.",
+        { type: m[1]!, value: m[2]!.slice(0, 64) },
+        { kind: "invalid_input" },
+      );
+    c = (c as { cause?: unknown }).cause;
+  }
   return appError(
     "common.invalidValue",
     "Invalid value: an id or a field value is malformed",

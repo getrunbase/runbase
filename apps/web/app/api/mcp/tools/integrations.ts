@@ -9,6 +9,11 @@ import { queryService } from "@getrunbase/core/query";
 import { run, must } from "./shared";
 
 export function defineIntegrationTools(server: McpServer, ctx: TenantContext) {
+  // Webhook reference: id or name (agents often pass the name).
+  const hook = async (ref: string) =>
+    (await webhooksService.list(ctx)).find(
+      (w) => w.id === ref || w.name === ref,
+    )?.id ?? ref;
   // Secrets: write-only values, never read back.
   const secretName = z
     .string()
@@ -42,7 +47,7 @@ export function defineIntegrationTools(server: McpServer, ctx: TenantContext) {
     {
       description:
         "Disconnects an OAuth account (id from connections.list) and revokes it at the provider. Workflows using it fail until it is reconnected.",
-      inputSchema: z.object({ id: z.string() }),
+      inputSchema: z.object({ id: z.string().describe("Webhook id or name") }),
     },
     ({ id }) => run(() => connectionsService.remove(ctx, id)),
   );
@@ -67,7 +72,7 @@ export function defineIntegrationTools(server: McpServer, ctx: TenantContext) {
       description:
         "Updates an inbound webhook (name, eventType, secretName, full config) without changing its URL.",
       inputSchema: z.object({
-        id: z.string(),
+        id: z.string().describe("Webhook id or name"),
         name: z.string().min(1).optional(),
         eventType: z.string().min(1).optional(),
         secretName: z.string().min(1).optional(),
@@ -75,16 +80,19 @@ export function defineIntegrationTools(server: McpServer, ctx: TenantContext) {
       }),
     },
     ({ id, ...patch }) =>
-      run(() => webhooksService.update(ctx, id, patch as never)),
+      run(async () =>
+        webhooksService.update(ctx, await hook(id), patch as never),
+      ),
   );
   server.registerTool(
     "webhooks.clear_sample",
     {
       description:
         "Clears the last saved payload (sample) of an inbound webhook.",
-      inputSchema: z.object({ id: z.string() }),
+      inputSchema: z.object({ id: z.string().describe("Webhook id or name") }),
     },
-    ({ id }) => run(() => webhooksService.clearSample(ctx, id)),
+    ({ id }) =>
+      run(async () => webhooksService.clearSample(ctx, await hook(id))),
   );
   server.registerTool(
     "webhooks.test",
@@ -92,12 +100,14 @@ export function defineIntegrationTools(server: McpServer, ctx: TenantContext) {
       description:
         "Sends a test payload signed with the webhook secret, in test mode: checks secret and configuration, saves the payload as sample, pushes no event and starts no workflow.",
       inputSchema: z.object({
-        id: z.string(),
+        id: z.string().describe("Webhook id or name"),
         payload: z.unknown().describe("JSON sent, e.g. { id: 'evt_1' }"),
       }),
     },
     ({ id, payload }) =>
-      run(() => webhooksService.sendTest(ctx, id, payload ?? {})),
+      run(async () =>
+        webhooksService.sendTest(ctx, await hook(id), payload ?? {}),
+      ),
   );
   server.registerTool(
     "webhooks.list",
@@ -112,12 +122,12 @@ export function defineIntegrationTools(server: McpServer, ctx: TenantContext) {
     "webhooks.delete",
     {
       description: "Deletes an inbound webhook (the URL stops responding).",
-      inputSchema: z.object({ id: z.string() }),
+      inputSchema: z.object({ id: z.string().describe("Webhook id or name") }),
     },
     ({ id }) =>
-      run(() =>
+      run(async () =>
         must(
-          webhooksService.remove(ctx, id),
+          webhooksService.remove(ctx, await hook(id)),
           "Webhook",
           id,
           "See webhooks.list.",
