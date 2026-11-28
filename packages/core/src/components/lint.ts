@@ -9,7 +9,12 @@ export type LintRule =
   | "client-grouping"
   | "any-sdk-result"
   | "missing-state"
-  | "aggregate-total";
+  | "aggregate-total"
+  | "page-heading"
+  | "page-landmark"
+  | "page-width"
+  | "page-padding"
+  | "unused-import";
 
 export type LintWarning = {
   file: string;
@@ -36,6 +41,13 @@ const EMPTY =
 
 const AGGREGATE = /\baggregate\s*:|\buseAggregate\s*[<(]/;
 const TOTAL = /\btotal\b/;
+const H1 = /<h1\b[^>]*>/g;
+const H1_CLASSES = ["text-xl", "font-semibold", "tracking-tight"];
+const MAIN = /<main\b[^>]*>/g;
+const KIT_IMPORT = /import\s*\{([^}]*)\}\s*from\s*["']@getrunbase\/kit["']/g;
+
+const classesOf = (tag: string) =>
+  (/className=[{"'`]+([^"'`}]*)/.exec(tag)?.[1] ?? "").split(/\s+/);
 
 const HIGH_LIMIT = 200;
 const MAX_ANY = 3;
@@ -130,13 +142,67 @@ function lintFile(file: string, src: string): LintWarning[] {
         `${hook[1]} without ${missing.join(", ")} state: render a skeleton while loading, a message when empty and the error when it fails.`,
       );
   }
+
+  for (const m of src.matchAll(H1)) {
+    const cls = classesOf(m[0]);
+    const missing = H1_CLASSES.filter((c) => !cls.includes(c));
+    if (missing.length)
+      add(
+        lineOf(src, m.index),
+        "page-heading",
+        `<h1> without ${missing.join(" ")}: page titles use className="text-xl font-semibold tracking-tight".`,
+      );
+  }
+
+  for (const m of src.matchAll(MAIN)) {
+    const cls = classesOf(m[0]);
+    // Full-height layouts (boards, split panes) span the whole width.
+    if (!cls.includes("max-w-7xl") && !cls.includes("min-h-0"))
+      add(
+        lineOf(src, m.index),
+        "page-width",
+        '<main> without max-w-7xl: center the page with "mx-auto max-w-7xl" (full-height boards use min-h-0 instead).',
+      );
+    if (!cls.includes("p-4") || !cls.includes("md:p-6"))
+      add(
+        lineOf(src, m.index),
+        "page-padding",
+        '<main> without "p-4 md:p-6": use the standard page padding.',
+      );
+  }
+
+  for (const m of src.matchAll(KIT_IMPORT)) {
+    const rest = src.slice(0, m.index) + src.slice(m.index + m[0].length);
+    for (const raw of m[1]!.split(",")) {
+      const name = raw
+        .trim()
+        .replace(/^type\s+/, "")
+        .split(/\s+as\s+/)
+        .pop()!;
+      if (name && !new RegExp(`\\b${name}\\b`).test(rest))
+        add(
+          lineOf(src, m.index),
+          "unused-import",
+          `"${name}" is imported from @getrunbase/kit but never used: remove it.`,
+        );
+    }
+  }
   return out;
 }
 
 export function lintPackage(files: Record<string, string>): LintWarning[] {
-  return Object.entries(files)
-    .filter(([f]) => /\.(tsx?|jsx?)$/.test(f))
-    .flatMap(([f, src]) => lintFile(f, src));
+  const code = Object.entries(files).filter(([f]) => /\.(tsx?|jsx?)$/.test(f));
+  const out = code.flatMap(([f, src]) => lintFile(f, src));
+  // The page needs one <main> landmark, in any file of the package.
+  const entry = code.find(([, src]) => /export\s+default\b/.test(src));
+  if (entry && !code.some(([, src]) => /<main\b/.test(src)))
+    out.push({
+      file: entry[0],
+      line: lineOf(entry[1], entry[1].search(/export\s+default\b/)),
+      rule: "page-landmark",
+      text: 'No <main> landmark: wrap the page in <main className="mx-auto flex max-w-7xl flex-col gap-6 p-4 md:p-6">.',
+    });
+  return out;
 }
 
 export const formatLintWarning = (w: LintWarning) =>

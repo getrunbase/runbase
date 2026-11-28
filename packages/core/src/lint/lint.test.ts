@@ -7,6 +7,7 @@ import {
   enforceLint,
   lintFunction,
   lintKey,
+  lintNote,
   lintObject,
   lintWorkflow,
   MAX_FUNCTION_LINES,
@@ -121,6 +122,144 @@ test("functions: wildcard domain, empty outputSchema, length, error write", () =
       }),
     ),
     ["function.errorInRecord"],
+  );
+});
+
+test("objects: mixed option casing warns", () => {
+  assert.deepEqual(
+    codes(
+      lintObject({
+        fields: [
+          { key: "stage", options: ["new", "won"] },
+          { key: "priority", options: ["High", "Low"] },
+        ],
+      }),
+    ),
+    ["option.mixedCasing"],
+  );
+  assert.deepEqual(
+    lintObject({
+      fields: [
+        { key: "stage", options: ["new", "in_progress"] },
+        { key: "tier", options: ["a1", "42"] },
+      ],
+    }),
+    [],
+  );
+});
+
+test("functions: { ok, error } is the failure convention, not an outcome", () => {
+  const schema = (props: object) => ({
+    code: "export default async () => ({ ok: true })",
+    outputSchema: { type: "object", properties: props },
+  });
+  assert.deepEqual(
+    lintFunction(
+      schema({ ok: { type: "boolean" }, error: { type: "string" } }),
+    ),
+    [],
+  );
+  assert.deepEqual(codes(lintFunction(schema({ ok: { type: "boolean" } }))), [
+    "function.booleanOutcome",
+  ]);
+  assert.deepEqual(
+    codes(
+      lintFunction(
+        schema({ found: { type: "boolean" }, error: { type: "string" } }),
+      ),
+    ),
+    ["function.booleanOutcome"],
+  );
+});
+
+test("functions: branching on the test flag warns", () => {
+  const base = {
+    outputSchema: { type: "object", properties: { n: { type: "number" } } },
+  };
+  for (const code of [
+    "export default async (i, ctx) => { if (ctx.test) return { n: 0 }; }",
+    "export default async (i, { test }) => { if (!test) await send(); }",
+    "export default async (i, { test }) => ({ n: test ? 0 : 1 })",
+  ])
+    assert.deepEqual(codes(lintFunction({ ...base, code })), [
+      "function.branchesOnTest",
+    ]);
+  assert.deepEqual(
+    lintFunction({ ...base, code: "const latest = x ?? 1; testValue(1)" }),
+    [],
+  );
+  // Skipping an external post in test runs is the documented pattern.
+  assert.deepEqual(
+    lintFunction({
+      ...base,
+      code: "export default async (i, { secrets, test }) => { if (test) return { n: 0 }; }",
+      permissions: { domains: ["slack.com"], secrets: ["SLACK_TOKEN"] },
+    }),
+    [],
+  );
+});
+
+test("notes: a workflow or function without a note warns", () => {
+  assert.deepEqual(codes(lintNote("workflow", "score", false)), [
+    "workflow.noNote",
+  ]);
+  assert.deepEqual(codes(lintNote("function", "enrich", false)), [
+    "function.noNote",
+  ]);
+  assert.deepEqual(lintNote("function", "enrich", true), []);
+});
+
+test("workflows: record_updated loop and stage race", () => {
+  const write = (data: object, recordId = "{{record.id}}") => ({
+    id: "w",
+    type: "record.update",
+    input: { recordId, data },
+  });
+  const updated = (fields?: string[]) => ({
+    type: "trigger.record_updated",
+    object: "deal",
+    ...(fields && { fields }),
+  });
+  assert.deepEqual(
+    codes(lintWorkflow({ trigger: updated(), steps: [write({ score: 1 })] })),
+    ["workflow.writesTriggerField"],
+  );
+  assert.deepEqual(
+    codes(
+      lintWorkflow({
+        trigger: updated(["stage"]),
+        steps: [write({ stage: "won" })],
+      }),
+    ),
+    ["workflow.writesTriggerField"],
+  );
+  assert.deepEqual(
+    lintWorkflow({ trigger: updated(["stage"]), steps: [write({ score: 1 })] }),
+    [],
+  );
+  assert.deepEqual(
+    lintWorkflow({
+      trigger: updated(),
+      steps: [write({ score: 1 }, "{{steps.find.output.id}}")],
+    }),
+    [],
+  );
+  const event = { type: "trigger.event", event: "payment.received" };
+  assert.deepEqual(
+    codes(lintWorkflow({ trigger: event, steps: [write({ stage: "paid" })] })),
+    ["workflow.stageRaceNoConcurrencyKey"],
+  );
+  assert.deepEqual(
+    lintWorkflow({
+      trigger: event,
+      concurrencyKey: "{{event.recordId}}",
+      steps: [write({ stage: "paid" })],
+    }),
+    [],
+  );
+  assert.deepEqual(
+    lintWorkflow({ trigger: event, steps: [write({ amount: 3 })] }),
+    [],
   );
 });
 
