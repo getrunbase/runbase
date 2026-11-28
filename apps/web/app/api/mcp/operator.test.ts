@@ -125,14 +125,16 @@ test("test data: label, purge_test and describe", async () => {
     {},
   );
 
+  // Events: the pushed test event and the record.created timeline events
+  // of the two test records.
   assert.deepEqual(await call("workspace.purge_test", { dryRun: true }), {
     dryRun: true,
     records: 2,
-    events: 1,
+    events: 3,
     runs: 0,
   });
   const out = await call("workspace.purge_test", { confirm: true });
-  assert.deepEqual(out, { records: 2, events: 1, runs: 0, hasMore: false });
+  assert.deepEqual(out, { records: 2, events: 3, runs: 0, hasMore: false });
   const left = await call("records.search", { object: "lead" });
   assert.deepEqual(
     left.records.map((r: { data: { name: string } }) => r.data.name),

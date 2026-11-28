@@ -14,7 +14,7 @@ import {
   type Hop,
 } from "../filter";
 import { isUuid } from "../lib/uuid";
-import { graphOf, page } from "./helpers";
+import { graphOf, lowerEmailFilter, page } from "./helpers";
 import { follow, hop, NUMERIC, scoped, searchIn, withVirtual } from "./query";
 import {
   MAX_TEMPLATE_HOPS,
@@ -148,10 +148,11 @@ export const readOps = {
           and(eq(records.id, id), eq(records.workspaceId, ctx.workspaceId)),
         );
       if (!row) throw notFound("records.notFound", "Record not found");
+      const fields = fieldsSchema.parse(row.object.fields);
       const where = compileFilter(
         records.data,
-        fieldsSchema.parse(row.object.fields),
-        filter,
+        fields,
+        lowerEmailFilter(fields, filter),
         await graphOf(tx, ctx, row.object.slug),
       );
       const hit = await tx

@@ -1,6 +1,7 @@
 {
   "common.invalidId": "Identifiant invalide : {id}",
   "common.invalidValue": "Valeur invalide : un identifiant ou une valeur de champ est mal formé",
+  "data.conflict": "Une database avec le slug {slug} existe déjà dans ce workspace",
   "databases.notEmpty": "Database non vide ({count} objet(s)) : exporter les objets (objects.export) puis confirmer (confirm: true) pour tout supprimer",
   "databases.notFound": "Database introuvable : {slug}",
   "events.insertFailed": "Insertion de l'event impossible",
@@ -31,6 +32,7 @@
   "objects.refTargetNotFound": "Champ « {field} » : objet cible « {object} » introuvable",
   "objects.uniqueDuplicates": "unique {field} : doublons existants ({duplicates})",
   "objects.unknownField": "Champ inconnu : {field}",
+  "objects.unknownFieldSuggest": "Champ inconnu : {field}. Vouliez-vous dire {suggestion} ?",
   "query.restrictedKey": "query.sql indisponible pour une clé limitée à certains objets",
   "query.sqlError": "Erreur SQL : {message}\n{hint}",
   "records.computedNotSortable": "{field} : champ calculé non triable",
