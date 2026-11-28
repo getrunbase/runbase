@@ -14,6 +14,7 @@ import { objectsService } from "../objects";
 import { notesService, type NoteSummary } from "../notes";
 import { pagesService } from "../pages";
 import { queryService } from "../query";
+import { rendererHealth } from "../render";
 import { removeInTx, recordsService } from "../records";
 import { ACTIVE_RUN_STATUSES } from "../runs";
 import { secretsService } from "../secrets";
@@ -198,6 +199,8 @@ export const overviewService = {
         activeRuns: Object.fromEntries(counts.runs.map((r) => [r.status, r.n])),
         openErrors: await errorsService.openCount(ctx),
       },
+      // Capture service used by page.screenshot and page reviews.
+      status: { renderer: await rendererHealth() },
     };
   },
 

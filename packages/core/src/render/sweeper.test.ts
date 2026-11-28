@@ -8,7 +8,11 @@ const png = { bytes: new Uint8Array([1]), type: "image/png" };
 test("sweep deletes render keys older than the TTL only", async () => {
   const s = memoryStorage();
   let t = 0;
-  const sw = renderSweeper(() => s, 1000, () => t);
+  const sw = renderSweeper(
+    () => s,
+    1000,
+    () => t,
+  );
   await s.put("w/renders/a/desktop-light.png", png);
   sw.track("w/renders/a/desktop-light.png");
   t = 600;
@@ -34,7 +38,11 @@ test("a failed removal is retried on the next sweep", async () => {
     },
   };
   let t = 0;
-  const sw = renderSweeper(() => s, 10, () => t);
+  const sw = renderSweeper(
+    () => s,
+    10,
+    () => t,
+  );
   sw.track("w/renders/c/desktop-light.png");
   t = 20;
   assert.equal(await sw.sweep(), 0);

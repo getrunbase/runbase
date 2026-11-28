@@ -103,8 +103,65 @@ let events: QueueEvents | undefined;
 const renderEvents = () =>
   (events ??= new QueueEvents(RENDER_QUEUE, queueOptions()));
 
+// Renderer health: number of BullMQ workers listening on the render queue.
+// Bounded so a missing Redis never hangs the caller.
+export type RendererHealth = {
+  available: boolean;
+  workers: number;
+  reason?: string;
+};
+type WorkerSource = { getWorkers: () => Promise<unknown[]> };
+const HEALTH_MS = 2_000;
+export async function rendererHealth(
+  q: WorkerSource = renderQueue(),
+  timeoutMs = HEALTH_MS,
+): Promise<RendererHealth> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    const workers = await Promise.race([
+      q.getWorkers(),
+      new Promise<"timeout">((r) => {
+        timer = setTimeout(() => r("timeout"), timeoutMs);
+      }),
+    ]);
+    if (workers === "timeout")
+      return {
+        available: false,
+        workers: 0,
+        reason: "queue backend did not answer",
+      };
+    const n = workers.length;
+    return n > 0
+      ? { available: true, workers: n }
+      : {
+          available: false,
+          workers: 0,
+          reason: "no renderer worker is listening on the render queue",
+        };
+  } catch (e) {
+    return {
+      available: false,
+      workers: 0,
+      reason: (e as Error).message.slice(0, 200),
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Throws at once when no renderer listens, instead of waiting for a timeout.
+export async function assertRendererUp(q?: WorkerSource): Promise<void> {
+  const h = await rendererHealth(q);
+  if (!h.available)
+    throw appError(
+      "platform.rendererUnavailable",
+      "Rendering service is not running: start apps/worker with the renderer; retry will not help until then",
+    );
+}
+
 export async function render(job: RenderJob): Promise<ShotReport> {
   const q = renderQueue();
+  await assertRendererUp(q);
   const ev = renderEvents();
   if ((await q.getWaitingCount()) >= MAX_WAITING)
     throw appError(
@@ -126,7 +183,7 @@ export async function render(job: RenderJob): Promise<ShotReport> {
       await j.remove().catch(() => {});
       throw appError(
         "platform.renderTimeout",
-        "The rendering service did not answer within {seconds} s",
+        "The rendering service did not answer within {seconds} s: it is saturated or stopped while rendering; retry in a moment, and if it fails again check apps/worker",
         { seconds: WAIT_MS / 1000 },
       );
     }
