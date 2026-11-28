@@ -164,6 +164,16 @@ export function registerTools(server: McpServer) {
           isError?: boolean;
           content?: { text?: string }[];
         };
+        if (!res?.isError && isWriteTool(name) && Array.isArray(res?.content)) {
+          // Resolved workspace of a write: the agent sees where it wrote.
+          const ws = (await accessibleWorkspaces(p).catch(() => [])).find(
+            (w) => w.id === ctx.workspaceId,
+          );
+          res.content.push({
+            type: "text",
+            text: `workspace: ${JSON.stringify(ws?.name ?? ctx.workspaceId)} (${ctx.workspaceId})`,
+          } as { text: string });
+        }
         const text = res?.isError ? (res.content?.[0]?.text ?? "") : null;
         const code = text?.match(/^\[([a-z_]+)\]/)?.[1] ?? "error";
         if (text !== null && !SILENT.has(code))
@@ -179,6 +189,11 @@ export function registerTools(server: McpServer) {
     );
   }
 }
+
+// Read-only tools: their response does not carry the workspace line.
+const READ_SUFFIX =
+  /\.(list|get|search|describe|dependencies|settings|versions|history|logs|guide|examples|saved|types|waiting|errors|screenshot|providers|funnel|export|download|trash|sql|ai_budget|dry_run|validate|test|test_step)$/;
+export const isWriteTool = (name: string) => !READ_SUFFIX.test(name);
 
 function defineTools(server: McpServer, ctx: TenantContext) {
   defineAccountTools(server, ctx);

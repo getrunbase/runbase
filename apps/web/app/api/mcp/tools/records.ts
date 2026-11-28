@@ -138,15 +138,24 @@ export function defineRecordTools(server: McpServer, ctx: TenantContext) {
     "records.upsert_batch",
     {
       description:
-        "Upserts several records of an object (max 1000), atomically: one invalid item cancels the whole batch.",
-      inputSchema: z.object({
-        object: slug,
-        items: z.array(upsertItem).min(1).max(1000),
-      }),
+        "Upserts several records of an object (max 1000), atomically: one invalid item cancels the whole batch. Item shape: { data: { fieldKey: value }, match?, externalId?, test?, mode? }. Top-level `test`, `match` and `mode` are defaults for every item (an item value wins). Example: `{ object: 'contact', match: 'email', test: true, items: [{ data: { email: 'a@x.io', name: 'Ada' } }] }`. Unknown keys are rejected.",
+      inputSchema: z
+        .object({
+          object: slug,
+          test: upsertItem.shape.test,
+          match: upsertItem.shape.match,
+          mode: upsertItem.shape.mode,
+          items: z.array(upsertItem.strict()).min(1).max(1000),
+        })
+        .strict(),
     },
-    ({ object, items }) =>
+    ({ object, items, ...defaults }) =>
       run(async () =>
-        recordsService.upsertBatch(ctx, await objectId(ctx, object), items),
+        recordsService.upsertBatch(
+          ctx,
+          await objectId(ctx, object),
+          withBatchDefaults(items, defaults),
+        ),
       ),
   );
   server.registerTool(
@@ -165,7 +174,7 @@ export function defineRecordTools(server: McpServer, ctx: TenantContext) {
     "records.search",
     {
       description:
-        "Searches an object's records (DSL filter all/any of { field, op, value }; ops: eq, neq, gt, gte, lt, lte, between, in, not_in, contains, starts_with, ends_with, regex (case-sensitive), before, after, within, older_than, is, is_empty, is_not_empty). `q`: free text (trigram index). Returns { records, hasMore, total, next }. Pagination: `after` = `next` of the previous page (keyset, works with any sort). `view`: name of a saved view (its filter is added, its sort applies when there is no `sort`).",
+        "Searches an object's records (DSL filter all/any of { field, op, value }; ops: eq, neq, gt, gte, lt, lte, between, in, not_in, contains, starts_with, ends_with, regex (case-sensitive), before, after, within, older_than, is, is_empty, is_not_empty; older_than and within take a number of days, e.g. `{ field: 'updated_at', op: 'older_than', value: 30 }`). `q`: free text (trigram index). Returns { records, hasMore, total, next }. Pagination: `after` = `next` of the previous page (keyset, works with any sort). `view`: name of a saved view (its filter is added, its sort applies when there is no `sort`).",
       inputSchema: z.object({
         object: slug,
         filter: filterSchema.optional(),
@@ -382,13 +391,14 @@ export function defineRecordTools(server: McpServer, ctx: TenantContext) {
     "records.import_csv",
     {
       description:
-        'Imports a CSV (1st line = headers, max 10000 lines). mapping { column: field key }; match = unique field (e.g. email) to update the existing record instead of creating a duplicate. Lists: JSON or values separated by ";". Each line is independent: returns { total, created, updated, unchanged, failed: [{ line, error }] }. dryRun: true to check without writing.',
+        'Imports a CSV (1st line = headers, max 10000 lines). mapping { column: field key }; match = unique field (e.g. email) to update the existing record instead of creating a duplicate. Lists: JSON or values separated by ";". Each line is independent: returns { total, created, updated, unchanged, failed: [{ line, error }] }. dryRun: true to check without writing. test: true marks created records as test (deleted by workspace.purge_test).',
       inputSchema: z.object({
         object: slug,
         csv: z.string().min(1),
         mapping: z.record(z.string(), z.string()),
         match: z.string().optional(),
         dryRun: z.boolean().optional(),
+        test: z.boolean().optional(),
       }),
     },
     ({ object, ...input }) =>
@@ -396,4 +406,21 @@ export function defineRecordTools(server: McpServer, ctx: TenantContext) {
         recordsService.importCsv(ctx, await objectId(ctx, object), input),
       ),
   );
+}
+
+// Top-level batch options (test, match, mode) are defaults for each item;
+// a value set on the item wins.
+export function withBatchDefaults<T extends Record<string, unknown>>(
+  items: T[],
+  defaults: Record<string, unknown>,
+): T[] {
+  const set = Object.fromEntries(
+    Object.entries(defaults).filter(([, v]) => v !== undefined),
+  );
+  return items.map((item) => ({
+    ...set,
+    ...Object.fromEntries(
+      Object.entries(item).filter(([, v]) => v !== undefined),
+    ),
+  })) as T[];
 }
