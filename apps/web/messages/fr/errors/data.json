@@ -62,5 +62,6 @@
   "errors.notRetryable": "Cette erreur ne peut pas être relancée",
   "files.invalidKey": "Clé de fichier invalide",
   "query.roleNotRestricted": "Requêtes SQL désactivées : le rôle runbase_query n'est pas restreint ({items}). Relancez pnpm db:migrate avec un compte superutilisateur.",
-  "objects.indexQuota": "Limite d'index atteinte pour ce workspace ({max})"
+  "objects.indexQuota": "Limite d'index atteinte pour ce workspace ({max})",
+  "filter.invalidDays": "{field} {op} : nombre entier de jours attendu, reçu {value}"
 }

@@ -15,6 +15,7 @@ import { workflowsService } from "../workflows";
 import { templatesService } from "./index";
 import { getBlock } from "../blocks";
 import { webhooksService } from "../webhooks";
+import { secretsService } from "../secrets";
 
 const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
 after(() => setImmediate(() => process.exit(0)));
@@ -111,12 +112,19 @@ for (const slug of slugs)
           });
     }
 
+    // Secrets the template declares are set by the user after import.
+    for (const name of raw.secrets ?? [])
+      await secretsService.set(ctx, name, "test");
+
     for (const id of res.workflows) {
       const wf = (await workflowsService.get(ctx, id))!;
       assert.equal(wf.status, "draft");
       const { errors } = await workflowsService.check(ctx, wf.definition);
       assert.deepEqual(
-        errors.map((e) => e.message),
+        // OAuth connections are made by the user after import (README).
+        errors
+          .filter((e) => e.code !== "workflows.missingConnection")
+          .map((e) => e.message),
         [],
         `${slug} / ${wf.name}`,
       );

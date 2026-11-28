@@ -86,7 +86,7 @@ test("switch: first matching case, Else, relation", async () => {
   const unknownBranch = { ...byStage, next: { s: { zz: ["a"] } } };
   assert.ok(
     (await workflowsService.validate(ctx, unknownBranch)).includes(
-      "s: unknown branch zz",
+      "s: unknown branch zz (valid: c1, c2, else)",
     ),
   );
 

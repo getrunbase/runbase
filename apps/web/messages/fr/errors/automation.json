@@ -30,7 +30,7 @@
   "workflows.unknownEntry": "entry : step {step} inexistant",
   "workflows.unknownBlock": "{step} : brique inconnue {type}",
   "workflows.unknownWorkflow": "{step} : workflow inconnu {workflow}",
-  "workflows.unknownBranch": "{step} : branche {branch} inconnue",
+  "workflows.unknownBranch": "{step} : branche {branch} inconnue (valides : {valid})",
   "workflows.unknownTarget": "{step}.{branch} : step {target} inexistant",
   "workflows.unknownNext": "next : step {step} inexistant",
   "workflows.unlinkedStep": "{step} : étape non reliée (aucun lien depuis le déclencheur)",
@@ -113,5 +113,15 @@
   "connections.tokenFailed": "La demande de jeton {provider} a échoué ({status}) : {body}",
   "connections.unknownProvider": "Fournisseur OAuth inconnu : {provider}",
   "connections.userOnly": "Seul un utilisateur connecté peut connecter un compte",
-  "workflows.untested": "La version {version} du workflow {id} n'a jamais été testée. Lancer workflows.dry_run { workflow: \"{id}\" } sans chemin en échec, ou une exécution de test runs.start { id: \"{id}\", test: true } réussie, puis réactiver."
+  "workflows.untested": "La version {version} du workflow {id} n'a jamais été testée. Lancer workflows.dry_run { workflow: \"{id}\" } sans chemin en échec, ou une exécution de test runs.start { id: \"{id}\", test: true } réussie, puis réactiver.",
+  "workflows.missingConnection": "{step} : aucune connexion {provider} {name} : connecter le compte dans Paramètres > Connexions",
+  "workflows.mappingPayloadPrefix": "trigger.mapping.{field} : {path} : les chemins partent de la racine du payload, retirer le préfixe payload.",
+  "workflows.mappingPathMissing": "trigger.mapping.{field} : {path} absent de l'échantillon du webhook",
+  "workflows.matchNotMapped": "trigger.match : {field} absent du mapping, la clé de l'enregistrement serait vide",
+  "workflows.matchUndefined": "trigger.match : {field} ({path}) est indéfini dans l'échantillon du webhook",
+  "workflows.stepRefNotOutput": "{step} : {variable} : les valeurs d'une étape se lisent sous steps.{source}.output",
+  "workflows.unknownEventPath": "{step} : {variable} absent de l'échantillon du webhook (event est le payload lui-même)",
+  "workflows.switchNoDefault": "{step} : le switch n'a pas de branche par défaut (else) connectée",
+  "workflows.unhandledBranch": "{step} : la branche {branch} n'est pas connectée, l'exécution s'y arrête sans bruit",
+  "workflows.domainNotAllowed": "{step} : {host} n'est pas dans les domaines autorisés de l'espace, la requête sera refusée"
 }
