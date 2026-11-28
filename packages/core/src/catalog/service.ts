@@ -50,15 +50,37 @@ export const resetCatalog = () => {
 // Lowercase without accents, for full-text search.
 const norm = foldAccents;
 
-const excerpt = (markdown: string) => {
-  const text = markdown
-    .replace(/```[\s\S]*?```/g, " ")
-    .split("\n")
-    .filter((l) => l.trim() && !/^\s*#/.test(l))
-    .join(" ")
-    .replace(/\s+/g, " ")
-    .trim();
-  return text.length > 280 ? `${text.slice(0, 277)}...` : text;
+const EXCERPT_MAX = 280;
+
+// Short card text: the manifest's one-line description when present,
+// otherwise the README's first non-heading paragraph. Cut at a word
+// boundary when still too long.
+export const excerpt = (
+  markdown: string,
+  manifest?: Record<string, unknown>,
+) => {
+  const short =
+    typeof manifest?.description === "string"
+      ? manifest.description.trim()
+      : "";
+  const paragraph =
+    markdown
+      .replace(/```[\s\S]*?```/g, "\n\n")
+      .split(/\n\s*\n/)
+      .map((p) =>
+        p
+          .split("\n")
+          .filter((l) => !/^\s*#/.test(l))
+          .join(" ")
+          .replace(/\s+/g, " ")
+          .trim(),
+      )
+      .find(Boolean) ?? "";
+  const text = short || paragraph;
+  if (text.length <= EXCERPT_MAX) return text;
+  const cut = text.slice(0, EXCERPT_MAX - 1);
+  const space = cut.lastIndexOf(" ");
+  return `${(space > 0 ? cut.slice(0, space) : cut).replace(/[\s,;:.]+$/, "")}…`;
 };
 
 // Short entry of a template (lists): without manifest or full description.
@@ -66,7 +88,7 @@ export const templateSummary = (t: CatalogTemplate) => ({
   id: t.id,
   slug: t.slug,
   name: t.name,
-  excerpt: excerpt(t.description),
+  excerpt: excerpt(t.description, t.manifest),
   categories: t.categories,
   connectors: t.connectors,
   authorId: t.authorId,

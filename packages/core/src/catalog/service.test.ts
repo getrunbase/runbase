@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { before, test } from "node:test";
 import { AppError } from "../errors/app-error";
 import { catalogFixture } from "../testing";
-import { catalogService, resetCatalog } from "./service";
+import { catalogService, excerpt, resetCatalog } from "./service";
 
 before(() => {
   process.env.CATALOG_ROOT = catalogFixture();
@@ -109,4 +109,22 @@ test("clean 404: code, kind not_found and English message", async () => {
       assert.equal(e.message, msg);
       return true;
     });
+});
+
+test("excerpt: manifest description first, else first README paragraph", () => {
+  const readme =
+    "# Title\n\nFirst paragraph\non two lines.\n\n## Section\n\nSecond paragraph.";
+  assert.equal(
+    excerpt(readme, { description: " One-line pitch. " }),
+    "One-line pitch.",
+  );
+  assert.equal(excerpt(readme, {}), "First paragraph on two lines.");
+  assert.equal(excerpt(readme), "First paragraph on two lines.");
+});
+
+test("excerpt: long text cut at a word boundary with an ellipsis", () => {
+  const long = Array.from({ length: 80 }, () => "word").join(" ");
+  const e = excerpt(long);
+  assert.ok(e.length <= 280);
+  assert.ok(e.endsWith("word…"));
 });
