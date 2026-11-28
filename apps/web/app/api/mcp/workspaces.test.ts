@@ -83,6 +83,8 @@ test("x-workspace-id header: fallback only without a client default", async () =
   const p: McpPrincipal = {
     key: `user:${(o.actor as { userId: string }).userId}:hdr`,
     actor: { ...o.actor, scopes: ["read", "write", "admin"] },
+    // Session-scoped default: sessionless writes ignore the default.
+    session: "hdr",
   };
   const call = client(p, b!.id);
   const active = async () =>

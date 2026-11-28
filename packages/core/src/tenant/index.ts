@@ -290,7 +290,8 @@ function pick(list: Ws[], ref: string) {
 // x-workspace-id) > first accessible. A requested but inaccessible workspace is
 // refused (never a silent fallback). With `write`, a principal that reaches
 // several workspaces and has no explicit choice (param, default, header) is
-// refused: a write never lands in a guessed workspace.
+// refused: a write never lands in a guessed workspace. Without an MCP session,
+// a write ignores the key-wide default and needs `ref` (or the header).
 export async function resolveMcpContext(
   p: McpPrincipal,
   ref?: string,
@@ -300,7 +301,17 @@ export async function resolveMcpContext(
   const list = await accessibleWorkspaces(p);
   let ws: Ws | undefined;
   if (ref) ws = pick(list, ref);
-  else {
+  else if (opts.write && list.length > 1 && !p.session) {
+    // No MCP session: the default stored for the key is shared by every
+    // sessionless client of that key, so a write never relies on it.
+    if (fallback) ws = pick(list, fallback);
+    else
+      throw appError(
+        "workspaces.workspaceParamRequired",
+        "Several workspaces are accessible and this call has no MCP session: pass the `workspace` parameter ({workspaces})",
+        { workspaces: list.map((w) => `${w.name} (${w.id})`).join(", ") },
+      );
+  } else {
     const [def] = await db
       .select({ id: mcpWorkspaceDefaults.workspaceId })
       .from(mcpWorkspaceDefaults)

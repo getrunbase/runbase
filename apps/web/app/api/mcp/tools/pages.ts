@@ -135,7 +135,7 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
     "page.get",
     {
       description:
-        "Reads a page package (files, entry, deps, permissions): the published version seen by users (null if never published), or the draft with `draft: true` (hasDraft = draft waiting for page.publish).",
+        "Reads a page package (files, entry, deps, permissions): the published version seen by users, or the draft with `draft: true` (hasDraft = draft waiting for page.publish). A page never published returns not_found without `draft`: read it with `draft: true`.",
       inputSchema: z.object({ id: pageId, draft: z.boolean().optional() }),
     },
     ({ id, draft }) => run(() => getPage(id, draft)),
