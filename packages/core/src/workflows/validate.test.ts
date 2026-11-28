@@ -101,6 +101,12 @@ test("validate, activation refused, dry run without side effects", async () => {
       qualify: { sales: ["mark"], nurture: ["mail"] },
     },
   };
+  // ai.* step: the key secret of input.ai must exist.
+  assert.deepEqual(await wf.validate(ctx, definition), [
+    "Missing secret ANTHROPIC_API_KEY",
+  ]);
+  // Customer key: never a platform key.
+  await secretsService.set(ctx, "ANTHROPIC_API_KEY", "cle-test");
   assert.deepEqual(await wf.validate(ctx, definition), []);
 
   // Empty No branch: end of the workflow, valid definition.
@@ -168,8 +174,6 @@ test("validate, activation refused, dry run without side effects", async () => {
     });
     ids.push(record.id);
   }
-  // Customer key: never a platform key.
-  await secretsService.set(ctx, "ANTHROPIC_API_KEY", "cle-test");
   const count = async () => {
     const [r] = await sql`select
       (select count(*) from audit_log where workspace_id = ${ws!.id}) as audit,
@@ -187,7 +191,9 @@ test("validate, activation refused, dry run without side effects", async () => {
   const results = await wf.dryRun(ctx, definition, ids, { ai: true });
   assert.deepEqual(await count(), before);
   assert.ok(
-    outbound.every((u) => u.startsWith("https://api.anthropic.com/v1/messages")),
+    outbound.every((u) =>
+      u.startsWith("https://api.anthropic.com/v1/messages"),
+    ),
   );
   assert.equal(outbound.length, 10); // ai.decide actually executed
   for (const id of ids)

@@ -8,12 +8,12 @@ import { Worker } from "bullmq";
 import { z } from "zod";
 import { blocks, defineBlock, getBlock } from "../blocks";
 import { queueOptions } from "../bus";
-import { errorsService } from "../errors";
+import { appError, errorsService } from "../errors";
 import { functionsService } from "../functions";
 import { objectsService } from "../objects";
 import { recordsService } from "../records";
 import type { TenantContext } from "../tenant";
-import { resolve } from "../triggers";
+import { MAX_FOLLOWUPS, resolve } from "../triggers";
 import { workflowsService } from "../workflows";
 import {
   processStep,
@@ -69,6 +69,21 @@ Object.assign(blocks, {
       return { branch: "ok", output: { n } };
     },
   }),
+  "test.config": defineBlock({
+    type: "test.config",
+    label: "test.config",
+    description: "",
+    sideEffect: false,
+    inputSchema: z.object({}),
+    outputSchema: z.object({}),
+    branches: ["ok"],
+    run: async () => {
+      calls["config"] = (calls["config"] ?? 0) + 1;
+      throw appError("blocks.domainNotAllowed", "Domain not allowed: {host}", {
+        host: "x.io",
+      });
+    },
+  }),
   "test.hang": defineBlock({
     type: "test.hang",
     label: "test.hang",
@@ -118,6 +133,17 @@ test("stepsScope: path ancestry wins, an error does not overwrite", () => {
     "0.0",
   );
   assert.deepEqual(scope, { a: { output: 1 }, b: { output: "mine" } });
+});
+
+test("stepsScope: a continued failure exposes output.error and error", () => {
+  const scope = stepsScope(
+    [
+      { stepId: "a", path: "0", output: { error: "boom" }, error: "boom" },
+      { stepId: "b", path: "0", output: null, error: "dead" },
+    ],
+    "0",
+  );
+  assert.deepEqual(scope, { a: { output: { error: "boom" }, error: "boom" } });
 });
 
 test("dry run: a function that writes records is simulated", async () => {
@@ -227,7 +253,11 @@ test("retry per step, continueOnFail, timeout, loop without replaying iterations
       steps: [
         flaky("a", "retry", { retry: { attempts: 2, backoff: "1s" } }),
         flaky("b", "dead", { retry: { attempts: 1, continueOnFail: true } }),
-        flaky("c", "after"),
+        {
+          id: "c",
+          type: "test.flaky",
+          input: { key: "{{steps.b.output.error}}" },
+        },
       ],
       next: { a: { ok: ["b"] }, b: { error: ["c"] } },
     },
@@ -250,6 +280,38 @@ test("retry per step, continueOnFail, timeout, loop without replaying iterations
     ],
   );
   assert.ok(done!.steps[0]!.startedAt);
+  // continueOnFail: the next step reads the failure in steps.b.output.error.
+  assert.deepEqual(done!.steps[2]!.input, { key: "failure dead #1" });
+  // Handled by the error branch: no error center entry.
+  assert.equal(
+    (await errorsService.list(ctx, { runId: r!.id })).items.length,
+    0,
+  );
+
+  // Configuration error: no new attempt despite the retry policy, no stack.
+  const conf = await workflowsService.create(ctx, {
+    name: "Config",
+    definition: {
+      trigger: { type: "trigger.manual" },
+      steps: [
+        {
+          id: "x",
+          type: "test.config",
+          input: {},
+          retry: { attempts: 3, backoff: "1s" },
+        },
+      ],
+    },
+  });
+  const cf = await settled((await runsService.start(ctx, conf.id))!.id);
+  assert.equal(cf!.status, "failed");
+  assert.equal(cf!.steps[0]!.attempts, 1);
+  assert.equal(calls["config"], 1);
+  const stored = await until(
+    () => errorsService.list(ctx, { runId: cf!.id }),
+    (l) => l.items.length > 0,
+  );
+  assert.equal(stored.items[0]!.stack, null);
 
   // Step timeout: the block that does not answer fails after 1 s.
   const slow = await workflowsService.create(ctx, {
@@ -420,13 +482,25 @@ test("trigger: already active run visible in errors, bus replayed without duplic
   assert.deepEqual(await resolve(job), [id]);
   const before = (await errorsService.list(ctx, { source: "workflow" })).items
     .length;
-  // Other publication while the run is running: ignored but visible.
+  // Other publication by another member while the run is running,
+  // follow-ups exhausted: dropped but visible.
+  const other = crypto.randomUUID();
+  await sql`insert into "user" (id, name, email) values (${other}, 'o', ${other + "@x.io"})`;
+  await sql`insert into memberships (user_id, organization_id, role) values (${other}, ${ctx.organizationId}, 'owner')`;
   assert.deepEqual(
-    await resolve({ ...job, data: { ...job.data, key: crypto.randomUUID() } }),
+    await resolve({
+      ...job,
+      data: {
+        ...job.data,
+        key: crypto.randomUUID(),
+        actor: { userId: other },
+        followups: MAX_FOLLOWUPS,
+      },
+    }),
     [],
   );
   const errs = await errorsService.list(ctx, { source: "workflow" });
   assert.equal(errs.items.length, before + 1);
-  assert.match(errs.items[0]!.message, /already in progress/);
+  assert.match(errs.items[0]!.message, /stayed in progress/);
   await runsService.cancel(ctx, id!);
 });

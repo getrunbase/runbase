@@ -12,7 +12,7 @@ import {
   withDefaults,
   type Field,
 } from "../objects/fields";
-import { schemaGraph } from "../filter";
+import { schemaGraph, type Filter } from "../filter";
 import type { TenantContext, Tx } from "../tenant";
 import { isUuid } from "../lib/uuid";
 import type { Data, ObjectRow, SearchInput } from "./types";
@@ -118,6 +118,7 @@ export async function timelineEvent(
   before: Data,
   after: Data,
   changed: string[],
+  test?: boolean,
 ) {
   await tx.insert(events).values({
     organizationId: ctx.organizationId,
@@ -133,8 +134,88 @@ export async function timelineEvent(
       ),
     },
     source: "records",
-    isTest: ctx.test ?? false,
+    // Events of a test record are test data too (workspace.purge_test).
+    isTest: test || (ctx.test ?? false),
   });
+}
+
+// Edit distance between two short strings (field key suggestions).
+function distance(a: string, b: string) {
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++)
+      cur[j] = Math.min(
+        prev[j]! + 1,
+        cur[j - 1]! + 1,
+        prev[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    prev = cur;
+  }
+  return prev[b.length]!;
+}
+
+// Closest field key to an unknown key: same normalized key or label
+// (e.g. a field renamed from its label), otherwise the nearest key by edit distance.
+export function suggestField(fields: Field[], key: string) {
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const k = norm(key);
+  const same = fields.find((f) => norm(f.key) === k || norm(f.label) === k);
+  if (same) return same.key;
+  let best: { key: string; d: number } | undefined;
+  for (const f of fields) {
+    const d = distance(k, norm(f.key));
+    if (!best || d < best.d) best = { key: f.key, d };
+  }
+  return best && best.d <= Math.max(2, Math.floor(k.length / 3))
+    ? best.key
+    : undefined;
+}
+
+// Written keys must exist in the schema: an unknown key (typo, renamed
+// field) is rejected instead of being stored silently.
+export function checkKnownFields(fields: Field[], data: Data) {
+  const known = new Set(fields.map((f) => f.key));
+  const field = Object.keys(data).find((k) => !known.has(k));
+  if (field === undefined) return;
+  const suggestion = suggestField(fields, field);
+  if (suggestion)
+    throw appError(
+      "objects.unknownFieldSuggest",
+      "Unknown field: {field}. Did you mean {suggestion}?",
+      { field, suggestion },
+    );
+  throw appError("objects.unknownField", "Unknown field: {field}", { field });
+}
+
+// Email values are stored lowercased (case-insensitive matching).
+export function lowerEmails(fields: Field[], data: Data): Data {
+  const out = { ...data };
+  for (const f of fields)
+    if (f.type === "email" && typeof out[f.key] === "string")
+      out[f.key] = (out[f.key] as string).trim().toLowerCase();
+  return out;
+}
+
+// Equality filters on an email field compare lowercased values, like
+// the stored ones.
+export function lowerEmailFilter(fields: Field[], filter: Filter): Filter {
+  if (!filter || typeof filter !== "object") return filter;
+  if ("all" in filter)
+    return { all: filter.all.map((x) => lowerEmailFilter(fields, x)) };
+  if ("any" in filter)
+    return { any: filter.any.map((x) => lowerEmailFilter(fields, x)) };
+  const f = fields.find((x) => x.key === filter.field);
+  if (f?.type !== "email" || !["eq", "neq", "in", "not_in"].includes(filter.op))
+    return filter;
+  const low = (v: unknown) =>
+    typeof v === "string" ? v.trim().toLowerCase() : v;
+  return {
+    ...filter,
+    value: Array.isArray(filter.value)
+      ? filter.value.map(low)
+      : low(filter.value),
+  } as Filter;
 }
 
 // Workspace objects read once per transaction (upsert batches: avoids

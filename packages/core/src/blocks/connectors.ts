@@ -188,6 +188,7 @@ function nodeBlock(c: Loaded, m: NodeManifest): Block {
     branches: m.branches,
     sideEffect: m.sideEffect,
     app: c.app,
+    ...(m.auth.oauth && { oauthProvider: m.auth.oauth.provider }),
     ...(m.options?.length && {
       optionFields: m.options,
       options: async (field, input, bctx) => {

@@ -26,6 +26,8 @@ import {
   recordValidator,
   type Field,
 } from "./fields";
+import { formulaRefs, renameFormulaRef } from "./formula";
+import { assertSingularSlug, lintKey } from "../lint";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -129,6 +131,50 @@ async function refreshFormulas(
   }
 }
 
+async function refuseTypeChangeWithData(
+  tx: Tx,
+  ctx: TenantContext,
+  id: string,
+  next: unknown,
+) {
+  const [row] = await tx
+    .select({ fields: objects.fields })
+    .from(objects)
+    .where(inWs(ctx, id));
+  if (!row) return;
+  const old = fieldsSchema.parse(row.fields);
+  const parsed = fieldsSchema.safeParse(next);
+  if (!parsed.success) return;
+  for (const f of parsed.data) {
+    const o = old.find((x) => x.key === f.key);
+    if (!o || o.type === f.type || COMPUTED.includes(o.type)) continue;
+    const [c] = await tx
+      .select({ n: count() })
+      .from(records)
+      .where(
+        and(
+          eq(records.objectId, id),
+          sql`${records.data} ->> ${f.key} is not null`,
+        ),
+      );
+    if (c?.n)
+      throw appError(
+        "objects.typeChangeHasData",
+        "Field {field} holds data in {count} record(s): changing its type from {from} to {to} would leave invalid values. Use objects.migrate with op change_type (dryRun first), or pass force: true",
+        { field: f.key, count: c.n, from: o.type, to: f.type },
+      );
+  }
+}
+const COMPUTED = [
+  "formula",
+  "lookup",
+  "rollup",
+  "created_at",
+  "updated_at",
+  "created_by",
+  "autonumber",
+];
+
 // Relation target: slug or uuid accepted as input, slug stored (the rest of the
 // code compares slugs). Unknown target = error. `self`: object being created.
 async function normalizeRefs(
@@ -163,7 +209,11 @@ const EXPORT_PAGE = 1000;
 // - change_type: values converted (text -> number, etc.), failures reported;
 // - add: new field, `default` written into existing records;
 // - require: field made mandatory, `default` for empty records;
-// - delete: field removed from the schema and from all records.
+// - delete: field removed from the schema and from all records;
+// - update: properties merged into one field (label, options, formula
+//   expression, validation), existing values checked against them.
+// change_type: `map` rewrites values before conversion ({"Won": "won"}),
+// `caseInsensitive` matches `map` keys and select options ignoring case.
 export type MigrateOp =
   | { op: "rename"; field: string; to: string; label?: string }
   | {
@@ -173,10 +223,102 @@ export type MigrateOp =
       options?: string[];
       object?: string;
       dropInvalid?: boolean;
+      map?: Record<string, unknown>;
+      caseInsensitive?: boolean;
+    }
+  | {
+      op: "update";
+      field: string;
+      label?: string;
+      options?: string[];
+      // Formula expression (alias: formula).
+      expression?: string;
+      formula?: string;
+      validation?: {
+        pattern?: string | null;
+        min?: number | null;
+        max?: number | null;
+        minLength?: number | null;
+        maxLength?: number | null;
+      };
+      dropInvalid?: boolean;
     }
   | { op: "add"; field: Field; default?: unknown }
   | { op: "require"; field: string; default?: unknown }
-  | { op: "delete"; field: string };
+  // force: delete even when computed fields (formula, lookup, rollup) use it.
+  | { op: "delete"; field: string; force?: boolean }
+  // Object slug renamed; refused while other objects point to it.
+  | { op: "rename_slug"; to: string };
+type FieldOp = Exclude<MigrateOp, { op: "rename_slug" }>;
+
+type ObjectRef = { slug: string; fields: Field[] };
+const isComputedRef = (f: Field) => f.type === "lookup" || f.type === "rollup";
+
+// Fields of `o` rewritten so references to `target`.`key` point to `to`:
+// formulas and lookup/rollup `through` of the object itself, lookup/rollup
+// `field` and `through` (`<target>:<key>`) of the objects that read it.
+// `changed`: keys of the rewritten fields (= the dependents).
+export function rewriteFieldRefs(
+  o: ObjectRef,
+  target: string,
+  key: string,
+  to: string,
+) {
+  const changed: string[] = [];
+  const fields = o.fields.map((f): Field => {
+    if (o.slug === target && f.key === key) return f;
+    let next: Field = f;
+    if (o.slug === target && f.type === "formula") {
+      if (formulaRefs(f.formula).includes(key))
+        next = { ...f, formula: renameFormulaRef(f.formula, key, to) };
+    } else if (isComputedRef(f)) {
+      const g = f as Extract<Field, { type: "lookup" | "rollup" }>;
+      let through = g.through;
+      let field = g.field;
+      if (o.slug === target && through === key) through = to;
+      if (through === `${target}:${key}`) through = `${target}:${to}`;
+      const rel = o.fields.find((x) => x.key === g.through);
+      const readsTarget =
+        g.through === target ||
+        g.through.startsWith(`${target}:`) ||
+        (rel &&
+          (rel.type === "ref" || rel.type === "refs") &&
+          rel.object === target);
+      if (readsTarget && field === key) field = to;
+      if (through !== g.through || field !== g.field)
+        next = { ...g, through, ...(field !== undefined && { field }) };
+    }
+    if (next !== f) changed.push(f.key);
+    return next;
+  });
+  return { fields, changed };
+}
+
+// Computed fields (any object) that read `target`.`key`, as "object.field".
+export function fieldDependents(all: ObjectRef[], target: string, key: string) {
+  return all.flatMap((o) =>
+    rewriteFieldRefs(o, target, key, "\u0000").changed.map(
+      (k) => `${o.slug}.${k}`,
+    ),
+  );
+}
+
+// Objects that point to `slug` (relations, lookups, rollups), as "object.field".
+export function slugDependents(all: ObjectRef[], slug: string) {
+  return all
+    .filter((o) => o.slug !== slug)
+    .flatMap((o) =>
+      o.fields
+        .filter(
+          (f) =>
+            ((f.type === "ref" || f.type === "refs") && f.object === slug) ||
+            (isComputedRef(f) &&
+              ((f as { through: string }).through === slug ||
+                (f as { through: string }).through.startsWith(`${slug}:`))),
+        )
+        .map((f) => `${o.slug}.${f.key}`),
+    );
+}
 
 type Data = Record<string, unknown>;
 // Effect of a migration on a record: null = unchanged; `error` = invalid
@@ -251,7 +393,7 @@ export function convertValue(v: unknown, f: Field): unknown {
 }
 
 // Migration plan: new schema, affected field and effect per record.
-export function migrationPlan(before: Field[], op: MigrateOp) {
+export function migrationPlan(before: Field[], op: FieldOp) {
   const without = (d: Data, key: string) =>
     Object.fromEntries(Object.entries(d).filter(([k]) => k !== key));
   switch (op.op) {
@@ -330,12 +472,13 @@ export function migrationPlan(before: Field[], op: MigrateOp) {
         ...(op.options && { options: op.options }),
         ...(op.object && { object: op.object }),
       });
+      const remap = valueMapper(f, op.map, op.caseInsensitive);
       return {
         field: f.key,
         fields: before.map((x) => (x.key === f.key ? f : x)),
         apply: (d: Data): Change => {
           if (d[f.key] == null) return null;
-          const v = convertValue(d[f.key], f);
+          const v = remap(convertValue(remap(d[f.key]), f));
           const error = checkValue(f, v);
           if (error) return { data: without(d, f.key), error };
           return isDeepStrictEqual(v, d[f.key])
@@ -344,7 +487,125 @@ export function migrationPlan(before: Field[], op: MigrateOp) {
         },
       };
     }
+    case "update": {
+      const old = fieldOf(before, op.field);
+      const next: Record<string, unknown> = { ...old };
+      if (op.label !== undefined) next.label = op.label;
+      if (op.options !== undefined) next.options = op.options;
+      const formula = op.expression ?? op.formula;
+      if (formula !== undefined) {
+        if (old.type !== "formula")
+          throw appError(
+            "objects.migrateNotFormula",
+            "Field {field} is not a formula: an expression applies to formula fields only",
+            { field: old.key },
+          );
+        next.formula = formula;
+      }
+      for (const [k, v] of Object.entries(op.validation ?? {}))
+        if (v === null) delete next[k];
+        else if (v !== undefined) next[k] = v;
+      const f = fieldSchema.parse(next);
+      return {
+        field: f.key,
+        fields: before.map((x) => (x.key === f.key ? f : x)),
+        apply: (d: Data): Change => {
+          if (f.type === "formula" || d[f.key] == null) return null;
+          const error = checkValue(f, d[f.key]);
+          return error ? { data: without(d, f.key), error } : null;
+        },
+      };
+    }
   }
+}
+
+// Slug rename (objects.migrate rename_slug): refused while other objects
+// point to the object; its own self-relations follow the new slug.
+async function renameSlug(
+  tx: Tx,
+  ctx: TenantContext,
+  object: { id: string; slug: string; fields: unknown },
+  all: { id: string; slug: string; fields: Field[] }[],
+  to: string,
+  opts: { dryRun?: boolean },
+) {
+  const bad = lintKey("Object slug", to)[0];
+  if (bad)
+    throw appError(
+      "objects.invalidSlug",
+      "Invalid object slug {slug}: {hint}",
+      {
+        slug: to,
+        hint: bad.hint,
+      },
+    );
+  assertSingularSlug(to);
+  if (all.some((o) => o.slug === to && o.id !== object.id))
+    throw appError("objects.slugExists", "Object slug already in use: {slug}", {
+      slug: to,
+    });
+  const dependents = slugDependents(all, object.slug);
+  // Same shape as a field migration report (no record is touched).
+  const report = {
+    slug: object.slug,
+    to,
+    records: 0,
+    touched: 0,
+    invalid: 0,
+    samples: [] as { id: string; value: unknown; error: string }[],
+    examples: [] as {
+      id: string;
+      before: unknown;
+      after: unknown;
+      computed: { field: string; before: unknown; after: unknown }[];
+    }[],
+    dependents,
+  };
+  if (opts.dryRun) return { dryRun: true, ...report };
+  if (dependents.length)
+    throw appError(
+      "objects.slugInUse",
+      "Object {slug} is used by {dependents}: a slug can be renamed only when no other object points to it",
+      { slug: object.slug, dependents: dependents.join(", ") },
+    );
+  const fields = fieldsSchema
+    .parse(object.fields)
+    .map((f) =>
+      (f.type === "ref" || f.type === "refs") && f.object === object.slug
+        ? { ...f, object: to }
+        : f,
+    );
+  await tx
+    .update(objects)
+    .set({ slug: to, fields, updatedAt: new Date() })
+    .where(inWs(ctx, object.id));
+  await audit(tx, ctx, "object.migrate", res(object.id), {
+    op: { op: "rename_slug", to },
+  });
+  return { dryRun: false, ...report };
+}
+
+// Value rewriting for change_type: explicit `map`, then (caseInsensitive)
+// select options matched ignoring case. Arrays are mapped item by item.
+function valueMapper(
+  f: Field,
+  map: Record<string, unknown> | undefined,
+  caseInsensitive: boolean | undefined,
+) {
+  const norm = (s: string) => (caseInsensitive ? s.trim().toLowerCase() : s);
+  const entries = new Map(
+    Object.entries(map ?? {}).map(([k, v]) => [norm(k), v]),
+  );
+  const options = "options" in f ? f.options : [];
+  const one = (x: unknown): unknown => {
+    if (typeof x !== "string") return x;
+    const k = norm(x);
+    if (entries.has(k)) return entries.get(k);
+    if (caseInsensitive) return options.find((o) => norm(o) === k) ?? x;
+    return x;
+  };
+  if (!entries.size && !caseInsensitive) return (v: unknown) => v;
+  return (v: unknown) => (Array.isArray(v) ? v.map(one) : one(v));
 }
 
 // Deletion of an object in a transaction: its records (and its trash)
@@ -443,13 +704,18 @@ export const objectsService = {
       return row!;
     });
   },
+  // A type change on a field that holds data is refused (values would be
+  // left invalid) unless `force`: objects.migrate change_type converts them.
   update: async (
     ctx: TenantContext,
     id: string,
     patch: Partial<Omit<ObjectInput, "slug" | "database">>,
+    opts: { force?: boolean } = {},
   ) => {
     await requireScope(ctx, "admin");
     return withTenant(ctx, async (tx) => {
+      if (patch.fields && !opts.force)
+        await refuseTypeChangeWithData(tx, ctx, id, patch.fields);
       const set = {
         ...patch,
         ...(patch.fields && {
@@ -568,18 +834,68 @@ export const objectsService = {
         .where(inWs(ctx, id))
         .for("update");
       if (!object) throw notFound("objects.notFound", "Object not found");
+      const all = (
+        await tx
+          .select({
+            id: objects.id,
+            slug: objects.slug,
+            fields: objects.fields,
+          })
+          .from(objects)
+          .where(eq(objects.workspaceId, ctx.workspaceId))
+      ).map((o) => ({ ...o, fields: fieldsSchema.parse(o.fields) }));
+      if (op.op === "rename_slug")
+        return renameSlug(tx, ctx, object, all, op.to, opts);
       const before = fieldsSchema.parse(object.fields);
       const plan = migrationPlan(before, op);
-      const after = await normalizeRefs(
-        tx,
-        ctx,
-        fieldsSchema.parse(plan.fields),
-      );
+      // Computed fields that read the field: rewritten on rename, they
+      // block a delete unless force.
+      const dependents =
+        op.op === "rename" || op.op === "delete"
+          ? fieldDependents(all, object.slug, plan.field)
+          : [];
+      if (op.op === "delete" && dependents.length && !op.force && !opts.dryRun)
+        throw appError(
+          "objects.fieldInUse",
+          "Field {field} is used by {dependents}: update them first, or pass force: true",
+          { field: plan.field, dependents: dependents.join(", ") },
+        );
+      const others =
+        op.op === "rename"
+          ? all
+              .filter((o) => o.id !== id)
+              .map((o) => ({
+                id: o.id,
+                ...rewriteFieldRefs(o, object.slug, op.field, op.to),
+              }))
+              .filter((o) => o.changed.length)
+          : [];
+      const planned =
+        op.op === "rename"
+          ? rewriteFieldRefs(
+              { slug: object.slug, fields: plan.fields },
+              object.slug,
+              op.field,
+              op.to,
+            ).fields
+          : plan.fields;
+      const after = await normalizeRefs(tx, ctx, fieldsSchema.parse(planned));
+      const formulas = after.filter((f) => f.type === "formula");
       const report = {
         records: 0,
         touched: 0,
         invalid: 0,
         samples: [] as { id: string; value: unknown; error: string }[],
+        // Up to 5 changed records: value of the field before and after
+        // (normalized, or recomputed for a formula).
+        // Each with the computed fields whose value changes.
+        examples: [] as {
+          id: string;
+          before: unknown;
+          after: unknown;
+          computed: { field: string; before: unknown; after: unknown }[];
+        }[],
+        dependents,
       };
       const writes: { id: string; data: Record<string, unknown> }[] = [];
       for (let last = ""; ;) {
@@ -599,9 +915,29 @@ export const objectsService = {
         for (const r of rows) {
           report.records++;
           const out = plan.apply(r.data);
-          if (!out) continue;
+          // Computed fields (formulas) follow the new schema: a record
+          // whose formula result changes counts as touched.
+          const data = applyComputed(after, out?.data ?? r.data);
+          if (!out && isDeepStrictEqual(data, r.data)) continue;
           report.touched++;
-          if (out.error) {
+          if (report.examples.length < 5)
+            report.examples.push({
+              id: r.id,
+              before: r.data[plan.field] ?? null,
+              after: data[op.op === "rename" ? op.to : plan.field] ?? null,
+              computed: formulas
+                .filter(
+                  (f) =>
+                    f.key !== plan.field &&
+                    !isDeepStrictEqual(data[f.key], r.data[f.key]),
+                )
+                .map((f) => ({
+                  field: f.key,
+                  before: r.data[f.key] ?? null,
+                  after: data[f.key] ?? null,
+                })),
+            });
+          if (out?.error) {
             report.invalid++;
             if (report.samples.length < 10)
               report.samples.push({
@@ -610,11 +946,13 @@ export const objectsService = {
                 error: out.error,
               });
           }
-          writes.push({ id: r.id, data: out.data });
+          writes.push({ id: r.id, data });
         }
       }
       if (opts.dryRun) return { dryRun: true, ...report };
-      if (report.invalid && !(op.op === "change_type" && op.dropInvalid)) {
+      const canDrop =
+        (op.op === "change_type" || op.op === "update") && op.dropInvalid;
+      if (report.invalid && !canDrop) {
         const p = {
           count: report.invalid,
           samples: report.samples
@@ -622,7 +960,7 @@ export const objectsService = {
             .map((x) => `${x.id}: ${x.error}`)
             .join("; "),
         };
-        throw op.op === "change_type"
+        throw op.op === "change_type" || op.op === "update"
           ? appError(
               "objects.migrateInvalidValues",
               "{count} invalid record(s) after migration (e.g. {samples}): fix the values or pass dropInvalid",
@@ -643,6 +981,11 @@ export const objectsService = {
         .update(objects)
         .set({ fields: after, updatedAt: new Date() })
         .where(inWs(ctx, id));
+      for (const o of others)
+        await tx
+          .update(objects)
+          .set({ fields: o.fields, updatedAt: new Date() })
+          .where(inWs(ctx, o.id));
       await tx
         .delete(recordKeys)
         .where(
@@ -690,7 +1033,10 @@ export const objectsService = {
     const existing = await workspaceIndexes(
       (await objectsService.list(ctx)).map((o) => o.id),
     );
-    if (!existing.includes(name) && existing.length >= MAX_INDEXES_PER_WORKSPACE)
+    if (
+      !existing.includes(name) &&
+      existing.length >= MAX_INDEXES_PER_WORKSPACE
+    )
       throw appError(
         "objects.indexQuota",
         "Index limit reached for this workspace ({max})",

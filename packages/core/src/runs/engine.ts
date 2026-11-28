@@ -14,7 +14,9 @@ import {
 import { queueOptions } from "../bus";
 import { fairProcessor } from "../queues/fair";
 import { runSteps, workflowRuns } from "../db/schema";
-import { appError } from "../errors/app-error";
+import { AppError, appError } from "../errors/app-error";
+import { formatIssues } from "../errors/clean";
+import { isNonRetryable } from "./retryable";
 import { recordError } from "../errors/record";
 import { builtins, stepInput } from "./templates";
 import { withTenant, type TenantContext } from "../tenant";
@@ -118,6 +120,8 @@ async function runStep(job: Job<StepJob>) {
   if (!run || FINISHED.includes(run.status) || run.status === "paused") return;
   // Test run: writes and descendant runs flagged as test (A4).
   if (run.isTest) ctx = { ...ctx, test: true };
+  // Record writes of this run: skipped by the workflow's own record triggers.
+  ctx = { ...ctx, viaWorkflow: run.workflowId };
   const paths = run.paths as Paths;
   const p = paths[path];
   if (!p || p.n !== n || p.status !== "running") {
@@ -185,7 +189,13 @@ async function runStep(job: Job<StepJob>) {
   );
   const scope = {
     ...(run.input as object),
-    ...builtins({ runId, workflowId: run.workflowId, test: run.isTest }),
+    ...builtins({
+      runId,
+      workflowId: run.workflowId,
+      test: run.isTest,
+      timeZone: (definition.trigger as { timezone?: string } | undefined)
+        ?.timezone,
+    }),
     steps: stepsScope(done, path),
   };
   const block = step && (await getBlock(ctx, step.type));
@@ -228,8 +238,9 @@ async function runStep(job: Job<StepJob>) {
               "runs.maxDurationExceeded",
               "Maximum run duration reached ({seconds} s)",
               {
-              seconds: maxRunMs / 1000,
-            })
+                seconds: maxRunMs / 1000,
+              },
+            )
           : appError("runs.timedOut", "Timed out ({seconds} s)", {
               seconds: opts.timeoutMs / 1000,
             }),
@@ -262,8 +273,14 @@ async function runStep(job: Job<StepJob>) {
     await addActiveMs(ctx, runId, startedAt);
     const cap = e instanceof CostCapExceeded ? e : undefined;
     // Step retry according to its policy: new delayed job (exponential
-    // backoff), the path stays at the same rank.
-    if (!cap && !(e instanceof StopError) && attempt + 1 < opts.attempts) {
+    // backoff), the path stays at the same rank. Configuration and
+    // authorization errors are not retried: a new attempt would fail the same.
+    if (
+      !cap &&
+      !(e instanceof StopError) &&
+      !isNonRetryable(e) &&
+      attempt + 1 < opts.attempts
+    ) {
       await enqueue(ctx, ref, {
         delay: opts.backoffMs * 2 ** attempt,
         retry: true,
@@ -273,7 +290,8 @@ async function runStep(job: Job<StepJob>) {
     }
     // Secret masking in run logs.
     const values = await decryptAll(ctx);
-    const error = redact((e as Error).message, values);
+    // Zod issues as `field: message` lines rather than a JSON dump.
+    const error = redact(formatIssues((e as Error).message), values);
     const attempts = attempt + 1;
     // Error center: step failed after retries, cost cap
     // exceeded, invalid AI branch.
@@ -283,13 +301,20 @@ async function runStep(job: Job<StepJob>) {
       const branch = next?.error?.length
         ? "error"
         : (block.branches[0] ?? "ok");
-      await recordError(ctx, {
-        source: "workflow",
-        runId,
-        stepId: p.step,
-        message: `${message} (the run continues)`,
-        payload: { input },
-      });
+      // Handled by a connected error branch: expected, logged only.
+      // Without one the run continues on the default branch: error center.
+      if (branch === "error")
+        console.info(
+          `[runs] ${runId} ${p.step}: ${message} (handled by the error branch)`,
+        );
+      else
+        await recordError(ctx, {
+          source: "workflow",
+          runId,
+          stepId: p.step,
+          message: `${message} (the run continues)`,
+          payload: { input },
+        });
       await advance(
         ctx,
         ref,
@@ -311,7 +336,11 @@ async function runStep(job: Job<StepJob>) {
       attempts,
       cost: cap?.cost,
       tokens: cap?.tokens,
-      stack: redact((e as Error).stack ?? "", values),
+      // An AppError is an expected, explained failure: no stack stored.
+      stack:
+        e instanceof AppError
+          ? undefined
+          : redact((e as Error).stack ?? "", values),
     });
     return;
   }
@@ -320,7 +349,13 @@ async function runStep(job: Job<StepJob>) {
     // (or the expiry). The other paths continue.
     // Expiry due date registered with the wait (survives Redis).
     const expire = await onPath(ctx, ref, async (tx, _r, q, all) => {
-      all[path] = { ...q, status: "waiting" };
+      const shown = (result.output as { message?: unknown } | null)?.message;
+      all[path] = {
+        ...q,
+        status: "waiting",
+        ...(step.type === "human.approve" &&
+          typeof shown === "string" && { message: shown }),
+      };
       return {
         out: result.expireMs
           ? [

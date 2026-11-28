@@ -330,11 +330,34 @@ test("clean function error: no ANSI or /tmp/fn- path", async () => {
       `export default () => { console.log("before"); throw new Error("boom"); }`,
     ),
     (e: Error & { logs?: string }) => {
-      assert.match(e.message, /Error: boom/);
-      assert.match(e.message, /fn\.ts:1:\d+/);
+      assert.equal(e.message, "boom");
+      assert.match(e.logs ?? "", /fn\.ts:1:\d+/);
+      assert.ok(!/\/fn-[A-Za-z0-9_]+\//.test(e.logs ?? ""), e.logs);
       assert.ok(!e.message.includes("\x1B"), e.message);
       assert.ok(!/\/fn-[A-Za-z0-9_]+\//.test(e.message), e.message);
       assert.ok(!e.logs?.includes("\x1B"));
+      return true;
+    },
+  );
+});
+
+test("ok:false surfaces error before a strict outputSchema", async () => {
+  await assert.rejects(
+    run(
+      `export default () => ({ ok: false, error: "quota exceeded" })`,
+      {},
+      {
+        outputSchema: {
+          type: "object",
+          properties: { n: { type: "number" } },
+          required: ["n"],
+          additionalProperties: false,
+        },
+      },
+    ),
+    (e: Error & { code?: string }) => {
+      assert.equal(e.message, "quota exceeded");
+      assert.equal(e.code, "functions.failed");
       return true;
     },
   );

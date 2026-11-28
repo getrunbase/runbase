@@ -5,11 +5,7 @@ import { anyUuid } from "../db/any";
 import { db } from "../db/client";
 import { appError } from "../errors/app-error";
 import { mapDbError } from "../lib/uuid";
-import {
-  mcpWorkspaceDefaults,
-  memberships,
-  workspaces,
-} from "../db/schema";
+import { mcpWorkspaceDefaults, memberships, workspaces } from "../db/schema";
 
 export type Scope = "read" | "write" | "admin";
 
@@ -24,6 +20,9 @@ export type TenantContext = {
   // Context of a test run (A4): writes (records, events) and descendant
   // runs flagged as test by default, deleted by workspace.purge_test.
   test?: boolean;
+  // Writes made by a run: id of its workflow (its own record triggers skip
+  // them, see triggers/resolve).
+  viaWorkflow?: string;
 };
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -174,7 +173,14 @@ export type McpPrincipal = {
   organizationId?: string;
   // Key limited to some MCP tools (null/missing = all).
   tools?: string[] | null;
+  // MCP session (Mcp-Session-Id): scopes the workspaces.use default, so two
+  // agents sharing one key never write into each other's workspace.
+  session?: string;
 };
+
+// Row key of the workspaces.use default: per session when the client sends one.
+const defaultKey = (p: McpPrincipal) =>
+  p.session ? `${p.key}#session:${p.session}` : p.key;
 
 // Cache of accessible workspaces: MCP reads them on each tool
 // call. Short TTL (bounds staleness between processes), cleared locally on
@@ -272,30 +278,68 @@ function pick(list: Ws[], ref: string) {
       { ref },
     );
   if (!byName[0])
-    throw appError("workspaces.forbidden", "Workspace inaccessible: {ref}", {
-      ref,
-    }, { kind: "forbidden" });
+    throw appError(
+      "workspaces.forbidden",
+      "Workspace inaccessible: {ref}",
+      {
+        ref,
+      },
+      { kind: "forbidden" },
+    );
   return byName[0];
+}
+
+// Workspace list for an error message: at most 5, then a pointer to workspaces.list.
+export function workspaceListHint(list: { id: string; name: string }[]) {
+  const shown = list.slice(0, 5).map((w) => `${w.name} (${w.id})`);
+  if (list.length > 5)
+    shown.push(`+${list.length - 5} more, see workspaces.list`);
+  return shown.join(", ");
 }
 
 // MCP tenant context: requested workspace > client default > `fallback` (header
 // x-workspace-id) > first accessible. A requested but inaccessible workspace is
-// refused (never a silent fallback).
+// refused (never a silent fallback). With `write`, a principal that reaches
+// several workspaces and has no explicit choice (param, default, header) is
+// refused: a write never lands in a guessed workspace. Without an MCP session,
+// a write ignores the key-wide default and needs `ref` (or the header).
 export async function resolveMcpContext(
   p: McpPrincipal,
   ref?: string,
   fallback?: string,
+  opts: { write?: boolean; account?: boolean } = {},
 ): Promise<TenantContext> {
   const list = await accessibleWorkspaces(p);
+  // Account-level tools (workspaces.create, members.*) act on the organization,
+  // not on a workspace: when every accessible workspace is in one organization,
+  // the choice of workspace does not matter and is not required.
+  if (opts.account && new Set(list.map((w) => w.organizationId)).size === 1)
+    opts = { ...opts, write: false };
   let ws: Ws | undefined;
   if (ref) ws = pick(list, ref);
-  else {
+  else if (opts.write && list.length > 1 && !p.session) {
+    // No MCP session: the default stored for the key is shared by every
+    // sessionless client of that key, so a write never relies on it.
+    if (fallback) ws = pick(list, fallback);
+    else
+      throw appError(
+        "workspaces.workspaceParamRequired",
+        "Several workspaces are accessible and this call has no MCP session: pass the `workspace` parameter ({workspaces})",
+        { workspaces: workspaceListHint(list) },
+      );
+  } else {
     const [def] = await db
       .select({ id: mcpWorkspaceDefaults.workspaceId })
       .from(mcpWorkspaceDefaults)
-      .where(eq(mcpWorkspaceDefaults.principal, p.key));
+      .where(eq(mcpWorkspaceDefaults.principal, defaultKey(p)));
     ws = list.find((w) => w.id === def?.id);
     if (!ws && fallback) ws = pick(list, fallback);
+    if (!ws && opts.write && list.length > 1)
+      throw appError(
+        "workspaces.workspaceRequired",
+        "Several workspaces are accessible: pass `workspace` or call workspaces.use first ({workspaces})",
+        { workspaces: workspaceListHint(list) },
+      );
     ws ??= list[0];
   }
   if (!ws)
@@ -312,7 +356,7 @@ export async function setMcpDefault(p: McpPrincipal, ref: string) {
   const ctx = await resolveMcpContext(p, ref);
   await db
     .insert(mcpWorkspaceDefaults)
-    .values({ principal: p.key, workspaceId: ctx.workspaceId })
+    .values({ principal: defaultKey(p), workspaceId: ctx.workspaceId })
     .onConflictDoUpdate({
       target: mcpWorkspaceDefaults.principal,
       set: { workspaceId: ctx.workspaceId, updatedAt: new Date() },

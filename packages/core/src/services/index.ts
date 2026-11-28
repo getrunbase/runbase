@@ -26,6 +26,7 @@ import { pagesService } from "../pages";
 import { componentsService } from "../components";
 import { webhooksService } from "../webhooks";
 import { viewsService } from "../views";
+import { notesService } from "../notes";
 import { filesService } from "../files";
 import { billingService, quotasService, usageService } from "../quotas";
 import { overviewService } from "../overview";
@@ -56,6 +57,7 @@ export const services = {
   components: componentsService,
   webhooks: webhooksService,
   views: viewsService,
+  notes: notesService,
   files: filesService,
   quotas: quotasService,
   billing: billingService,
@@ -76,6 +78,7 @@ export const mcpTools: {
     create: "workspaces.create",
     rename: "workspaces.rename",
     remove: "workspaces.delete",
+    getSettings: "workspace.settings",
     // Excluded: carries secrets, set by an admin outside MCP.
     setSettings: null,
   },
@@ -105,6 +108,7 @@ export const mcpTools: {
   overview: {
     describe: "workspace.describe",
     purgeTest: "workspace.purge_test",
+    dependencies: "workspace.dependencies",
   },
   databases: {
     list: "databases.list",
@@ -180,11 +184,16 @@ export const mcpTools: {
     update: "workflows.update",
     restore: "workflows.restore",
     validate: "workflows.validate",
+    definitionOf: "workflows.validate",
+    updateTested: "workflows.update",
     validateItems: "workflows.validate",
     check: "workflows.validate",
     dryRun: "workflows.dry_run",
     testStep: "workflows.test_step",
     activate: "workflows.activate",
+    dryRunWorkflow: "workflows.dry_run",
+    requireTested: "workflows.activate",
+    activateTested: "workflows.activate",
     deactivate: "workflows.deactivate",
     remove: "workflows.delete",
   },
@@ -198,12 +207,15 @@ export const mcpTools: {
   runs: {
     start: "runs.start",
     get: "runs.get",
-    waiting: "runs.waiting",
+    // Excluded: full rows for the front end; runs.waiting is the compact form.
+    waiting: null,
+    waitingCompact: "runs.waiting",
     list: "runs.list",
     // Excluded: front-end record page view, runs.get covers the detail.
     forRecord: null,
     // Excluded: counter for the front-end home KPIs.
-    countSince: null,    statusCounts: null,
+    countSince: null,
+    statusCounts: null,
     decide: "runs.decide",
     cancel: "runs.cancel",
     cancelBulk: "runs.cancel_bulk",
@@ -255,6 +267,12 @@ export const mcpTools: {
     save: "views.save",
     remove: "views.delete",
   },
+  notes: {
+    list: "notes.list",
+    get: "notes.get",
+    save: "notes.save",
+    remove: "notes.delete",
+  },
   files: {
     upload: "files.upload",
     download: "files.download",
@@ -303,6 +321,9 @@ export const mcpTools: {
     discard: "page.discard",
     patchFiles: "page.update",
     errors: "page.errors",
+    // Helpers of every page.* tool (id or name, compile status).
+    resolveId: null,
+    bundleStatus: null,
     // Called by the page iframe (server action), not by an agent.
     reportError: null,
     // Excluded: rendering of /p/[slug] (iframe), not an MCP tool.

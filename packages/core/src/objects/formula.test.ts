@@ -1,6 +1,27 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { evalFormula, formulaRefs, parseFormula } from "./formula";
+import {
+  evalFormula,
+  formulaRefs,
+  parseFormula,
+  renameFormulaRef,
+} from "./formula";
+
+test("formula: renameFormulaRef rewrites identifiers only", () => {
+  assert.equal(
+    renameFormulaRef(
+      'amount * qty + len("amount") + round(amount)',
+      "amount",
+      "total",
+    ),
+    'total * qty + len("amount") + round(total)',
+  );
+  assert.equal(renameFormulaRef("round(x)", "round", "r"), "round(x)");
+  assert.equal(
+    renameFormulaRef("amounts + amount", "amount", "a"),
+    "amounts + a",
+  );
+});
 
 test("formula: arithmetic, precedence, concatenation and functions", () => {
   const d = { price: 10, qte: 3, name: "Acme", remise: null };
@@ -30,4 +51,20 @@ test("formula: no access outside the record (no eval)", () => {
     "qte",
     "rate",
   ]);
+});
+
+test("formula: days_between compares calendar dates (b - a), now()", () => {
+  const db = (a: unknown, b: unknown) =>
+    evalFormula("days_between(a, b)", { a, b });
+  assert.equal(db("2024-01-01", "2024-01-31"), 30);
+  assert.equal(db("2024-01-31", "2024-01-01"), -30);
+  // Time of day ignored: late evening to next morning = 1 day.
+  assert.equal(db("2024-03-10T23:30:00Z", "2024-03-11T00:15:00Z"), 1);
+  assert.equal(db("2024-03-10T08:00:00Z", "2024-03-10T22:00:00Z"), 0);
+  assert.equal(db("2024-03-10", "2024-03-10T18:00:00Z"), 0);
+  assert.equal(db("nope", "2024-01-01"), null);
+  assert.equal(db(null, "2024-01-01"), null);
+  const now = evalFormula("now()", {}) as string;
+  assert.match(now, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+  assert.equal(evalFormula("days_between(today(), now())", {}), 0);
 });

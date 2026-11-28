@@ -7,6 +7,20 @@ import { appError, notFound } from "../../errors/app-error";
 
 const data = z.record(z.string(), z.unknown());
 
+// A template that renders to nothing ("{{event.missing}}") yields "" or
+// null: with skipEmpty, those keys are dropped so they never clear a stored
+// field. Clear a field explicitly with skipEmpty: false.
+export function dropEmpty(d: Record<string, unknown>, skip: boolean) {
+  if (!skip) return d;
+  return Object.fromEntries(
+    Object.entries(d).filter(
+      ([, v]) =>
+        v !== undefined && v !== null && !(typeof v === "string" && !v.trim()),
+    ),
+  );
+}
+const skipEmpty = z.boolean().optional();
+
 async function objectId(objects: BlockServices["objects"], slug: string) {
   const obj = await objects.get(slug);
   if (!obj)
@@ -22,11 +36,15 @@ export const recordUpdate = defineBlock({
   label: "Update a record",
   description: "Updates one or more fields of a record.",
   sideEffect: true,
-  inputSchema: z.object({ recordId: z.string(), data }),
+  // skipEmpty (default false): empty-rendered values do not clear fields.
+  inputSchema: z.object({ recordId: z.string(), data, skipEmpty }),
   outputSchema: z.object({ record: z.unknown(), changed: z.array(z.string()) }),
   branches: ["ok"],
-  run: async ({ recordId, data }, { services }) => {
-    const { record, changed } = await services.records.update(recordId, data);
+  run: async ({ recordId, data, skipEmpty }, { services }) => {
+    const { record, changed } = await services.records.update(
+      recordId,
+      dropEmpty(data, skipEmpty ?? false),
+    );
     return { branch: "ok", output: { record, changed } };
   },
 });
@@ -103,6 +121,8 @@ export const recordUpsert = defineBlock({
     data,
     match: z.string().optional(),
     externalId: z.string().optional(),
+    // Default true: an empty-rendered value never overwrites a stored one.
+    skipEmpty,
   }),
   outputSchema: z.object({
     record: z.unknown(),
@@ -110,7 +130,11 @@ export const recordUpsert = defineBlock({
     changed: z.array(z.string()),
   }),
   branches: ["created", "updated"],
-  run: async ({ object, data, match, externalId }, { services }) => {
+  run: async (
+    { object, data: raw, match, externalId, skipEmpty },
+    { services },
+  ) => {
+    const data = dropEmpty(raw, skipEmpty ?? true);
     if (!match && !externalId)
       throw appError(
         "blocks.matchOrExternalIdRequired",

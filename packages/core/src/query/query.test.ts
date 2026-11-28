@@ -310,3 +310,15 @@ test("query.sql: other connections' activity, records object, restricted key", a
     /limited to some objects/,
   );
 });
+
+test("query.sql: duplicate result column names are refused", async () => {
+  const a = await owner("QD");
+  await assert.rejects(
+    queryService.sql(a, "select 1 as n, 2 as n"),
+    (e: Error & { code?: string }) =>
+      e.code === "query.duplicateColumns" && /unique alias/.test(e.message),
+  );
+  assert.deepEqual((await queryService.sql(a, "select 1 as n, 2 as m")).rows, [
+    { n: 1, m: 2 },
+  ]);
+});

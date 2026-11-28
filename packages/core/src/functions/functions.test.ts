@@ -43,6 +43,14 @@ test("create, edit, restore a function; reference by name or version", async () 
   });
   assert.equal(v2.version, 2);
   assert.deepEqual(v2.permissions, { domains: [], secrets: [] });
+  // Same code and config: no new version.
+  const same = await fn.save(a, {
+    name: "enrich",
+    code: "export default () => 2",
+  });
+  assert.equal(same.version, 2);
+  assert.equal((same as { unchanged?: boolean }).unchanged, true);
+  assert.equal("unchanged" in v2, false);
 
   assert.equal((await fn.get(a, "enrich"))!.code, "export default () => 2");
   assert.equal((await fn.get(a, "enrich", 1))!.code, "export default () => 1");
@@ -168,7 +176,7 @@ test("records SDK in the sandbox: read/write gated by permissions.records", asyn
   const code = `export default async (i) => {
     const { record: r } = await records.upsert({ objectId: i.o, externalId: "x1", data: { name: "Acme" } });
     const found = await records.search(i.o, {});
-    return { id: r.id, n: found.length, name: (await records.get(r.id)).data.name };
+    return { id: r.id, n: found.records.length, name: (await records.get(r.id)).data.name };
   }`;
   await fn.save(a, {
     name: "rw",
@@ -189,6 +197,61 @@ test("records SDK in the sandbox: read/write gated by permissions.records", asyn
   await assert.rejects(fn.test(a, "ro", { o: o.id }), /write/);
   await fn.save(a, { name: "none", code });
   await assert.rejects(fn.test(a, "none", { o: o.id }), /permissions\.records/);
+});
+
+test("records SDK search: documented page shape, paging with after", async () => {
+  const { objectsService } = await import("../objects");
+  const { recordsService } = await import("../records");
+  const a = await owner("FP");
+  const o = await objectsService.create(a, {
+    slug: "item",
+    name: "Item",
+    fields: [{ key: "name", label: "Name", type: "text" }],
+  });
+  for (const name of ["a", "b", "c"])
+    await recordsService.upsert(a, { objectId: o.id, data: { name } });
+  await fn.save(a, {
+    name: "pager",
+    code: `export default async () => {
+      const p1 = await records.search("item", { limit: 2, sort: [{ field: "name" }] });
+      const p2 = await records.search("item", { limit: 2, sort: [{ field: "name" }], after: p1.next });
+      return {
+        p1: { names: p1.records.map((r) => r.data.name), hasMore: p1.hasMore, total: p1.total, next: !!p1.next },
+        p2: { names: p2.records.map((r) => r.data.name), hasMore: p2.hasMore, total: p2.total, next: p2.next },
+      };
+    }`,
+    permissions: { domains: [], secrets: [], records: "read" },
+  });
+  assert.deepEqual((await fn.test(a, "pager", {})).output, {
+    p1: { names: ["a", "b"], hasMore: true, total: 3, next: true },
+    p2: { names: ["c"], hasMore: false, total: 3, next: null },
+  });
+});
+
+test("functions.test { test: true } tags its writes as test data", async () => {
+  const { objectsService } = await import("../objects");
+  const { recordsService } = await import("../records");
+  const a = await owner("FT");
+  const o = await objectsService.create(a, {
+    slug: "company",
+    name: "Company",
+    fields: [{ key: "name", label: "Nom", type: "text" }],
+  });
+  await fn.save(a, {
+    name: "mk",
+    code: `export default async (i, { test }) => {
+      const { record } = await records.upsert({ objectId: i.o, data: { name: "T" } });
+      return { id: record.id, test };
+    }`,
+    permissions: { domains: [], secrets: [], records: "write" },
+  });
+  const t = await fn.test(a, "mk", { o: o.id }, undefined, { test: true });
+  const out = t.output as { id: string; test: boolean };
+  assert.equal(out.test, true);
+  assert.equal((await recordsService.get(a, out.id)).isTest, true);
+  const live = await fn.test(a, "mk", { o: o.id });
+  const id = (live.output as { id: string }).id;
+  assert.equal((await recordsService.get(a, id)).isTest, false);
 });
 
 test("events SDK in the sandbox: push and list gated by permissions.events", async () => {
@@ -236,7 +299,7 @@ test("records SDK: delete, merge, object slug; logs and errors of a page call", 
     code: `export default async (i) => {
       await records.delete(i.del);
       await records.merge(i.keep, [i.dup]);
-      return { left: (await records.search("contact", {})).length };
+      return { left: (await records.search("contact", {})).records.length };
     }`,
     permissions: { domains: [], secrets: [], records: "write" },
   });

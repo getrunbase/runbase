@@ -39,7 +39,7 @@ export function definePlatformTools(server: McpServer, ctx: TenantContext) {
     "events.list",
     {
       description:
-        "Workspace events. With only `recordId`: chronological timeline of that record (array). Otherwise filters `type`, `recordId`, `from`/`to` (ISO, event date), newest to oldest, paginated: returns { items, hasMore, nextCursor }; next page with `cursor` = nextCursor.",
+        "Workspace events, always { items, hasMore, nextCursor }. With only `recordId`: chronological timeline of that record (single page). Otherwise filters `type`, `recordId`, `from`/`to` (ISO, event date), newest to oldest, paginated; next page with `cursor` = nextCursor.",
       inputSchema: z.object({
         recordId: z.string().optional(),
         type: z.string().optional(),
@@ -50,9 +50,13 @@ export function definePlatformTools(server: McpServer, ctx: TenantContext) {
       }),
     },
     ({ from, to, ...f }) =>
-      run(() =>
+      run(async () =>
         f.recordId && !f.type && !from && !to && !f.cursor && !f.limit
-          ? eventsService.timeline(ctx, f.recordId)
+          ? {
+              items: await eventsService.timeline(ctx, f.recordId),
+              hasMore: false,
+              nextCursor: null,
+            }
           : eventsService.list(ctx, {
               ...f,
               from: from ? new Date(from) : undefined,

@@ -17,7 +17,7 @@ export function defineRunTools(server: McpServer, ctx: TenantContext) {
     "runs.start",
     {
       description:
-        "Starts a run of a workflow's current version, on an optional record, with an optional event payload (`event`, read by {{event.…}} as if the event had triggered the run). Refused if a run of the same workflow is already active on that record. `test: true`: test run, deleted by workspace.purge_test.",
+        "Starts a run of a workflow's current version, on an optional record, with an optional event payload (`event`, read by {{event.…}} as if the event had triggered the run). Refused if a run of the same workflow is already active on that record. Refused for a trigger.webhook workflow on an object given an `event` without `recordId` (the mapping would be skipped): use webhooks.test instead. `test: true`: test run, deleted by workspace.purge_test.",
       inputSchema: z.object({
         id: wfId,
         recordId: z.string().optional(),
@@ -39,10 +39,15 @@ export function defineRunTools(server: McpServer, ctx: TenantContext) {
     "workflows.run_manual",
     {
       description:
-        "trigger.manual: starts a workflow on a record or a selection of records (no record = one run without a record). Records that already have an active run are skipped.",
-      inputSchema: z.object({ id: wfId, recordIds: z.array(z.string()) }),
+        "trigger.manual: starts a workflow on a record or a selection of records (no record = one run without a record). Records that already have an active run are skipped. test: true flags the runs as test (deleted by workspace.purge_test).",
+      inputSchema: z.object({
+        id: wfId,
+        recordIds: z.array(z.string()),
+        test: z.boolean().optional(),
+      }),
     },
-    ({ id, recordIds }) => run(() => triggersService.manual(ctx, id, recordIds)),
+    ({ id, recordIds, test }) =>
+      run(() => triggersService.manual(ctx, id, recordIds, { test })),
   );
   server.registerTool(
     "runs.list",
@@ -157,16 +162,16 @@ export function defineRunTools(server: McpServer, ctx: TenantContext) {
     "runs.waiting",
     {
       description:
-        "Lists runs paused on a human.approve block, waiting for a decision.",
+        "Lists runs paused on a human.approve block, waiting for a decision: compact [{ runId, workflowId, recordId, message, since }]. Decide with runs.decide; details with runs.get.",
       inputSchema: z.object({}),
     },
-    () => run(() => runsService.waiting(ctx)),
+    () => run(() => runsService.waitingCompact(ctx)),
   );
   server.registerTool(
     "runs.decide",
     {
       description:
-        "Approves or rejects a paused run (human.approve): it resumes on the approved or rejected branch. not_found error (unknown run) or not_waiting (run or path not waiting, with the reason).",
+        "Approves or rejects a paused run (human.approve): it resumes on the approved or rejected branch. Returns { runId, branch, status }; the step output carries { message, approved, by, decidedAt, comment? } (`by` includes decidedBy when given). not_found error (unknown run) or not_waiting (run or path not waiting, with the reason).",
       inputSchema: z.object({
         id: z.string().describe("Run id"),
         approved: z.boolean(),
@@ -174,11 +179,29 @@ export function defineRunTools(server: McpServer, ctx: TenantContext) {
           .string()
           .optional()
           .describe("Waiting path to decide (default: the first)"),
+        comment: z
+          .string()
+          .optional()
+          .describe("Reason for the decision, stored in the step output"),
+        decidedBy: z
+          .string()
+          .optional()
+          .describe(
+            "Who decided (e.g. the user's name when an agent relays their answer), stored in the output's `by`",
+          ),
       }),
     },
-    ({ id, approved, path }) =>
+    ({ id, approved, path, comment, decidedBy }) =>
       run(async () => {
-        if (await runsService.decide(ctx, id, approved, path)) return true;
+        const decided = await runsService.decide(
+          ctx,
+          id,
+          approved,
+          path,
+          comment,
+          decidedBy,
+        );
+        if (decided) return decided;
         const r = await runsService.get(ctx, id);
         if (!r)
           throw notFound(

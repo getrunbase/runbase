@@ -42,9 +42,12 @@ test("mapDbError: 22P02 wrapped by Drizzle -> generic error", () => {
   assert.equal(dataException(drizzle), "22P02");
   const out = mapDbError(drizzle) as AppError;
   assert.ok(out instanceof AppError);
-  assert.equal(out.code, "common.invalidValue");
+  assert.equal(out.code, "common.invalidValueOf");
   assert.doesNotMatch(out.message, /Failed query|select|workspace_id|params/);
-  assert.deepEqual(out.params, {});
+  assert.deepEqual(out.params, { type: "uuid", value: "0e877df1" });
+  // Unparseable message: generic error.
+  const bare = Object.assign(new Error("bad date"), { code: "22007" });
+  assert.equal((mapDbError(bare) as AppError).code, "common.invalidValue");
   // Other error: unchanged.
   const other = Object.assign(new Error("dup"), { code: "23505" });
   assert.equal(mapDbError(other), other);

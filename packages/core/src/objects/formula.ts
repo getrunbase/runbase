@@ -3,7 +3,9 @@
 //   numbers, "strings", true/false/null, field keys (prix, qte)
 //   + - * / %, comparisons (= != < <= > >=), and, or, not, ( )
 //   functions: if, concat, round, abs, min, max, upper, lower, len,
-//   coalesce, empty, days_between, today
+//   coalesce, empty, days_between, today, now
+// days_between(a, b) = b - a in calendar days (time of day ignored, UTC):
+// positive when b is after a. today() = "YYYY-MM-DD", now() = ISO timestamp.
 // `+` concatenates as soon as one side is a string.
 import { appError } from "../errors/app-error";
 
@@ -56,13 +58,27 @@ const FNS: Record<string, (...a: unknown[]) => unknown> = {
   coalesce: (...a) => a.find((x) => x != null && x !== "") ?? null,
   empty: (x) => x == null || x === "" || (Array.isArray(x) && !x.length),
   today: () => new Date().toISOString().slice(0, 10),
-  days_between: (a, b) =>
-    a == null || b == null
-      ? null
-      : Math.round(
-          (Date.parse(String(b)) - Date.parse(String(a))) / 86_400_000,
-        ),
+  now: () => new Date().toISOString(),
+  days_between: (a, b) => {
+    const x = calendarDay(a);
+    const y = calendarDay(b);
+    return x == null || y == null ? null : Math.round((y - x) / 86_400_000);
+  },
 };
+
+// UTC midnight (ms) of the calendar date of a value; null if not a date.
+// A leading YYYY-MM-DD without an explicit offset is taken as written.
+function calendarDay(v: unknown): number | null {
+  if (v == null || v === "") return null;
+  const s = String(v);
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?!\d)/.exec(s);
+  if (m && !/[+-]\d{2}:?\d{2}$/.test(s))
+    return Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const t = Date.parse(s);
+  if (Number.isNaN(t)) return null;
+  const d = new Date(t);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+}
 
 function num(x: unknown): number {
   const n = typeof x === "number" ? x : Number(x);
@@ -230,4 +246,18 @@ export function evalFormula(src: string, data: Record<string, unknown>) {
   } catch {
     return null;
   }
+}
+
+// Formula with every reference to field `from` renamed to `to`. Strings and
+// function names are left untouched (token-aware, not a text replace).
+export function renameFormulaRef(src: string, from: string, to: string) {
+  const re = new RegExp(TOKEN.source, "g");
+  return src.replace(
+    re,
+    (m: string, _n, _s, ident: string | undefined, _o, at: number) => {
+      if (ident !== from) return m;
+      if (/^\s*\(/.test(src.slice(at + m.length))) return m;
+      return m.slice(0, m.length - ident.length) + to;
+    },
+  );
 }

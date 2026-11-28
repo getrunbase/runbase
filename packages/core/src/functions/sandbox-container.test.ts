@@ -9,8 +9,7 @@ import { execFileSync } from "node:child_process";
 import { execFunction } from "./sandbox";
 
 const IMAGE = process.env.SANDBOX_IMAGE;
-const skip =
-  !IMAGE && "SANDBOX_IMAGE not set (sandbox image not built)";
+const skip = !IMAGE && "SANDBOX_IMAGE not set (sandbox image not built)";
 const id = `sbx-test-${process.pid}`;
 const TOKEN = `token-${crypto.randomUUID()}`;
 const docker = (...args: string[]) =>

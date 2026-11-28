@@ -1,23 +1,78 @@
 // Overview of a workspace (workspace.describe) and purge of test
 // data (workspace.purge_test). Aggregates existing services, without its own
 // logic: an agent discovers the whole workspace in one call.
-import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
+import { and, eq, inArray, notInArray, or, sql } from "drizzle-orm";
+import { anyUuid } from "../db/any";
 import { requireScope } from "../api-keys";
 import { audit } from "../audit";
 import { databasesService } from "../databases";
-import { events, records, workflowRuns } from "../db/schema";
+import { errors, events, records, workflowRuns } from "../db/schema";
 import { errorsService } from "../errors";
-import { requireConfirm } from "../errors/app-error";
+import { notFound, requireConfirm } from "../errors/app-error";
 import { functionsService } from "../functions";
 import { objectsService } from "../objects";
+import { notesService, type NoteSummary } from "../notes";
 import { pagesService } from "../pages";
 import { queryService } from "../query";
+import { rendererHealth } from "../render";
 import { removeInTx, recordsService } from "../records";
 import { ACTIVE_RUN_STATUSES } from "../runs";
 import { secretsService } from "../secrets";
 import { webhooksService } from "../webhooks";
 import { workflowsService } from "../workflows";
 import { withTenant, type TenantContext } from "../tenant";
+import {
+  buildDependencyMap,
+  dependenciesOf,
+  type DepPage,
+} from "./dependencies";
+
+// Dependency map from the current definitions (published page versions).
+async function dependencyMap(
+  ctx: TenantContext,
+  pre?: {
+    objs: Awaited<ReturnType<typeof objectsService.list>>;
+    wfs: { id: string; name: string; status: string; definition: unknown }[];
+    fns: Awaited<ReturnType<typeof functionsService.list>>;
+    pages: { id: string }[];
+  },
+) {
+  const objs = pre?.objs ?? (await objectsService.list(ctx));
+  const fns = pre?.fns ?? (await functionsService.list(ctx));
+  const wfs =
+    pre?.wfs ??
+    (await Promise.all(
+      (await workflowsService.list(ctx)).map(async (w) => ({
+        id: w.id,
+        name: w.name,
+        status: w.status,
+        definition: (await workflowsService.get(ctx, w.id))?.definition,
+      })),
+    ));
+  const pageList = pre?.pages ?? (await pagesService.list(ctx));
+  const pages = (
+    await Promise.all(pageList.map((p) => pagesService.get(ctx, p.id)))
+  ).filter((p): p is NonNullable<typeof p> => !!p);
+  return buildDependencyMap({
+    objects: objs.map((o) => ({
+      id: o.id,
+      slug: o.slug,
+      fields: (o.fields ?? []) as { key: string }[],
+    })),
+    workflows: wfs,
+    functions: fns.map((f) => ({
+      name: f.name,
+      code: f.code,
+      permissions: f.permissions as never,
+    })),
+    pages: pages.map((p) => ({
+      id: p.id,
+      name: p.name,
+      files: (p.files ?? {}) as DepPage["files"],
+      permissions: p.permissions as DepPage["permissions"],
+    })),
+  });
+}
 
 // Beyond that, purge_test asks to rerun (bounded batch per call).
 const PURGE_BATCH = 5_000;
@@ -25,7 +80,7 @@ const PURGE_BATCH = 5_000;
 export const overviewService = {
   describe: async (ctx: TenantContext) => {
     await requireScope(ctx, "read");
-    const [dbs, objs, wfs, fns, hooks, pages, secrets, sqlViews] =
+    const [dbs, objs, wfs, fns, hooks, pages, secrets, sqlViews, allNotes] =
       await Promise.all([
         databasesService.list(ctx),
         objectsService.list(ctx),
@@ -35,7 +90,15 @@ export const overviewService = {
         pagesService.list(ctx),
         secretsService.list(ctx),
         queryService.views(ctx),
+        notesService.list(ctx),
       ]);
+    // Note titles per entity (no body: notes.get loads it on demand).
+    const notesOf = (type: string, id: string) =>
+      allNotes
+        .filter(
+          (n: NoteSummary) => n.entity.type === type && n.entity.id === id,
+        )
+        .map((n) => ({ id: n.id, title: n.title, stale: n.stale }));
     const counts = await withTenant(ctx, async (tx) => {
       const perObject = await tx
         .select({
@@ -66,23 +129,35 @@ export const overviewService = {
     });
     const recordsOf = (id: string) =>
       counts.perObject.find((c) => c.objectId === id)?.n ?? 0;
-    const workflows = await Promise.all(
-      wfs.map(async (w) => {
-        const full = await workflowsService.get(ctx, w.id);
-        const def = (full?.definition ?? {}) as {
-          trigger?: unknown;
-          steps?: { id: string; type: string }[];
-        };
-        return {
-          id: w.id,
-          name: w.name,
-          status: w.status,
-          version: w.currentVersion,
-          trigger: def.trigger ?? null,
-          steps: (def.steps ?? []).map((s) => ({ id: s.id, type: s.type })),
-        };
-      }),
+    const defs = await Promise.all(
+      wfs.map(async (w) => ({
+        id: w.id,
+        name: w.name,
+        status: w.status,
+        definition: (await workflowsService.get(ctx, w.id))?.definition,
+      })),
     );
+    const deps = await dependencyMap(ctx, { objs, wfs: defs, fns, pages });
+    // Compact: steps listed at top level only, as before; touches per object.
+    const workflows = wfs.map((w, i) => {
+      const def = (defs[i]!.definition ?? {}) as {
+        trigger?: unknown;
+        steps?: { id: string; type: string }[];
+      };
+      const d = deps.workflows[i]!;
+      return {
+        id: w.id,
+        name: w.name,
+        status: w.status,
+        version: w.currentVersion,
+        trigger: def.trigger ?? null,
+        steps: (def.steps ?? []).map((s) => ({ id: s.id, type: s.type })),
+        objects: d.objects,
+        functions: d.functions,
+        domains: d.domains,
+        notes: notesOf("workflow", w.id),
+      };
+    });
     return {
       databases: dbs.map((d) => ({
         ...d,
@@ -94,6 +169,7 @@ export const overviewService = {
             name: o.name,
             fields: o.fields,
             records: recordsOf(o.id),
+            notes: notesOf("object", o.id),
           })),
       })),
       workflows,
@@ -104,20 +180,55 @@ export const overviewService = {
         outputSchema: f.outputSchema,
         permissions: f.permissions,
         limits: f.limits,
+        notes: notesOf("function", f.name),
       })),
       // Without the last received payload (large): webhooks.list gives it.
       webhooks: hooks.map((h) => ({ ...h, sample: undefined })),
-      pages,
+      pages: pages.map((p) => ({ ...p, notes: notesOf("page", p.id) })),
+      // Workspace-level notes (conventions, decisions).
+      notes: notesOf("workspace", ctx.workspaceId),
       secrets: secrets.map((s) => s.name),
       // Views readable by query.sql: name, columns, types.
       sqlViews,
+      // Field -> writers/readers (workflow:<name>#<step>, function:<name>,
+      // page:<name>). workspace.dependencies for one entity.
+      dependencies: deps.fields,
       counts: {
         records: counts.perObject.reduce((a, c) => a + c.n, 0),
         events: counts.events,
         activeRuns: Object.fromEntries(counts.runs.map((r) => [r.status, r.n])),
         openErrors: await errorsService.openCount(ctx),
       },
+      // Capture service used by page.screenshot and page reviews.
+      status: { renderer: await rendererHealth() },
     };
+  },
+
+  // Dependency map, whole or for one entity (`object.field`, `object`,
+  // `workflow:<name>`, `function:<name>`, `page:<name>`).
+  dependencies: async (ctx: TenantContext, entity?: string) => {
+    await requireScope(ctx, "read");
+    const map = await dependencyMap(ctx);
+    if (!entity) return map;
+    const hit = dependenciesOf(map, entity);
+    if (hit) return hit;
+    // Known object or field that nothing uses: empty answer, not an error.
+    const [slug, key, ...extra] = entity.split(".");
+    const obj = extra.length
+      ? undefined
+      : (await objectsService.list(ctx)).find((o) => o.slug === slug);
+    const fieldKeys = ((obj?.fields ?? []) as { key: string }[]).map(
+      (f) => f.key,
+    );
+    if (obj && key === undefined)
+      return { object: slug, fields: {}, usedBy: [] };
+    if (obj && key && fieldKeys.includes(key))
+      return { field: entity, writers: [], readers: [] };
+    throw notFound(
+      "overview.unknownEntity",
+      "Nothing found for {entity}. Use object.field, object, workflow:<name>, function:<name> or page:<name>.",
+      { entity },
+    );
   },
 
   // Deletes records, events and runs marked as test. Records: trash
@@ -129,6 +240,11 @@ export const overviewService = {
     await requireScope(ctx, "admin");
     const ws = (t: typeof records | typeof events | typeof workflowRuns) =>
       eq(t.workspaceId, ctx.workspaceId);
+    // Test events, and every event of a test record (timeline included).
+    const testEvent = or(
+      eq(events.isTest, true),
+      sql`${events.recordId} in (select ${records.id} from ${records} where ${records.workspaceId} = ${ctx.workspaceId} and ${records.isTest})`,
+    )!;
     const count = () =>
       withTenant(ctx, async (tx) => {
         const n = async (q: Promise<{ n: number }[]>) => (await q)[0]?.n ?? 0;
@@ -144,7 +260,7 @@ export const overviewService = {
             tx
               .select({ n: c })
               .from(events)
-              .where(and(ws(events), eq(events.isTest, true))),
+              .where(and(ws(events), testEvent)),
           ),
           runs: await n(
             tx
@@ -154,7 +270,48 @@ export const overviewService = {
           ),
         };
       });
-    if (opts.dryRun) return { dryRun: true, ...(await count()) };
+    // Errors of the test runs that would be purged (run_id has no FK).
+    const purgeableRuns = sql`(select ${workflowRuns.id} from ${workflowRuns} where ${workflowRuns.workspaceId} = ${ctx.workspaceId} and ${workflowRuns.isTest} and ${workflowRuns.status} not in (${sql.join(
+      ACTIVE_RUN_STATUSES.map((s) => sql`${s}`),
+      sql`, `,
+    )}))`;
+    // Plus errors flagged as test (caused by an x-runbase-test delivery).
+    const runErrors = and(
+      eq(errors.workspaceId, ctx.workspaceId),
+      or(
+        sql`${errors.runId} in ${purgeableRuns}`,
+        sql`${errors.payload}->>'test' = 'true'`,
+      ),
+    );
+    if (opts.dryRun)
+      return withTenant(ctx, async (tx) => {
+        // Created as test, then adopted by a live write (isTest cleared):
+        // kept by the purge. Listed so nothing disappears by surprise.
+        const kept = await tx
+          .select({ id: records.id })
+          .from(records)
+          .where(
+            and(
+              ws(records),
+              eq(records.isTest, false),
+              sql`exists (select 1 from ${events} where ${events.recordId} = ${records.id} and ${events.type} = 'record.created' and ${events.isTest})`,
+            ),
+          )
+          .limit(50);
+        const [e] = await tx
+          .select({ n: sql<number>`count(*)`.mapWith(Number) })
+          .from(errors)
+          .where(runErrors);
+        return {
+          dryRun: true,
+          ...(await count()),
+          errors: e?.n ?? 0,
+          keptLive: kept.map((k) => k.id),
+          ...(kept.length && {
+            hint: "keptLive: test records adopted as live by a write without test: true; they are not purged. To purge them, re-flag each with records.update { id, data: {}, test: true }, or delete them with records.delete.",
+          }),
+        };
+      });
     requireConfirm(opts.confirm, "overview.purgeConfirm", "Test data purge");
     const out = await withTenant(ctx, async (tx) => {
       const ids = (
@@ -164,11 +321,22 @@ export const overviewService = {
           .where(and(ws(records), eq(records.isTest, true)))
           .limit(PURGE_BATCH)
       ).map((r) => r.id);
-      for (const id of ids) await removeInTx(tx, ctx, id);
       const ev = await tx
         .delete(events)
-        .where(and(ws(events), eq(events.isTest, true)))
+        .where(
+          and(
+            ws(events),
+            ids.length
+              ? or(eq(events.isTest, true), anyUuid(events.recordId, ids))
+              : eq(events.isTest, true),
+          ),
+        )
         .returning({ id: events.id });
+      for (const id of ids) await removeInTx(tx, ctx, id);
+      const errs = await tx
+        .delete(errors)
+        .where(runErrors)
+        .returning({ id: errors.id });
       const runs = await tx
         .delete(workflowRuns)
         .where(
@@ -185,15 +353,21 @@ export const overviewService = {
         ctx,
         "workspace.purge_test",
         { type: "workspace", id: ctx.workspaceId },
-        { records: ids.length, events: ev.length, runs: runs.length },
+        {
+          records: ids.length,
+          events: ev.length,
+          runs: runs.length,
+          errors: errs.length,
+        },
       );
-      return { ids, events: ev.length, runs: runs.length };
+      return { ids, events: ev.length, runs: runs.length, errors: errs.length };
     });
     if (out.ids.length) await recordsService.purge(ctx, { ids: out.ids });
     return {
       records: out.ids.length,
       events: out.events,
       runs: out.runs,
+      errors: out.errors,
       hasMore: out.ids.length === PURGE_BATCH,
     };
   },

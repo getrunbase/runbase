@@ -5,24 +5,32 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
 import type { TenantContext } from "@getrunbase/core/tenant";
 import { notFound, requireConfirm } from "@getrunbase/core/errors";
-import { functionInputSchema, functionsService } from "@getrunbase/core/functions";
+import {
+  functionInputSchema,
+  functionsService,
+} from "@getrunbase/core/functions";
 import {
   editsSchema,
   componentsGuide,
   componentsService,
   EXAMPLES,
+  formatCompileError,
   permissionsSchema,
 } from "@getrunbase/core/components";
 import { runtimeCsp, runtimeHtml, testHarness } from "@/lib/code-runtime";
 import { componentCss } from "@/lib/component-css";
 import { render } from "@getrunbase/core/render";
-import { run, must, runImage, viewports, themes } from "./shared";
+import { lintFunction } from "@getrunbase/core/lint";
+import { run, must, runImage, viewports, themes, linted } from "./shared";
 
 export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
   // Functions
-  const fnName = z.string().describe("Function name");
+  const fnName = z
+    .string()
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "kebab-case, e.g. score-lead")
+    .describe("Function name (kebab-case, e.g. score-lead)");
   const fnSdk =
-    "Code: `export default async (input, { records, events, secrets, test }) => output`. Failure convention in a workflow (fn.* step): return `{ ok: false, error: \"message\" }` or throw: the step fails, is retried per its retry policy, then the run fails and the error appears in errors.list. `test`: true inside a test run (runs.start { test: true }, or a run inherited from one); records and events written by the function in a test run are marked test automatically. Declared secrets: `secrets` context key (and input.secrets if the input does not already have that field). Records SDK (permissions.records 'read': get, search; 'write': + upsert, update, transact, delete, merge): `await records.get(id)`, `records.search(object, {filter, limit})` (object = slug or uuid), `records.upsert({objectId: slug or uuid, data, match})` (returns {record, created}), `records.update(id, data)`, `records.transact(ops)`, `records.delete(id)` (trash), `records.merge(keepId, [ids])`; also as a global `records`. Events SDK (permissions.events 'read': `events.list({type, recordId, from, to, cursor, limit})`; 'write': + `events.push({type, recordId, payload, occurredAt, idempotencyKey})`). `permissions.domains`: hostnames or `'*'` = whole public internet (admin scope); private/loopback/link-local/cloud metadata IPs (RFC1918, 127/8, ::1, 169.254/16, 100.64/10, fc00::/7) are blocked after DNS resolution and on redirects. HTML: `parseHTML(html)` returns `{ document }` (linkedom: querySelectorAll, textContent, getAttribute) and `new DOMParser().parseFromString(html, 'text/html')`, as globals and `ctx.parseHTML`; no browser rendering, no npm imports. `limits`: { timeoutMs 1000-120000 (default 30000), memoryMb 32-512 (default 128) }. console.* = logs (64 KB max), visible in functions.test, functions.logs and runs.get.";
+    "Code: `export default async (input, { records, events, secrets, test }) => output`. Failure convention in a workflow (fn.* step): return `{ ok: false, error: \"message\" }` or throw: the step fails, is retried per its retry policy, then the run fails and the error appears in errors.list. `test`: true inside a test run (runs.start { test: true }, or a run inherited from one); records and events written by the function in a test run are marked test automatically. Declared secrets: `secrets` context key (and input.secrets if the input does not already have that field). Records SDK (permissions.records 'read': get, search; 'write': + upsert, update, transact, delete, merge): `await records.get(id)`, `records.search(object, {filter, limit, sort, after})` (object = slug or uuid; filter `{all: [{field, op, value}]}` or `{any: [...]}`, field = field key; returns `{ records: [{ id, data, ... }], hasMore, total, next }`, read values in `records[i].data`), `records.upsert({objectId: slug or uuid, data, match})` (returns {record, created}), `records.update(id, data)`, `records.transact(ops)`, `records.delete(id)` (trash), `records.merge(keepId, [ids])`; also as a global `records`. Events SDK (permissions.events 'read': `events.list({type, recordId, from, to, cursor, limit})`; 'write': + `events.push({type, recordId, payload, occurredAt, idempotencyKey})`). `permissions.domains`: hostnames or `'*'` = whole public internet (admin scope); private/loopback/link-local/cloud metadata IPs (RFC1918, 127/8, ::1, 169.254/16, 100.64/10, fc00::/7) are blocked after DNS resolution and on redirects. HTML: `parseHTML(html)` returns `{ document }` (linkedom: querySelectorAll, textContent, getAttribute) and `new DOMParser().parseFromString(html, 'text/html')`, as globals and `ctx.parseHTML`; no browser rendering, no npm imports. `limits`: { timeoutMs 1000-120000 (default 30000), memoryMb 32-512 (default 128) }. console.* = logs (64 KB max), visible in functions.test, functions.logs and runs.get.";
 
   server.registerTool(
     "functions.list",
@@ -53,11 +61,16 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
     "functions.save",
     {
       description:
-        "Creates a TypeScript function or, if the name exists, creates a new version of it (admin scope). Permissions: network domains, secrets, records, events. " +
+        "Creates a TypeScript function or, if the name exists, creates a new version of it (admin scope). Permissions: network domains, secrets, records, events. Returns `lint` warnings ({ code, path, message, hint }) when the function breaks workspace standards: fix them and save again. " +
         fnSdk,
       inputSchema: functionInputSchema,
     },
-    (input) => run(() => functionsService.save(ctx, input)),
+    (input) =>
+      run(() =>
+        linted(ctx, lintFunction(input), () =>
+          functionsService.save(ctx, input),
+        ),
+      ),
   );
   server.registerTool(
     "functions.create",
@@ -67,7 +80,12 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
         fnSdk,
       inputSchema: functionInputSchema,
     },
-    (input) => run(() => functionsService.create(ctx, input)),
+    (input) =>
+      run(() =>
+        linted(ctx, lintFunction(input), () =>
+          functionsService.create(ctx, input),
+        ),
+      ),
   );
   server.registerTool(
     "functions.update",
@@ -76,7 +94,12 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
         "Creates a new version of an existing function (admin scope). " + fnSdk,
       inputSchema: functionInputSchema,
     },
-    (input) => run(() => functionsService.update(ctx, input)),
+    (input) =>
+      run(() =>
+        linted(ctx, lintFunction(input), () =>
+          functionsService.update(ctx, input),
+        ),
+      ),
   );
   server.registerTool(
     "functions.delete",
@@ -124,16 +147,19 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
     "functions.test",
     {
       description:
-        "Really runs a function, outside any workflow: returns output and logs. Without dryRun, its writes (records, events) and network calls happen. dryRun: true: real reads, records/events writes simulated (not made) and listed in `writes` [{ method, args }]; network calls still go out.",
+        "Really runs a function, outside any workflow: returns output and logs. Without dryRun, its writes (records, events) and network calls happen. dryRun: true: real reads, records/events writes simulated (not made) and listed in `writes` [{ method, args }]; network calls still go out. test: true runs it as test data: the `test` context key is true and records/events it writes are marked test (deleted by workspace.purge_test, and existing test records stay test).",
       inputSchema: z.object({
         name: fnName,
         input: z.record(z.string(), z.unknown()).default({}),
         version: z.number().int().min(1).optional(),
         dryRun: z.boolean().optional(),
+        test: z.boolean().optional(),
       }),
     },
-    ({ name, input, version, dryRun }) =>
-      run(() => functionsService.test(ctx, name, input, version, { dryRun })),
+    ({ name, input, version, dryRun, test }) =>
+      run(() =>
+        functionsService.test(ctx, name, input, version, { dryRun, test }),
+      ),
   );
   server.registerTool(
     "functions.logs",
@@ -162,7 +188,20 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
         'With `screenshot`: real rendering in headless Chromium (iframe runtime, compiled CSS, effects run, no network) and returns one PNG image per viewport × theme, then {errors, console, sdkCalls}. `screenshot.data`: "mock" (default, serves `data`) or "live" (real workspace reads with the permissions; actions, workflows and writes simulated). Always look at the desktop AND mobile screenshots.',
       ].join("\n"),
       inputSchema: z.object({
-        source: z.string().describe("TSX to test"),
+        source: z
+          .string()
+          .optional()
+          .describe("TSX to test (a single component); or pass `files`"),
+        files: z
+          .record(z.string(), z.string())
+          .optional()
+          .describe(
+            'TSX package to test, same shape as page.create: {"index.tsx": "…", "components/card.tsx": "…"}; built with the same browser config as page.create',
+          ),
+        entry: z
+          .string()
+          .optional()
+          .describe("entry file of `files` (default index.tsx)"),
         edits: editsSchema
           .optional()
           .describe("{old, new} replacements applied to `source`"),
@@ -201,9 +240,7 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
         if (!c.bundle)
           return {
             shots: [],
-            errors: c.errors.map((e) =>
-              e.line ? `${e.line}:${e.col ?? 0} ${e.text}` : e.text,
-            ),
+            errors: c.errors.map(formatCompileError),
             console: [],
           };
         // Rendered by the renderer service; it serves the SDK calls itself.

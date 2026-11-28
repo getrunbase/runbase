@@ -9,6 +9,11 @@ import { queryService } from "@getrunbase/core/query";
 import { run, must } from "./shared";
 
 export function defineIntegrationTools(server: McpServer, ctx: TenantContext) {
+  // Webhook reference: id or name (agents often pass the name).
+  const hook = async (ref: string) =>
+    (await webhooksService.list(ctx)).find(
+      (w) => w.id === ref || w.name === ref,
+    )?.id ?? ref;
   // Secrets: write-only values, never read back.
   const secretName = z
     .string()
@@ -42,7 +47,7 @@ export function defineIntegrationTools(server: McpServer, ctx: TenantContext) {
     {
       description:
         "Disconnects an OAuth account (id from connections.list) and revokes it at the provider. Workflows using it fail until it is reconnected.",
-      inputSchema: z.object({ id: z.string() }),
+      inputSchema: z.object({ id: z.string().describe("Webhook id or name") }),
     },
     ({ id }) => run(() => connectionsService.remove(ctx, id)),
   );
@@ -51,7 +56,7 @@ export function defineIntegrationTools(server: McpServer, ctx: TenantContext) {
     "webhooks.create",
     {
       description:
-        "Creates a public endpoint POST /api/hooks/<id> (`path`): signature verified with the secret `secretName` (secrets.set), then event `eventType` pushed (workflow trigger), deduplicated by the external id (`config.idPath`, default `id`). `config.dedupe`: `id` (default: a resend of the same id is dropped, response duplicate: true, no workflow), `id+hash` (dropped only if the item content is identical: an enriched resend of the same id creates a new event and starts the workflow), `none` (every call creates an event). Unique name per workspace. Formats: `stripe`, `standard` (Standard Webhooks/Svix, id = webhook-id header), `hmac` (header, algorithm sha256|sha1|sha512, encoding hex|base64, prefix e.g. `sha256=`, timestampHeader + template `{timestamp}.{body}`, idHeader; headerFormat `kv` reads a `t=<unix>,v1=<sig>[,v1=…]` header value with timestampKey (default `t`) and signatureKey (default `v1`, any listed signature matches), signedPayload default `{t}.{body}`, toleranceSec default 300; secretEncoding raw (default) | base64 | whsec (`whsec_<base64>` decoded)). `stripe` = hmac kv on `stripe-signature`. Outreach-like: { format: 'hmac', header: 'X-Outreach-Signature', headerFormat: 'kv', signedPayload: '{t}.{body}' }. Cal.com: hmac header `x-cal-signature-256`. Batches: `config.splitPath` (e.g. `events`) or a root array give one event per item, `idPath` relative to the item. `config.storeSample: false`: no sample stored. Test URL `testPath` (/api/hooks/<id>/test): signature verified and sample saved, no event or workflow started (to listen to a provider's next call and write the mapping).",
+        "Creates a public endpoint POST /api/hooks/<id> (`path`): signature verified with the secret `secretName` (secrets.set), then event `eventType` pushed (workflow trigger), deduplicated by the external id (`config.idPath`, default `id`). `config.dedupe`: `id` (default: a resend of the same id is dropped, response duplicate: true, no workflow), `id+hash` (dropped only if the item content is identical: an enriched resend of the same id creates a new event and starts the workflow), `none` (every call creates an event). Unique name per workspace. Formats: `stripe`, `standard` (Standard Webhooks/Svix, id = webhook-id header), `hmac` (header, algorithm sha256|sha1|sha512, encoding hex|base64, prefix e.g. `sha256=`, timestampHeader + template `{timestamp}.{body}`, idHeader; headerFormat `kv` reads a `t=<unix>,v1=<sig>[,v1=…]` header value with timestampKey (default `t`) and signatureKey (default `v1`, any listed signature matches), signedPayload default `{t}.{body}`, toleranceSec default 300; secretEncoding raw (default) | base64 | whsec (`whsec_<base64>` decoded)). `stripe` = hmac kv on `stripe-signature`. Outreach-like: { format: 'hmac', header: 'X-Outreach-Signature', headerFormat: 'kv', signedPayload: '{t}.{body}' }. Cal.com: hmac header `x-cal-signature-256`. Batches: `config.splitPath` (e.g. `events`) or a root array give one event per item, `idPath` relative to the item. `config.storeSample: false`: no sample stored. Test URL `testPath` (/api/hooks/<id>/test): signature verified and sample saved, no event or workflow started (to listen to a provider's next call and write the mapping). Bodies: JSON or application/x-www-form-urlencoded (form fields, repeated keys as arrays). Every call must be HMAC-signed: a plain HTML form cannot sign, so put a signing proxy (edge function, form service) in front of it. Mapped values are validated at reception (unknown field, invalid email, unknown select option): with `config.rejectUnmapped` the call gets 422 with `invalid` [{field, value, problem}] (or `missing` for an unresolved match field), otherwise the problems are listed in the response `warnings`. While a run is active on the record, deliveries coalesce into one follow-up (older ones marked superseded, warning in errors.list); trigger `queue: 'each'` runs every delivery.",
       inputSchema: z.object({
         name: z.string().min(1),
         eventType: z.string().min(1),
@@ -67,7 +72,7 @@ export function defineIntegrationTools(server: McpServer, ctx: TenantContext) {
       description:
         "Updates an inbound webhook (name, eventType, secretName, full config) without changing its URL.",
       inputSchema: z.object({
-        id: z.string(),
+        id: z.string().describe("Webhook id or name"),
         name: z.string().min(1).optional(),
         eventType: z.string().min(1).optional(),
         secretName: z.string().min(1).optional(),
@@ -75,16 +80,19 @@ export function defineIntegrationTools(server: McpServer, ctx: TenantContext) {
       }),
     },
     ({ id, ...patch }) =>
-      run(() => webhooksService.update(ctx, id, patch as never)),
+      run(async () =>
+        webhooksService.update(ctx, await hook(id), patch as never),
+      ),
   );
   server.registerTool(
     "webhooks.clear_sample",
     {
       description:
         "Clears the last saved payload (sample) of an inbound webhook.",
-      inputSchema: z.object({ id: z.string() }),
+      inputSchema: z.object({ id: z.string().describe("Webhook id or name") }),
     },
-    ({ id }) => run(() => webhooksService.clearSample(ctx, id)),
+    ({ id }) =>
+      run(async () => webhooksService.clearSample(ctx, await hook(id))),
   );
   server.registerTool(
     "webhooks.test",
@@ -92,12 +100,14 @@ export function defineIntegrationTools(server: McpServer, ctx: TenantContext) {
       description:
         "Sends a test payload signed with the webhook secret, in test mode: checks secret and configuration, saves the payload as sample, pushes no event and starts no workflow.",
       inputSchema: z.object({
-        id: z.string(),
+        id: z.string().describe("Webhook id or name"),
         payload: z.unknown().describe("JSON sent, e.g. { id: 'evt_1' }"),
       }),
     },
     ({ id, payload }) =>
-      run(() => webhooksService.sendTest(ctx, id, payload ?? {})),
+      run(async () =>
+        webhooksService.sendTest(ctx, await hook(id), payload ?? {}),
+      ),
   );
   server.registerTool(
     "webhooks.list",
@@ -112,12 +122,12 @@ export function defineIntegrationTools(server: McpServer, ctx: TenantContext) {
     "webhooks.delete",
     {
       description: "Deletes an inbound webhook (the URL stops responding).",
-      inputSchema: z.object({ id: z.string() }),
+      inputSchema: z.object({ id: z.string().describe("Webhook id or name") }),
     },
     ({ id }) =>
-      run(() =>
+      run(async () =>
         must(
-          webhooksService.remove(ctx, id),
+          webhooksService.remove(ctx, await hook(id)),
           "Webhook",
           id,
           "See webhooks.list.",
@@ -131,7 +141,11 @@ export function defineIntegrationTools(server: McpServer, ctx: TenantContext) {
         "Creates or replaces a secret (encrypted). The value can never be read back.",
       inputSchema: z.object({ name: secretName, value: z.string().min(1) }),
     },
-    ({ name, value }) => run(() => secretsService.set(ctx, name, value)),
+    ({ name, value }) =>
+      run(async () => {
+        await secretsService.set(ctx, name, value);
+        return { name, updated: true };
+      }),
   );
   server.registerTool(
     "secrets.delete",

@@ -102,7 +102,10 @@ const definition = (
     { id: "hot", type: "test.echo", input: { text: echo } },
     { id: "cold", type: "test.echo", input: { text: "froid" } },
   ],
-  next: { get: { found: ["qualify"] }, qualify: { hot: ["hot"], cold: ["cold"] } },
+  next: {
+    get: { found: ["qualify"] },
+    qualify: { hot: ["hot"], cold: ["cold"] },
+  },
 });
 
 async function until<T>(fn: () => Promise<T>, ok: (v: T) => boolean) {
@@ -285,18 +288,39 @@ test("wait survives a worker restart, approve resumes, loop iterates", async () 
     },
   });
   for (const approved of [true, false]) {
-    const r = await runsService.start(ctx, approval.id);
-    await until(
+    // Started by name: the run carries the resolved workflow id.
+    const r = await runsService.start(ctx, "Validation");
+    assert.equal(r!.workflowId, approval.id);
+    const w = await until(
       () => runsService.get(ctx, r!.id),
       (x) => x!.status === "waiting",
     );
+    assert.equal(
+      (w!.paths as Record<string, { message?: string }>)["0"]!.message,
+      "Go ?",
+    );
     assert.ok((await runsService.waiting(ctx)).some((x) => x.id === r!.id));
+    const compact = (await runsService.waitingCompact(ctx)).find(
+      (x) => x.runId === r!.id,
+    );
+    assert.equal(compact?.message, "Go ?");
+    assert.ok(compact?.since instanceof Date);
     assert.ok(
       (await runsService.list(ctx, { status: "waiting" })).items.some(
         (x) => x.id === r!.id,
       ),
     );
-    assert.equal(await runsService.decide(ctx, r!.id, approved), true);
+    const decided = await runsService.decide(
+      ctx,
+      r!.id,
+      approved,
+      undefined,
+      "checked",
+      approved ? "Jane (via agent)" : undefined,
+    );
+    assert.ok(decided);
+    assert.equal(decided.runId, r!.id);
+    assert.equal(decided.branch, approved ? "approved" : "rejected");
     assert.equal(await runsService.decide(ctx, r!.id, approved), false);
     const done = await until(
       () => runsService.get(ctx, r!.id),
@@ -309,7 +333,40 @@ test("wait survives a worker restart, approve resumes, loop iterates", async () 
         [approved ? "yes" : "no", "ok"],
       ],
     );
+    const out = done!.steps[0]!.output as Record<string, unknown>;
+    assert.equal(out.message, "Go ?");
+    assert.equal(out.approved, approved);
+    assert.equal(out.comment, "checked");
+    assert.ok(typeof out.decidedAt === "string");
+    assert.ok(Array.isArray((out.by as { scopes: unknown }).scopes));
+    // Decider always labelled (user name here), rendered input kept.
+    const label = (out.by as { label?: unknown }).label;
+    assert.ok(typeof label === "string" && label.length > 0);
+    assert.deepEqual(done!.steps[0]!.input, { message: "Go ?" });
+    assert.equal(
+      (out.by as { decidedBy?: string }).decidedBy,
+      approved ? "Jane (via agent)" : undefined,
+    );
   }
+
+  // runs.start with a bare event on a webhook workflow bound to an object:
+  // refused (the mapping would be skipped), pointing to webhooks.test.
+  const hookWf = await workflowsService.create(ctx, {
+    name: "Hooked",
+    definition: {
+      trigger: {
+        type: "trigger.webhook",
+        webhook: "stripe",
+        object: "company",
+      },
+      steps: [],
+    },
+  });
+  await assert.rejects(
+    runsService.start(ctx, hookWf.id, { event: { id: "evt_1" } }),
+    (e: Error & { code?: string }) =>
+      e.code === "runs.webhookNeedsRecord" && /webhooks\.test/.test(e.message),
+  );
 
   // loop: subgraph over a list, capped by limit.
   const lp = await workflowsService.create(ctx, {

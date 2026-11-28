@@ -43,8 +43,12 @@ Data-bound blocks, built on the SDK and @ui. Each one handles its own loading, e
 - \`useQuery({object, filter?, sort?, q?, limit?, after?, groupBy?, aggregate?, enabled?})\` returns \`{data, total, loading, error, reload, hasMore, fetchMore}\`.
   - \`limit\`: 50 by default, 1000 max. \`after\`: keyset pagination. \`enabled: false\`: no request.
   - KPIs and charts: \`groupBy\` and \`aggregate: [{op: "count"|"sum"|"avg"|"min"|"max", field?, as}]\`, never by loading every row.
+  - With \`groupBy\`/\`aggregate\`, \`data\` holds flat rows, one per group: \`{<groupBy field>: value, <as>: number}\` (no \`id\`, no \`data\`), e.g. \`[{stage: "won", count: 12, amount: 40000}]\`. \`total\` is then the number of groups, not the number of records: read the record count from a \`count\` aggregate.
   - Filter: \`{field, op, value}\`, \`{all: [...]}\` or \`{any: [...]}\`. Operators: eq, neq, in, contains, starts_with, gt, gte, lt, lte, between, before, after, within, older_than, is_empty, is_not_empty.
-- \`useRecord(id, {include?})\`, \`useTimeline(recordId)\`, \`useObject(id)\` (fields, labels, options), \`useUser()\`.
+- Every record (useQuery, useInfiniteQuery, useRecord, mutation results) has one shape: \`{id, objectId, data}\`, fields under \`data\`. Type it: \`useQuery<Deal>(...)\` returns \`Row<Deal>[]\`, \`useRecord<Deal>(id)\` a \`Row<Deal>\`. Never \`any\` around SDK results, never \`r.data ?? r\`.
+- \`useRecord(id, {include?})\` returns \`{data, loading, error}\` with \`data\` a \`Row\` (\`{id, objectId, data}\`); \`data\` is empty (null or undefined) while loading, when not found, or when \`id\` is null or undefined (no request then): check \`if (!data)\` before reading \`data.data\`.
+- \`useObject(id)\` returns \`{data, loading, error}\` with \`data\` = \`{id, name, fields: [{key, label, type, options?: [{value, label}]}]}\`; null id: no request.
+- \`useTimeline(recordId)\`, \`useUser()\`.
 - \`useMutation(object)\` returns \`{create, update, remove, pending}\`; optimistic by default, rolled back with an error toast if the server refuses.
 - Reads reload on their own when data changes (other users, workflows, mutations).
 - \`toast(text, kind)\`, \`navigate({page, recordId?})\`, \`openUrl(url)\` (external https link in a new tab after a confirm, from a click only; \`<a target="_blank">\` does the same), \`useParam(key, fallback)\` (state in the URL), \`startWorkflow(id, {recordId?})\`, \`format.date/currency/number/percent/relative\`.

@@ -55,9 +55,15 @@ test("function written, tested then used in a workflow through MCP", async () =>
     next: { s: { hot: ["hot"], cold: ["cold"] } },
   };
   const wf = await call("workflows.create", { name: "Score", definition });
-  const [dry] = await call("workflows.dry_run", {
-    definition,
-    records: [lead.record.id],
+  const {
+    results: [dry],
+  } = await call("workflows.dry_run", {
+    workflow: wf.id,
+    // The same lead, pinned to the other branch: both writes reached.
+    records: [
+      lead.record.id,
+      { id: lead.record.id, pins: { s: { branch: "cold" } } },
+    ],
   });
   assert.deepEqual(
     dry.path.map((p: { stepId: string }) => p.stepId),
@@ -99,14 +105,14 @@ test("secrets, queries and admin scope through MCP", async () => {
   assert.ok(!JSON.stringify(secrets).includes("s3cr3t"));
 
   await call("objects.create", {
-    slug: "contacts",
+    slug: "contact",
     name: "Contacts",
     fields: [{ key: "name", label: "Nom", type: "text" }],
   });
-  await call("records.upsert", { object: "contacts", data: { name: "Ada" } });
-  const res = await call("query.sql", { sql: "select name from contacts" });
+  await call("records.upsert", { object: "contact", data: { name: "Ada" } });
+  const res = await call("query.sql", { sql: "select name from contact" });
   assert.deepEqual(res.rows, [{ name: "Ada" }]);
-  await call("query.save", { name: "Noms", sql: "select name from contacts" });
+  await call("query.save", { name: "Noms", sql: "select name from contact" });
   assert.equal((await call("query.saved")).length, 1);
   await call("query.delete", { name: "Noms" });
   assert.equal((await call("query.saved")).length, 0);

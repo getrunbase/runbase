@@ -228,3 +228,36 @@ export const feedback = pgTable(
   },
   (t) => [index("feedback_created_at_idx").on(t.createdAt)],
 );
+
+// Workspace notes: persistent agent memory (decisions, conventions, pitfalls)
+// attached to one entity. `entity_id` is the workspace, object, workflow or
+// page id, or the function name. `entity_version` is the entity version the
+// note was written against, to flag notes that may be stale.
+export const notes = pgTable(
+  "notes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    entityType: text("entity_type").notNull(),
+    entityId: text("entity_id").notNull(),
+    entityVersion: text("entity_version"),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("notes_entity_title_idx").on(
+      t.workspaceId,
+      t.entityType,
+      t.entityId,
+      t.title,
+    ),
+    index("notes_organization_id_idx").on(t.organizationId),
+  ],
+);

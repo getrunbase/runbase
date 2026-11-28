@@ -1,15 +1,27 @@
 // Workspace error center: filterable list, replay, resolution.
-import { and, count, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  gte,
+  inArray,
+  lte,
+  notInArray,
+  sql,
+} from "drizzle-orm";
 import { requireScope } from "../api-keys";
 import { errors, workflowRuns } from "../db/schema";
 import { replayIngest } from "../ingest";
 import { retryRun } from "../runs";
+import { retryTrigger } from "../triggers";
 import { withTenant, type TenantContext } from "../tenant";
 import { isUuid } from "../lib/uuid";
 import { cleanError, fingerprint, truncateStack } from "./clean";
 import { appError } from "./app-error";
 
 export { recordError } from "./record";
+export { cleanStack } from "./clean";
 export {
   AppError,
   appError,
@@ -29,6 +41,8 @@ export {
 export type ErrorRow = typeof errors.$inferSelect;
 type Filter = {
   source?: ErrorRow["source"];
+  // Sources left out when `source` is not given (MCP: agent tool errors).
+  excludeSources?: ErrorRow["source"][];
   status?: ErrorRow["status"];
   // Errors of a workflow's runs, of a record, or of a run.
   workflowId?: string;
@@ -97,6 +111,14 @@ async function reportComponent(
   });
 }
 
+// Failed trigger fan-out (webhook mapping): event and workflow to replay.
+function triggerRef(p: unknown) {
+  const o = p as { eventId?: unknown; workflowId?: unknown } | null;
+  return typeof o?.eventId === "string" && typeof o.workflowId === "string"
+    ? { eventId: o.eventId, workflowId: o.workflowId }
+    : null;
+}
+
 export const errorsService = {
   reportComponent,
   // Most recent first, cursor-paginated.
@@ -113,6 +135,9 @@ export const errorsService = {
           and(
             eq(errors.workspaceId, ctx.workspaceId),
             f.source && eq(errors.source, f.source),
+            !f.source && f.excludeSources?.length
+              ? notInArray(errors.source, f.excludeSources)
+              : undefined,
             f.status && eq(errors.status, f.status),
             f.runId ? eq(errors.runId, f.runId) : undefined,
             f.workflowId
@@ -189,7 +214,8 @@ export const errorsService = {
     return row?.n ?? 0;
   },
   // Replays the ingestion (stored body) or the run (failed step). Successful
-  // ingestion: error resolved. Run restarted: a new failure will create an error.
+  // ingestion: error resolved. Run restarted: the error stays open until the
+  // replayed run succeeds (afterFinish), a new failure creates a new error.
   retry: async (ctx: TenantContext, id: string) => {
     await requireScope(ctx, "write");
     const e = await errorsService.get(ctx, id);
@@ -203,8 +229,14 @@ export const errorsService = {
       );
       ok = res.ok;
       result = { status: res.status, body: res.body };
-    } else if (e.runId) ok = await retryRun(ctx, e.runId);
-    else throw appError("errors.notRetryable", "Error cannot be retried");
+    } else if (e.runId) {
+      ok = await retryRun(ctx, e.runId);
+      // Resolution is deferred to the run's completion.
+      return { ok, result: { runId: e.runId, pending: ok } };
+    } else if (triggerRef(e.payload)) {
+      const { eventId, workflowId } = triggerRef(e.payload)!;
+      ok = await retryTrigger(ctx, eventId, workflowId);
+    } else throw appError("errors.notRetryable", "Error cannot be retried");
     if (ok) await setStatus(ctx, id, "resolved");
     return { ok, result };
   },

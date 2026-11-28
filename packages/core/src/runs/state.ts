@@ -57,6 +57,9 @@ export type PathState = {
   n: number;
   status: PathStatus;
   failedSeq?: number;
+  // human.approve: rendered message, shown by runs.waiting / runs.get
+  // while the path waits for a decision.
+  message?: string;
 };
 export type Paths = Record<string, PathState>;
 
@@ -176,7 +179,9 @@ export function releaseJoins(runId: string, paths: Paths): PathRef[] {
 
 // Visible outputs of a path (`{{steps.<id>.output}}`): those of its
 // ancestry (path and parent paths) take precedence over those of parallel
-// paths; a failed step does not overwrite a successful output.
+// paths; a failed step does not overwrite a successful output. A step that
+// failed with continueOnFail (output `{ error }` stored) stays visible as
+// `{ output: { error }, error }` so the next steps can read the failure.
 export function stepsScope(
   done: {
     stepId: string;
@@ -191,9 +196,11 @@ export function stepsScope(
     ...done.filter((s) => !mine(s.path)),
     ...done.filter((s) => mine(s.path)),
   ];
-  return Object.fromEntries(
-    ordered
-      .filter((s) => !s.error)
-      .map((s) => [s.stepId, { output: s.output }]),
-  );
+  const scope: Record<string, { output: unknown; error?: string }> = {};
+  for (const s of ordered) {
+    if (!s.error) scope[s.stepId] = { output: s.output };
+    else if (s.output != null && !(s.stepId in scope && !scope[s.stepId]!.error))
+      scope[s.stepId] = { output: s.output, error: s.error };
+  }
+  return scope;
 }

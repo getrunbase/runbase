@@ -14,6 +14,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { localStorage, setFileStorage } from "@getrunbase/core/files";
+import { rendererHealth } from "@getrunbase/core/render";
 import { SHOT_HEADER, verifyShotToken } from "@/lib/screenshot-token";
 import { client, owner, raw } from "./test-client";
 
@@ -69,6 +70,10 @@ before(async () => {
     },
     stdio: ["ignore", "inherit", "inherit"],
   });
+  // page.screenshot reports the renderer as down until its worker listens.
+  if (browser)
+    for (let i = 0; i < 300 && !(await rendererHealth()).available; i++)
+      await new Promise((r) => setTimeout(r, 100));
 });
 
 after(() => {

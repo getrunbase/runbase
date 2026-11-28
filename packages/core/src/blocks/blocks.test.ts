@@ -47,6 +47,16 @@ test("catalog: triggers exposed with schemas, deprecated blocks hidden", async (
   );
   assert.ok(blocks["slack.send"]);
   assert.equal(list.find((b) => b.type === "record.get")!.kind, "block");
+  // The implicit continueOnFail branch is documented on every block.
+  const get = list.find((b) => b.type === "record.get") as {
+    failBranch?: { branch: string };
+  };
+  assert.equal(get.failBranch?.branch, "error");
+});
+
+test("switch names its fallback branch `else`, loop documents its vars", () => {
+  assert.match(blocks["switch"]!.description, /`else`/);
+  assert.match(blocks["loop"]!.description, /\{\{item\}\}.*\{\{index\}\}/);
 });
 
 test("record.delete describes the trash, like records.delete", () => {

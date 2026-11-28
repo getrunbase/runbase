@@ -72,13 +72,43 @@ test("TSX package page: creation, file patch, errors, publication, restore", asy
     changes: [{ op: "edit", path: "index.tsx", old: "</p>", new: "</p" }],
   });
   assert.equal(broken.errors.length > 0, true);
+  assert.match(broken.errors[0], /^index\.tsx:\d+:\d+ /);
+  // page.get shows the compile status of the draft.
+  const brokenDraft = await call("page.get", { id: page.id, draft: true });
+  assert.equal(brokenDraft.bundle.ok, false);
+  // A draft that does not compile is never published, even with force.
+  const refused = await raw(ctx)("page.publish", { id: page.id, force: true });
+  assert.equal(refused.isError, true);
+  assert.match(refused.content[0]!.text, /does not compile/);
+  const viaUpdate = await call("page.update", {
+    id: page.id,
+    review: false,
+    publish: true,
+    force: true,
+    name: "Leads",
+  });
+  assert.equal(viaUpdate.published, false);
+  assert.match(viaUpdate.publishBlocked, /does not compile/);
   await call("page.update", {
     id: page.id,
     review: false,
     changes: [{ op: "edit", path: "index.tsx", old: "</p", new: "</p>" }],
   });
+  assert.equal(
+    (await call("page.get", { id: page.id, draft: true })).bundle.ok,
+    true,
+  );
 
-  await call("page.publish", { id: page.id });
+  // No renderer in tests: the render was not checked, publish needs force.
+  const unverified = await raw(ctx)("page.publish", { id: page.id });
+  assert.equal(unverified.isError, true);
+  assert.match(unverified.content[0]!.text, /render not checked/);
+  const shot = await call("page.screenshot", { id: page.id, draft: true });
+  assert.equal(shot.rendered, false);
+  assert.match(shot.notice, /platform outage/);
+  assert.equal(shot.compile.ok, true);
+  // Page name accepted wherever an id is.
+  await call("page.publish", { id: "Leads", force: true });
   assert.equal(
     (await call("page.get", { id: page.id })).files["index.tsx"],
     tsx("v2"),
@@ -100,6 +130,36 @@ test("TSX package page: creation, file patch, errors, publication, restore", asy
   assert.equal(u.page.name, "Leads 2");
   assert.equal(u.page.entry, "main.tsx");
   assert.equal(await call("page.delete", { id: page.id }), true);
+});
+
+test("draft-only page: page.get says how to read it", async () => {
+  const ctx = await owner();
+  const page = await client(ctx)("page.create", {
+    name: "Draft only",
+    files: { "index.tsx": tsx("d") },
+  });
+  const r = await raw(ctx)("page.get", { id: page.id });
+  assert.equal(r.isError, true);
+  assert.match(
+    r.content[0]!.text,
+    /has no published version: pass draft: true or page\.publish/,
+  );
+});
+
+test("page.update publish: held back on compile errors", async () => {
+  const ctx = await owner();
+  const call = client(ctx);
+  const page = await call("page.create", {
+    name: "Held",
+    files: { "index.tsx": tsx("h") },
+  });
+  const u = await call("page.update", {
+    id: page.id,
+    publish: true,
+    changes: [{ op: "edit", path: "index.tsx", old: "</p>", new: "</p" }],
+  });
+  assert.equal(u.published, false);
+  assert.equal((await raw(ctx)("page.get", { id: page.id })).isError, true);
 });
 
 // Runtime error reported by the iframe, readable via page.errors.

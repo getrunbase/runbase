@@ -8,11 +8,12 @@ import {
   accessibleWorkspaces,
   resolveMcpContext,
   setMcpDefault,
+  workspaceListHint,
   type McpPrincipal,
   type TenantContext,
 } from "@getrunbase/core/tenant";
 import { rateLimit } from "@getrunbase/core/quotas";
-import { recordError } from "@getrunbase/core/errors";
+import { appError, recordError } from "@getrunbase/core/errors";
 import { run, SILENT, type ToolConfig } from "./tools/shared";
 import { defineAccountTools } from "./tools/account";
 import { defineSchemaTools } from "./tools/schema";
@@ -24,6 +25,7 @@ import { defineIntegrationTools } from "./tools/integrations";
 import { definePageTools } from "./tools/pages";
 import { defineRunTools } from "./tools/runs";
 import { defineOperationTools } from "./tools/operations";
+import { defineNoteTools } from "./tools/notes";
 
 export { errorCode } from "./tools/shared";
 
@@ -70,6 +72,47 @@ const workspaceParam = z
   .optional()
   .describe("Workspace id or name (default: active workspace)");
 
+// Unwraps optional/nullable/default wrappers down to the inner schema.
+function inner(s: z.ZodType): z.ZodType {
+  let cur = s as z.ZodType & { def: { innerType?: z.ZodType } };
+  while (cur.def.innerType) cur = cur.def.innerType as typeof cur;
+  return cur;
+}
+
+// Path of a nested field named `key` (e.g. `pins` -> `definition.pins`).
+export function nestedPath(
+  schema: z.ZodType,
+  key: string,
+  prefix = "",
+  depth = 0,
+): string | undefined {
+  const s = inner(schema);
+  if (!(s instanceof z.ZodObject) || depth > 3) return;
+  const shape = s.shape as Record<string, z.ZodType>;
+  if (prefix && key in shape) return prefix + key;
+  for (const [k, v] of Object.entries(shape)) {
+    const found = nestedPath(v, key, `${prefix}${k}.`, depth + 1);
+    if (found) return found;
+  }
+}
+
+// Strict input schema: an unknown key is refused (never silently dropped),
+// with a hint when the key exists deeper in the schema.
+export function strictInput(schema: z.ZodObject) {
+  const shape = { ...schema.shape, workspace: workspaceParam };
+  const strict: z.ZodObject = z.strictObject(shape, {
+    error: (iss) => {
+      if (iss.code !== "unrecognized_keys") return undefined;
+      const hints = iss.keys.map((k) => {
+        const path = nestedPath(strict, k);
+        return path ? `${k} (did you mean ${path}?)` : k;
+      });
+      return `Unknown parameter${hints.length > 1 ? "s" : ""}: ${hints.join(", ")}. Accepted: ${Object.keys(shape).join(", ")}`;
+    },
+  });
+  return strict;
+}
+
 // Definitions (~150 tools), built once per process.
 export const toolBuilds = { count: 0 };
 let defs: Map<string, Def> | undefined;
@@ -84,9 +127,7 @@ function definitions() {
           out.set(name, {
             cfg: {
               ...cfg,
-              inputSchema: (cfg.inputSchema ?? z.object({})).extend({
-                workspace: workspaceParam,
-              }),
+              inputSchema: strictInput(cfg.inputSchema ?? z.object({})),
             },
             fn,
           }),
@@ -106,7 +147,16 @@ function definitions() {
 // already-built definitions, filtered by the key's tools.
 export function registerTools(server: McpServer) {
   const { principal: p, header } = mcpRequest();
-  const active = (ws: { id: string }[], id: string) =>
+  // Active workspace, reported the same way by workspaces.list and
+  // workspaces.create. Without an MCP session there is no persisted default
+  // (a key-wide default would be shared by every client of the key): only
+  // the x-workspace-id header counts, otherwise there is no active workspace.
+  const activeId = async (): Promise<string | null> => {
+    if (!p.session)
+      return header ? (await resolveMcpContext(p, header)).workspaceId : null;
+    return (await resolveMcpContext(p, undefined, header)).workspaceId;
+  };
+  const mark = (ws: { id: string }[], id: string | null) =>
     ws.map((w) => ({ ...w, active: w.id === id }));
   server.registerTool(
     "workspaces.list",
@@ -114,26 +164,47 @@ export function registerTools(server: McpServer) {
       description:
         "Lists accessible workspaces (all organizations), with the active one marked.",
     },
-    () =>
-      run(async () => {
-        const ctx = await resolveMcpContext(p, undefined, header);
-        return active(await accessibleWorkspaces(p), ctx.workspaceId);
-      }),
+    async () => {
+      const res = await run(async () =>
+        mark(await accessibleWorkspaces(p), await activeId()),
+      );
+      if (!p.session && !header && !res.isError)
+        res.content.push({ type: "text", text: `workspace: ${NO_SESSION}` });
+      return res;
+    },
   );
   server.registerTool(
     "workspaces.use",
     {
-      description: "Sets the default workspace for this client's next calls.",
-      inputSchema: z.object({
+      description:
+        "Sets the default workspace for the next calls of this MCP session. Without an MCP session nothing is persisted: pass `workspace` on every call.",
+      inputSchema: z.strictObject({
         workspace: z.string().describe("Workspace id or name"),
       }),
     },
     ({ workspace }) =>
       run(async () => {
+        if (!p.session) {
+          // Access check only: a sessionless default would leak to every
+          // other client of the same key.
+          const ctx = await resolveMcpContext(p, workspace);
+          const w = (await accessibleWorkspaces(p)).find(
+            (x) => x.id === ctx.workspaceId,
+          );
+          return {
+            ...w,
+            active: false,
+            persisted: false,
+            note: `Not persisted: this connection has no MCP session (Mcp-Session-Id). Pass workspace: "${ctx.workspaceId}" on every call.`,
+          };
+        }
         const ctx = await setMcpDefault(p, workspace);
-        return active(await accessibleWorkspaces(p), ctx.workspaceId).find(
-          (w) => w.active,
-        );
+        return {
+          ...mark(await accessibleWorkspaces(p), ctx.workspaceId).find(
+            (w) => w.active,
+          ),
+          persisted: true,
+        };
       }),
   );
 
@@ -151,8 +222,25 @@ export function registerTools(server: McpServer) {
         let ctx: TenantContext;
         try {
           // rename/delete target the workspace `id`, possibly in another organization.
-          const target = byId.has(name) ? (ref ?? input.id) : ref;
-          ctx = await resolveMcpContext(p, target, header);
+          let target = byId.has(name) ? (ref ?? input.id) : ref;
+          // workspaces.create acts on an organization: it never resolves the
+          // active workspace (possibly another agent's, or one this actor
+          // cannot administer). Without `workspace`, any workspace of the
+          // single accessible organization stands for it.
+          if (name === "workspaces.create" && !target) {
+            const list = await accessibleWorkspaces(p);
+            if (new Set(list.map((w) => w.organizationId)).size > 1)
+              throw appError(
+                "workspaces.createOrgRequired",
+                "Several organizations are accessible: pass `workspace` (any workspace of the target organization) ({workspaces})",
+                { workspaces: workspaceListHint(list) },
+              );
+            target = list[0]?.id;
+          }
+          ctx = await resolveMcpContext(p, target, header, {
+            write: isWriteTool(name),
+            account: isAccountTool(name),
+          });
           await rateLimit(ctx, "api");
         } catch (e) {
           return run(() => Promise.reject(e));
@@ -163,6 +251,28 @@ export function registerTools(server: McpServer) {
           isError?: boolean;
           content?: { text?: string }[];
         };
+        if (!res?.isError && isWriteTool(name) && Array.isArray(res?.content)) {
+          // Workspace the call actually used: the agent sees where it wrote.
+          const list = await accessibleWorkspaces(p).catch(() => []);
+          const label = (id: string, name?: string) =>
+            `${JSON.stringify(name ?? list.find((w) => w.id === id)?.name ?? id)} (${id})`;
+          const used = label(ctx.workspaceId);
+          let text = `workspace: ${used}`;
+          if (name === "workspaces.create") {
+            const act = await activeId().catch(() => null);
+            const next = p.session
+              ? `Call workspaces.use { workspace: "%ID%" } to work in it.`
+              : `Pass workspace: "%ID%" on each call to work in it.`;
+            // The new workspace does not become the active one.
+            const created = parseJson(res.content[0]?.text) as {
+              id?: string;
+              name?: string;
+            } | null;
+            if (created?.id)
+              text = `workspace: created ${label(created.id, created.name)}; ${act ? `active is still ${label(act)}.` : NO_SESSION} ${next.replace("%ID%", created.id)}`;
+          }
+          res.content.push({ type: "text", text } as { text: string });
+        }
         const text = res?.isError ? (res.content?.[0]?.text ?? "") : null;
         const code = text?.match(/^\[([a-z_]+)\]/)?.[1] ?? "error";
         if (text !== null && !SILENT.has(code))
@@ -179,6 +289,28 @@ export function registerTools(server: McpServer) {
   }
 }
 
+const NO_SESSION =
+  "no active workspace: this connection has no MCP session (Mcp-Session-Id), so pass `workspace` on every call.";
+
+function parseJson(text?: string): unknown {
+  try {
+    return text ? JSON.parse(text) : null;
+  } catch {
+    return null;
+  }
+}
+
+// Read-only tools: they keep the first-workspace fallback and their response
+// does not carry the workspace line. Any other tool is a write and needs an
+// explicit workspace when several are accessible. `.test` stays a write
+// because functions.test can write.
+const READ_VERBS =
+  /\.(list|get|describe|search|dependencies|settings|history|logs|versions|types|funnel|export|download|errors|guide|examples|screenshot|saved|sql|waiting|providers|ai_budget|trash|validate|dry_run|test_step)$/;
+// Organization-level tools: no workspace choice needed inside one organization.
+export const isAccountTool = (name: string) =>
+  name === "workspaces.create" || name.startsWith("members.");
+export const isWriteTool = (name: string) => !READ_VERBS.test(name);
+
 function defineTools(server: McpServer, ctx: TenantContext) {
   defineAccountTools(server, ctx);
   defineSchemaTools(server, ctx);
@@ -190,4 +322,5 @@ function defineTools(server: McpServer, ctx: TenantContext) {
   definePageTools(server, ctx);
   defineRunTools(server, ctx);
   defineOperationTools(server, ctx);
+  defineNoteTools(server, ctx);
 }

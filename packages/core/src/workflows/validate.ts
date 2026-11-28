@@ -1,5 +1,5 @@
 // Validation and dry run of a workflow.
-import { getBlock } from "../blocks";
+import { blocksService, getBlock } from "../blocks";
 import { isValueMode, validateCondition } from "../blocks/catalog/condition";
 import { validateMapping } from "../blocks/catalog/record-map";
 import { caseFilter, switchRecordInput } from "../blocks/catalog/switch";
@@ -19,10 +19,28 @@ import {
   functionSecretsChecks,
   functionStepChecks,
 } from "./validate-functions";
+import {
+  branchWarnings,
+  filterChecks,
+  httpDomainChecks,
+  recordWriteChecks,
+  sampleEvent,
+  templateRefChecks,
+  webhookMappingChecks,
+} from "./validate-runtime";
+import {
+  dateChecks,
+  orphanUpsertWarnings,
+  placeholderRecipientChecks,
+  regexChecks,
+  unknownBlockError,
+} from "./validate-hints";
 
 export {
+  coverageOf,
   dryRun,
   testStep,
+  unreachedWrites,
   type DryRunOptions,
   type DryRunPath,
   type DryRunStep,
@@ -84,6 +102,9 @@ export async function validateDefinition(
   return (await validateItems(ctx, definition)).map((i) => i.message);
 }
 
+const FILTER_HINT =
+  "Filter shape: {field, op, value}, {all: [...]} or {any: [...]}; older_than and within take an integer number of days (e.g. 30)";
+
 // Field error (zod): path + message.
 const fieldError = (path: string, message: string) =>
   errorItem("workflows.invalidField", "{path}: {message}", { path, message });
@@ -116,9 +137,20 @@ export async function validateItems(
       errors.push(
         fieldError(
           `trigger${i.path.length ? `.${i.path.join(".")}` : ""}`,
-          i.message,
+          i.path[0] === "filter" ? `${i.message}. ${FILTER_HINT}` : i.message,
         ),
       );
+  else if (
+    trigger.data.type === "trigger.schedule" &&
+    trigger.data.filter &&
+    !trigger.data.object
+  )
+    errors.push(
+      errorItem(
+        "workflows.scheduleFilterNeedsObject",
+        "trigger.filter: requires trigger.object (the filter selects records of that object)",
+      ),
+    );
   else if (
     "object" in trigger.data &&
     trigger.data.object &&
@@ -131,9 +163,15 @@ export async function validateItems(
         { object: trigger.data.object },
       ),
     );
+  // Webhook sample: first event of the last received payload.
+  let event: unknown;
   if (trigger.success && trigger.data.type === "trigger.webhook") {
     const t = trigger.data;
-    if (!(await webhooksService.list(ctx)).some((w) => w.name === t.webhook))
+    const hook = (await webhooksService.list(ctx)).find(
+      (w) => w.name === t.webhook,
+    );
+    event = sampleEvent(hook);
+    if (!hook)
       errors.push(
         errorItem(
           "workflows.unknownWebhook",
@@ -170,6 +208,7 @@ export async function validateItems(
           { field: t.match },
         ),
       );
+    webhookMappingChecks(t, event, errors, warnings);
   }
   if (trigger.success && trigger.data.type === "trigger.run_failed") {
     const w = trigger.data.workflow;
@@ -197,15 +236,12 @@ export async function validateItems(
         ),
       );
 
+  let known: string[] | undefined;
   for (const s of steps) {
     const block = await getBlock(ctx, s.type);
     if (!block) {
-      errors.push(
-        errorItem("workflows.unknownBlock", "{step}: unknown block {type}", {
-          step: s.id,
-          type: s.type,
-        }),
-      );
+      known ??= (await blocksService.list(ctx)).map((b) => b.type);
+      errors.push(unknownBlockError(s.id, s.type, known));
       continue;
     }
     templateErrors(s, ids, errors);
@@ -286,14 +322,27 @@ export async function validateItems(
     if (out) {
       const branches = branchesOf(s, block);
       for (const [b, targets] of Object.entries(out)) {
-        if (!branches.includes(b))
+        if (
+          !branches.includes(b) &&
+          branches.includes("else") &&
+          /^(default|otherwise|fallback)$/i.test(b)
+        )
+          errors.push(
+            errorItem(
+              "workflows.elseBranchName",
+              "{step}: no branch {branch}, the fallback branch is named else (rename next.{step}.{branch} to next.{step}.else)",
+              { step: s.id, branch: b },
+            ),
+          );
+        else if (!branches.includes(b))
           errors.push(
             errorItem(
               "workflows.unknownBranch",
-              "{step}: unknown branch {branch}",
+              "{step}: unknown branch {branch} (valid: {valid})",
               {
                 step: s.id,
                 branch: b,
+                valid: branches.join(", ") || "none",
               },
             ),
           );
@@ -309,7 +358,29 @@ export async function validateItems(
       }
     }
   }
-  await functionSecretsChecks(ctx, steps, errors, warnings);
+  const triggerObject =
+    trigger.success && "object" in trigger.data
+      ? (trigger.data.object ?? undefined)
+      : undefined;
+  await functionSecretsChecks(ctx, steps, errors, warnings, next);
+  await recordWriteChecks(ctx, triggerObject, steps, errors);
+  await templateRefChecks(ctx, steps, event, errors, warnings);
+  await filterChecks(
+    ctx,
+    trigger.success ? trigger.data : undefined,
+    steps,
+    errors,
+  );
+  await branchWarnings(ctx, steps, next, warnings);
+  regexChecks(steps, errors);
+  dateChecks(steps, errors);
+  placeholderRecipientChecks(steps, warnings);
+  orphanUpsertWarnings(
+    trigger.success ? trigger.data : undefined,
+    steps,
+    warnings,
+  );
+  await httpDomainChecks(ctx, steps, warnings);
   for (const id of Object.keys(next))
     if (!ids.has(id))
       errors.push(

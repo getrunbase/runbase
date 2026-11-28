@@ -1,6 +1,7 @@
 // Versioned functions: each save creates an immutable
 // version. A workflow references a function by name (latest version) or
 // by pinned version: `get(ctx, name, version?)`.
+import { createHash } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { requireScope } from "../api-keys";
@@ -101,6 +102,33 @@ async function find(
     .orderBy(desc(functions.version))
     .limit(1);
   return row ?? null;
+}
+
+// Stable JSON (sorted keys) of what defines a version.
+function canonical(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(canonical).join(",")}]`;
+  if (v && typeof v === "object")
+    return `{${Object.keys(v)
+      .sort()
+      .filter((k) => (v as Record<string, unknown>)[k] !== undefined)
+      .map(
+        (k) =>
+          `${JSON.stringify(k)}:${canonical((v as Record<string, unknown>)[k])}`,
+      )
+      .join(",")}}`;
+  return JSON.stringify(v ?? null);
+}
+function configHash(f: {
+  code: string;
+  inputSchema?: unknown;
+  outputSchema?: unknown;
+  permissions?: unknown;
+  limits?: unknown;
+}) {
+  const { code, inputSchema, outputSchema, permissions, limits } = f;
+  return createHash("sha256")
+    .update(canonical({ code, inputSchema, outputSchema, permissions, limits }))
+    .digest("hex");
 }
 
 async function insert(
@@ -224,8 +252,22 @@ export function hostBridge(
       return simulate(method, a, writes.length);
     }
     if (method === "get") return recordsService.get(ctx, String(a[0]));
-    if (method === "search")
-      return recordsService.search(ctx, String(a[0]), (a[1] ?? {}) as never);
+    if (method === "search") {
+      // Documented SDK shape: { records, hasMore, total, next }; top-level
+      // `limit` and `after` accepted as well as `pagination`.
+      const { limit, after, pagination, ...rest } = (a[1] ?? {}) as Record<
+        string,
+        unknown
+      > & { pagination?: { limit?: number; after?: string } };
+      return recordsService.searchPage(ctx, String(a[0]), {
+        ...rest,
+        pagination: {
+          ...pagination,
+          ...(limit !== undefined ? { limit: Number(limit) } : {}),
+          ...(after != null ? { after: String(after) } : {}),
+        },
+      } as never);
+    }
     if (method === "delete") {
       const row = await recordsService.remove(ctx, String(a[0]));
       if (!row)
@@ -338,6 +380,17 @@ const unknownFunction = (name: string, version?: number) =>
         { name },
       );
 
+// Keys listed in outputSchema.required but absent from a returned object
+// (optional properties may be omitted).
+export function missingOutputKeys(schema: unknown, output: unknown): string[] {
+  const required = (schema as { required?: unknown } | null)?.required;
+  if (!Array.isArray(required)) return [];
+  if (!output || typeof output !== "object" || Array.isArray(output)) return [];
+  return required.filter(
+    (k): k is string => typeof k === "string" && !(k in output),
+  );
+}
+
 export const functionsService = {
   // Latest version of each workspace function.
   list: async (ctx: TenantContext) => {
@@ -372,6 +425,11 @@ export const functionsService = {
     assertDomains(input.permissions?.domains);
     const f = functionInputSchema.parse(input);
     return withTenant(ctx, async (tx) => {
+      // Idempotent: same code and config as the latest version = no new
+      // version (agents often re-save unchanged functions).
+      const latest = await find(tx, ctx, f.name);
+      if (latest && configHash(latest) === configHash(f))
+        return { ...latest, unchanged: true as const };
       const row = await insert(tx, ctx, f);
       await audit(
         tx,
@@ -427,9 +485,11 @@ export const functionsService = {
     name: string,
     input: unknown,
     version?: number,
-    opts: { dryRun?: boolean } = {},
+    // test: true tags the run's writes as test data (ctx.test).
+    opts: { dryRun?: boolean; test?: boolean } = {},
   ) => {
     await requireScope(ctx, "admin");
+    if (opts.test) ctx = { ...ctx, test: true };
     const f = await withTenant(ctx, (tx) => find(tx, ctx, name, version));
     if (!f) throw unknownFunction(name, version);
     const writes = opts.dryRun ? ([] as PlannedWrite[]) : undefined;
@@ -438,7 +498,14 @@ export const functionsService = {
       secrets: await decryptAll(ctx),
       writes,
     });
-    return writes ? { ...r, writes } : r;
+    const warnings = missingOutputKeys(f.outputSchema, r.output).map(
+      (k) => `outputSchema declares "${k}" but the function did not return it`,
+    );
+    return {
+      ...r,
+      ...(writes && { writes }),
+      ...(warnings.length && { warnings }),
+    };
   },
   // Call from a page: latest version, output only.
   call: async (ctx: TenantContext, name: string, input: unknown) => {

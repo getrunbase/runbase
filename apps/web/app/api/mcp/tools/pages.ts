@@ -2,16 +2,42 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
 import type { TenantContext } from "@getrunbase/core/tenant";
-import { notFound } from "@getrunbase/core/errors";
-import { compilePackage } from "@getrunbase/core/components";
-import { render, reviewPage } from "@getrunbase/core/render";
+import { appError, notFound } from "@getrunbase/core/errors";
+import {
+  compilePackage,
+  formatCompileError,
+  formatLintWarning,
+  lintPackage,
+} from "@getrunbase/core/components";
+import {
+  render,
+  rendererHealth,
+  reviewPage,
+  type PageReview,
+} from "@getrunbase/core/render";
 import { appUrl, shotToken } from "@/lib/screenshot-token";
 import { pagesService } from "@getrunbase/core/pages";
 import { run, runImage } from "./shared";
 
+// Plain statement returned when the renderer is down: the page was compiled
+// but nobody looked at it.
+export const RENDER_NOT_CHECKED =
+  "render not checked: the rendering service is unavailable (platform outage, not an error in the page); only the server-side compile was checked";
+
+// Publish gate: the draft compiles (enforced by the core on every publish)
+// and was rendered without errors, unless `force`. Returns null when the
+// draft may be published, otherwise the reason to refuse.
+export function publishBlock(
+  review: Pick<PageReview, "shots" | "errors"> & { pageErrors: unknown[] },
+): string | null {
+  if (!review.shots.length) return RENDER_NOT_CHECKED;
+  const n = review.errors.length + review.pageErrors.length;
+  return n ? `the draft renders with ${n} error(s)` : null;
+}
+
 export function definePageTools(server: McpServer, ctx: TenantContext) {
   // Pages: an agent builds a page only through MCP.
-  const pageId = z.string().describe("Page id");
+  const pageId = z.string().describe("Page id or name (see page.list)");
   const pageFiles = z
     .record(z.string(), z.string())
     .describe(
@@ -28,7 +54,24 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
     .describe(
       'SDK permissions declared by the page: { objects, write, workflows, files, ai }. `ai` = AI configs for useAI: { "default": { provider, model, secret }, "<name>": {...} } (no workspace default).',
     );
+  const force = z
+    .boolean()
+    .optional()
+    .describe(
+      "publish even when the draft was not rendered (renderer down) or renders with errors; compile errors always refuse",
+    );
   const filePath = z.string().describe("relative file path in the package");
+  // Page id or name -> id (workflow resolver pattern).
+  const ref = async (id: string) => {
+    const found = await pagesService.resolveId(ctx, id);
+    if (!found)
+      throw notFound(
+        "mcp.pageNotFound",
+        "Page not found: {id}. See page.list.",
+        { id },
+      );
+    return found;
+  };
   const pageRow = async <T>(p: Promise<T | null>, id: string) => {
     const row = await p;
     if (!row)
@@ -40,7 +83,19 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
     return row;
   };
   const getPage = async (id: string, draft = false) => {
-    const p = await pagesService.get(ctx, id, { draft });
+    const pid = await ref(id);
+    const p = await pagesService.get(ctx, pid, { draft });
+    // Draft-only page: say how to reach it instead of a plain not found.
+    if (
+      !p &&
+      !draft &&
+      (await pagesService.get(ctx, pid, { draft: true }).catch(() => null))
+    )
+      throw notFound(
+        "mcp.pageNotPublished",
+        "Page {id} has no published version: pass draft: true or page.publish",
+        { id },
+      );
     if (!p)
       throw notFound(
         "mcp.pageNotFound",
@@ -77,11 +132,40 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
       theme: "light" as const,
     };
   };
+  // Draft review: captures, axe violations, runtime errors reported during
+  // this review only (older page.errors entries do not block a publish).
+  const review = async (id: string) => {
+    const since = Date.now();
+    const r = await reviewPage(pageJob(id, true));
+    const pageErrors = (
+      await pagesService.errors(ctx, id, { draft: true }).catch(() => [])
+    ).filter((e) => new Date(e.lastSeen).getTime() >= since);
+    return { ...r, pageErrors };
+  };
+  // Rendered-or-force gate shared by page.publish and page.update.
+  const gate = async (
+    id: string,
+    opts: { force?: boolean; reviewed?: Awaited<ReturnType<typeof review>> },
+  ) => {
+    if (opts.force) return;
+    const r =
+      opts.reviewed ??
+      ((await rendererHealth()).available
+        ? await review(id)
+        : { shots: [], errors: [], pageErrors: [] });
+    const why = publishBlock(r);
+    if (why)
+      throw appError(
+        "pages.publishUnverified",
+        "Not published: {reason}. The draft is kept. Check it with page.screenshot {draft: true} and page.errors {draft: true}, fix it with page.update, or pass force: true to publish anyway.",
+        { reason: why },
+        { kind: "conflict" },
+      );
+  };
   server.registerTool(
     "page.screenshot",
     {
-      description:
-        "PNG screenshot of a saved page as a user sees it (real workspace data, code components included), read-only: actions and workflows are not run. `draft: true` captures the draft (after page.update, before page.publish). Waits until every code component has finished rendering and loaders (skeletons) are gone (max 8 s). User account (OAuth) or API key. Returns the image then {errors, console}; errors include code component errors (also recorded in errors.list, source component). Use after page.create/update to check the rendering (desktop and mobile).",
+      description: `PNG screenshot of a saved page as a user sees it (real workspace data, code components included), read-only: actions and workflows are not run. \`draft: true\` captures the draft (after page.update, before page.publish). Waits until every code component has finished rendering and loaders (skeletons) are gone (max 8 s). User account (OAuth) or API key. Returns the image then {errors, console}; errors include code component errors (also recorded in errors.list, source component). Use after page.create/update to check the rendering (desktop and mobile). When the rendering service is down, returns no image but {rendered: false, notice, compile: {ok, errors}}: the package was compiled, the render was not checked.`,
       inputSchema: z.object({
         id: pageId,
         draft: z.boolean().optional().describe("capture the draft"),
@@ -108,6 +192,16 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
     ({ id, draft, params, componentState, viewport, theme, audit }) =>
       runImage(async () => {
         const page = await getPage(id, draft);
+        const health = await rendererHealth();
+        if (!health.available)
+          return {
+            shots: [],
+            errors: [],
+            console: [],
+            rendered: false,
+            notice: RENDER_NOT_CHECKED,
+            compile: await pagesService.bundleStatus(page),
+          };
         return render({
           ...pageJob(page.id, draft, params, componentState),
           viewport,
@@ -131,10 +225,15 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
     "page.get",
     {
       description:
-        "Reads a page package (files, entry, deps, permissions): the published version seen by users (null if never published), or the draft with `draft: true` (hasDraft = draft waiting for page.publish).",
+        "Reads a page package (files, entry, deps, permissions): the published version seen by users, or the draft with `draft: true` (hasDraft = draft waiting for page.publish). `bundle` = {ok, errors} is the server-side compile status of that package (errors as file:line:col). A page never published returns not_found without `draft`: read it with `draft: true`.",
       inputSchema: z.object({ id: pageId, draft: z.boolean().optional() }),
     },
-    ({ id, draft }) => run(() => getPage(id, draft)),
+    ({ id, draft }) =>
+      run(async () => {
+        // The stored bundle is an internal artifact: replaced by its status.
+        const page = await getPage(id, draft);
+        return { ...page, bundle: await pagesService.bundleStatus(page) };
+      }),
   );
   server.registerTool(
     "page.versions",
@@ -142,7 +241,7 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
       description: "Published versions of a page.",
       inputSchema: z.object({ id: pageId }),
     },
-    ({ id }) => run(() => pagesService.versions(ctx, id)),
+    ({ id }) => run(async () => pagesService.versions(ctx, await ref(id))),
   );
   server.registerTool(
     "page.errors",
@@ -151,13 +250,14 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
         "Recent browser runtime errors of a page (uncaught errors, unhandled rejections, React render errors, console.error), reported by the page iframe within seconds: the published version, or the draft with `draft: true`. Each error has message, location (file:line:col in the package source), stack, count (deduplicated) and lastSeen; errors expire after 24 h. Open the page first (page.screenshot) to collect them.",
       inputSchema: z.object({ id: pageId, draft: z.boolean().optional() }),
     },
-    ({ id, draft }) => run(() => pagesService.errors(ctx, id, { draft })),
+    ({ id, draft }) =>
+      run(async () => pagesService.errors(ctx, await ref(id), { draft })),
   );
   server.registerTool(
     "page.create",
     {
       description:
-        "Creates a page from a TSX package (draft; `publish: true` publishes right away). Shared components are files of the package (e.g. components/card.tsx).",
+        "Creates a page from a TSX package (draft). Shared components are files of the package (e.g. components/card.tsx). Returns the page, `errors` (server-side compile errors, file:line:col) and `warnings` (static checks, file:line [rule]: arbitrary Tailwind values, palette classes, hard-coded select options, client-side grouping, `any` around SDK results, missing loading/empty/error states): fix them with page.update. `publish: true` publishes only when the package compiles; prefer page.screenshot {draft: true} then page.publish.",
       inputSchema: z.object({
         name: z.string().min(1),
         icon: pageIcon,
@@ -168,7 +268,16 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
         publish: z.boolean().optional(),
       }),
     },
-    (input) => run(() => pagesService.create(ctx, input)),
+    (input) =>
+      run(async () => {
+        const page = await pagesService.create(ctx, input);
+        const { errors } = await pagesService.bundleStatus(page);
+        return {
+          ...page,
+          errors,
+          warnings: lintPackage(input.files).map(formatLintWarning),
+        };
+      }),
   );
   const fileOp = z.discriminatedUnion("op", [
     z.object({ op: z.literal("write"), path: filePath, source: z.string() }),
@@ -185,7 +294,7 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
     "page.update",
     {
       description:
-        "Updates a page. Name and icon apply immediately. `changes` is a file patch applied in order to the draft, all or nothing: {op: write, path, source} creates or replaces a file, {op: edit, path, old, new} replaces text matching once, {op: rename, from, to} (the entry follows), {op: delete, path} (not the entry). `files` replaces the whole package. Draft changes are invisible to users until page.publish (`publish: true` publishes right away). The package is recompiled: returns {page, errors} (compile errors, file:line), then, unless `review: false` or compile errors, `review` = {a11y (axe violations), pageErrors (runtime errors), renderErrors, warnings} followed by desktop and mobile screenshots of the draft.",
+        "Updates a page. Name and icon apply immediately. `changes` is a file patch applied in order to the draft, all or nothing: {op: write, path, source} creates or replaces a file, {op: edit, path, old, new} replaces text matching once, {op: rename, from, to} (the entry follows), {op: delete, path} (not the entry). `files` replaces the whole package. Draft changes are invisible to users until page.publish. The package is recompiled: returns {page, errors, warnings} (compile errors and static-check warnings, file:line), then, unless `review: false` or compile errors, `review` = {a11y (axe violations), pageErrors (runtime errors), renderErrors, warnings} followed by desktop and mobile screenshots of the draft. `publish: true` publishes after the same gate as page.publish: no compile error, and the draft rendered without errors (or `force: true`); otherwise `published: false` and `publishBlocked` says why.",
       inputSchema: z.object({
         id: pageId,
         name: z.string().min(1).optional(),
@@ -196,6 +305,7 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
         deps: pageDeps,
         permissions: pagePerms,
         publish: z.boolean().optional(),
+        force,
         review: z
           .boolean()
           .default(true)
@@ -204,43 +314,64 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
           ),
       }),
     },
-    async ({ id, changes, review, ...patch }) => {
+    async ({
+      id: given,
+      changes,
+      review: wantReview,
+      publish,
+      force: forced,
+      ...patch
+    }) => {
       let out: Record<string, unknown>;
       let page: Awaited<ReturnType<typeof getPage>>;
+      let id: string;
       try {
+        id = await ref(given);
         if (changes)
-          await pageRow(pagesService.patchFiles(ctx, id, changes), id);
-        await pageRow(pagesService.update(ctx, id, patch), id);
+          await pageRow(pagesService.patchFiles(ctx, id, changes), given);
+        await pageRow(pagesService.update(ctx, id, patch), given);
         page = await getPage(id, true);
         const { errors } = await compilePackage(page.files, page.entry);
         out = {
           page,
-          errors: errors.map((e) =>
-            e.line
-              ? `${e.file ?? ""}:${e.line}:${e.col ?? 0} ${e.text}`
-              : e.text,
-          ),
+          errors: errors.map(formatCompileError),
+          warnings: lintPackage(page.files).map(formatLintWarning),
         };
       } catch (e) {
         return run(() => Promise.reject(e));
       }
-      if (!review || (out.errors as string[]).length)
-        return run(async () => out);
-      // Review: captures, axe violations, runtime errors (page.errors).
-      const r = await reviewPage(pageJob(page.id, true));
-      const pageErrors = await pagesService
-        .errors(ctx, page.id, { draft: true })
-        .catch(() => []);
-      out.review = {
-        a11y: r.a11y,
-        pageErrors,
-        renderErrors: r.errors,
-        warnings: r.warnings,
-      };
+      const compileFailed = (out.errors as string[]).length > 0;
+      let reviewed: Awaited<ReturnType<typeof review>> | undefined;
+      if (wantReview && !compileFailed) {
+        reviewed = await review(page.id);
+        out.review = {
+          a11y: reviewed.a11y,
+          pageErrors: reviewed.pageErrors,
+          renderErrors: reviewed.errors,
+          warnings: reviewed.warnings,
+        };
+        if (!reviewed.shots.length)
+          (out.review as Record<string, unknown>).notice = RENDER_NOT_CHECKED;
+      }
+      if (publish) {
+        if (compileFailed) {
+          out.published = false;
+          out.publishBlocked = "the draft does not compile: fix `errors`";
+        } else
+          try {
+            await gate(page.id, { force: forced, reviewed });
+            out.page = await pagesService.publish(ctx, page.id);
+            out.published = true;
+          } catch (e) {
+            out.published = false;
+            out.publishBlocked = (e as Error).message;
+          }
+      }
+      if (!reviewed?.shots.length) return run(async () => out);
       return {
         content: [
           { type: "text" as const, text: JSON.stringify(out) },
-          ...r.shots.flatMap((s) => [
+          ...reviewed.shots.flatMap((s) => [
             { type: "text" as const, text: `${s.viewport} · ${s.theme}` },
             {
               type: "image" as const,
@@ -256,19 +387,25 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
     "page.publish",
     {
       description:
-        "Publishes a page's draft: it becomes the version seen by users. Without a draft, changes nothing.",
-      inputSchema: z.object({ id: pageId }),
+        "Publishes a page's draft: it becomes the version seen by users. Without a draft, changes nothing. Refused when the draft does not compile (always), or, without `force: true`, when the draft could not be rendered (rendering service down: the render was not checked) or renders with errors (render errors or page.errors reported during the check).",
+      inputSchema: z.object({ id: pageId, force }),
     },
-    ({ id }) =>
+    ({ id: given, force: forced }) =>
       run(async () => {
-        const row = await pagesService.publish(ctx, id);
-        if (!row)
-          throw notFound(
-            "mcp.pageNotFound",
-            "Page not found: {id}. See page.list.",
-            { id },
-          );
-        return row;
+        const id = await ref(given);
+        const draft = await getPage(id, true);
+        if (draft.hasDraft) {
+          const status = await pagesService.bundleStatus(draft);
+          if (!status.ok)
+            throw appError(
+              "pages.publishCompileFailed",
+              "Not published: the draft does not compile: {errors}. Fix it with page.update.",
+              { errors: status.errors.join("; ") },
+              { kind: "invalid_input" },
+            );
+          await gate(id, { force: forced });
+        }
+        return pageRow(pagesService.publish(ctx, id), given);
       }),
   );
   server.registerTool(
@@ -279,16 +416,7 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
       inputSchema: z.object({ id: pageId }),
     },
     ({ id }) =>
-      run(async () => {
-        const row = await pagesService.discard(ctx, id);
-        if (!row)
-          throw notFound(
-            "mcp.pageNotFound",
-            "Page not found: {id}. See page.list.",
-            { id },
-          );
-        return row;
-      }),
+      run(async () => pageRow(pagesService.discard(ctx, await ref(id)), id)),
   );
   server.registerTool(
     "page.restore",
@@ -299,7 +427,7 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
     },
     ({ id, version }) =>
       run(async () => {
-        const row = await pagesService.restore(ctx, id, version);
+        const row = await pagesService.restore(ctx, await ref(id), version);
         if (!row)
           throw notFound(
             "mcp.pageVersionNotFound",
@@ -315,6 +443,6 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
       description: "Deletes a page and its versions.",
       inputSchema: z.object({ id: pageId }),
     },
-    ({ id }) => run(() => pagesService.remove(ctx, id)),
+    ({ id }) => run(async () => pagesService.remove(ctx, await ref(id))),
   );
 }

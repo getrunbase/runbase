@@ -112,15 +112,37 @@ test("test data: label, purge_test and describe", async () => {
   assert.deepEqual(d.secrets, ["K"]);
   assert.equal(d.counts.records, 3);
   assert.ok(!JSON.stringify(d).includes('"v"'));
+  assert.deepEqual(d.dependencies, {});
+  const deps = await call("workspace.dependencies");
+  assert.deepEqual(Object.keys(deps).sort(), [
+    "fields",
+    "functions",
+    "pages",
+    "workflows",
+  ]);
+  assert.deepEqual(
+    (await call("workspace.dependencies", { entity: "lead" })).fields,
+    {},
+  );
 
+  // Events: the pushed test event and the record.created timeline events
+  // of the two test records.
   assert.deepEqual(await call("workspace.purge_test", { dryRun: true }), {
     dryRun: true,
     records: 2,
-    events: 1,
+    events: 3,
     runs: 0,
+    errors: 0,
+    keptLive: [],
   });
   const out = await call("workspace.purge_test", { confirm: true });
-  assert.deepEqual(out, { records: 2, events: 1, runs: 0, hasMore: false });
+  assert.deepEqual(out, {
+    records: 2,
+    events: 3,
+    runs: 0,
+    errors: 0,
+    hasMore: false,
+  });
   const left = await call("records.search", { object: "lead" });
   assert.deepEqual(
     left.records.map((r: { data: { name: string } }) => r.data.name),
@@ -168,7 +190,7 @@ test("functions.test dryRun: simulated writes; logs available", async () => {
       console.log("ajout", i.name);
       const { record } = await records.upsert({ objectId: "lead", data: { name: i.name } });
       const found = await records.search("lead", {});
-      return { id: record.id, seen: found.length };
+      return { id: record.id, seen: found.records.length };
     }`,
     permissions: { domains: [], secrets: [], records: "write" },
   });

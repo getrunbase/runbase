@@ -17,6 +17,7 @@ import {
   rewriteRefs,
   updateInTx,
   upsertInTx,
+  withPromotion,
 } from "./write";
 
 export const writeOps = {
@@ -39,13 +40,14 @@ export const writeOps = {
     id: string,
     data: Data,
     mode: "merge" | "replace" = "merge",
+    opts: { test?: boolean } = {},
   ) => {
     await requireScope(ctx, "write");
     const result = await withTenant(ctx, (tx) =>
-      updateInTx(tx, ctx, id, data, mode),
+      updateInTx(tx, ctx, id, data, mode, opts),
     );
     await publishUpsert(ctx, {}, result);
-    return result;
+    return withPromotion(result);
   },
 
   // Atomic merge (contacts, companies): `keep` absorbs `merge`. Its
@@ -95,7 +97,12 @@ export const writeOps = {
           if (empty(data[k]) && !empty(v)) data[k] = v;
       // Frees the unique keys of the merged records before taking them over.
       await tx.delete(recordKeys).where(anyUuid(recordKeys.recordId, ids));
-      const result = await updateInTx(tx, ctx, keepId, data, "replace");
+      // The result stays test data only when every merged row is test;
+      // merging live data into a test record promotes it (warning returned).
+      const allTest = rows.every((r) => r.isTest);
+      const result = await updateInTx(tx, ctx, keepId, data, "replace", {
+        test: allTest,
+      });
       await rewriteRefs(tx, ctx, object, ids, keepId);
       await tx
         .update(events)
@@ -123,7 +130,7 @@ export const writeOps = {
         id,
         objectId: out.record.objectId,
       });
-    return { ...out, merged: ids };
+    return withPromotion({ ...out, merged: ids });
   },
 
   // Several writes (upsert, update, delete, across all objects) in
@@ -221,7 +228,7 @@ export const writeOps = {
     await requireScope(ctx, "write");
     const result = await withTenant(ctx, (tx) => upsertInTx(tx, ctx, input));
     await publishUpsert(ctx, input, result);
-    return result;
+    return withPromotion(result);
   },
 
   // Upsert of several records of an object in a single transaction: one invalid

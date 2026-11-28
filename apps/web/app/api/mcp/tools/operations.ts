@@ -3,8 +3,9 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
 import type { TenantContext } from "@getrunbase/core/tenant";
 import { runsService } from "@getrunbase/core/runs";
-import { errorsService } from "@getrunbase/core/errors";
+import { cleanStack, errorsService } from "@getrunbase/core/errors";
 import { overviewService } from "@getrunbase/core/overview";
+import { workspacesService } from "@getrunbase/core/workspaces";
 import { run } from "./shared";
 
 export function defineOperationTools(server: McpServer, ctx: TenantContext) {
@@ -28,21 +29,41 @@ export function defineOperationTools(server: McpServer, ctx: TenantContext) {
     ({ budgetUsd }) => run(() => runsService.setBudget(ctx, budgetUsd)),
   );
 
+  // Workspace settings
+  server.registerTool(
+    "workspace.settings",
+    {
+      description:
+        "Workspace settings: `allowedDomains` (hostnames that http and other external blocks may call; empty = none), MCP server names, `lintStrict` (lint warnings block saves). Read it before adding an http block to an unknown domain; changing it is done by an admin in the UI (hand that step back).",
+      inputSchema: z.object({}),
+    },
+    () => run(() => workspacesService.getSettings(ctx)),
+  );
+
   // Overview and test data
   server.registerTool(
     "workspace.describe",
     {
       description:
-        "The whole workspace in one call: databases > objects (fields, record count), workflows (trigger, steps, status), functions (schemas, permissions, limits), webhooks, pages, secret names, SQL views readable by query.sql (name, columns, types), counters (records, events, active runs, open errors). Call it first to discover a workspace.",
+        "The whole workspace in one call: databases > objects (fields, record count), workflows (trigger, steps, status), functions (schemas, permissions, limits), webhooks, pages, secret names, SQL views readable by query.sql (name, columns, types), counters (records, events, active runs, open errors), note titles per entity (notes: id, title, stale; bodies via notes.get), and a generated dependency map: per workflow the objects/fields it reads and writes, functions called and external domains; `dependencies` maps each object field (`object.field`) to its writers and readers (workflow:<name>#<step>, function:<name>, page:<name>), from static analysis of workflow definitions, function code and published pages. Call it first to discover a workspace.",
       inputSchema: z.object({}),
     },
     () => run(() => overviewService.describe(ctx)),
   );
   server.registerTool(
+    "workspace.dependencies",
+    {
+      description:
+        "Generated dependency map (static analysis of workflow definitions, function code and published pages, no input needed). `entity`: `object.field` (e.g. leads.status) returns its writers and readers; `object` (slug) its fields and users; `workflow:<name>` its trigger, steps, objects/fields touched, functions and external domains; `function:<name>` or `page:<name>` the fields they touch. Without entity: the whole map. References: workflow:<name>#<step> (#trigger = the trigger), function:<name>, page:<name>. Keys built at runtime are not detected.",
+      inputSchema: z.object({ entity: z.string().min(1).optional() }),
+    },
+    ({ entity }) => run(() => overviewService.dependencies(ctx, entity)),
+  );
+  server.registerTool(
     "workspace.purge_test",
     {
       description:
-        "Deletes test data (created with test: true): records (trash then purge, relations removed), finished events and runs (a still-active run is kept: runs.cancel first). dryRun: true returns the counts without deleting anything; otherwise confirm: true required. hasMore: call again for the next batch.",
+        "Deletes test data (created with test: true): records (trash then purge, relations removed), finished events and runs (a still-active run is kept: runs.cancel first). dryRun: true returns the counts without deleting anything; otherwise confirm: true required. hasMore: call again for the next batch. A test record updated without test: true is adopted as live (promoted) and no longer purged here.",
       inputSchema: z.object({
         dryRun: z.boolean().optional(),
         confirm: z.boolean().optional(),
@@ -57,7 +78,7 @@ export function defineOperationTools(server: McpServer, ctx: TenantContext) {
     "errors.list",
     {
       description:
-        "Lists the workspace errors (ingest, workflow, function = function call from a page, mcp = failing MCP tool, component = code component failing in a user's browser; payload {page, block}), most recent first. Filters: source, status, run, workflow, record, period (from/to ISO). Returns { items, hasMore, nextCursor }: pass nextCursor back as cursor for the next page.",
+        "Lists the workspace errors (ingest, workflow, function = function call from a page, mcp = failing MCP tool, component = code component failing in a user's browser; payload {page, block}), most recent first. Without `source`, mcp errors (your own failed tool calls) are left out. No stack: read it with errors.get. Filters: source, status, run, workflow, record, period (from/to ISO). Returns { items, hasMore, nextCursor }: pass nextCursor back as cursor for the next page.",
       inputSchema: z.object({
         source: z
           .enum(["ingest", "workflow", "function", "mcp", "component"])
@@ -85,13 +106,18 @@ export function defineOperationTools(server: McpServer, ctx: TenantContext) {
       }),
     },
     ({ from, to, ...f }) =>
-      run(() =>
-        errorsService.list(ctx, {
+      run(async () => {
+        const page = await errorsService.list(ctx, {
           ...f,
+          excludeSources: ["mcp"],
           from: from ? new Date(from) : undefined,
           to: to ? new Date(to) : undefined,
-        }),
-      ),
+        });
+        return {
+          ...page,
+          items: page.items.map((e) => ({ ...e, stack: undefined })),
+        };
+      }),
   );
   server.registerTool(
     "errors.get",
@@ -99,7 +125,12 @@ export function defineOperationTools(server: McpServer, ctx: TenantContext) {
       description: "Reads an error: reference, message, payload, stack.",
       inputSchema: z.object({ id: errorId }),
     },
-    ({ id }) => run(() => errorsService.get(ctx, id)),
+    ({ id }) =>
+      run(async () => {
+        const e = await errorsService.get(ctx, id);
+        // Rows stored before path cleanup: no server path in the payload.
+        return e && { ...e, stack: e.stack ? cleanStack(e.stack) : e.stack };
+      }),
   );
   server.registerTool(
     "errors.retry",

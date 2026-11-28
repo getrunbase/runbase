@@ -45,6 +45,17 @@ test("page.*: test, examples", async () => {
   });
   assert.match(denied.sdkCalls[0].denied, /object not allowed: o2/);
 
+  // Same {files, entry} package as page.create.
+  const pkg = await call("page.test", {
+    files: {
+      "main.tsx": `import { Hi } from "./hi"; export default () => <Hi />;`,
+      "hi.tsx": `export const Hi = () => <p>from package</p>;`,
+    },
+    entry: "main.tsx",
+  });
+  assert.deepEqual(pkg.errors, []);
+  assert.match(pkg.html, /from package/);
+
   const crash = await call("page.test", {
     source: `export default function C() { throw new Error("boum"); }`,
   });

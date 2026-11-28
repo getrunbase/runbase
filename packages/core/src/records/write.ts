@@ -24,7 +24,9 @@ import type { TenantContext, Tx } from "../tenant";
 import { isUuid } from "../lib/uuid";
 import {
   changedFields,
+  checkKnownFields,
   checkRefs,
+  lowerEmails,
   objectsOf,
   pick,
   prepareNew,
@@ -48,7 +50,11 @@ export async function upsertInTx(tx: Tx, ctx: TenantContext, raw: UpsertInput) {
   if (!object) throw notFound("objects.notFound", "Object not found");
   const objectFields = fieldsSchema.parse(object.fields);
   const validate = recordValidator(objectFields);
-  const input = { ...raw, data: coerceValues(objectFields, raw.data) };
+  checkKnownFields(objectFields, raw.data);
+  const input = {
+    ...raw,
+    data: lowerEmails(objectFields, coerceValues(objectFields, raw.data)),
+  };
 
   // Atomic upsert (unique index object_id, external_id): we try
   // the insert, ON CONFLICT DO NOTHING waits for the commit of a concurrent
@@ -133,6 +139,8 @@ export async function upsertInTx(tx: Tx, ctx: TenantContext, raw: UpsertInput) {
   }
 
   let changed: string[];
+  // A test record adopted as live by this write (see below).
+  let promoted = false;
   if (existing) {
     const before = existing.data;
     const data = recompute(
@@ -148,10 +156,21 @@ export async function upsertInTx(tx: Tx, ctx: TenantContext, raw: UpsertInput) {
     );
     changed = changedFields(before, data);
     await checkRefs(tx, ctx, objectFields, pick(data, changed));
-    if (!changed.length) return { record: existing, created: false, changed };
+    // A live (non-test) write adopts a test record: it is live data now and
+    // workspace.purge_test must not delete it.
+    const promote = existing.isTest && !(input.test ?? ctx.test ?? false);
+    // An explicit test:true re-flags a live record as test (purgeable again).
+    const reflag = !existing.isTest && input.test === true;
+    if (!changed.length && !promote && !reflag)
+      return { record: existing, created: false, changed, promoted: false };
+    promoted = promote;
     [record] = await tx
       .update(records)
-      .set({ data, updatedAt: new Date() })
+      .set({
+        data,
+        updatedAt: new Date(),
+        ...((promote || reflag) && { isTest: reflag }),
+      })
       .where(eq(records.id, existing.id))
       .returning();
   } else changed = changedFields({}, record!.data);
@@ -175,8 +194,9 @@ export async function upsertInTx(tx: Tx, ctx: TenantContext, raw: UpsertInput) {
       existing?.data ?? {},
       record!.data,
       changed,
+      input.test || record!.isTest,
     );
-  return { record: record!, created: !existing, changed };
+  return { record: record!, created: !existing, changed, promoted };
 }
 
 export async function updateInTx(
@@ -185,6 +205,8 @@ export async function updateInTx(
   id: string,
   data: Data,
   mode: "merge" | "replace" = "merge",
+  // test: true keeps a test record purgeable (no promotion to live).
+  opts: { test?: boolean } = {},
 ) {
   if (!isUuid(id)) throw notFound("records.notFound", "Record not found");
   const [row] = await tx
@@ -197,7 +219,8 @@ export async function updateInTx(
   const fields = fieldsSchema.parse(row.object.fields);
   const validate = recordValidator(fields);
   const before = row.record.data;
-  const input = coerceValues(fields, data);
+  checkKnownFields(fields, data);
+  const input = lowerEmails(fields, coerceValues(fields, data));
   const next = recompute(
     fields,
     before,
@@ -207,10 +230,19 @@ export async function updateInTx(
   );
   const changed = changedFields(before, next);
   await checkRefs(tx, ctx, fields, pick(next, changed));
-  if (!changed.length) return { record: row.record, created: false, changed };
+  // Live write on a test record: promote it (see upsertInTx).
+  const promote = row.record.isTest && !(opts.test ?? ctx.test ?? false);
+  // An explicit test:true re-flags a live record as test (purgeable again).
+  const reflag = !row.record.isTest && opts.test === true;
+  if (!changed.length && !promote && !reflag)
+    return { record: row.record, created: false, changed, promoted: false };
   const [record] = await tx
     .update(records)
-    .set({ data: next, updatedAt: new Date() })
+    .set({
+      data: next,
+      updatedAt: new Date(),
+      ...((promote || reflag) && { isTest: reflag }),
+    })
     .where(eq(records.id, id))
     .returning();
   if (fields.some((f) => f.unique && changed.includes(f.key)))
@@ -222,8 +254,26 @@ export async function updateInTx(
     { type: "record", id },
     updateDiff(before, next, changed),
   );
-  await timelineEvent(tx, ctx, id, "record.updated", before, next, changed);
-  return { record: record!, created: false, changed };
+  await timelineEvent(
+    tx,
+    ctx,
+    id,
+    "record.updated",
+    before,
+    next,
+    changed,
+    record!.isTest,
+  );
+  return { record: record!, created: false, changed, promoted: promote };
+}
+
+// Warning returned when a live write adopted a test record.
+export const PROMOTED_WARNING =
+  "test record adopted as live; pass test:true to keep it purgeable";
+
+// Adds `warning` to a write result whose test record was promoted.
+export function withPromotion<T extends { promoted: boolean }>(r: T) {
+  return r.promoted ? { ...r, warning: PROMOTED_WARNING } : r;
 }
 
 // References (ref/refs) of workspace records to `ids` (records of

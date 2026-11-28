@@ -224,6 +224,13 @@ function constrain(f: Field, s: z.ZodType): z.ZodType {
   });
 }
 
+// Problem with a value written to a field (null when valid), e.g. an
+// invalid email or an unknown select option.
+export function valueProblem(f: Field, v: unknown): string | null {
+  const r = valueSchema(f).safeParse(v);
+  return r.success ? null : (r.error.issues[0]?.message ?? "invalid value");
+}
+
 function valueSchema(f: Field): z.ZodType {
   if (isComputed(f)) return z.unknown();
   return constrain(f, rawSchema(f));

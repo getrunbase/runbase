@@ -32,6 +32,8 @@ export const settingsSchema = z.object({
       }),
     )
     .default({}),
+  // Definition lint (src/lint): true = warnings block the save.
+  lintStrict: z.boolean().default(false),
 });
 export type WorkspaceSettings = z.infer<typeof settingsSchema>;
 
@@ -40,6 +42,7 @@ const settingsPatchSchema = z.object({
   allowedDomains: settingsSchema.shape.allowedDomains.removeDefault().optional(),
   secrets: settingsSchema.shape.secrets.removeDefault().optional(),
   mcpServers: settingsSchema.shape.mcpServers.removeDefault().optional(),
+  lintStrict: z.boolean().optional(),
 });
 
 type Json = Record<string, unknown>;
@@ -98,7 +101,35 @@ async function pruneWorkspaceIds(organizationId: string, id: string) {
     .where(and(eq(apiKeys.organizationId, organizationId), k.has));
 }
 
+// Strict definition lint enabled for the workspace (no secret decryption).
+export async function lintStrict(ctx: TenantContext) {
+  const [row] = await withTenant(ctx, (tx) =>
+    tx
+      .select({ settings: workspaces.settings })
+      .from(workspaces)
+      .where(eq(workspaces.id, ctx.workspaceId)),
+  );
+  return settingsSchema.parse(row?.settings ?? {}).lintStrict;
+}
+
 export const workspacesService = {
+  // Readable settings (no secrets): allowed domains of external blocks,
+  // MCP server names, strict lint.
+  getSettings: async (ctx: TenantContext) => {
+    await requireScope(ctx, "read");
+    const [row] = await withTenant(ctx, (tx) =>
+      tx
+        .select({ settings: workspaces.settings })
+        .from(workspaces)
+        .where(eq(workspaces.id, ctx.workspaceId)),
+    );
+    const s = settingsSchema.parse(row?.settings ?? {});
+    return {
+      allowedDomains: s.allowedDomains,
+      mcpServers: Object.keys(s.mcpServers),
+      lintStrict: s.lintStrict,
+    };
+  },
   // Settings: owners/admins; the audit only keeps secret names.
   setSettings: async (ctx: TenantContext, input: unknown) => {
     await requireScope(ctx, "admin");
@@ -122,6 +153,7 @@ export const workspacesService = {
         ...(patch.allowedDomains && { allowedDomains: patch.allowedDomains }),
         secrets: Object.keys(secrets),
         ...(patch.mcpServers && { mcpServers: Object.keys(patch.mcpServers) }),
+        ...(patch.lintStrict !== undefined && { lintStrict: patch.lintStrict }),
       });
     });
   },

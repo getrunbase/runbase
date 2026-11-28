@@ -1,6 +1,7 @@
 // Bulk operations of recordsService: update / delete by filter (with a
 // mandatory preview) and CSV import.
 import { and, eq } from "drizzle-orm";
+import { ZodError } from "zod";
 import { appError, notFound } from "../errors/app-error";
 import { requireScope } from "../api-keys";
 import { publish } from "../bus";
@@ -12,7 +13,13 @@ import { parseCsv } from "./csv";
 import { objectsOf, txObjects } from "./helpers";
 import { scoped } from "./query";
 import { MAX_BULK, type Data } from "./types";
-import { publishUpsert, removeInTx, updateInTx, upsertInTx } from "./write";
+import {
+  PROMOTED_WARNING,
+  publishUpsert,
+  removeInTx,
+  updateInTx,
+  upsertInTx,
+} from "./write";
 
 // Ids of an object's records matching the filter (filter operations).
 async function matchingIds(
@@ -69,16 +76,47 @@ function csvValue(f: Field, v: string): unknown {
       .split(";")
       .map((x) => x.trim())
       .filter(Boolean);
-  return v;
+  return t;
 }
+
+type ImportFailure = {
+  line: number;
+  field?: string;
+  value?: unknown;
+  message: string;
+};
+
+// Failures of a CSV row: one entry per invalid field for a validation
+// error (field, submitted value, message), otherwise the error message.
+function rowFailures(line: number, data: Data, e: unknown): ImportFailure[] {
+  if (e instanceof ZodError)
+    return e.issues.map((i) => {
+      const field = i.path.length ? String(i.path[0]) : undefined;
+      return {
+        line,
+        ...(field ? { field, value: data[field] ?? null } : {}),
+        message: i.message,
+      };
+    });
+  return [{ line, message: e instanceof Error ? e.message : String(e) }];
+}
+
+// Maximum number of failures listed in an import report (failedCount
+// gives the total).
+const MAX_FAILURES = 50;
 
 type ImportReport = {
   total: number;
   created: number;
   updated: number;
   unchanged: number;
-  failed: { line: number; error: string }[];
+  failed: ImportFailure[];
+  // Rows that failed (`failed` lists at most MAX_FAILURES entries).
   failedCount: number;
+  // Rows whose `match` column is empty (handled per `onEmptyMatch`).
+  emptyMatchKey: number;
+  skipped: number;
+  warnings: string[];
 };
 
 // Aborts the transaction of a dry-run import, carrying its report out.
@@ -99,6 +137,8 @@ export const bulkOps = {
       data: Data;
       dryRun?: boolean;
       expected?: number;
+      // true: matched test records stay test data (no promotion to live).
+      test?: boolean;
     },
   ) => {
     await requireScope(ctx, "write");
@@ -107,14 +147,24 @@ export const bulkOps = {
       if (input.dryRun) return ids.length;
       checkExpected(ids.length, input.expected);
       const out = [];
-      for (const id of ids) out.push(await updateInTx(tx, ctx, id, input.data));
+      for (const id of ids)
+        out.push(
+          await updateInTx(tx, ctx, id, input.data, "merge", {
+            test: input.test,
+          }),
+        );
       return out;
     });
     if (typeof results === "number") return { dryRun: true, count: results };
     for (const r of results) await publishUpsert(ctx, {}, r);
+    const promoted = results.filter((r) => r.promoted).length;
     return {
       count: results.length,
       updated: results.filter((r) => r.changed.length).length,
+      ...(promoted && {
+        promoted,
+        warning: `${promoted} ${PROMOTED_WARNING}`,
+      }),
     };
   },
 
@@ -150,7 +200,12 @@ export const bulkOps = {
       csv: string;
       mapping: Record<string, string>;
       match?: string;
+      // Row with an empty `match` value: create a new record (default,
+      // possible duplicates), skip it, or report it as failed.
+      onEmptyMatch?: "create" | "skip" | "fail";
       dryRun?: boolean;
+      // Created records are test data (workspace.purge_test).
+      test?: boolean;
     },
   ) => {
     await requireScope(ctx, "write");
@@ -188,7 +243,11 @@ export const bulkOps = {
           { field: input.match },
         );
       const done: Awaited<ReturnType<typeof upsertInTx>>[] = [];
-      const failed: { line: number; error: string }[] = [];
+      const failed: ImportFailure[] = [];
+      let failedCount = 0;
+      let emptyMatchKey = 0;
+      let skipped = 0;
+      const onEmpty = input.onEmptyMatch ?? "create";
       for (const [n, r] of rows.entries()) {
         const data: Data = {};
         for (const { i, f } of cols)
@@ -196,6 +255,24 @@ export const bulkOps = {
             data[f.key] = csvValue(f, r[i]);
         const match =
           input.match && data[input.match] != null ? input.match : undefined;
+        if (input.match && !match) {
+          emptyMatchKey++;
+          if (onEmpty === "skip") {
+            skipped++;
+            continue;
+          }
+          if (onEmpty === "fail") {
+            failedCount++;
+            if (failed.length < MAX_FAILURES)
+              failed.push({
+                line: n + 2,
+                field: input.match,
+                value: null,
+                message: `Empty match key “${input.match}”`,
+              });
+            continue;
+          }
+        }
         try {
           done.push(
             await tx.transaction((sp) => {
@@ -204,14 +281,14 @@ export const bulkOps = {
                 objectId,
                 data: coerceValues(fields, data),
                 match,
+                test: input.test,
               });
             }),
           );
         } catch (e) {
-          failed.push({
-            line: n + 2,
-            error: e instanceof Error ? e.message : String(e),
-          });
+          failedCount++;
+          if (failed.length < MAX_FAILURES)
+            failed.push(...rowFailures(n + 2, data, e));
         }
       }
       const report: ImportReport = {
@@ -219,8 +296,21 @@ export const bulkOps = {
         created: done.filter((d) => d.created).length,
         updated: done.filter((d) => !d.created && d.changed.length).length,
         unchanged: done.filter((d) => !d.created && !d.changed.length).length,
-        failed: failed.slice(0, 50),
-        failedCount: failed.length,
+        failed: failed.slice(0, MAX_FAILURES),
+        failedCount,
+        emptyMatchKey,
+        skipped,
+        warnings: emptyMatchKey
+          ? [
+              `${emptyMatchKey} row(s) have an empty “${input.match}”: ${
+                onEmpty === "create"
+                  ? "created as new records without deduplication"
+                  : onEmpty === "skip"
+                    ? "skipped"
+                    : "reported as failed"
+              } (onEmptyMatch: create | skip | fail).`,
+            ]
+          : [],
       };
       if (input.dryRun) throw new DryRun(report);
       return { report, done };

@@ -10,12 +10,12 @@ test("template.export -> template.import, readable errors", async () => {
   const src = await owner();
   const call = client(src);
   await call("objects.create", {
-    slug: "leads",
+    slug: "lead",
     name: "Leads",
     fields: [{ key: "email", label: "Email", type: "email", unique: true }],
   });
   await call("records.upsert", {
-    object: "leads",
+    object: "lead",
     data: { email: "a@b.io" },
   });
   await call("secrets.set", { name: "API_KEY", value: "never-exported" });

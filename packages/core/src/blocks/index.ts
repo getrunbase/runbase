@@ -90,6 +90,13 @@ export async function getBlock(
   return f ? functionBlock(ctx, f) : undefined;
 }
 
+// Implicit branch of any step that sets retry.continueOnFail: true (see
+// branchesOf): not in `branches` since it only exists with that option.
+export const FAIL_BRANCH = {
+  branch: "error",
+  when: "only with retry.continueOnFail: true on the step; taken after the last failed attempt; connect next.<step id>.error",
+} as const;
+
 // Workflow triggers (`definition.trigger`), described for the catalog.
 const TRIGGERS: Record<string, { label: string; description: string }> = {
   "trigger.record_created": {
@@ -114,7 +121,7 @@ const TRIGGERS: Record<string, { label: string; description: string }> = {
   "trigger.webhook": {
     label: "Incoming webhook",
     description:
-      "Starts a run on each valid reception of webhook `webhook` (name). With `object` + `mapping` (field -> payload path), the record is created or updated first (`match`: unique field) and the run targets it.",
+      'Starts a run on each valid reception of webhook `webhook` (name). With `object` + `mapping` (field -> path relative to the body root, e.g. { email: "email", city: "address.city" }), the record is created or updated first (`match`: unique field) and the run targets it. {{event.x}} is the flattened body: body field `x`, no `payload.` prefix; {{event.id}}, {{event.type}} and {{event.occurredAt}} describe the stored event. Rule: 1 run plus 1 follow-up per record. Receptions during an active run coalesce into one follow-up that replays the latest one once the run ends (pending until then). A reception whose match field does not resolve is refused with 422 (config.rejectUnmapped, default true for new hooks); other unresolved paths come back as `warnings`. Header `x-runbase-test: 1` marks the event, record and run as test.',
   },
   "trigger.run_failed": {
     label: "Workflow failed",
@@ -199,6 +206,7 @@ export const blocksService = {
       .map((b) => ({
         kind: "block" as const,
         ...b,
+        failBranch: FAIL_BRANCH,
         ...("app" in b && b.app
           ? { app: { name: b.app.name, label: b.app.label } }
           : {}),

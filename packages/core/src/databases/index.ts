@@ -1,13 +1,26 @@
 // Databases: level between the workspace and the objects.
 import { appError, notFound } from "../errors/app-error";
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, inArray } from "drizzle-orm";
 import { requireScope } from "../api-keys";
 import { audit } from "../audit";
 import { databases, objects, records } from "../db/schema";
 import { publishDeleted, removeObjectInTx } from "../objects";
 import { withTenant, type TenantContext, type Tx } from "../tenant";
 
-export const DEFAULT_DATABASE = { slug: "defaut", name: "Default" };
+export const DEFAULT_DATABASE = { slug: "default", name: "Default" };
+// Slug of the default database in workspaces created before the rename.
+const LEGACY_DEFAULT = "defaut";
+
+// Slugs accepted for a lookup: "default" and its legacy alias are the same database.
+const slugsOf = (slug: string) =>
+  slug === DEFAULT_DATABASE.slug || slug === LEGACY_DEFAULT
+    ? [DEFAULT_DATABASE.slug, LEGACY_DEFAULT]
+    : [slug];
+
+// Unique constraint violated (direct Postgres error or wrapped by Drizzle).
+const isUniqueViolation = (e: unknown) =>
+  (((e as { cause?: unknown }).cause ?? e) as { code?: string }).code ===
+  "23505";
 
 type DatabaseInput = {
   slug: string;
@@ -32,7 +45,10 @@ export async function resolveDatabaseId(
       .select({ id: databases.id })
       .from(databases)
       .where(
-        and(eq(databases.workspaceId, ctx.workspaceId), eq(databases.slug, s)),
+        and(
+          eq(databases.workspaceId, ctx.workspaceId),
+          inArray(databases.slug, slugsOf(s)),
+        ),
       );
   const [row] = await find();
   if (row) return row.id;
@@ -77,7 +93,7 @@ export const databasesService = {
         .where(
           and(
             eq(databases.workspaceId, ctx.workspaceId),
-            eq(databases.slug, slug),
+            inArray(databases.slug, slugsOf(slug)),
           ),
         );
       if (!row) return null;
@@ -101,7 +117,25 @@ export const databasesService = {
   },
   create: async (ctx: TenantContext, input: DatabaseInput) => {
     await requireScope(ctx, "admin");
+    const taken = () =>
+      appError(
+        "data.conflict",
+        "A database with slug {slug} already exists in this workspace",
+        { slug: input.slug },
+        { kind: "conflict" },
+      );
     return withTenant(ctx, async (tx) => {
+      // "default" and "defaut" name the same database: either one taken.
+      const [dup] = await tx
+        .select({ id: databases.id })
+        .from(databases)
+        .where(
+          and(
+            eq(databases.workspaceId, ctx.workspaceId),
+            inArray(databases.slug, slugsOf(input.slug)),
+          ),
+        );
+      if (dup) throw taken();
       const [row] = await tx
         .insert(databases)
         .values({
@@ -115,6 +149,9 @@ export const databasesService = {
         .returning();
       await audit(tx, ctx, "database.create", res(row!.id), input);
       return row!;
+    }).catch((e: unknown) => {
+      if (isUniqueViolation(e)) throw taken();
+      throw e;
     });
   },
   rename: async (

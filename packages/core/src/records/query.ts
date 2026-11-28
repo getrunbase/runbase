@@ -15,7 +15,7 @@ import {
   type Hop,
   type SchemaGraph,
 } from "../filter";
-import { graphOf, page } from "./helpers";
+import { graphOf, lowerEmailFilter, page } from "./helpers";
 import type { RecordRow, SearchInput } from "./types";
 
 // Workspace object, its fields and the compiled filter (search / aggregate).
@@ -38,7 +38,7 @@ export async function scoped(
     ? compileFilter(
         records.data,
         fields,
-        filter,
+        lowerEmailFilter(fields, filter),
         await graphOf(tx, ctx, object.slug),
       )
     : sql`true`;

@@ -22,7 +22,8 @@ import { requireScope } from "../api-keys";
 import { audit } from "../audit";
 import { db } from "../db/client";
 import { webhooks } from "../db/schema";
-import { eventsService } from "../events";
+import { eventsService, publishEvent } from "../events";
+import { hasFailedFanOut } from "../errors/record";
 import { decryptAll, decryptSecret, secretNameSchema } from "../secrets";
 import { withTenant, type TenantContext } from "../tenant";
 import { appError, notFound } from "../errors/app-error";
@@ -69,6 +70,8 @@ const optionsSchema = z.object({
   splitPath: z.string().min(1).optional(),
   storeSample: z.boolean().optional(),
   dedupe: z.enum(["id", "id+hash", "none"]).optional(),
+  // Reception refused (422) when a trigger's match field does not resolve.
+  rejectUnmapped: z.boolean().optional(),
 });
 type WebhookOptions = z.infer<typeof optionsSchema>;
 
@@ -261,9 +264,13 @@ export type WebhookResponse = { status: number; body: unknown };
 export function splitPayload(payload: unknown, splitPath?: string) {
   const list = splitPath ? pick(payload, splitPath) : payload;
   if (splitPath && !Array.isArray(list))
-    throw appError("webhooks.splitPathNotArray", "splitPath {path}: not an array", {
-      path: splitPath,
-    });
+    throw appError(
+      "webhooks.splitPathNotArray",
+      "splitPath {path}: not an array",
+      {
+        path: splitPath,
+      },
+    );
   return Array.isArray(list) ? list : [payload];
 }
 
@@ -274,11 +281,44 @@ const asObject = (v: unknown) =>
 
 // Public reception. The webhook is read without tenant (unguessable id), everything
 // else goes through its creator's context. `test`: nothing is pushed.
+// Synchronous mapping check injected by the HTTP route (triggers).
+export type MappingCheck = (
+  ctx: TenantContext,
+  hookName: string,
+  items: unknown[],
+) => Promise<{
+  missing: { field: string; path: string | null }[];
+  // Mapped values the record write would refuse (field, value, problem).
+  invalid?: { field: string; value: unknown; problem: string; item: number }[];
+  warnings: string[];
+}>;
+
+// Body -> payload: JSON, or a form post (application/x-www-form-urlencoded,
+// repeated keys become arrays). undefined when the body cannot be parsed.
+export function parseBody(body: string, contentType?: string | null) {
+  if (
+    contentType?.toLowerCase().includes("application/x-www-form-urlencoded")
+  ) {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of new URLSearchParams(body)) {
+      const prev = out[k];
+      out[k] =
+        prev === undefined ? v : Array.isArray(prev) ? [...prev, v] : [prev, v];
+    }
+    return out;
+  }
+  try {
+    return JSON.parse(body) as unknown;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function receiveWebhook(
   id: string,
   body: string,
   headers: Headers,
-  opts: { test?: boolean } = {},
+  opts: { test?: boolean; check?: MappingCheck } = {},
 ): Promise<WebhookResponse> {
   if (!z.uuid().safeParse(id).success)
     return { status: 404, body: { error: "Webhook not found" } };
@@ -300,12 +340,9 @@ export async function receiveWebhook(
   if (!signatureMatches(config, secret, body, signed))
     return { status: 401, body: { error: "Invalid signature" } };
   const headerId = signed.id;
-  let payload: unknown;
-  try {
-    payload = JSON.parse(body);
-  } catch {
+  const payload = parseBody(body, headers["content-type"]);
+  if (payload === undefined)
     return { status: 422, body: { error: "Invalid JSON" } };
-  }
   const o = hook.config as WebhookOptions;
   const saveSample = () =>
     db
@@ -323,6 +360,39 @@ export async function receiveWebhook(
     return { status: 422, body: { error: (e as Error).message } };
   }
   const batch = items.length > 1 || !!o.splitPath || Array.isArray(payload);
+  const warnings: string[] = [];
+  if (opts.check) {
+    const c = await opts.check(ctx, hook.name, items);
+    if (c.missing.length && o.rejectUnmapped)
+      return {
+        status: 422,
+        body: {
+          error: "Match field not found in the payload",
+          missing: c.missing,
+        },
+      };
+    const invalid = c.invalid ?? [];
+    // Same contract as a missing match field: refused before acknowledging,
+    // the sender sees which field and value are wrong.
+    if (invalid.length && o.rejectUnmapped)
+      return {
+        status: 422,
+        body: { error: "Mapped value rejected by the object", invalid },
+      };
+    warnings.push(
+      ...invalid.map(
+        (m) =>
+          `field ${m.field}: value ${JSON.stringify(m.value)} rejected (${m.problem})${c.invalid!.length > 1 || items.length > 1 ? ` (item ${m.item})` : ""}`,
+      ),
+      ...c.missing.map(
+        (m) =>
+          `match field ${m.field}: path ${m.path ?? "(unmapped)"} resolved to nothing`,
+      ),
+      ...c.warnings,
+    );
+  }
+  // `x-runbase-test: 1`: test event, its record and runs are test too.
+  const test = headers["x-runbase-test"] === "1";
   const out = [];
   for (const [i, item] of items.entries()) {
     // Header id (standard) takes precedence outside batches; in a batch, the
@@ -346,17 +416,28 @@ export async function receiveWebhook(
       payload: asObject(item),
       source: `webhook:${hook.name}`,
       idempotencyKey: key,
+      ...(test && { test: true }),
     });
-    out.push({ event_id: event.id, duplicate: event.duplicate });
+    // Resend of an event whose fan-out failed: replayed, not deduplicated.
+    let duplicate = event.duplicate;
+    if (duplicate && (await hasFailedFanOut(ctx, event.id))) {
+      duplicate = false;
+      await publishEvent(ctx, {}, { id: event.id });
+    }
+    out.push({ event_id: event.id, duplicate });
   }
   const duplicate = out.every((e) => e.duplicate);
   // Sample for the mapping: last new one received (a replay does not overwrite it).
   if (!duplicate && o.storeSample !== false) await saveSample();
+  const extra = {
+    ...(test && { test: true }),
+    ...(warnings.length && { warnings }),
+  };
   return {
     status: 200,
     body: batch
-      ? { events: out, duplicate }
-      : { event_id: out[0]?.event_id, duplicate },
+      ? { events: out, duplicate, ...extra }
+      : { event_id: out[0]?.event_id, duplicate, ...extra },
   };
 }
 
@@ -376,6 +457,7 @@ const parseConfig = (config: WebhookInput["config"]) => ({
     splitPath: config.splitPath,
     storeSample: config.storeSample,
     dedupe: config.dedupe,
+    rejectUnmapped: config.rejectUnmapped,
   }),
 });
 
@@ -418,7 +500,11 @@ export const webhooksService = {
   // revoking the key or removing the member cuts the webhook.
   create: async (ctx: TenantContext, input: WebhookInput) => {
     await requireScope(ctx, "admin");
-    const config = parseConfig(input.config);
+    // New hooks refuse unresolved match fields unless told otherwise.
+    const config = {
+      ...parseConfig(input.config),
+      rejectUnmapped: input.config.rejectUnmapped ?? true,
+    };
     const secretName = secretNameSchema.parse(input.secretName);
     const a = ctx.actor;
     return withTenant(ctx, async (tx) => {

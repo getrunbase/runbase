@@ -11,7 +11,7 @@ test("data protected end to end through MCP", async () => {
   const ctx = await owner();
   const call = client(ctx);
   await call("objects.create", {
-    slug: "contacts",
+    slug: "contact",
     name: "Contacts",
     fields: [
       { key: "name", label: "Nom", type: "text" },
@@ -20,7 +20,7 @@ test("data protected end to end through MCP", async () => {
     ],
   });
   const report = await call("records.import_csv", {
-    object: "contacts",
+    object: "contact",
     csv: "nom,mail,score\nAda,ada@x.io,10\nBob,bob@x.io,20\nAda 2,ada@x.io,30",
     mapping: { nom: "name", mail: "email", score: "score" },
     match: "email",
@@ -28,25 +28,25 @@ test("data protected end to end through MCP", async () => {
   assert.equal(report.created, 2);
   assert.equal(report.updated, 1);
 
-  const page = await call("objects.export", { object: "contacts" });
+  const page = await call("objects.export", { object: "contact" });
   assert.equal(page.next, null);
   assert.equal(page.csv.trim().split("\n").length, 3);
 
   const preview = await call("objects.migrate", {
-    object: "contacts",
+    object: "contact",
     operation: { op: "change_type", field: "score", type: "number" },
     dryRun: true,
   });
   assert.equal(preview.invalid, 0);
   await call("objects.migrate", {
-    object: "contacts",
+    object: "contact",
     operation: { op: "change_type", field: "score", type: "number" },
   });
 
   const {
     records: [bob],
   } = await call("records.search", {
-    object: "contacts",
+    object: "contact",
     q: "Bob",
   });
   assert.equal(bob.data.score, 20);
@@ -56,39 +56,39 @@ test("data protected end to end through MCP", async () => {
 
   const filter = { all: [{ field: "score", op: "gte", value: 20 }] };
   const dry = await call("records.delete_where", {
-    object: "contacts",
+    object: "contact",
     filter,
     dryRun: true,
   });
   assert.equal(dry.count, 2);
   const refused = await raw(ctx)("records.delete_where", {
-    object: "contacts",
+    object: "contact",
     filter,
   });
   assert.equal(refused.isError, true);
   await call("records.delete_where", {
-    object: "contacts",
+    object: "contact",
     filter,
     expected: 2,
   });
   assert.equal(
-    (await call("records.search", { object: "contacts" })).records.length,
+    (await call("records.search", { object: "contact" })).records.length,
     0,
   );
-  const trash = await call("records.trash", { object: "contacts" });
+  const trash = await call("records.trash", { object: "contact" });
   assert.equal(trash.length, 2);
   await call("records.restore", { id: bob.id });
   assert.equal(
-    (await call("records.search", { object: "contacts" })).records.length,
+    (await call("records.search", { object: "contact" })).records.length,
     1,
   );
   assert.deepEqual(
-    await call("records.purge", { object: "contacts", confirm: true }),
+    await call("records.purge", { object: "contact", confirm: true }),
     {
       purged: 1,
     },
   );
 
-  const objRefused = await raw(ctx)("objects.delete", { object: "contacts" });
+  const objRefused = await raw(ctx)("objects.delete", { object: "contact" });
   assert.equal(objRefused.isError, true);
 });

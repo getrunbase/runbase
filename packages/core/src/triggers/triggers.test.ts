@@ -280,6 +280,7 @@ test("trigger.webhook: payload -> record mapping (match), run with event", async
       "trigger.webhook: unknown webhook x",
       "trigger.mapping: unknown field zz",
       "trigger.match: name must be a unique field",
+      "trigger.match: name is not in the mapping, the record key would be empty",
     ],
   );
   const wf = await workflowsService.create(ctx, {
@@ -313,4 +314,171 @@ test("trigger.webhook: payload -> record mapping (match), run with event", async
     sample: { uid: string };
   }[];
   assert.equal(h!.sample.uid, "b2");
+});
+
+test("trigger.webhook: failed mapping is retryable, resend not deduplicated, event linked to its record", async () => {
+  const { createHmac } = await import("node:crypto");
+  const { secretsService } = await import("../secrets");
+  const { errorsService } = await import("../errors");
+  const { receiveWebhook, webhooksService } = await import("../webhooks");
+  const ctx = await owner("WebhookRetry");
+  await objectsService.create(ctx, {
+    slug: "lead",
+    name: "Lead",
+    fields: [{ key: "email", label: "Email", type: "email", unique: true }],
+  });
+  await secretsService.set(ctx, "H", "k");
+  const hook = await webhooksService.create(ctx, {
+    name: "forms",
+    eventType: "form.sent",
+    secretName: "H",
+    config: { format: "hmac", header: "x-sig", idPath: "id" } as never,
+  });
+  const trigger = (path: string) => ({
+    type: "trigger.webhook",
+    webhook: "forms",
+    object: "lead",
+    match: "email",
+    mapping: { email: path },
+  });
+  const wf = await workflowsService.create(ctx, {
+    name: "Forms",
+    definition: { trigger: trigger("contact.mail"), steps },
+  });
+  await workflowsService.update(ctx, wf.id, { status: "active" });
+  const body = JSON.stringify({ id: "f1", contact: { email: "a@x.io" } });
+  const send = () =>
+    receiveWebhook(hook.id, body, {
+      "x-sig": createHmac("sha256", "k").update(body).digest("hex"),
+    });
+  const r1 = await send();
+  const id = (r1.body as { event_id: string }).event_id;
+  assert.deepEqual(
+    await resolve({ name: "event.received", data: { ...ctx, id } } as never),
+    [],
+  );
+  const [err] = await sql`select id, message, payload from errors
+    where workspace_id = ${ctx.workspaceId} and status = 'open'`;
+  assert.match(err!.message, /path contact\.mail resolved to nothing/);
+  assert.equal(err!.payload.eventId, id);
+  assert.equal(err!.payload.workflowId, wf.id);
+
+  // Resend while the fan-out is failed: not swallowed as a duplicate.
+  const r2 = await send();
+  assert.equal((r2.body as { duplicate: boolean }).duplicate, false);
+
+  // Mapping fixed (deprecated `payload.` prefix accepted): retry runs it.
+  await workflowsService.update(ctx, wf.id, {
+    definition: { trigger: trigger("payload.contact.email"), steps },
+  });
+  const retried = await errorsService.retry(ctx, err!.id);
+  assert.equal(retried!.ok, true);
+  const [ev] = await sql`select record_id from events where id = ${id}`;
+  const [lead] = await sql`select id from records
+    where workspace_id = ${ctx.workspaceId}`;
+  assert.equal(ev!.record_id, lead!.id);
+  const open = await sql`select id from errors
+    where workspace_id = ${ctx.workspaceId} and status = 'open'`;
+  assert.equal(open.length, 0);
+  // Fan-out succeeded: the next resend is a duplicate again.
+  assert.equal(((await send()).body as { duplicate: boolean }).duplicate, true);
+});
+
+test("active run: self-trigger skipped quietly, external write queues one follow-up", async () => {
+  await busQueue().obliterate({ force: true });
+  const ctx = await owner("FollowUp");
+  const obj = await objectsService.create(ctx, {
+    slug: "deal",
+    name: "Deal",
+    fields: [{ key: "stage", label: "Stage", type: "text" }],
+  });
+  const wf = await workflowsService.create(ctx, {
+    name: "Long",
+    definition: {
+      trigger: { type: "trigger.record_updated", object: "deal" },
+      steps: [{ id: "w", type: "wait", input: { duration: "1h" } }],
+    },
+  });
+  await workflowsService.update(ctx, wf.id, { status: "active" });
+  const { record } = await recordsService.upsert(ctx, {
+    objectId: obj.id,
+    data: { stage: "new" },
+  });
+  const updated = (c: TenantContext) =>
+    resolve({
+      name: "record.updated",
+      data: { ...c, id: record.id, changed: ["stage"] },
+    });
+  assert.equal((await updated(ctx)).length, 1);
+  // Same actor as the active run: its own write, nothing queued.
+  assert.deepEqual(await updated(ctx), []);
+  const errs = () =>
+    sql`select id from errors where workspace_id = ${ctx.workspaceId}`;
+  assert.equal((await errs()).length, 0);
+  assert.equal((await busQueue().getDelayed()).length, 0);
+  // Another actor: one delayed follow-up for this workflow, no error.
+  const uid = crypto.randomUUID();
+  await sql`insert into "user" (id, name, email) values (${uid}, 'Bob', ${uid + "@x.io"})`;
+  await sql`insert into memberships (user_id, organization_id, role) values (${uid}, ${ctx.organizationId}, 'owner')`;
+  const other = { ...ctx, actor: { userId: uid } };
+  assert.deepEqual(await updated(other), []);
+  assert.deepEqual(await updated(other), []);
+  const delayed = await busQueue().getDelayed();
+  assert.equal(delayed.length, 1);
+  assert.equal(delayed[0]!.data.only, wf.id);
+  assert.equal(delayed[0]!.data.followups, 1);
+  assert.equal((await errs()).length, 0);
+  await busQueue().obliterate({ force: true });
+});
+
+test("record_updated: `to` filter and writes of the workflow's own run skipped", async () => {
+  await busQueue().obliterate({ force: true });
+  const ctx = await owner("ToFilter");
+  const obj = await objectsService.create(ctx, {
+    slug: "lead",
+    name: "Lead",
+    fields: [
+      { key: "name", label: "Name", type: "text" },
+      { key: "status", label: "Status", type: "text" },
+    ],
+  });
+  const wf = await workflowsService.create(ctx, {
+    name: "Qualified",
+    definition: {
+      trigger: {
+        type: "trigger.record_updated",
+        object: "lead",
+        to: { status: "Qualified" },
+      },
+      steps,
+    },
+  });
+  await workflowsService.update(ctx, wf.id, { status: "active" });
+  const { record } = await recordsService.upsert(ctx, {
+    objectId: obj.id,
+    data: { name: "Ann", status: "New" },
+  });
+  const updated = (changed: string[], c: TenantContext = ctx) =>
+    resolve({ name: "record.updated", data: { ...c, id: record.id, changed } });
+  // Status is New: no run.
+  assert.equal((await updated(["status"])).length, 0);
+  await recordsService.update(ctx, record.id, { status: "Qualified" });
+  // Another field changed while already Qualified: no run.
+  assert.equal((await updated(["name"])).length, 0);
+  // Write made by a run of this same workflow: skipped.
+  assert.equal(
+    (await updated(["status"], { ...ctx, viaWorkflow: wf.id })).length,
+    0,
+  );
+  // Write made by another workflow's run, or a person: one run.
+  assert.equal(
+    (
+      await updated(["status"], {
+        ...ctx,
+        viaWorkflow: crypto.randomUUID(),
+      })
+    ).length,
+    1,
+  );
+  await busQueue().obliterate({ force: true });
 });

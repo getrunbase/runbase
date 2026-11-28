@@ -4,7 +4,7 @@ import { requireScope } from "../api-keys";
 import { functionLogs, runSteps, workflowRuns, workflows } from "../db/schema";
 import { withTenant, type TenantContext } from "../tenant";
 import { isUuid } from "../lib/uuid";
-import { type RunFilter, RUN_STATUSES } from "./state";
+import { type Paths, type RunFilter, RUN_STATUSES } from "./state";
 
 export const runQueries = {
   get: async (ctx: TenantContext, runId: string) => {
@@ -187,6 +187,23 @@ export const runQueries = {
           ),
         )
         .orderBy(desc(workflowRuns.createdAt)),
+    );
+  },
+  // Compact form for agents: one line per waiting path (no full run rows).
+  waitingCompact: async (ctx: TenantContext) => {
+    const rows = await runQueries.waiting(ctx);
+    return rows.flatMap((r) =>
+      Object.entries((r.paths ?? {}) as Paths)
+        .filter(([, p]) => p.status === "waiting")
+        .map(([path, p]) => ({
+          runId: r.id,
+          workflowId: r.workflowId,
+          recordId: r.recordId,
+          path,
+          step: p.step,
+          message: p.message ?? "",
+          since: r.createdAt,
+        })),
     );
   },
 };

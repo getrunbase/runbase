@@ -14,7 +14,7 @@ import {
   type Hop,
 } from "../filter";
 import { isUuid } from "../lib/uuid";
-import { graphOf, page } from "./helpers";
+import { graphOf, lowerEmailFilter, page } from "./helpers";
 import { follow, hop, NUMERIC, scoped, searchIn, withVirtual } from "./query";
 import {
   MAX_TEMPLATE_HOPS,
@@ -120,13 +120,16 @@ export const readOps = {
           }
           cur = next;
         }
+        // `contact.id`: the related record's id (not a data field).
         const pick = (r: RecordRow) =>
-          segs
-            .slice(hops.length)
-            .reduce<unknown>(
-              (o, k) => (o == null ? undefined : (o as Data)[k]),
-              r.data,
-            );
+          hops.length && segs.length === hops.length + 1 && segs.at(-1) === "id"
+            ? r.id
+            : segs
+                .slice(hops.length)
+                .reduce<unknown>(
+                  (o, k) => (o == null ? undefined : (o as Data)[k]),
+                  r.data,
+                );
         out[path] = hops.every((h) => h.kind === "ref")
           ? cur[0] && pick(cur[0])
           : cur.map(pick);
@@ -148,10 +151,11 @@ export const readOps = {
           and(eq(records.id, id), eq(records.workspaceId, ctx.workspaceId)),
         );
       if (!row) throw notFound("records.notFound", "Record not found");
+      const fields = fieldsSchema.parse(row.object.fields);
       const where = compileFilter(
         records.data,
-        fieldsSchema.parse(row.object.fields),
-        filter,
+        fields,
+        lowerEmailFilter(fields, filter),
         await graphOf(tx, ctx, row.object.slug),
       );
       const hit = await tx
