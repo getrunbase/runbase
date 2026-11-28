@@ -19,5 +19,6 @@
   "sdk.notAllowed": "{what} non autorisé : {id}",
   "sdk.objectNotFound": "objet introuvable : {id}",
   "sdk.runNotFound": "run introuvable : {id}",
-  "sdk.workflowNotFound": "workflow introuvable : {id}"
+  "sdk.workflowNotFound": "workflow introuvable : {id}",
+  "pages.missingDefaultExport": "Le fichier d'entrée n'a pas d'export par défaut : ajoutez `export default function Page() {…}`"
 }

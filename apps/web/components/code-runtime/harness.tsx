@@ -5,6 +5,7 @@ import "./harness-env";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server.browser";
 import { mockCall } from "@getrunbase/core/components/mock";
+import { appError } from "@getrunbase/core/errors";
 import { format } from "./format";
 import { modules } from "./modules";
 
@@ -90,14 +91,29 @@ export default function render({ bundle, props, data }: Input) {
     const C = (new Function(`${bundle};return __C`)() as { default?: unknown })
       .default;
     if (typeof C !== "function")
-      throw new Error("export default du composant manquant");
+      throw appError(
+        "pages.missingDefaultExport",
+        "The entry file has no default export: add `export default function Page() {…}`",
+      );
     const html = renderToString(createElement(C as never, props as never));
     return { errors: [], html: html.slice(0, 20_000), sdkCalls };
   } catch (e) {
     return {
-      errors: [{ text: String((e as Error)?.stack ?? e).slice(0, 2_000) }],
+      errors: [
+        {
+          text: stripTmpPaths(String((e as Error)?.stack ?? e)).slice(0, 2_000),
+        },
+      ],
       html: "",
       sdkCalls,
     };
   }
 }
+
+// Sandbox temp paths (bundle location) are noise for the agent and leak
+// host details: replaced by `<bundle>`.
+export const stripTmpPaths = (s: string) =>
+  s.replace(
+    /(?:file:\/\/)?\/(?:private\/)?(?:tmp|var\/folders)\/[^\s:)]*/g,
+    "<bundle>",
+  );

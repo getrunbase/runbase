@@ -90,6 +90,13 @@ export async function getBlock(
   return f ? functionBlock(ctx, f) : undefined;
 }
 
+// Implicit branch of any step that sets retry.continueOnFail: true (see
+// branchesOf): not in `branches` since it only exists with that option.
+export const FAIL_BRANCH = {
+  branch: "error",
+  when: "only with retry.continueOnFail: true on the step; taken after the last failed attempt; connect next.<step id>.error",
+} as const;
+
 // Workflow triggers (`definition.trigger`), described for the catalog.
 const TRIGGERS: Record<string, { label: string; description: string }> = {
   "trigger.record_created": {
@@ -199,6 +206,7 @@ export const blocksService = {
       .map((b) => ({
         kind: "block" as const,
         ...b,
+        failBranch: FAIL_BRANCH,
         ...("app" in b && b.app
           ? { app: { name: b.app.name, label: b.app.label } }
           : {}),

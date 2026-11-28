@@ -89,6 +89,13 @@ test("switch: first matching case, Else, relation", async () => {
       "s: unknown branch zz (valid: c1, c2, else)",
     ),
   );
+  // `default` / `otherwise` (common agent guesses): fix suggested.
+  const defaultBranch = { ...byStage, next: { s: { default: ["a"] } } };
+  assert.ok(
+    (await workflowsService.validate(ctx, defaultBranch)).includes(
+      "s: no branch default, the fallback branch is named else (rename next.s.default to next.s.else)",
+    ),
+  );
 
   const branchOf = async (def: typeof byStage, id: string) =>
     (await workflowsService.dryRun(ctx, def, [id]))[0]!.path[0]!.branch;

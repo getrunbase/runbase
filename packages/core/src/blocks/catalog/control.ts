@@ -96,7 +96,8 @@ type LoopState = {
 export const loop = defineBlock({
   type: "loop",
   label: "Loop",
-  description: "Repeats a sequence of steps for each item of a list.",
+  description:
+    'Repeats the steps of `do` for each item of `items`. Inside `do`: {{item}} (current item, e.g. {{item.id}} or {{item.data.email}} for a record), {{index}} (0-based) and {{steps.<id>.output}} of the iteration. Dedupe example: items "{{steps.dupes.output.records}}", do [{ id: "merge", type: "record.merge", input: { keep: "{{record.id}}", merge: ["{{item.id}}"] } }]. After the loop: {{steps.<loop id>.output.results}}.',
   sideEffect: true,
   inputSchema: z.object({
     items: z.array(z.unknown()),

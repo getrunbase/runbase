@@ -84,6 +84,22 @@ test("hard-coded options are fine when the schema is read", () => {
   );
 });
 
+test("`total` next to an aggregate is flagged: it counts groups", () => {
+  const src = `const q = useQuery({ object: "o", groupBy: "stage", aggregate: [{ op: "sum", field: "amount", as: "amount" }] });
+const n = q.total;`;
+  const w = lintPackage({ "a.tsx": src }).filter(
+    (x) => x.rule === "aggregate-total",
+  );
+  assert.equal(w.length, 1);
+  assert.equal(w[0]!.line, 2);
+  assert.deepEqual(
+    rules({ "a.tsx": `const q = useQuery({ object: "o" }); q.total;` }).filter(
+      (r) => r === "aggregate-total",
+    ),
+    [],
+  );
+});
+
 test("the page.examples packages pass the static checks", () => {
   for (const e of EXAMPLES) assert.deepEqual(lintPackage(e.files), [], e.name);
 });
