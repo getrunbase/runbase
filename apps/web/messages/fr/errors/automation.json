@@ -149,5 +149,12 @@
   "workflows.dryRunApprovalHint": "Le chemin s'arrête à {step} (décision humaine attendue). Épingler sa branche pour tester la suite : definition.pins = { \"{step}\": { branch: \"approved\" } } (ou \"rejected\", \"expired\")",
   "workflows.dryRunStoppedAtCondition": "Rien ne s'est exécuté après {step} (branche {branch}) : passer des `records` qui prennent une branche connectée, ou l'épingler : definition.pins = { \"{step}\": { branch: \"{pin}\" } }",
   "workflows.reasonStopped": "arrête l'exécution : {message}",
-  "workflows.dryRunUnreachedWrites": "Aucune simulation n'a atteint les étapes à effet de bord {steps} : passer des `records` (ou un `event`) qui prennent leur branche, ou épingler la branche qui y mène"
+  "workflows.dryRunUnreachedWrites": "Aucune simulation n'a atteint les étapes à effet de bord {steps} : passer des `records` (ou un `event`) qui prennent leur branche, ou épingler la branche qui y mène",
+  "workflows.unknownBlockSuggest": "{step} : brique inconnue {type}, vouliez-vous dire {suggestion} ? (blocks.list)",
+  "workflows.unknownBlockDidYouMean": "Brique inconnue : {type}, vouliez-vous dire {suggestion} ?",
+  "workflows.invalidRegex": "{step} : expression régulière invalide {pattern} : {message}",
+  "workflows.invalidDate": "{step}.{field} : date invalide {value} (date ISO, \"now\", \"today\" ou un modèle {{…}})",
+  "workflows.placeholderRecipient": "{step}.{field} : destinataire fictif {value} ; indiquez une vraie adresse avant d'activer",
+  "workflows.orphanWebhookRecord": "{step} : stop.error s'exécute alors que trigger.webhook a déjà créé ou mis à jour l'enregistrement {object} ; validez le payload dans une condition avant d'écrire, ou supprimez l'enregistrement sur ce chemin",
+  "workflows.scheduleFilterNeedsObject": "trigger.filter : requiert trigger.object (le filtre sélectionne les enregistrements de cet objet)"
 }

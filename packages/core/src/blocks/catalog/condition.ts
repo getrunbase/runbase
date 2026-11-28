@@ -8,6 +8,7 @@ import {
   type Filter,
 } from "../../filter";
 import { notFound } from "../../errors/app-error";
+import { regexFlags } from "../../workflows/validate-hints";
 
 // Record mode: filter DSL evaluated on the record (relations included).
 export const conditionRecordInput = z.object({
@@ -23,6 +24,12 @@ export const conditionValueInput = z
     left: z.unknown(),
     op: conditionSchema.shape.op,
     right: z.unknown().optional(),
+    // regex only: JavaScript flags (e.g. "i"); caseInsensitive = "i".
+    flags: z
+      .string()
+      .regex(/^[imsu]*$/, "flags: only i, m, s, u")
+      .optional(),
+    caseInsensitive: z.boolean().optional(),
   })
   .strict();
 export const conditionInput = z.union([
@@ -66,7 +73,7 @@ export const condition = defineBlock({
   type: "condition",
   label: "Condition (yes / no)",
   description:
-    'Checks one or more rules on the record (relations included), or compares any run value ({ left: "{{steps.x.output.y}}", op, right }): continues on Yes if true, otherwise on No.',
+    'Checks one or more rules on the record (relations included), or compares any run value ({ left: "{{steps.x.output.y}}", op, right }; op regex takes flags: "i" or caseInsensitive: true): continues on Yes if true, otherwise on No.',
   sideEffect: false,
   inputSchema: conditionInput,
   outputSchema: z.object({ result: z.boolean() }),
@@ -77,7 +84,14 @@ export const condition = defineBlock({
       const { object, recordId, condition } = input;
       await validateCondition(services.objects.list, { object, condition });
       result = await services.records.matches(recordId, condition as Filter);
-    } else result = evaluateValue(input.op, input.left, input.right);
+    } else
+      result = evaluateValue(
+        input.op,
+        input.left,
+        input.right,
+        new Date(),
+        regexFlags(input),
+      );
     return { branch: String(result), output: { result } };
   },
 });

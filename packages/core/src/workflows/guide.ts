@@ -16,6 +16,7 @@ Goal: a workspace another person can read, debug and extend. The rules below are
 
 ## Native block or function
 - Use a native block when one exists: record.search, record.upsert, record.update, condition, switch, list.*, data.transform, date, http.request, event.emit, ai.*, human.approve, wait, workflow.run, stop.error.
+- Block types are singular: record.update (not records.update), event.emit (not events.push, the MCP tool). An unknown type fails validate with a "did you mean" hint.
 - Use a function (fn.<name>) only for what no block covers: a call to an external API with auth and response parsing, a non-trivial computation, a transformation too large for data.transform.
 - Keep the flow in the workflow, not inside a function: reads, writes, branches and waits are blocks, so each step shows in runs.get and can be retried on its own (runs.retry_from).
 - A workflow with a single fn.* step that does everything is wrong: split reads, logic and writes into steps.
