@@ -7,7 +7,7 @@ import { audit } from "../audit";
 import { databasesService } from "../databases";
 import { events, records, workflowRuns } from "../db/schema";
 import { errorsService } from "../errors";
-import { requireConfirm } from "../errors/app-error";
+import { notFound, requireConfirm } from "../errors/app-error";
 import { functionsService } from "../functions";
 import { objectsService } from "../objects";
 import { pagesService } from "../pages";
@@ -18,6 +18,58 @@ import { secretsService } from "../secrets";
 import { webhooksService } from "../webhooks";
 import { workflowsService } from "../workflows";
 import { withTenant, type TenantContext } from "../tenant";
+import {
+  buildDependencyMap,
+  dependenciesOf,
+  type DepPage,
+} from "./dependencies";
+
+// Dependency map from the current definitions (published page versions).
+async function dependencyMap(
+  ctx: TenantContext,
+  pre?: {
+    objs: Awaited<ReturnType<typeof objectsService.list>>;
+    wfs: { id: string; name: string; status: string; definition: unknown }[];
+    fns: Awaited<ReturnType<typeof functionsService.list>>;
+    pages: { id: string }[];
+  },
+) {
+  const objs = pre?.objs ?? (await objectsService.list(ctx));
+  const fns = pre?.fns ?? (await functionsService.list(ctx));
+  const wfs =
+    pre?.wfs ??
+    (await Promise.all(
+      (await workflowsService.list(ctx)).map(async (w) => ({
+        id: w.id,
+        name: w.name,
+        status: w.status,
+        definition: (await workflowsService.get(ctx, w.id))?.definition,
+      })),
+    ));
+  const pageList = pre?.pages ?? (await pagesService.list(ctx));
+  const pages = (
+    await Promise.all(pageList.map((p) => pagesService.get(ctx, p.id)))
+  ).filter((p): p is NonNullable<typeof p> => !!p);
+  return buildDependencyMap({
+    objects: objs.map((o) => ({
+      id: o.id,
+      slug: o.slug,
+      fields: (o.fields ?? []) as { key: string }[],
+    })),
+    workflows: wfs,
+    functions: fns.map((f) => ({
+      name: f.name,
+      code: f.code,
+      permissions: f.permissions as never,
+    })),
+    pages: pages.map((p) => ({
+      id: p.id,
+      name: p.name,
+      files: (p.files ?? {}) as DepPage["files"],
+      permissions: p.permissions as DepPage["permissions"],
+    })),
+  });
+}
 
 // Beyond that, purge_test asks to rerun (bounded batch per call).
 const PURGE_BATCH = 5_000;
@@ -66,23 +118,34 @@ export const overviewService = {
     });
     const recordsOf = (id: string) =>
       counts.perObject.find((c) => c.objectId === id)?.n ?? 0;
-    const workflows = await Promise.all(
-      wfs.map(async (w) => {
-        const full = await workflowsService.get(ctx, w.id);
-        const def = (full?.definition ?? {}) as {
-          trigger?: unknown;
-          steps?: { id: string; type: string }[];
-        };
-        return {
-          id: w.id,
-          name: w.name,
-          status: w.status,
-          version: w.currentVersion,
-          trigger: def.trigger ?? null,
-          steps: (def.steps ?? []).map((s) => ({ id: s.id, type: s.type })),
-        };
-      }),
+    const defs = await Promise.all(
+      wfs.map(async (w) => ({
+        id: w.id,
+        name: w.name,
+        status: w.status,
+        definition: (await workflowsService.get(ctx, w.id))?.definition,
+      })),
     );
+    const deps = await dependencyMap(ctx, { objs, wfs: defs, fns, pages });
+    // Compact: steps listed at top level only, as before; touches per object.
+    const workflows = wfs.map((w, i) => {
+      const def = (defs[i]!.definition ?? {}) as {
+        trigger?: unknown;
+        steps?: { id: string; type: string }[];
+      };
+      const d = deps.workflows[i]!;
+      return {
+        id: w.id,
+        name: w.name,
+        status: w.status,
+        version: w.currentVersion,
+        trigger: def.trigger ?? null,
+        steps: (def.steps ?? []).map((s) => ({ id: s.id, type: s.type })),
+        objects: d.objects,
+        functions: d.functions,
+        domains: d.domains,
+      };
+    });
     return {
       databases: dbs.map((d) => ({
         ...d,
@@ -111,6 +174,9 @@ export const overviewService = {
       secrets: secrets.map((s) => s.name),
       // Views readable by query.sql: name, columns, types.
       sqlViews,
+      // Field -> writers/readers (workflow:<name>#<step>, function:<name>,
+      // page:<name>). workspace.dependencies for one entity.
+      dependencies: deps.fields,
       counts: {
         records: counts.perObject.reduce((a, c) => a + c.n, 0),
         events: counts.events,
@@ -118,6 +184,33 @@ export const overviewService = {
         openErrors: await errorsService.openCount(ctx),
       },
     };
+  },
+
+  // Dependency map, whole or for one entity (`object.field`, `object`,
+  // `workflow:<name>`, `function:<name>`, `page:<name>`).
+  dependencies: async (ctx: TenantContext, entity?: string) => {
+    await requireScope(ctx, "read");
+    const map = await dependencyMap(ctx);
+    if (!entity) return map;
+    const hit = dependenciesOf(map, entity);
+    if (hit) return hit;
+    // Known object or field that nothing uses: empty answer, not an error.
+    const [slug, key, ...extra] = entity.split(".");
+    const obj = extra.length
+      ? undefined
+      : (await objectsService.list(ctx)).find((o) => o.slug === slug);
+    const fieldKeys = ((obj?.fields ?? []) as { key: string }[]).map(
+      (f) => f.key,
+    );
+    if (obj && key === undefined)
+      return { object: slug, fields: {}, usedBy: [] };
+    if (obj && key && fieldKeys.includes(key))
+      return { field: entity, writers: [], readers: [] };
+    throw notFound(
+      "overview.unknownEntity",
+      "Nothing found for {entity}. Use object.field, object, workflow:<name>, function:<name> or page:<name>.",
+      { entity },
+    );
   },
 
   // Deletes records, events and runs marked as test. Records: trash

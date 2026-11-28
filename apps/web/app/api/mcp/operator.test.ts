@@ -112,6 +112,18 @@ test("test data: label, purge_test and describe", async () => {
   assert.deepEqual(d.secrets, ["K"]);
   assert.equal(d.counts.records, 3);
   assert.ok(!JSON.stringify(d).includes('"v"'));
+  assert.deepEqual(d.dependencies, {});
+  const deps = await call("workspace.dependencies");
+  assert.deepEqual(Object.keys(deps).sort(), [
+    "fields",
+    "functions",
+    "pages",
+    "workflows",
+  ]);
+  assert.deepEqual(
+    (await call("workspace.dependencies", { entity: "lead" })).fields,
+    {},
+  );
 
   assert.deepEqual(await call("workspace.purge_test", { dryRun: true }), {
     dryRun: true,

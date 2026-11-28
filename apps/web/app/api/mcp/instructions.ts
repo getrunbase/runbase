@@ -5,7 +5,7 @@ export const MCP_INSTRUCTIONS = `# Runbase: tool map
 Data, automation and interface platform, split into workspaces. Every tool takes an optional \`workspace\` parameter (otherwise workspaces.use).
 
 ## Getting started
-Call **workspace.describe** first: databases, objects and fields, workflows (trigger, status), functions, webhooks, pages, secret names and counters, in one call.
+Call **workspace.describe** first: databases, objects and fields, workflows (trigger, status), functions, webhooks, pages, secret names and counters, in one call, plus a generated dependency map (which workflow, function or page reads or writes each field). workspace.dependencies { entity: "leads.status" } answers "what writes this field?" for one entity.
 
 ## In 10 minutes: data, workflow, view
 1. **Data**: databases.create, objects.create (typed fields, a unique field such as email), records.upsert_batch with \`test: true\` for sample data.
