@@ -146,5 +146,10 @@
   "workflows.dryRunApprovalHint": "Le chemin s'arrête à {step} (décision humaine attendue). Épingler sa branche pour tester la suite : definition.pins = { \"{step}\": { branch: \"approved\" } } (ou \"rejected\", \"expired\")",
   "workflows.dryRunStoppedAtCondition": "Rien ne s'est exécuté après {step} (branche {branch}) : passer des `records` qui prennent une branche connectée, ou l'épingler : definition.pins = { \"{step}\": { branch: \"{pin}\" } }",
   "workflows.reasonStopped": "arrête l'exécution : {message}",
-  "workflows.dryRunUnreachedWrites": "Aucune simulation n'a atteint les étapes à effet de bord {steps} : passer des `records` (ou un `event`) qui prennent leur branche, ou épingler la branche qui y mène"
+  "workflows.dryRunUnreachedWrites": "Aucune simulation n'a atteint les étapes à effet de bord {steps} : passer des `records` (ou un `event`) qui prennent leur branche, ou épingler la branche qui y mène",
+  "workflows.untestedBlocked": "La version {version} du workflow {id} n'est pas encore testée. Le dernier workflows.dry_run était bloqué par : {blocking}. Atteindre ces étapes avec des `records` / `events` qui prennent leur branche, ou épingler la branche qui y mène (definition.pins = { \"<stepId>\": { branch: \"<branch>\" } }, records: [{ id, pins }] par enregistrement) ; la couverture s'additionne entre les simulations de cette version. Puis workflows.activate { id: \"{id}\" }.",
+  "workflows.untestedDraft": "La version {version} (brouillon) du workflow {id} n'a jamais été testée. Lancer workflows.dry_run { workflow: \"{id}\", version: {version} } sans chemin en échec, puis workflows.activate { id: \"{id}\" } la promeut.",
+  "workflows.dryRunEventMissing": "Ce workflow démarre sur l'événement {type} : passer `event` (le contenu de l'événement, par exemple events.list { type: \"{type}\" } pour un vrai), ou `events` pour une exécution par contenu, ou `records` pour exécuter sur des enregistrements",
+  "workflows.dryRunDeliberateEnd": "{step} a pris la branche {branch}, déclarée vide : l'exécution s'arrête là volontairement et rien après {step} n'a été exercé par cette exécution",
+  "workflows.functionFailed": "{fn} : {error}"
 }
