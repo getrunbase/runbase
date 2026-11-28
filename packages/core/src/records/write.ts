@@ -24,7 +24,9 @@ import type { TenantContext, Tx } from "../tenant";
 import { isUuid } from "../lib/uuid";
 import {
   changedFields,
+  checkKnownFields,
   checkRefs,
+  lowerEmails,
   objectsOf,
   pick,
   prepareNew,
@@ -48,7 +50,11 @@ export async function upsertInTx(tx: Tx, ctx: TenantContext, raw: UpsertInput) {
   if (!object) throw notFound("objects.notFound", "Object not found");
   const objectFields = fieldsSchema.parse(object.fields);
   const validate = recordValidator(objectFields);
-  const input = { ...raw, data: coerceValues(objectFields, raw.data) };
+  checkKnownFields(objectFields, raw.data);
+  const input = {
+    ...raw,
+    data: lowerEmails(objectFields, coerceValues(objectFields, raw.data)),
+  };
 
   // Atomic upsert (unique index object_id, external_id): we try
   // the insert, ON CONFLICT DO NOTHING waits for the commit of a concurrent
@@ -175,6 +181,7 @@ export async function upsertInTx(tx: Tx, ctx: TenantContext, raw: UpsertInput) {
       existing?.data ?? {},
       record!.data,
       changed,
+      input.test || record!.isTest,
     );
   return { record: record!, created: !existing, changed };
 }
@@ -197,7 +204,8 @@ export async function updateInTx(
   const fields = fieldsSchema.parse(row.object.fields);
   const validate = recordValidator(fields);
   const before = row.record.data;
-  const input = coerceValues(fields, data);
+  checkKnownFields(fields, data);
+  const input = lowerEmails(fields, coerceValues(fields, data));
   const next = recompute(
     fields,
     before,
@@ -222,7 +230,16 @@ export async function updateInTx(
     { type: "record", id },
     updateDiff(before, next, changed),
   );
-  await timelineEvent(tx, ctx, id, "record.updated", before, next, changed);
+  await timelineEvent(
+    tx,
+    ctx,
+    id,
+    "record.updated",
+    before,
+    next,
+    changed,
+    row.record.isTest,
+  );
   return { record: record!, created: false, changed };
 }
 

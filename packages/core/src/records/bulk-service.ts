@@ -1,6 +1,7 @@
 // Bulk operations of recordsService: update / delete by filter (with a
 // mandatory preview) and CSV import.
 import { and, eq } from "drizzle-orm";
+import { ZodError } from "zod";
 import { appError, notFound } from "../errors/app-error";
 import { requireScope } from "../api-keys";
 import { publish } from "../bus";
@@ -69,15 +70,42 @@ function csvValue(f: Field, v: string): unknown {
       .split(";")
       .map((x) => x.trim())
       .filter(Boolean);
-  return v;
+  return t;
 }
+
+type ImportFailure = {
+  line: number;
+  field?: string;
+  value?: unknown;
+  message: string;
+};
+
+// Failures of a CSV row: one entry per invalid field for a validation
+// error (field, submitted value, message), otherwise the error message.
+function rowFailures(line: number, data: Data, e: unknown): ImportFailure[] {
+  if (e instanceof ZodError)
+    return e.issues.map((i) => {
+      const field = i.path.length ? String(i.path[0]) : undefined;
+      return {
+        line,
+        ...(field ? { field, value: data[field] ?? null } : {}),
+        message: i.message,
+      };
+    });
+  return [{ line, message: e instanceof Error ? e.message : String(e) }];
+}
+
+// Maximum number of failures listed in an import report (failedCount
+// gives the total).
+const MAX_FAILURES = 50;
 
 type ImportReport = {
   total: number;
   created: number;
   updated: number;
   unchanged: number;
-  failed: { line: number; error: string }[];
+  failed: ImportFailure[];
+  // Rows that failed (`failed` lists at most MAX_FAILURES entries).
   failedCount: number;
 };
 
@@ -151,6 +179,7 @@ export const bulkOps = {
       mapping: Record<string, string>;
       match?: string;
       dryRun?: boolean;
+      // Created records are test data (workspace.purge_test).
       test?: boolean;
     },
   ) => {
@@ -189,7 +218,8 @@ export const bulkOps = {
           { field: input.match },
         );
       const done: Awaited<ReturnType<typeof upsertInTx>>[] = [];
-      const failed: { line: number; error: string }[] = [];
+      const failed: ImportFailure[] = [];
+      let failedCount = 0;
       for (const [n, r] of rows.entries()) {
         const data: Data = {};
         for (const { i, f } of cols)
@@ -210,10 +240,9 @@ export const bulkOps = {
             }),
           );
         } catch (e) {
-          failed.push({
-            line: n + 2,
-            error: e instanceof Error ? e.message : String(e),
-          });
+          failedCount++;
+          if (failed.length < MAX_FAILURES)
+            failed.push(...rowFailures(n + 2, data, e));
         }
       }
       const report: ImportReport = {
@@ -221,8 +250,8 @@ export const bulkOps = {
         created: done.filter((d) => d.created).length,
         updated: done.filter((d) => !d.created && d.changed.length).length,
         unchanged: done.filter((d) => !d.created && !d.changed.length).length,
-        failed: failed.slice(0, 50),
-        failedCount: failed.length,
+        failed: failed.slice(0, MAX_FAILURES),
+        failedCount,
       };
       if (input.dryRun) throw new DryRun(report);
       return { report, done };

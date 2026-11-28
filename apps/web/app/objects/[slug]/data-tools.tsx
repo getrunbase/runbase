@@ -277,9 +277,12 @@ export function ImportDialog({
               </p>
               {report.failed.length > 0 && (
                 <ul className="max-h-32 list-disc overflow-y-auto pl-5 text-destructive">
-                  {report.failed.map((f) => (
-                    <li key={f.line}>
-                      {t("lineError", { line: f.line, error: f.error })}
+                  {report.failed.map((f, i) => (
+                    <li key={i}>
+                      {t("lineError", {
+                        line: f.line,
+                        error: f.field ? `${f.field}: ${f.message}` : f.message,
+                      })}
                     </li>
                   ))}
                 </ul>

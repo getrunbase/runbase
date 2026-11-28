@@ -391,7 +391,7 @@ export function defineRecordTools(server: McpServer, ctx: TenantContext) {
     "records.import_csv",
     {
       description:
-        'Imports a CSV (1st line = headers, max 10000 lines). mapping { column: field key }; match = unique field (e.g. email) to update the existing record instead of creating a duplicate. Lists: JSON or values separated by ";". Each line is independent: returns { total, created, updated, unchanged, failed: [{ line, error }] }. dryRun: true to check without writing. test: true marks created records as test (deleted by workspace.purge_test).',
+        'Imports a CSV (1st line = headers, max 10000 lines). mapping { column: field key }; match = unique field (e.g. email) to update the existing record instead of creating a duplicate. Lists: JSON or values separated by ";". Each line is independent: returns { total, created, updated, unchanged, failed: [{ line, field, value, message }] (first 50), failedCount }. dryRun: true to check without writing. test: true marks created records as test data (workspace.purge_test).',
       inputSchema: z.object({
         object: slug,
         csv: z.string().min(1),

@@ -1,7 +1,8 @@
 // Overview of a workspace (workspace.describe) and purge of test
 // data (workspace.purge_test). Aggregates existing services, without its own
 // logic: an agent discovers the whole workspace in one call.
-import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
+import { and, eq, inArray, notInArray, or, sql } from "drizzle-orm";
+import { anyUuid } from "../db/any";
 import { requireScope } from "../api-keys";
 import { audit } from "../audit";
 import { databasesService } from "../databases";
@@ -236,6 +237,11 @@ export const overviewService = {
     await requireScope(ctx, "admin");
     const ws = (t: typeof records | typeof events | typeof workflowRuns) =>
       eq(t.workspaceId, ctx.workspaceId);
+    // Test events, and every event of a test record (timeline included).
+    const testEvent = or(
+      eq(events.isTest, true),
+      sql`${events.recordId} in (select ${records.id} from ${records} where ${records.workspaceId} = ${ctx.workspaceId} and ${records.isTest})`,
+    )!;
     const count = () =>
       withTenant(ctx, async (tx) => {
         const n = async (q: Promise<{ n: number }[]>) => (await q)[0]?.n ?? 0;
@@ -251,7 +257,7 @@ export const overviewService = {
             tx
               .select({ n: c })
               .from(events)
-              .where(and(ws(events), eq(events.isTest, true))),
+              .where(and(ws(events), testEvent)),
           ),
           runs: await n(
             tx
@@ -271,11 +277,18 @@ export const overviewService = {
           .where(and(ws(records), eq(records.isTest, true)))
           .limit(PURGE_BATCH)
       ).map((r) => r.id);
-      for (const id of ids) await removeInTx(tx, ctx, id);
       const ev = await tx
         .delete(events)
-        .where(and(ws(events), eq(events.isTest, true)))
+        .where(
+          and(
+            ws(events),
+            ids.length
+              ? or(eq(events.isTest, true), anyUuid(events.recordId, ids))
+              : eq(events.isTest, true),
+          ),
+        )
         .returning({ id: events.id });
+      for (const id of ids) await removeInTx(tx, ctx, id);
       const runs = await tx
         .delete(workflowRuns)
         .where(
