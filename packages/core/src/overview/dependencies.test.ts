@@ -213,3 +213,38 @@ test("record.transact ops and record.merge count as writers", () => {
   assert.ok(wf.objects.leads?.writes.includes("*"));
   assert.ok(wf.objects.leads?.writes.includes("status"));
 });
+
+test("function writing a runtime record id: objects from calling workflows, else unknown", () => {
+  const code = `export default async (input, { records }) => {
+  await records.update(input.id, { status: "done", score: 5 });
+};`;
+  const perms = { records: "write" };
+  const m = buildDependencyMap({
+    objects,
+    workflows: [
+      {
+        id: "w1",
+        name: "close",
+        definition: {
+          trigger: { type: "trigger.record_created", object: "leads" },
+          steps: [
+            { id: "f", type: "fn.closer", input: { id: "{{record.id}}" } },
+          ],
+        },
+      },
+    ],
+    functions: [
+      { name: "closer", code, permissions: perms },
+      { name: "orphan", code, permissions: perms },
+    ],
+    pages: [],
+  });
+  const closer = m.functions.find((f) => f.name === "closer")!;
+  assert.deepEqual(closer.objects.leads?.writes, ["score", "status"]);
+  assert.equal(closer.unknown, undefined);
+  assert.ok(m.fields["leads.status"]?.writers.includes("function:closer"));
+  assert.equal("canWrite" in closer, false);
+  const orphan = m.functions.find((f) => f.name === "orphan")!;
+  assert.deepEqual(orphan.objects, {});
+  assert.equal(orphan.unknown, "objects: unknown (dynamic record id)");
+});

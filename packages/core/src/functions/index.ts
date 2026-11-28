@@ -1,6 +1,7 @@
 // Versioned functions: each save creates an immutable
 // version. A workflow references a function by name (latest version) or
 // by pinned version: `get(ctx, name, version?)`.
+import { createHash } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { requireScope } from "../api-keys";
@@ -101,6 +102,33 @@ async function find(
     .orderBy(desc(functions.version))
     .limit(1);
   return row ?? null;
+}
+
+// Stable JSON (sorted keys) of what defines a version.
+function canonical(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(canonical).join(",")}]`;
+  if (v && typeof v === "object")
+    return `{${Object.keys(v)
+      .sort()
+      .filter((k) => (v as Record<string, unknown>)[k] !== undefined)
+      .map(
+        (k) =>
+          `${JSON.stringify(k)}:${canonical((v as Record<string, unknown>)[k])}`,
+      )
+      .join(",")}}`;
+  return JSON.stringify(v ?? null);
+}
+function configHash(f: {
+  code: string;
+  inputSchema?: unknown;
+  outputSchema?: unknown;
+  permissions?: unknown;
+  limits?: unknown;
+}) {
+  const { code, inputSchema, outputSchema, permissions, limits } = f;
+  return createHash("sha256")
+    .update(canonical({ code, inputSchema, outputSchema, permissions, limits }))
+    .digest("hex");
 }
 
 async function insert(
@@ -224,8 +252,22 @@ export function hostBridge(
       return simulate(method, a, writes.length);
     }
     if (method === "get") return recordsService.get(ctx, String(a[0]));
-    if (method === "search")
-      return recordsService.search(ctx, String(a[0]), (a[1] ?? {}) as never);
+    if (method === "search") {
+      // Documented SDK shape: { records, hasMore, total, next }; top-level
+      // `limit` and `after` accepted as well as `pagination`.
+      const { limit, after, pagination, ...rest } = (a[1] ?? {}) as Record<
+        string,
+        unknown
+      > & { pagination?: { limit?: number; after?: string } };
+      return recordsService.searchPage(ctx, String(a[0]), {
+        ...rest,
+        pagination: {
+          ...pagination,
+          ...(limit !== undefined ? { limit: Number(limit) } : {}),
+          ...(after != null ? { after: String(after) } : {}),
+        },
+      } as never);
+    }
     if (method === "delete") {
       const row = await recordsService.remove(ctx, String(a[0]));
       if (!row)
@@ -383,6 +425,11 @@ export const functionsService = {
     assertDomains(input.permissions?.domains);
     const f = functionInputSchema.parse(input);
     return withTenant(ctx, async (tx) => {
+      // Idempotent: same code and config as the latest version = no new
+      // version (agents often re-save unchanged functions).
+      const latest = await find(tx, ctx, f.name);
+      if (latest && configHash(latest) === configHash(f))
+        return { ...latest, unchanged: true as const };
       const row = await insert(tx, ctx, f);
       await audit(
         tx,

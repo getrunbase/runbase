@@ -48,7 +48,14 @@ export type DependencyMap = {
     functions: string[];
     domains: string[];
   }[];
-  functions: { name: string; objects: Touches; domains: string[] }[];
+  functions: {
+    name: string;
+    objects: Touches;
+    domains: string[];
+    // Set when the code writes records but no object could be resolved
+    // (record id passed at runtime and no calling workflow names one).
+    unknown?: string;
+  }[];
   pages: { id: string; name: string; objects: Touches }[];
 };
 
@@ -140,6 +147,32 @@ export function buildDependencyMap(input: {
     return hits.length === 1 ? hits[0] : undefined;
   };
 
+  // Fields of `obj` that function code reads or writes (`key:` = write when
+  // the function may write, `.key` / `["key"]` = read).
+  const scanFn = (
+    objects: Touches,
+    who: string,
+    obj: DepObject,
+    code: string,
+    canWrite: boolean,
+    fallback: "reads" | "writes" = "reads",
+  ) => {
+    const reads: string[] = [];
+    const writes: string[] = [];
+    for (const { key } of obj.fields) {
+      const k = escape(key);
+      const asKey = new RegExp(`(^|[{,\\s])["']?${k}["']?\\s*:`, "m");
+      const asRead = new RegExp(`\\.${k}\\b|\\[["']${k}["']\\]`);
+      if (canWrite && asKey.test(code)) writes.push(key);
+      else if (asKey.test(code) || asRead.test(code)) reads.push(key);
+      if (canWrite && asRead.test(code)) reads.push(key);
+    }
+    note(objects, who, obj, reads, "reads");
+    note(objects, who, obj, writes, "writes");
+    if (!reads.length && !writes.length)
+      note(objects, who, obj, ["*"], fallback);
+  };
+
   const functions = input.functions.map((fn) => {
     const objects: Touches = {};
     const who = `function:${fn.name}`;
@@ -151,29 +184,23 @@ export function buildDependencyMap(input: {
       const named = [obj.slug, obj.id].some((n) =>
         new RegExp(`["'\`]${escape(n)}["'\`]`).test(code),
       );
-      if (!named) continue;
-      const reads: string[] = [];
-      const writes: string[] = [];
-      for (const { key } of obj.fields) {
-        const k = escape(key);
-        const asKey = new RegExp(`(^|[{,\\s])["']?${k}["']?\\s*:`, "m");
-        const asRead = new RegExp(`\\.${k}\\b|\\[["']${k}["']\\]`);
-        if (canWrite && asKey.test(code)) writes.push(key);
-        else if (asKey.test(code) || asRead.test(code)) reads.push(key);
-        if (canWrite && asRead.test(code)) reads.push(key);
-      }
-      note(objects, who, obj, reads, "reads");
-      note(objects, who, obj, writes, "writes");
-      if (!reads.length && !writes.length)
-        note(objects, who, obj, ["*"], "reads");
+      if (named) scanFn(objects, who, obj, code, canWrite);
     }
     const domains = uniq([
       ...(fn.permissions?.domains ?? []),
       ...domainsIn(code),
     ]);
-    return { name: fn.name, objects, domains };
+    return {
+      name: fn.name,
+      objects,
+      domains,
+      canWrite,
+    } as DependencyMap["functions"][number] & { canWrite?: boolean };
   });
   const fnByName = new Map(functions.map((f) => [f.name, f]));
+  // Objects a workflow hands to each function (step `object`, else the
+  // trigger object): resolves writes made with a runtime record id.
+  const fnTargets = new Map<string, Set<DepObject>>();
 
   const workflows = input.workflows.map((wf) => {
     const def = (isRec(wf.definition) ? wf.definition : {}) as {
@@ -212,6 +239,11 @@ export function buildDependencyMap(input: {
       if (s.type.startsWith("fn.")) {
         const name = s.type.slice(3);
         fns.push(name);
+        const t = resolve(inp.object) ?? subject;
+        if (t) {
+          const set = fnTargets.get(name) ?? new Set<DepObject>();
+          fnTargets.set(name, set.add(t));
+        }
         domains.push(...(fnByName.get(name)?.domains ?? []));
         continue;
       }
@@ -281,6 +313,26 @@ export function buildDependencyMap(input: {
       domains: uniq(domains),
     };
   });
+
+  // Writing functions that name no object: use the calling workflows.
+  const codeByName = new Map(input.functions.map((f) => [f.name, f.code]));
+  for (const fn of functions as (DependencyMap["functions"][number] & {
+    canWrite?: boolean;
+  })[]) {
+    const canWrite = fn.canWrite;
+    delete fn.canWrite;
+    if (!canWrite) continue;
+    const writes = Object.values(fn.objects).some((o) => o.writes.length);
+    if (writes) continue;
+    const targets = fnTargets.get(fn.name);
+    if (!targets?.size) {
+      fn.unknown = "objects: unknown (dynamic record id)";
+      continue;
+    }
+    const code = codeByName.get(fn.name) ?? "";
+    for (const obj of targets)
+      scanFn(fn.objects, `function:${fn.name}`, obj, code, true, "writes");
+  }
 
   const pages = input.pages.map((p) => {
     const objects: Touches = {};

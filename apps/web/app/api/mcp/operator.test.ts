@@ -190,7 +190,7 @@ test("functions.test dryRun: simulated writes; logs available", async () => {
       console.log("ajout", i.name);
       const { record } = await records.upsert({ objectId: "lead", data: { name: i.name } });
       const found = await records.search("lead", {});
-      return { id: record.id, seen: found.length };
+      return { id: record.id, seen: found.records.length };
     }`,
     permissions: { domains: [], secrets: [], records: "write" },
   });
