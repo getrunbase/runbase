@@ -1,0 +1,439 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Quote and Discount Approval",
+  "description": "Quote approval workflow: discounts above 15% wait for a manager in Slack, then the quote is saved to Google Drive and emailed from Gmail.",
+  "databases": [
+    {
+      "slug": "quotes",
+      "name": "Quotes"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "deals",
+      "name": "Deals",
+      "icon": "handshake",
+      "database": "quotes",
+      "fields": [
+        {
+          "key": "title",
+          "label": "Title",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "company",
+          "label": "Company",
+          "type": "text"
+        },
+        {
+          "key": "owner",
+          "label": "Owner",
+          "type": "text"
+        },
+        {
+          "key": "amount",
+          "label": "Amount",
+          "type": "number"
+        },
+        {
+          "key": "stage",
+          "label": "Stage",
+          "type": "select",
+          "options": ["qualified", "proposal", "negotiation", "won", "lost"]
+        }
+      ]
+    },
+    {
+      "slug": "quotes",
+      "name": "Quotes",
+      "icon": "file-text",
+      "database": "quotes",
+      "fields": [
+        {
+          "key": "number",
+          "label": "Quote number",
+          "type": "text",
+          "title": true,
+          "unique": true
+        },
+        {
+          "key": "deal",
+          "label": "Deal",
+          "type": "ref",
+          "object": "deals"
+        },
+        {
+          "key": "company",
+          "label": "Company",
+          "type": "text"
+        },
+        {
+          "key": "buyer_name",
+          "label": "Buyer name",
+          "type": "text"
+        },
+        {
+          "key": "buyer_email",
+          "label": "Buyer email",
+          "type": "email"
+        },
+        {
+          "key": "sales_rep",
+          "label": "Sales rep",
+          "type": "text"
+        },
+        {
+          "key": "line_items",
+          "label": "Line items",
+          "type": "text"
+        },
+        {
+          "key": "list_price",
+          "label": "List price",
+          "type": "number"
+        },
+        {
+          "key": "discount_pct",
+          "label": "Discount (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "key": "net_price",
+          "label": "Net price",
+          "type": "number"
+        },
+        {
+          "key": "currency",
+          "label": "Currency",
+          "type": "select",
+          "options": ["EUR", "USD", "GBP"]
+        },
+        {
+          "key": "valid_until",
+          "label": "Valid until",
+          "type": "date"
+        },
+        {
+          "key": "discount_reason",
+          "label": "Discount reason",
+          "type": "text"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": [
+            "draft",
+            "pending_approval",
+            "rejected",
+            "sent",
+            "accepted",
+            "declined"
+          ]
+        },
+        {
+          "key": "drive_link",
+          "label": "Drive link",
+          "type": "url"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "quotes",
+      "name": "Waiting for approval",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "pending_approval"
+      },
+      "sort": [
+        {
+          "field": "discount_pct",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "number",
+        "company",
+        "sales_rep",
+        "list_price",
+        "discount_pct",
+        "net_price",
+        "discount_reason"
+      ]
+    },
+    {
+      "object": "quotes",
+      "name": "Sent quotes",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "sent"
+      },
+      "sort": [
+        {
+          "field": "valid_until",
+          "dir": "asc"
+        }
+      ],
+      "columns": [
+        "number",
+        "company",
+        "buyer_name",
+        "net_price",
+        "currency",
+        "valid_until",
+        "drive_link"
+      ]
+    },
+    {
+      "object": "quotes",
+      "name": "High discounts",
+      "filter": {
+        "field": "discount_pct",
+        "op": "gt",
+        "value": 15
+      },
+      "sort": [
+        {
+          "field": "discount_pct",
+          "dir": "desc"
+        }
+      ]
+    },
+    {
+      "object": "deals",
+      "name": "Open deals",
+      "filter": {
+        "field": "stage",
+        "op": "in",
+        "value": ["qualified", "proposal", "negotiation"]
+      },
+      "sort": [
+        {
+          "field": "amount",
+          "dir": "desc"
+        }
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "key": "approve-and-send-quote",
+      "name": "Approve discounts and send quotes",
+      "definition": {
+        "trigger": {
+          "type": "trigger.record_created",
+          "object": "$object:quotes"
+        },
+        "steps": [
+          {
+            "id": "check_discount",
+            "type": "condition",
+            "input": {
+              "object": "quotes",
+              "recordId": "{{record.id}}",
+              "condition": {
+                "field": "discount_pct",
+                "op": "gt",
+                "value": 15
+              }
+            }
+          },
+          {
+            "id": "mark_pending",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "status": "pending_approval"
+              }
+            }
+          },
+          {
+            "id": "ask_slack",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "Discount approval needed: quote {{record.number}} for {{record.company}} by {{record.sales_rep}}. List {{record.list_price}} {{record.currency}}, discount {{record.discount_pct}}%, net {{record.net_price}} {{record.currency}}. Reason: {{record.discount_reason}}. Approve or reject it in Runbase."
+            }
+          },
+          {
+            "id": "approve",
+            "type": "human.approve",
+            "input": {
+              "message": "Quote {{record.number}} for {{record.company}}: {{record.discount_pct}}% off {{record.list_price}} {{record.currency}} (net {{record.net_price}}). Reason from {{record.sales_rep}}: {{record.discount_reason}}.",
+              "timeout": "3d"
+            }
+          },
+          {
+            "id": "upload",
+            "type": "node.google_drive.upload_file",
+            "input": {
+              "name": "Quote {{record.number}} - {{record.company}}.html",
+              "mimeType": "text/html",
+              "folderId": "YOUR_QUOTES_FOLDER_ID",
+              "content": "<h1>Quote {{record.number}}</h1><p>Prepared for {{record.buyer_name}}, {{record.company}}</p><p>{{record.line_items}}</p><p>List price: {{record.list_price}} {{record.currency}}<br>Discount: {{record.discount_pct}}%<br><strong>Total: {{record.net_price}} {{record.currency}}</strong></p><p>Valid until {{record.valid_until}}.</p>"
+            }
+          },
+          {
+            "id": "email_buyer",
+            "type": "node.gmail.send",
+            "input": {
+              "to": "{{record.buyer_email}}",
+              "subject": "Your quote {{record.number}} from our team",
+              "text": "Hi {{record.buyer_name}},\n\nAs discussed, here is your quote {{record.number}} for {{record.company}}.\n\n{{record.line_items}}\n\nTotal: {{record.net_price}} {{record.currency}} (valid until {{record.valid_until}}).\n\nYou can view it here: {{steps.upload.output.webViewLink}}\n\nReply to this email with any question.\n\n{{record.sales_rep}}"
+            }
+          },
+          {
+            "id": "mark_sent",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "status": "sent",
+                "drive_link": "{{steps.upload.output.webViewLink}}"
+              }
+            }
+          },
+          {
+            "id": "mark_rejected",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "status": "rejected"
+              }
+            }
+          },
+          {
+            "id": "tell_rep",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "Quote {{record.number}} for {{record.company}} was not approved at {{record.discount_pct}}% off (rejected, or no decision within 3 days). {{record.sales_rep}}, please revise the discount and create a new quote."
+            }
+          }
+        ],
+        "next": {
+          "check_discount": {
+            "true": ["mark_pending"],
+            "false": ["upload"]
+          },
+          "mark_pending": {
+            "ok": ["ask_slack"]
+          },
+          "ask_slack": {
+            "ok": ["approve"]
+          },
+          "approve": {
+            "approved": ["upload"],
+            "rejected": ["mark_rejected"],
+            "expired": ["mark_rejected"]
+          },
+          "upload": {
+            "ok": ["email_buyer"]
+          },
+          "email_buyer": {
+            "ok": ["mark_sent"]
+          },
+          "mark_rejected": {
+            "ok": ["tell_rep"]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": ["SLACK_WEBHOOK_URL"],
+  "records": [
+    {
+      "key": "d1",
+      "object": "deals",
+      "data": {
+        "title": "Northwind - annual plan",
+        "company": "Northwind Logistics",
+        "owner": "Jordan Lee",
+        "amount": 24000,
+        "stage": "negotiation"
+      }
+    },
+    {
+      "key": "d2",
+      "object": "deals",
+      "data": {
+        "title": "Brightpath - team expansion",
+        "company": "Brightpath Health",
+        "owner": "Amara Okafor",
+        "amount": 9600,
+        "stage": "proposal"
+      }
+    },
+    {
+      "key": "q1",
+      "object": "quotes",
+      "data": {
+        "number": "Q-2026-041",
+        "deal": "$record:d1",
+        "company": "Northwind Logistics",
+        "buyer_name": "Elena Rossi",
+        "buyer_email": "elena@northwind.example",
+        "sales_rep": "Jordan Lee",
+        "line_items": "Business plan, 40 seats, 12 months; onboarding package",
+        "list_price": 30000,
+        "discount_pct": 20,
+        "net_price": 24000,
+        "currency": "EUR",
+        "valid_until": "2026-12-31",
+        "discount_reason": "Multi-year commitment discussed, competing offer on the table",
+        "status": "pending_approval"
+      }
+    },
+    {
+      "key": "q2",
+      "object": "quotes",
+      "data": {
+        "number": "Q-2026-042",
+        "deal": "$record:d2",
+        "company": "Brightpath Health",
+        "buyer_name": "Marcus Hill",
+        "buyer_email": "marcus@brightpath.example",
+        "sales_rep": "Amara Okafor",
+        "line_items": "Team plan, 20 seats, 12 months",
+        "list_price": 10600,
+        "discount_pct": 10,
+        "net_price": 9540,
+        "currency": "USD",
+        "valid_until": "2026-12-20",
+        "discount_reason": "Annual prepayment",
+        "status": "sent",
+        "drive_link": "https://drive.google.com/file/d/example/view"
+      }
+    },
+    {
+      "key": "q3",
+      "object": "quotes",
+      "data": {
+        "number": "Q-2026-038",
+        "deal": "$record:d1",
+        "company": "Northwind Logistics",
+        "buyer_name": "Elena Rossi",
+        "buyer_email": "elena@northwind.example",
+        "sales_rep": "Jordan Lee",
+        "line_items": "Business plan, 40 seats, 12 months",
+        "list_price": 30000,
+        "discount_pct": 35,
+        "net_price": 19500,
+        "currency": "EUR",
+        "valid_until": "2026-12-15",
+        "discount_reason": "Match competitor price",
+        "status": "rejected"
+      }
+    }
+  ]
+}

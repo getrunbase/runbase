@@ -1,0 +1,9 @@
+{
+  "id": "customer-feedback-nps",
+  "slug": "customer-feedback-nps",
+  "name": "NPS Survey and Feedback Loop",
+  "categories": ["customer-success", "marketing"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}

@@ -1,0 +1,377 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Newsletter Signups with Welcome Email",
+  "description": "Newsletter welcome email automation: dedupe form signups, send a Gmail welcome plus a two-email onboarding series, and log each subscriber to Google Sheets.",
+  "databases": [
+    {
+      "slug": "audience",
+      "name": "Audience"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "subscribers",
+      "name": "Subscribers",
+      "icon": "mail",
+      "database": "audience",
+      "fields": [
+        {
+          "key": "email",
+          "label": "Email",
+          "type": "email",
+          "unique": true,
+          "title": true
+        },
+        {
+          "key": "first_name",
+          "label": "First name",
+          "type": "text"
+        },
+        {
+          "key": "source",
+          "label": "Source",
+          "type": "select",
+          "options": [
+            "homepage",
+            "blog",
+            "webinar",
+            "lead-magnet",
+            "referral",
+            "other"
+          ]
+        },
+        {
+          "key": "utm_source",
+          "label": "UTM source",
+          "type": "text"
+        },
+        {
+          "key": "utm_campaign",
+          "label": "UTM campaign",
+          "type": "text"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": ["new", "onboarding", "active", "unsubscribed"],
+          "default": "new"
+        },
+        {
+          "key": "onboarding_step",
+          "label": "Onboarding emails sent",
+          "type": "number"
+        },
+        {
+          "key": "notes",
+          "label": "Notes",
+          "type": "text"
+        },
+        {
+          "key": "created_at",
+          "label": "Created",
+          "type": "created_at"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "subscribers",
+      "name": "Latest signups",
+      "sort": [
+        {
+          "field": "created_at",
+          "dir": "desc"
+        }
+      ],
+      "columns": ["email", "first_name", "source", "utm_campaign", "status"]
+    },
+    {
+      "object": "subscribers",
+      "name": "In welcome series",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "onboarding"
+      },
+      "columns": ["email", "first_name", "onboarding_step"]
+    },
+    {
+      "object": "subscribers",
+      "name": "Active subscribers",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "active"
+      }
+    },
+    {
+      "object": "subscribers",
+      "name": "Signups by source",
+      "sort": [
+        {
+          "field": "source",
+          "dir": "asc"
+        }
+      ],
+      "columns": ["email", "source", "utm_source", "utm_campaign", "status"]
+    },
+    {
+      "object": "subscribers",
+      "name": "Unsubscribed",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "unsubscribed"
+      },
+      "columns": ["email", "first_name", "notes"]
+    }
+  ],
+  "workflows": [
+    {
+      "key": "welcome-series",
+      "name": "Welcome new newsletter subscribers",
+      "definition": {
+        "trigger": {
+          "type": "trigger.webhook",
+          "webhook": "newsletter-form",
+          "object": "$object:subscribers",
+          "match": "email",
+          "mapping": {
+            "email": "email",
+            "first_name": "first_name",
+            "source": "source",
+            "utm_source": "utm_source",
+            "utm_campaign": "utm_campaign"
+          }
+        },
+        "steps": [
+          {
+            "id": "is_new",
+            "type": "condition",
+            "input": {
+              "object": "subscribers",
+              "recordId": "{{record.id}}",
+              "condition": {
+                "field": "status",
+                "op": "eq",
+                "value": "new"
+              }
+            }
+          },
+          {
+            "id": "welcome",
+            "type": "node.gmail.send",
+            "input": {
+              "connection": "google",
+              "to": "{{record.email}}",
+              "subject": "Welcome to the newsletter, {{record.first_name}}",
+              "text": "Hi {{record.first_name}},\n\nThanks for subscribing. Every other Tuesday you will get one practical idea you can apply to your work the same week, plus the best links we read.\n\nOver the next few days we will also send you two short emails with our most useful past issues, so you do not start from zero.\n\nIf you ever want to stop, just reply with \"unsubscribe\".\n\nSee you soon"
+            }
+          },
+          {
+            "id": "mark_welcomed",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "status": "onboarding",
+                "onboarding_step": 1
+              }
+            }
+          },
+          {
+            "id": "log_sheet",
+            "type": "node.google_sheets.append_rows",
+            "input": {
+              "connection": "google",
+              "spreadsheetId": "{{secret.SUBSCRIBERS_SPREADSHEET_ID}}",
+              "range": "Subscribers",
+              "rows": [
+                {
+                  "Email": "{{record.email}}",
+                  "First name": "{{record.first_name}}",
+                  "Source": "{{record.source}}",
+                  "UTM campaign": "{{record.utm_campaign}}",
+                  "Signed up": "{{now}}"
+                }
+              ]
+            }
+          },
+          {
+            "id": "wait_1",
+            "type": "wait",
+            "input": {
+              "duration": "2d"
+            }
+          },
+          {
+            "id": "still_onboarding_1",
+            "type": "condition",
+            "input": {
+              "object": "subscribers",
+              "recordId": "{{record.id}}",
+              "condition": {
+                "field": "status",
+                "op": "eq",
+                "value": "onboarding"
+              }
+            }
+          },
+          {
+            "id": "tip_1",
+            "type": "node.gmail.send",
+            "input": {
+              "connection": "google",
+              "to": "{{record.email}}",
+              "subject": "The 3 issues readers save the most",
+              "text": "Hi {{record.first_name}},\n\nHere are the three past issues our readers bookmark the most. Each one takes five minutes to read.\n\n1. How to write a weekly report people actually read\n2. A simple scoring model for inbound leads\n3. The checklist we use before every launch\n\nReply and tell us what you are working on: it shapes what we write next."
+            }
+          },
+          {
+            "id": "mark_tip_1",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "onboarding_step": 2
+              }
+            }
+          },
+          {
+            "id": "wait_2",
+            "type": "wait",
+            "input": {
+              "duration": "3d"
+            }
+          },
+          {
+            "id": "still_onboarding_2",
+            "type": "condition",
+            "input": {
+              "object": "subscribers",
+              "recordId": "{{record.id}}",
+              "condition": {
+                "field": "status",
+                "op": "eq",
+                "value": "onboarding"
+              }
+            }
+          },
+          {
+            "id": "tip_2",
+            "type": "node.gmail.send",
+            "input": {
+              "connection": "google",
+              "to": "{{record.email}}",
+              "subject": "One thing to try this week",
+              "text": "Hi {{record.first_name}},\n\nLast email of your welcome series. One small habit to try this week: block 30 minutes on Friday to review what worked and what did not, and write it down in three lines.\n\nFrom now on you will receive the regular newsletter every other Tuesday. Thanks for reading."
+            }
+          },
+          {
+            "id": "mark_active",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "status": "active",
+                "onboarding_step": 3
+              }
+            }
+          }
+        ],
+        "next": {
+          "is_new": {
+            "true": ["welcome"]
+          },
+          "welcome": {
+            "ok": ["mark_welcomed"]
+          },
+          "mark_welcomed": {
+            "ok": ["log_sheet"]
+          },
+          "log_sheet": {
+            "ok": ["wait_1"]
+          },
+          "wait_1": {
+            "done": ["still_onboarding_1"]
+          },
+          "still_onboarding_1": {
+            "true": ["tip_1"]
+          },
+          "tip_1": {
+            "ok": ["mark_tip_1"]
+          },
+          "mark_tip_1": {
+            "ok": ["wait_2"]
+          },
+          "wait_2": {
+            "done": ["still_onboarding_2"]
+          },
+          "still_onboarding_2": {
+            "true": ["tip_2"]
+          },
+          "tip_2": {
+            "ok": ["mark_active"]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": ["SUBSCRIBERS_SPREADSHEET_ID"],
+  "records": [
+    {
+      "key": "s1",
+      "object": "subscribers",
+      "data": {
+        "email": "maya@northwind.example",
+        "first_name": "Maya",
+        "source": "blog",
+        "utm_source": "linkedin",
+        "utm_campaign": "q4-guide",
+        "status": "active",
+        "onboarding_step": 3
+      }
+    },
+    {
+      "key": "s2",
+      "object": "subscribers",
+      "data": {
+        "email": "tom@lumen.example",
+        "first_name": "Tom",
+        "source": "webinar",
+        "utm_source": "email",
+        "utm_campaign": "nov-webinar",
+        "status": "onboarding",
+        "onboarding_step": 2
+      }
+    },
+    {
+      "key": "s3",
+      "object": "subscribers",
+      "data": {
+        "email": "sara@brightpath.example",
+        "first_name": "Sara",
+        "source": "homepage",
+        "status": "onboarding",
+        "onboarding_step": 1
+      }
+    },
+    {
+      "key": "s4",
+      "object": "subscribers",
+      "data": {
+        "email": "leo@quarry.example",
+        "first_name": "Leo",
+        "source": "lead-magnet",
+        "utm_source": "google",
+        "utm_campaign": "checklist",
+        "status": "unsubscribed",
+        "onboarding_step": 3,
+        "notes": "Replied unsubscribe on Nov 12."
+      }
+    }
+  ]
+}

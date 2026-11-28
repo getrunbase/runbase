@@ -1,0 +1,215 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Applicant Tracking from Google Sheets",
+  "description": "A free applicant tracking system on Google Sheets: AI screens each new candidate, Gmail acknowledges them and Drive stores a screening note.",
+  "databases": [{ "slug": "hiring", "name": "Hiring" }],
+  "objects": [
+    {
+      "slug": "jobs",
+      "name": "Jobs",
+      "icon": "briefcase",
+      "database": "hiring",
+      "fields": [
+        { "key": "title", "label": "Title", "type": "text", "title": true, "unique": true },
+        { "key": "team", "label": "Team", "type": "text" },
+        { "key": "location", "label": "Location", "type": "text" },
+        { "key": "requirements", "label": "Requirements", "type": "text" },
+        { "key": "status", "label": "Status", "type": "select", "options": ["open", "paused", "filled"], "default": "open" }
+      ]
+    },
+    {
+      "slug": "candidates",
+      "name": "Candidates",
+      "icon": "user",
+      "database": "hiring",
+      "fields": [
+        { "key": "name", "label": "Name", "type": "text", "title": true },
+        { "key": "email", "label": "Email", "type": "email", "unique": true },
+        { "key": "job", "label": "Job", "type": "ref", "object": "jobs" },
+        { "key": "linkedin", "label": "LinkedIn", "type": "url" },
+        { "key": "resume_url", "label": "Resume link", "type": "url" },
+        { "key": "motivation", "label": "Motivation", "type": "text" },
+        { "key": "applied_at", "label": "Applied at", "type": "text" },
+        {
+          "key": "stage",
+          "label": "Stage",
+          "type": "select",
+          "options": ["new", "screening", "interview", "offer", "hired", "rejected"],
+          "default": "new"
+        },
+        { "key": "skills", "label": "Skills", "type": "text" },
+        {
+          "key": "seniority",
+          "label": "Seniority",
+          "type": "select",
+          "options": ["junior", "mid", "senior", "lead", "unknown"]
+        },
+        { "key": "fit_score", "label": "Fit score (1-5)", "type": "number" },
+        { "key": "screening_summary", "label": "Screening summary", "type": "text" },
+        { "key": "notes_url", "label": "Screening notes", "type": "url" },
+        { "key": "acknowledged", "label": "Acknowledged", "type": "bool" }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "candidates",
+      "name": "Active pipeline",
+      "filter": { "field": "stage", "op": "not_in", "value": ["hired", "rejected"] },
+      "sort": [{ "field": "fit_score", "dir": "desc" }],
+      "columns": ["name", "job", "stage", "seniority", "fit_score", "skills", "notes_url"]
+    },
+    {
+      "object": "candidates",
+      "name": "To review",
+      "filter": { "field": "stage", "op": "eq", "value": "new" },
+      "sort": [{ "field": "fit_score", "dir": "desc" }],
+      "columns": ["name", "job", "fit_score", "screening_summary", "resume_url"]
+    },
+    {
+      "object": "candidates",
+      "name": "Interviews",
+      "filter": { "field": "stage", "op": "in", "value": ["interview", "offer"] },
+      "columns": ["name", "job", "stage", "email", "notes_url"]
+    },
+    {
+      "object": "jobs",
+      "name": "Open jobs",
+      "filter": { "field": "status", "op": "eq", "value": "open" }
+    }
+  ],
+  "workflows": [
+    {
+      "key": "import-applicants",
+      "name": "Import applicants from the sheet every 30 minutes",
+      "definition": {
+        "trigger": { "type": "trigger.schedule", "cron": "*/30 * * * *" },
+        "steps": [
+          {
+            "id": "read",
+            "type": "node.google_sheets.read_rows",
+            "input": {
+              "spreadsheetId": "{{secret.APPLICANTS_SHEET_ID}}",
+              "range": "Applications!A1:G1000",
+              "headers": true
+            }
+          },
+          {
+            "id": "upsert",
+            "type": "loop",
+            "input": {
+              "items": "{{steps.read.output.rows}}",
+              "limit": 1000,
+              "do": [
+                {
+                  "id": "job",
+                  "type": "record.upsert",
+                  "input": {
+                    "object": "$object:jobs",
+                    "match": "title",
+                    "data": { "title": "{{item.position}}" }
+                  }
+                },
+                {
+                  "id": "candidate",
+                  "type": "record.upsert",
+                  "input": {
+                    "object": "$object:candidates",
+                    "match": "email",
+                    "data": {
+                      "name": "{{item.name}}",
+                      "email": "{{item.email}}",
+                      "job": "{{steps.job.output.record.id}}",
+                      "linkedin": "{{item.linkedin}}",
+                      "resume_url": "{{item.resume_url}}",
+                      "motivation": "{{item.motivation}}",
+                      "applied_at": "{{item.timestamp}}"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "next": { "read": { "ok": ["upsert"] } }
+      }
+    },
+    {
+      "key": "screen-candidate",
+      "name": "Screen, acknowledge and archive each new candidate",
+      "definition": {
+        "trigger": { "type": "trigger.record_created", "object": "$object:candidates" },
+        "steps": [
+          {
+            "id": "extract",
+            "type": "ai.run",
+            "input": {
+              "prompt": "You screen job applications for a small team. From the candidate data (motivation text, LinkedIn and resume links, applied position), extract: the main skills as a short comma-separated list, the seniority (junior, mid, senior, lead or unknown when unclear), a fit score from 1 to 5 against the position, and a three-sentence factual summary a hiring manager can read in 20 seconds. Do not invent experience that is not stated.",
+              "context": "{{record}}",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "skills": { "type": "string" },
+                  "seniority": { "type": "string", "enum": ["junior", "mid", "senior", "lead", "unknown"] },
+                  "fit_score": { "type": "number", "minimum": 1, "maximum": 5 },
+                  "summary": { "type": "string" }
+                },
+                "required": ["skills", "seniority", "fit_score", "summary"]
+              }
+            }
+          },
+          {
+            "id": "acknowledge",
+            "type": "node.gmail.send",
+            "input": {
+              "to": "{{record.email}}",
+              "subject": "We received your application",
+              "text": "Hi {{record.name}},\n\nThank you for applying. We have received your application and a member of the team will read it in the coming days. If your profile matches what we are looking for, we will contact you to schedule a first call.\n\nBest regards,\n[Your name]\n[Company]"
+            }
+          },
+          {
+            "id": "notes",
+            "type": "node.google_drive.upload_file",
+            "input": {
+              "name": "Screening - {{record.name}}.md",
+              "mimeType": "text/markdown",
+              "folderId": "{{secret.SCREENING_FOLDER_ID}}",
+              "content": "# {{record.name}}\n\n- Email: {{record.email}}\n- Applied at: {{record.applied_at}}\n- LinkedIn: {{record.linkedin}}\n- Resume: {{record.resume_url}}\n\n## AI screening\n\n- Seniority: {{steps.extract.output.result.seniority}}\n- Fit score: {{steps.extract.output.result.fit_score}} / 5\n- Skills: {{steps.extract.output.result.skills}}\n\n{{steps.extract.output.result.summary}}\n\n## Motivation\n\n{{record.motivation}}\n\n## Interview notes\n\n"
+            }
+          },
+          {
+            "id": "save",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "skills": "{{steps.extract.output.result.skills}}",
+                "seniority": "{{steps.extract.output.result.seniority}}",
+                "fit_score": "{{steps.extract.output.result.fit_score}}",
+                "screening_summary": "{{steps.extract.output.result.summary}}",
+                "notes_url": "{{steps.notes.output.webViewLink}}",
+                "acknowledged": true,
+                "stage": "screening"
+              }
+            }
+          }
+        ],
+        "next": {
+          "extract": { "ok": ["acknowledge"] },
+          "acknowledge": { "ok": ["notes"] },
+          "notes": { "ok": ["save"] }
+        }
+      }
+    }
+  ],
+  "secrets": ["APPLICANTS_SHEET_ID", "SCREENING_FOLDER_ID"],
+  "records": [
+    { "key": "job-pm", "object": "jobs", "data": { "title": "Product Manager", "team": "Product", "location": "Remote (EU)", "requirements": "3+ years in B2B SaaS, discovery interviews, writing specs", "status": "open" } },
+    { "key": "job-sdr", "object": "jobs", "data": { "title": "Sales Development Rep", "team": "Sales", "location": "Lyon", "requirements": "Outbound experience, French and English", "status": "open" } },
+    { "key": "c1", "object": "candidates", "data": { "name": "Camille Durand", "email": "camille.durand@example.com", "job": "$record:job-pm", "linkedin": "https://www.linkedin.com/in/example-camille", "motivation": "Four years as PM at a logistics SaaS, ran 60+ customer interviews last year.", "applied_at": "2026-11-24 10:12", "stage": "interview", "skills": "product discovery, roadmapping, SQL, B2B SaaS", "seniority": "senior", "fit_score": 5, "screening_summary": "Senior PM with four years in B2B logistics SaaS. Strong discovery practice. Matches all listed requirements.", "acknowledged": true } },
+    { "key": "c2", "object": "candidates", "data": { "name": "Jonas Weber", "email": "jonas.weber@example.com", "job": "$record:job-pm", "motivation": "Moving from customer success to product after two years.", "applied_at": "2026-11-25 16:40", "stage": "screening", "skills": "customer success, onboarding, Notion", "seniority": "junior", "fit_score": 3, "screening_summary": "Two years in customer success, no formal product role yet. Close to users, but below the 3-year requirement.", "acknowledged": true } },
+    { "key": "c3", "object": "candidates", "data": { "name": "Sara Benali", "email": "sara.benali@example.com", "job": "$record:job-sdr", "motivation": "18 months of outbound at a recruiting startup, bilingual French and English.", "applied_at": "2026-11-26 09:05", "stage": "screening", "skills": "outbound prospecting, cold calling, HubSpot", "seniority": "mid", "fit_score": 4, "screening_summary": "Mid-level SDR with 18 months of outbound. Bilingual. Good fit for the Lyon role.", "acknowledged": true } },
+    { "key": "c4", "object": "candidates", "data": { "name": "Leo Martin", "email": "leo.martin@example.com", "job": "$record:job-sdr", "motivation": "Looking for my first sales job after a business degree.", "applied_at": "2026-11-27 18:22", "stage": "new" } }
+  ]
+}

@@ -1,0 +1,354 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "No-show Follow-up",
+  "description": "Send a no-show follow-up email from Gmail every hour to attendees who declined or never confirmed, log the no-show and alert your team in Slack.",
+  "databases": [
+    {
+      "slug": "meetings",
+      "name": "Meetings"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "meetings",
+      "name": "Meetings",
+      "icon": "calendar-x",
+      "database": "meetings",
+      "fields": [
+        {
+          "key": "title",
+          "label": "Meeting",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "attendee_email",
+          "label": "Attendee email",
+          "type": "email"
+        },
+        {
+          "key": "event_id",
+          "label": "Calendar event ID",
+          "type": "text"
+        },
+        {
+          "key": "start",
+          "label": "Start",
+          "type": "date"
+        },
+        {
+          "key": "end",
+          "label": "End",
+          "type": "date"
+        },
+        {
+          "key": "response",
+          "label": "Invite response",
+          "type": "select",
+          "options": ["declined", "no_reply"]
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": ["no_show", "follow_up_sent", "rescheduled", "lost"]
+        },
+        {
+          "key": "follow_up_sent_at",
+          "label": "Follow-up sent at",
+          "type": "date"
+        },
+        {
+          "key": "event_link",
+          "label": "Calendar link",
+          "type": "url"
+        },
+        {
+          "key": "notes",
+          "label": "Notes",
+          "type": "text"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "meetings",
+      "name": "Waiting for a new slot",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "follow_up_sent"
+      },
+      "sort": [
+        {
+          "field": "end",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "title",
+        "attendee_email",
+        "end",
+        "response",
+        "follow_up_sent_at"
+      ]
+    },
+    {
+      "object": "meetings",
+      "name": "Rescheduled",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "rescheduled"
+      },
+      "sort": [
+        {
+          "field": "end",
+          "dir": "desc"
+        }
+      ]
+    },
+    {
+      "object": "meetings",
+      "name": "All no-shows",
+      "sort": [
+        {
+          "field": "end",
+          "dir": "desc"
+        }
+      ],
+      "columns": ["title", "attendee_email", "end", "response", "status"]
+    }
+  ],
+  "functions": [
+    {
+      "name": "no-show-window",
+      "code": "// Returns the one-hour window that just ended, so hourly runs never overlap.\nexport default ({ now }) => {\n  const end = new Date(now);\n  end.setMinutes(0, 0, 0);\n  const start = new Date(end.getTime() - 60 * 60 * 1000);\n  // Look back a day for the start so long meetings ending in the window are listed.\n  const listFrom = new Date(end.getTime() - 24 * 60 * 60 * 1000);\n  return { listFrom: listFrom.toISOString(), start: start.toISOString(), end: end.toISOString() };\n};\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "now": {
+            "type": "string"
+          }
+        },
+        "required": ["now"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "listFrom": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string"
+          },
+          "end": {
+            "type": "string"
+          }
+        }
+      },
+      "permissions": {}
+    },
+    {
+      "name": "find-no-shows",
+      "code": "// Keeps meetings that ended inside the window and returns one row per\n// external attendee who declined or never answered the invite.\nexport default ({ events, start, end, internalDomain }) => {\n  const from = Date.parse(start);\n  const to = Date.parse(end);\n  const internal = String(internalDomain || \"\").toLowerCase().replace(/^@/, \"\");\n  const rows = [];\n  for (const ev of events || []) {\n    if (ev.status === \"cancelled\" || !ev.end) continue;\n    const ended = Date.parse(ev.end);\n    if (!(ended > from && ended <= to)) continue;\n    for (const a of ev.attendees || []) {\n      const email = String(a.email || \"\").toLowerCase();\n      if (!email.includes(\"@\")) continue;\n      if (internal && email.endsWith(\"@\" + internal)) continue;\n      if (a.responseStatus !== \"declined\" && a.responseStatus !== \"needsAction\") continue;\n      rows.push({\n        key: `${ev.id}-${email}`,\n        event_id: ev.id,\n        title: ev.summary || \"Meeting\",\n        email,\n        response: a.responseStatus === \"declined\" ? \"declined\" : \"no_reply\",\n        start: ev.start,\n        end: ev.end,\n        event_link: ev.htmlLink,\n      });\n    }\n  }\n  return { noShows: rows, count: rows.length };\n};\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array"
+          },
+          "start": {
+            "type": "string"
+          },
+          "end": {
+            "type": "string"
+          },
+          "internalDomain": {
+            "type": "string"
+          }
+        },
+        "required": ["events", "start", "end"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "noShows": {
+            "type": "array"
+          },
+          "count": {
+            "type": "number"
+          }
+        }
+      },
+      "permissions": {}
+    }
+  ],
+  "workflows": [
+    {
+      "key": "follow-up-no-shows",
+      "name": "Follow up no-shows every hour",
+      "definition": {
+        "trigger": {
+          "type": "trigger.schedule",
+          "cron": "5 * * * *"
+        },
+        "steps": [
+          {
+            "id": "window",
+            "type": "fn.no-show-window",
+            "input": {
+              "now": "{{now}}"
+            }
+          },
+          {
+            "id": "events",
+            "type": "node.google_calendar.list_events",
+            "input": {
+              "calendarId": "primary",
+              "timeMin": "{{steps.window.output.listFrom}}",
+              "timeMax": "{{steps.window.output.end}}",
+              "maxResults": 250,
+              "connection": "google"
+            }
+          },
+          {
+            "id": "find",
+            "type": "fn.find-no-shows",
+            "input": {
+              "events": "{{steps.events.output.events}}",
+              "start": "{{steps.window.output.start}}",
+              "end": "{{steps.window.output.end}}",
+              "internalDomain": "{{secret.INTERNAL_EMAIL_DOMAIN}}"
+            }
+          },
+          {
+            "id": "each",
+            "type": "loop",
+            "input": {
+              "items": "{{steps.find.output.noShows}}",
+              "limit": 100,
+              "do": [
+                {
+                  "id": "email",
+                  "type": "node.gmail.send",
+                  "input": {
+                    "to": "{{item.email}}",
+                    "subject": "Sorry we missed you: {{item.title}}",
+                    "text": "Hi,\n\nWe had \"{{item.title}}\" in the calendar for {{item.start}}, but it looks like the time did not work out. No problem at all.\n\nYou can pick a new slot that suits you here: {{secret.RESCHEDULE_URL}}\n\nIf you would rather not meet right now, just reply and let me know.\n\nThanks",
+                    "connection": "google"
+                  }
+                },
+                {
+                  "id": "log",
+                  "type": "record.upsert",
+                  "input": {
+                    "object": "meetings",
+                    "externalId": "{{item.key}}",
+                    "data": {
+                      "title": "{{item.title}}",
+                      "attendee_email": "{{item.email}}",
+                      "event_id": "{{item.event_id}}",
+                      "start": "{{item.start}}",
+                      "end": "{{item.end}}",
+                      "response": "{{item.response}}",
+                      "status": "follow_up_sent",
+                      "follow_up_sent_at": "{{now}}",
+                      "event_link": "{{item.event_link}}"
+                    }
+                  }
+                },
+                {
+                  "id": "alert",
+                  "type": "node.slack.send",
+                  "input": {
+                    "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+                    "text": "No-show: {{item.email}} missed \"{{item.title}}\" ({{item.start}}, invite {{item.response}}). Reschedule email sent."
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "next": {
+          "window": {
+            "ok": ["events"]
+          },
+          "events": {
+            "ok": ["find"]
+          },
+          "find": {
+            "ok": ["each"]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": ["RESCHEDULE_URL", "SLACK_WEBHOOK_URL", "INTERNAL_EMAIL_DOMAIN"],
+  "records": [
+    {
+      "key": "m1",
+      "object": "meetings",
+      "externalId": "evt-1001-maya@northwind.example",
+      "data": {
+        "title": "Discovery call: Northwind",
+        "attendee_email": "maya@northwind.example",
+        "event_id": "evt-1001",
+        "start": "2026-11-26T14:00:00Z",
+        "end": "2026-11-26T14:30:00Z",
+        "response": "no_reply",
+        "status": "follow_up_sent",
+        "follow_up_sent_at": "2026-11-26T15:05:00Z"
+      }
+    },
+    {
+      "key": "m2",
+      "object": "meetings",
+      "externalId": "evt-1002-daniel@brightlane.example",
+      "data": {
+        "title": "Demo: Brightlane",
+        "attendee_email": "daniel@brightlane.example",
+        "event_id": "evt-1002",
+        "start": "2026-11-25T15:00:00Z",
+        "end": "2026-11-25T15:45:00Z",
+        "response": "declined",
+        "status": "rescheduled",
+        "follow_up_sent_at": "2026-11-25T16:05:00Z",
+        "notes": "Booked again for Dec 2"
+      }
+    },
+    {
+      "key": "m3",
+      "object": "meetings",
+      "externalId": "evt-1003-ines@quillstack.example",
+      "data": {
+        "title": "Interview: Product designer",
+        "attendee_email": "ines@quillstack.example",
+        "event_id": "evt-1003",
+        "start": "2026-11-24T14:00:00Z",
+        "end": "2026-11-24T14:45:00Z",
+        "response": "no_reply",
+        "status": "lost",
+        "follow_up_sent_at": "2026-11-24T15:05:00Z",
+        "notes": "No answer after two follow-ups"
+      }
+    },
+    {
+      "key": "m4",
+      "object": "meetings",
+      "externalId": "evt-1004-tom@ferrovia.example",
+      "data": {
+        "title": "Intro call: Ferrovia",
+        "attendee_email": "tom@ferrovia.example",
+        "event_id": "evt-1004",
+        "start": "2026-11-27T08:00:00Z",
+        "end": "2026-11-27T08:30:00Z",
+        "response": "declined",
+        "status": "follow_up_sent",
+        "follow_up_sent_at": "2026-11-27T09:05:00Z"
+      }
+    }
+  ]
+}

@@ -1,0 +1,320 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Low Stock Alert",
+  "description": "Low stock alert from Google Sheets: hourly check, Slack alert below minimum, and a supplier reorder email from Gmail once you approve it.",
+  "databases": [{ "slug": "inventory", "name": "Inventory" }],
+  "objects": [
+    {
+      "slug": "suppliers",
+      "name": "Suppliers",
+      "icon": "truck",
+      "database": "inventory",
+      "fields": [
+        { "key": "email", "label": "Email", "type": "email", "unique": true },
+        { "key": "name", "label": "Name", "type": "text", "title": true },
+        { "key": "lead_time_days", "label": "Lead time (days)", "type": "number" }
+      ]
+    },
+    {
+      "slug": "products",
+      "name": "Products",
+      "icon": "package",
+      "database": "inventory",
+      "fields": [
+        { "key": "sku", "label": "SKU", "type": "text", "unique": true },
+        { "key": "name", "label": "Name", "type": "text", "title": true },
+        { "key": "on_hand", "label": "On hand", "type": "number" },
+        { "key": "min_qty", "label": "Minimum", "type": "number" },
+        { "key": "reorder_qty", "label": "Reorder quantity", "type": "number" },
+        { "key": "margin", "label": "Units above minimum", "type": "number" },
+        { "key": "supplier", "label": "Supplier", "type": "ref", "object": "suppliers" },
+        { "key": "reorder_status", "label": "Reorder status", "type": "select", "options": ["ok", "requested"], "default": "ok" },
+        { "key": "synced_at", "label": "Last sync", "type": "date" }
+      ]
+    },
+    {
+      "slug": "purchase_orders",
+      "name": "Purchase orders",
+      "icon": "clipboard-list",
+      "database": "inventory",
+      "fields": [
+        { "key": "title", "label": "Title", "type": "text", "title": true },
+        { "key": "product", "label": "Product", "type": "ref", "object": "products" },
+        { "key": "sku", "label": "SKU", "type": "text" },
+        { "key": "quantity", "label": "Quantity", "type": "number" },
+        { "key": "supplier_email", "label": "Supplier email", "type": "email" },
+        { "key": "status", "label": "Status", "type": "select", "options": ["pending_approval", "sent", "cancelled", "received"] },
+        { "key": "sent_at", "label": "Sent at", "type": "date" },
+        { "key": "run_id", "label": "Run", "type": "text" }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "products",
+      "name": "Below minimum",
+      "filter": { "field": "margin", "op": "lt", "value": 0 },
+      "sort": [{ "field": "margin", "dir": "asc" }],
+      "columns": ["sku", "name", "on_hand", "min_qty", "reorder_status", "supplier"]
+    },
+    {
+      "object": "products",
+      "name": "All stock",
+      "sort": [{ "field": "margin", "dir": "asc" }],
+      "columns": ["sku", "name", "on_hand", "min_qty", "margin", "synced_at"]
+    },
+    {
+      "object": "purchase_orders",
+      "name": "Awaiting approval",
+      "filter": { "field": "status", "op": "eq", "value": "pending_approval" },
+      "columns": ["title", "sku", "quantity", "supplier_email"]
+    },
+    {
+      "object": "purchase_orders",
+      "name": "Open orders",
+      "filter": { "field": "status", "op": "eq", "value": "sent" },
+      "sort": [{ "field": "sent_at", "dir": "desc" }],
+      "columns": ["title", "quantity", "supplier_email", "sent_at"]
+    }
+  ],
+  "workflows": [
+    {
+      "key": "low_stock_check",
+      "name": "Check stock levels and request reorders",
+      "definition": {
+        "trigger": { "type": "trigger.schedule", "cron": "0 * * * *" },
+        "steps": [
+          {
+            "id": "read",
+            "type": "node.google_sheets.read_rows",
+            "input": {
+              "spreadsheetId": "YOUR_SPREADSHEET_ID",
+              "range": "Stock!A1:G501",
+              "headers": true
+            }
+          },
+          {
+            "id": "sync",
+            "type": "loop",
+            "input": {
+              "items": "{{steps.read.output.rows}}",
+              "limit": 500,
+              "do": [
+                {
+                  "id": "supplier",
+                  "type": "record.upsert",
+                  "input": {
+                    "object": "$object:suppliers",
+                    "match": "email",
+                    "data": { "email": "{{item.supplier_email}}", "name": "{{item.supplier_name}}" }
+                  }
+                },
+                {
+                  "id": "margin",
+                  "type": "formatter",
+                  "input": { "op": "number.math", "input": "{{item.on_hand}}", "operator": "-", "operand": "{{item.min_qty}}" }
+                },
+                {
+                  "id": "product",
+                  "type": "record.upsert",
+                  "input": {
+                    "object": "$object:products",
+                    "match": "sku",
+                    "data": {
+                      "sku": "{{item.sku}}",
+                      "name": "{{item.name}}",
+                      "on_hand": "{{item.on_hand}}",
+                      "min_qty": "{{item.min_qty}}",
+                      "reorder_qty": "{{item.reorder_qty}}",
+                      "margin": "{{steps.margin.output.value}}",
+                      "supplier": "{{steps.supplier.output.record.id}}",
+                      "synced_at": "{{now}}"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "low",
+            "type": "record.search",
+            "input": {
+              "object": "$object:products",
+              "filter": {
+                "all": [
+                  { "field": "margin", "op": "lt", "value": 0 },
+                  { "field": "reorder_status", "op": "eq", "value": "ok" }
+                ]
+              },
+              "limit": 100
+            }
+          },
+          {
+            "id": "restocked",
+            "type": "record.search",
+            "input": {
+              "object": "$object:products",
+              "filter": {
+                "all": [
+                  { "field": "margin", "op": "gte", "value": 0 },
+                  { "field": "reorder_status", "op": "eq", "value": "requested" }
+                ]
+              },
+              "limit": 100
+            }
+          },
+          {
+            "id": "reset",
+            "type": "loop",
+            "input": {
+              "items": "{{steps.restocked.output.records}}",
+              "limit": 100,
+              "do": [
+                {
+                  "id": "clear",
+                  "type": "record.update",
+                  "input": { "recordId": "{{item.id}}", "data": { "reorder_status": "ok" } }
+                }
+              ]
+            }
+          },
+          {
+            "id": "alert",
+            "type": "loop",
+            "input": {
+              "items": "{{steps.low.output.records}}",
+              "limit": 100,
+              "include": ["supplier"],
+              "do": [
+                {
+                  "id": "po",
+                  "type": "record.create",
+                  "input": {
+                    "object": "$object:purchase_orders",
+                    "data": {
+                      "title": "Reorder {{item.data.reorder_qty}} x {{item.data.name}}",
+                      "product": "{{item.id}}",
+                      "sku": "{{item.data.sku}}",
+                      "quantity": "{{item.data.reorder_qty}}",
+                      "supplier_email": "{{item.included.supplier.data.email}}",
+                      "status": "pending_approval",
+                      "run_id": "{{run.id}}"
+                    }
+                  }
+                },
+                {
+                  "id": "flag",
+                  "type": "record.update",
+                  "input": { "recordId": "{{item.id}}", "data": { "reorder_status": "requested" } }
+                },
+                {
+                  "id": "slack",
+                  "type": "node.slack.send",
+                  "input": {
+                    "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+                    "text": ":warning: Low stock: {{item.data.name}} ({{item.data.sku}}) has {{item.data.on_hand}} units left, minimum is {{item.data.min_qty}}. Reorder of {{item.data.reorder_qty}} from {{item.included.supplier.data.name}} is waiting for approval in Runbase."
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "approve",
+            "type": "human.approve",
+            "input": {
+              "message": "Check the quantities in the Awaiting approval view of Purchase orders, edit or cancel any line, then approve to email each supplier.",
+              "timeout": "2d"
+            }
+          },
+          {
+            "id": "pending",
+            "type": "record.search",
+            "input": {
+              "object": "$object:purchase_orders",
+              "filter": {
+                "all": [
+                  { "field": "status", "op": "eq", "value": "pending_approval" },
+                  { "field": "run_id", "op": "eq", "value": "{{run.id}}" }
+                ]
+              },
+              "limit": 100
+            }
+          },
+          {
+            "id": "send",
+            "type": "loop",
+            "input": {
+              "items": "{{steps.pending.output.records}}",
+              "limit": 100,
+              "do": [
+                {
+                  "id": "email",
+                  "type": "node.gmail.send",
+                  "input": {
+                    "to": "{{item.data.supplier_email}}",
+                    "subject": "Purchase order: {{item.data.quantity}} x {{item.data.sku}}",
+                    "text": "Hello,\n\nPlease confirm the following order:\n\nSKU: {{item.data.sku}}\nItem: {{item.data.title}}\nQuantity: {{item.data.quantity}}\n\nShip to: [your warehouse address]\nReply with the expected delivery date.\n\nThank you,\n[Your name]"
+                  }
+                },
+                {
+                  "id": "mark",
+                  "type": "record.update",
+                  "input": { "recordId": "{{item.id}}", "data": { "status": "sent", "sent_at": "{{now}}" } }
+                }
+              ]
+            }
+          },
+          {
+            "id": "to_cancel",
+            "type": "record.search",
+            "input": {
+              "object": "$object:purchase_orders",
+              "filter": {
+                "all": [
+                  { "field": "status", "op": "eq", "value": "pending_approval" },
+                  { "field": "run_id", "op": "eq", "value": "{{run.id}}" }
+                ]
+              },
+              "limit": 100
+            }
+          },
+          {
+            "id": "cancel",
+            "type": "loop",
+            "input": {
+              "items": "{{steps.to_cancel.output.records}}",
+              "limit": 100,
+              "do": [
+                {
+                  "id": "void",
+                  "type": "record.update",
+                  "input": { "recordId": "{{item.id}}", "data": { "status": "cancelled" } }
+                }
+              ]
+            }
+          }
+        ],
+        "next": {
+          "read": { "ok": ["sync"] },
+          "sync": { "done": ["restocked", "low"] },
+          "restocked": { "found": ["reset"] },
+          "low": { "found": ["alert"] },
+          "alert": { "done": ["approve"] },
+          "approve": { "approved": ["pending"], "rejected": ["to_cancel"], "expired": ["to_cancel"] },
+          "pending": { "found": ["send"] },
+          "to_cancel": { "found": ["cancel"] }
+        }
+      }
+    }
+  ],
+  "secrets": ["SLACK_WEBHOOK_URL"],
+  "records": [
+    { "key": "sup1", "object": "suppliers", "data": { "email": "orders@harbor-packaging.example", "name": "Harbor Packaging", "lead_time_days": 5 } },
+    { "key": "sup2", "object": "suppliers", "data": { "email": "sales@greenleaf-teas.example", "name": "Greenleaf Teas", "lead_time_days": 10 } },
+    { "key": "p1", "object": "products", "data": { "sku": "TEA-SEN-100", "name": "Sencha loose leaf 100 g", "on_hand": 14, "min_qty": 40, "reorder_qty": 200, "margin": -26, "supplier": "$record:sup2", "reorder_status": "requested", "synced_at": "2026-11-28T09:00:00Z" } },
+    { "key": "p2", "object": "products", "data": { "sku": "TEA-EAR-100", "name": "Earl Grey loose leaf 100 g", "on_hand": 132, "min_qty": 40, "reorder_qty": 200, "margin": 92, "supplier": "$record:sup2", "reorder_status": "ok", "synced_at": "2026-11-28T09:00:00Z" } },
+    { "key": "p3", "object": "products", "data": { "sku": "BOX-GIFT-S", "name": "Gift box, small", "on_hand": 310, "min_qty": 150, "reorder_qty": 1000, "margin": 160, "supplier": "$record:sup1", "reorder_status": "ok", "synced_at": "2026-11-28T09:00:00Z" } },
+    { "key": "po1", "object": "purchase_orders", "data": { "title": "Reorder 200 x Sencha loose leaf 100 g", "product": "$record:p1", "sku": "TEA-SEN-100", "quantity": 200, "supplier_email": "sales@greenleaf-teas.example", "status": "pending_approval" } }
+  ]
+}

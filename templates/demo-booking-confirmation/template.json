@@ -1,0 +1,9 @@
+{
+  "id": "demo-booking-confirmation",
+  "slug": "demo-booking-confirmation",
+  "name": "Demo Booking with Calendar Invite",
+  "categories": ["sales",  "email"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}

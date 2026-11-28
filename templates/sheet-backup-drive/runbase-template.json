@@ -1,0 +1,475 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Database Backup to Google Drive",
+  "description": "Automatic nightly backup to Google Drive: customers and orders saved as dated CSV files, logged, with a Slack alert if a run fails.",
+  "databases": [
+    {
+      "slug": "operations",
+      "name": "Operations"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "customers",
+      "name": "Customers",
+      "icon": "building",
+      "database": "operations",
+      "fields": [
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "email",
+          "label": "Billing email",
+          "type": "email",
+          "unique": true
+        },
+        {
+          "key": "plan",
+          "label": "Plan",
+          "type": "select",
+          "options": [
+            "starter",
+            "team",
+            "enterprise"
+          ]
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": [
+            "active",
+            "paused",
+            "churned"
+          ]
+        },
+        {
+          "key": "mrr",
+          "label": "MRR",
+          "type": "number"
+        },
+        {
+          "key": "since",
+          "label": "Customer since",
+          "type": "date"
+        }
+      ]
+    },
+    {
+      "slug": "orders",
+      "name": "Orders",
+      "icon": "receipt",
+      "database": "operations",
+      "fields": [
+        {
+          "key": "reference",
+          "label": "Reference",
+          "type": "text",
+          "title": true,
+          "unique": true
+        },
+        {
+          "key": "customer",
+          "label": "Customer",
+          "type": "ref",
+          "object": "customers"
+        },
+        {
+          "key": "amount",
+          "label": "Amount",
+          "type": "number"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": [
+            "pending",
+            "paid",
+            "refunded"
+          ]
+        },
+        {
+          "key": "ordered_on",
+          "label": "Ordered on",
+          "type": "date"
+        }
+      ]
+    },
+    {
+      "slug": "backups",
+      "name": "Backups",
+      "icon": "archive",
+      "database": "operations",
+      "fields": [
+        {
+          "key": "label",
+          "label": "Backup",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "backup_date",
+          "label": "Date",
+          "type": "date"
+        },
+        {
+          "key": "customers_rows",
+          "label": "Customer rows",
+          "type": "number"
+        },
+        {
+          "key": "orders_rows",
+          "label": "Order rows",
+          "type": "number"
+        },
+        {
+          "key": "customers_file",
+          "label": "Customers file",
+          "type": "url"
+        },
+        {
+          "key": "orders_file",
+          "label": "Orders file",
+          "type": "url"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": [
+            "succeeded",
+            "failed"
+          ]
+        },
+        {
+          "key": "error",
+          "label": "Error",
+          "type": "text"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "backups",
+      "name": "Backup history",
+      "sort": [
+        {
+          "field": "backup_date",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "label",
+        "backup_date",
+        "status",
+        "customers_rows",
+        "orders_rows",
+        "customers_file",
+        "orders_file"
+      ]
+    },
+    {
+      "object": "backups",
+      "name": "Failed backups",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "failed"
+      },
+      "sort": [
+        {
+          "field": "backup_date",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "label",
+        "backup_date",
+        "error"
+      ]
+    },
+    {
+      "object": "customers",
+      "name": "Active customers",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "active"
+      },
+      "sort": [
+        {
+          "field": "mrr",
+          "dir": "desc"
+        }
+      ]
+    },
+    {
+      "object": "orders",
+      "name": "Recent orders",
+      "sort": [
+        {
+          "field": "ordered_on",
+          "dir": "desc"
+        }
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "records-to-csv",
+      "code": "// Turns record lists into CSV files, one per object.\n// Columns = union of the data keys, plus id and updated date.\nconst cell = (v) => {\n  if (v == null) return \"\";\n  const s = typeof v === \"object\" ? JSON.stringify(v) : String(v);\n  return /[\",\\n\\r]/.test(s) ? `\"${s.replace(/\"/g, '\"\"')}\"` : s;\n};\nconst toCsv = (records) => {\n  const rows = (records || []).map((r) => ({\n    id: r && r.id,\n    updated_at: r && (r.updatedAt || r.updated_at),\n    ...((r && r.data) || {}),\n  }));\n  const cols = [];\n  for (const r of rows) for (const k of Object.keys(r)) if (!cols.includes(k)) cols.push(k);\n  if (!cols.length) return { csv: \"id\\n\", count: 0 };\n  const lines = [cols.join(\",\")];\n  for (const r of rows) lines.push(cols.map((c) => cell(r[c])).join(\",\"));\n  return { csv: lines.join(\"\\n\") + \"\\n\", count: rows.length };\n};\nexport default ({ customers, orders }) => {\n  const c = toCsv(customers);\n  const o = toCsv(orders);\n  return {\n    customersCsv: c.csv,\n    customersCount: c.count,\n    ordersCsv: o.csv,\n    ordersCount: o.count,\n    total: c.count + o.count,\n  };\n};\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customers": {
+            "type": "array"
+          },
+          "orders": {
+            "type": "array"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "customersCsv": {
+            "type": "string"
+          },
+          "customersCount": {
+            "type": "number"
+          },
+          "ordersCsv": {
+            "type": "string"
+          },
+          "ordersCount": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        }
+      },
+      "permissions": {}
+    }
+  ],
+  "workflows": [
+    {
+      "key": "nightly-backup",
+      "name": "Back up key objects to Google Drive every night",
+      "definition": {
+        "trigger": {
+          "type": "trigger.schedule",
+          "cron": "0 2 * * *",
+          "timezone": "UTC"
+        },
+        "steps": [
+          {
+            "id": "customers",
+            "type": "record.search",
+            "input": {
+              "object": "customers",
+              "limit": 500
+            }
+          },
+          {
+            "id": "orders",
+            "type": "record.search",
+            "input": {
+              "object": "orders",
+              "limit": 500
+            }
+          },
+          {
+            "id": "csv",
+            "type": "fn.records-to-csv",
+            "input": {
+              "customers": "{{steps.customers.output.records}}",
+              "orders": "{{steps.orders.output.records}}"
+            }
+          },
+          {
+            "id": "upload-customers",
+            "type": "node.google_drive.upload_file",
+            "input": {
+              "name": "customers-{{today}}.csv",
+              "content": "{{steps.csv.output.customersCsv}}",
+              "encoding": "text",
+              "mimeType": "text/csv",
+              "folderId": "{{secret.BACKUP_DRIVE_FOLDER_ID}}"
+            }
+          },
+          {
+            "id": "upload-orders",
+            "type": "node.google_drive.upload_file",
+            "input": {
+              "name": "orders-{{today}}.csv",
+              "content": "{{steps.csv.output.ordersCsv}}",
+              "encoding": "text",
+              "mimeType": "text/csv",
+              "folderId": "{{secret.BACKUP_DRIVE_FOLDER_ID}}"
+            }
+          },
+          {
+            "id": "log",
+            "type": "record.create",
+            "input": {
+              "object": "backups",
+              "data": {
+                "label": "Nightly backup {{today}}",
+                "backup_date": "{{today}}",
+                "customers_rows": "{{steps.csv.output.customersCount}}",
+                "orders_rows": "{{steps.csv.output.ordersCount}}",
+                "customers_file": "{{steps.upload-customers.output.webViewLink}}",
+                "orders_file": "{{steps.upload-orders.output.webViewLink}}",
+                "status": "succeeded"
+              }
+            }
+          }
+        ],
+        "next": {
+          "customers": {
+            "found": [
+              "orders"
+            ],
+            "empty": [
+              "orders"
+            ]
+          },
+          "orders": {
+            "found": [
+              "csv"
+            ],
+            "empty": [
+              "csv"
+            ]
+          },
+          "csv": {
+            "ok": [
+              "upload-customers"
+            ]
+          },
+          "upload-customers": {
+            "ok": [
+              "upload-orders"
+            ]
+          },
+          "upload-orders": {
+            "ok": [
+              "log"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "key": "backup-failed-alert",
+      "name": "Alert Slack when the nightly backup fails",
+      "definition": {
+        "trigger": {
+          "type": "trigger.run_failed",
+          "workflow": "$workflow:nightly-backup"
+        },
+        "steps": [
+          {
+            "id": "alert",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "Nightly backup to Google Drive failed ({{event.workflowName}}, run {{event.runId}}): {{event.error}}. Today's CSV files may be missing from Drive."
+            }
+          },
+          {
+            "id": "log",
+            "type": "record.create",
+            "input": {
+              "object": "backups",
+              "data": {
+                "label": "Failed backup {{today}}",
+                "backup_date": "{{today}}",
+                "status": "failed",
+                "error": "{{event.error}}"
+              }
+            }
+          }
+        ],
+        "next": {
+          "alert": {
+            "ok": [
+              "log"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": [
+    "BACKUP_DRIVE_FOLDER_ID",
+    "SLACK_WEBHOOK_URL"
+  ],
+  "records": [
+    {
+      "key": "acme",
+      "object": "customers",
+      "data": {
+        "name": "Acme Logistics",
+        "email": "billing@acme.example",
+        "plan": "team",
+        "status": "active",
+        "mrr": 490,
+        "since": "2025-03-12"
+      }
+    },
+    {
+      "key": "lumen",
+      "object": "customers",
+      "data": {
+        "name": "Lumen Studio",
+        "email": "finance@lumen.example",
+        "plan": "starter",
+        "status": "active",
+        "mrr": 99,
+        "since": "2026-01-08"
+      }
+    },
+    {
+      "key": "order-1",
+      "object": "orders",
+      "data": {
+        "reference": "ORD-1042",
+        "customer": "$record:acme",
+        "amount": 490,
+        "status": "paid",
+        "ordered_on": "2026-11-01"
+      }
+    },
+    {
+      "key": "order-2",
+      "object": "orders",
+      "data": {
+        "reference": "ORD-1043",
+        "customer": "$record:lumen",
+        "amount": 99,
+        "status": "pending",
+        "ordered_on": "2026-11-20"
+      }
+    },
+    {
+      "key": "backup-1",
+      "object": "backups",
+      "data": {
+        "label": "Nightly backup 2026-11-27",
+        "backup_date": "2026-11-27",
+        "customers_rows": 2,
+        "orders_rows": 2,
+        "status": "succeeded"
+      }
+    }
+  ]
+}

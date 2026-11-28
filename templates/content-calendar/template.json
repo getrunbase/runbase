@@ -1,0 +1,9 @@
+{
+  "id": "content-calendar",
+  "slug": "content-calendar",
+  "name": "Content Calendar",
+  "categories": ["marketing", "productivity"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}

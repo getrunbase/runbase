@@ -1,0 +1,262 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Lead Capture to Google Sheets",
+  "description": "Save form submissions to Google Sheets as leads, with UTM tracking, a Slack alert and an instant thank-you email from Gmail.",
+  "databases": [
+    {
+      "slug": "marketing",
+      "name": "Marketing"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "leads",
+      "name": "Leads",
+      "icon": "inbox",
+      "database": "marketing",
+      "fields": [
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "email",
+          "label": "Email",
+          "type": "email",
+          "unique": true
+        },
+        {
+          "key": "company",
+          "label": "Company",
+          "type": "text"
+        },
+        {
+          "key": "message",
+          "label": "Message",
+          "type": "text"
+        },
+        {
+          "key": "source",
+          "label": "Source",
+          "type": "select",
+          "options": [
+            "landing-page",
+            "pricing-page",
+            "webinar",
+            "ebook",
+            "other"
+          ]
+        },
+        {
+          "key": "utm_source",
+          "label": "UTM source",
+          "type": "text"
+        },
+        {
+          "key": "utm_medium",
+          "label": "UTM medium",
+          "type": "text"
+        },
+        {
+          "key": "utm_campaign",
+          "label": "UTM campaign",
+          "type": "text"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": ["new", "contacted", "qualified", "disqualified"],
+          "default": "new"
+        },
+        {
+          "key": "created_at",
+          "label": "Created",
+          "type": "created_at"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "leads",
+      "name": "New leads",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "new"
+      },
+      "sort": [
+        {
+          "field": "created_at",
+          "dir": "desc"
+        }
+      ]
+    },
+    {
+      "object": "leads",
+      "name": "Leads by campaign",
+      "sort": [
+        {
+          "field": "utm_campaign",
+          "dir": "asc"
+        }
+      ],
+      "columns": [
+        "name",
+        "email",
+        "source",
+        "utm_source",
+        "utm_medium",
+        "utm_campaign",
+        "status"
+      ]
+    },
+    {
+      "object": "leads",
+      "name": "Qualified leads",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "qualified"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "key": "capture-lead",
+      "name": "Capture form leads",
+      "definition": {
+        "trigger": {
+          "type": "trigger.webhook",
+          "webhook": "lead-form",
+          "object": "$object:leads",
+          "match": "email",
+          "mapping": {
+            "email": "email",
+            "name": "name",
+            "company": "company",
+            "message": "message",
+            "source": "source",
+            "utm_source": "utm_source",
+            "utm_medium": "utm_medium",
+            "utm_campaign": "utm_campaign"
+          }
+        },
+        "steps": [
+          {
+            "id": "log_sheet",
+            "type": "node.google_sheets.append_rows",
+            "input": {
+              "connection": "google",
+              "spreadsheetId": "{{secret.LEADS_SPREADSHEET_ID}}",
+              "range": "Leads",
+              "rows": [
+                {
+                  "Name": "{{record.name}}",
+                  "Email": "{{record.email}}",
+                  "Company": "{{record.company}}",
+                  "Source": "{{record.source}}",
+                  "UTM source": "{{record.utm_source}}",
+                  "UTM medium": "{{record.utm_medium}}",
+                  "UTM campaign": "{{record.utm_campaign}}",
+                  "Message": "{{record.message}}"
+                }
+              ]
+            }
+          },
+          {
+            "id": "announce",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "New lead: {{record.name}} <{{record.email}}> from {{record.company}}. Source {{record.source}}, campaign {{record.utm_campaign}}."
+            }
+          },
+          {
+            "id": "thank_you",
+            "type": "node.gmail.send",
+            "input": {
+              "connection": "google",
+              "to": "{{record.email}}",
+              "subject": "Thanks for reaching out, {{record.name}}",
+              "text": "Hi {{record.name}},\n\nThanks for your message. We have received it and someone from the team will get back to you within one business day.\n\nIn the meantime, simply reply to this email if you want to add anything.\n\nBest regards"
+            }
+          }
+        ],
+        "next": {
+          "log_sheet": {
+            "ok": ["announce"]
+          },
+          "announce": {
+            "ok": ["thank_you"]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": ["LEADS_SPREADSHEET_ID", "SLACK_WEBHOOK_URL"],
+  "records": [
+    {
+      "key": "lead-maya",
+      "object": "leads",
+      "data": {
+        "name": "Maya Chen",
+        "email": "maya@northwind.example",
+        "company": "Northwind",
+        "message": "We would like a demo for a team of 12.",
+        "source": "pricing-page",
+        "utm_source": "google",
+        "utm_medium": "cpc",
+        "utm_campaign": "brand-q4",
+        "status": "new"
+      }
+    },
+    {
+      "key": "lead-omar",
+      "object": "leads",
+      "data": {
+        "name": "Omar Haddad",
+        "email": "omar@brightlane.example",
+        "company": "Brightlane",
+        "message": "Downloaded the guide, curious about pricing.",
+        "source": "ebook",
+        "utm_source": "linkedin",
+        "utm_medium": "paid-social",
+        "utm_campaign": "ops-guide",
+        "status": "contacted"
+      }
+    },
+    {
+      "key": "lead-lena",
+      "object": "leads",
+      "data": {
+        "name": "Lena Fischer",
+        "email": "lena@kestrel.example",
+        "company": "Kestrel Studio",
+        "message": "Saw your webinar, can we talk next week?",
+        "source": "webinar",
+        "utm_source": "newsletter",
+        "utm_medium": "email",
+        "utm_campaign": "webinar-nov",
+        "status": "qualified"
+      }
+    },
+    {
+      "key": "lead-tom",
+      "object": "leads",
+      "data": {
+        "name": "Tom Okafor",
+        "email": "tom@fieldworks.example",
+        "company": "Fieldworks",
+        "source": "landing-page",
+        "utm_source": "google",
+        "utm_medium": "organic",
+        "status": "new"
+      }
+    }
+  ]
+}

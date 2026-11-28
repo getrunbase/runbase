@@ -1,0 +1,416 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Invoice Archive to Google Drive",
+  "description": "Save invoices to Google Drive automatically: each new invoice is archived in Drive, logged in a Google Sheets ledger and emailed from Gmail.",
+  "databases": [
+    {
+      "slug": "invoicing",
+      "name": "Invoicing"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "clients",
+      "name": "Clients",
+      "icon": "building",
+      "database": "invoicing",
+      "fields": [
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "email",
+          "label": "Billing email",
+          "type": "email",
+          "unique": true
+        },
+        {
+          "key": "contact_name",
+          "label": "Contact name",
+          "type": "text"
+        },
+        {
+          "key": "billing_address",
+          "label": "Billing address",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "slug": "invoices",
+      "name": "Invoices",
+      "icon": "receipt",
+      "database": "invoicing",
+      "fields": [
+        {
+          "key": "description",
+          "label": "Description",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "number",
+          "label": "Number",
+          "type": "autonumber"
+        },
+        {
+          "key": "invoice_number",
+          "label": "Invoice number",
+          "type": "text"
+        },
+        {
+          "key": "client",
+          "label": "Client",
+          "type": "ref",
+          "object": "clients"
+        },
+        {
+          "key": "amount",
+          "label": "Amount",
+          "type": "currency"
+        },
+        {
+          "key": "issue_date",
+          "label": "Issue date",
+          "type": "date"
+        },
+        {
+          "key": "due_date",
+          "label": "Due date",
+          "type": "date"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": [
+            "draft",
+            "sent",
+            "paid",
+            "void"
+          ]
+        },
+        {
+          "key": "drive_link",
+          "label": "Drive file",
+          "type": "url"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "invoices",
+      "name": "Unpaid invoices",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "sent"
+      },
+      "sort": [
+        {
+          "field": "due_date",
+          "dir": "asc"
+        }
+      ],
+      "columns": [
+        "invoice_number",
+        "client",
+        "amount",
+        "due_date",
+        "drive_link"
+      ]
+    },
+    {
+      "object": "invoices",
+      "name": "Issued last 30 days",
+      "filter": {
+        "field": "issue_date",
+        "op": "within",
+        "value": 30
+      },
+      "sort": [
+        {
+          "field": "issue_date",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "invoice_number",
+        "client",
+        "amount",
+        "status"
+      ]
+    },
+    {
+      "object": "invoices",
+      "name": "Paid invoices",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "paid"
+      },
+      "sort": [
+        {
+          "field": "issue_date",
+          "dir": "desc"
+        }
+      ]
+    },
+    {
+      "object": "clients",
+      "name": "All clients",
+      "sort": [
+        {
+          "field": "name",
+          "dir": "asc"
+        }
+      ],
+      "columns": [
+        "name",
+        "contact_name",
+        "email"
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "render-invoice",
+      "code": "// Builds the invoice document, the ledger row and the client email\n// from one invoice record (read with its client included).\nexport default ({ invoice, company, currency }) => {\n  const r = invoice || {};\n  const d = r.data || {};\n  const inc = (r.included && r.included.client) || null;\n  const client = Array.isArray(inc) ? inc[0] : inc;\n  const c = (client && client.data) || {};\n  const cur = currency || \"EUR\";\n  const money = (n) => Number(n || 0).toFixed(2) + \" \" + cur;\n  const day = (v) => (v ? String(v).slice(0, 10) : \"\");\n  const number = \"INV-\" + String(d.number || 0).padStart(5, \"0\");\n  const esc = (s) => String(s == null ? \"\" : s).replace(/[&<>\"]/g, (ch) => ({ \"&\": \"&amp;\", \"<\": \"&lt;\", \">\": \"&gt;\", '\"': \"&quot;\" })[ch]);\n  const issued = day(d.issue_date);\n  const due = day(d.due_date);\n  const html = `<!doctype html><html><head><meta charset=\"utf-8\"><title>${number}</title></head><body style=\"font-family:sans-serif;max-width:640px;margin:40px auto\">\n<h1>Invoice ${number}</h1>\n<p><strong>${esc(company)}</strong></p>\n<p>Billed to: ${esc(c.name)}<br>${esc(c.billing_address).replace(/\\n/g, \"<br>\")}<br>${esc(c.email)}</p>\n<p>Issue date: ${issued}<br>Due date: ${due}</p>\n<table style=\"width:100%;border-collapse:collapse\"><tr><th align=\"left\">Description</th><th align=\"right\">Amount</th></tr>\n<tr><td>${esc(d.description)}</td><td align=\"right\">${money(d.amount)}</td></tr>\n<tr><td><strong>Total due</strong></td><td align=\"right\"><strong>${money(d.amount)}</strong></td></tr></table>\n</body></html>`;\n  return {\n    number,\n    fileName: `${number} - ${c.name || \"client\"} - ${issued}.html`,\n    html,\n    clientEmail: c.email || \"\",\n    subject: `Invoice ${number} from ${company}`,\n    text: `Hello ${c.contact_name || c.name || \"\"},\\n\\nPlease find invoice ${number} for ${money(d.amount)} (${d.description || \"services\"}), due on ${due}.\\n\\nThank you,\\n${company}`,\n    row: {\n      Number: number,\n      Client: c.name || \"\",\n      \"Issue date\": issued,\n      \"Due date\": due,\n      Amount: Number(d.amount || 0),\n      Currency: cur,\n      Description: d.description || \"\",\n    },\n  };\n};",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "invoice": {
+            "type": "object"
+          },
+          "company": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "invoice",
+          "company"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "html": {
+            "type": "string"
+          },
+          "clientEmail": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "row": {
+            "type": "object"
+          }
+        }
+      },
+      "permissions": {
+        "domains": [],
+        "secrets": []
+      },
+      "limits": {}
+    }
+  ],
+  "workflows": [
+    {
+      "key": "archive-invoice",
+      "name": "Archive and send new invoices",
+      "definition": {
+        "trigger": {
+          "type": "trigger.record_created",
+          "object": "$object:invoices"
+        },
+        "steps": [
+          {
+            "id": "not_draft",
+            "type": "condition",
+            "input": {
+              "left": "{{record.status}}",
+              "op": "neq",
+              "right": "draft"
+            }
+          },
+          {
+            "id": "full",
+            "type": "record.get",
+            "input": {
+              "id": "{{record.id}}",
+              "include": [
+                "client"
+              ]
+            }
+          },
+          {
+            "id": "render",
+            "type": "fn.render-invoice",
+            "input": {
+              "invoice": "{{steps.full.output.record}}",
+              "company": "Your Company Ltd",
+              "currency": "EUR"
+            }
+          },
+          {
+            "id": "archive",
+            "type": "node.google_drive.upload_file",
+            "input": {
+              "name": "{{steps.render.output.fileName}}",
+              "content": "{{steps.render.output.html}}",
+              "mimeType": "text/html",
+              "folderId": "YOUR_DRIVE_FOLDER_ID"
+            }
+          },
+          {
+            "id": "ledger",
+            "type": "node.google_sheets.append_rows",
+            "input": {
+              "spreadsheetId": "YOUR_SPREADSHEET_ID",
+              "range": "Invoices",
+              "rows": [
+                "{{steps.render.output.row}}"
+              ]
+            }
+          },
+          {
+            "id": "email",
+            "type": "node.gmail.send",
+            "input": {
+              "to": "{{steps.render.output.clientEmail}}",
+              "subject": "{{steps.render.output.subject}}",
+              "text": "{{steps.render.output.text}}\n\nInvoice: {{steps.archive.output.webViewLink}}"
+            }
+          },
+          {
+            "id": "mark",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "status": "sent",
+                "invoice_number": "{{steps.render.output.number}}",
+                "drive_link": "{{steps.archive.output.webViewLink}}"
+              }
+            }
+          }
+        ],
+        "next": {
+          "not_draft": {
+            "true": [
+              "full"
+            ]
+          },
+          "full": {
+            "found": [
+              "render"
+            ]
+          },
+          "render": {
+            "ok": [
+              "archive"
+            ]
+          },
+          "archive": {
+            "ok": [
+              "ledger"
+            ]
+          },
+          "ledger": {
+            "ok": [
+              "email"
+            ]
+          },
+          "email": {
+            "ok": [
+              "mark"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": [],
+  "records": [
+    {
+      "key": "cl-northwind",
+      "object": "clients",
+      "data": {
+        "name": "Northwind Traders",
+        "email": "billing@northwind.example",
+        "contact_name": "Laura Chen",
+        "billing_address": "12 Harbour Street\nBristol BS1 4QA"
+      }
+    },
+    {
+      "key": "cl-globex",
+      "object": "clients",
+      "data": {
+        "name": "Globex Studio",
+        "email": "accounts@globex.example",
+        "contact_name": "Marc Dubois",
+        "billing_address": "8 rue des Lilas\n69003 Lyon"
+      }
+    },
+    {
+      "key": "inv-1",
+      "object": "invoices",
+      "data": {
+        "description": "Website redesign, phase 1",
+        "invoice_number": "INV-00001",
+        "client": "$record:cl-northwind",
+        "amount": 4800,
+        "issue_date": "2026-11-03",
+        "due_date": "2026-12-03",
+        "status": "paid",
+        "drive_link": "https://drive.google.com/"
+      }
+    },
+    {
+      "key": "inv-2",
+      "object": "invoices",
+      "data": {
+        "description": "Monthly retainer, November",
+        "invoice_number": "INV-00002",
+        "client": "$record:cl-globex",
+        "amount": 1500,
+        "issue_date": "2026-11-20",
+        "due_date": "2026-12-20",
+        "status": "sent",
+        "drive_link": "https://drive.google.com/"
+      }
+    },
+    {
+      "key": "inv-3",
+      "object": "invoices",
+      "data": {
+        "description": "Analytics setup workshop",
+        "invoice_number": "INV-00003",
+        "client": "$record:cl-northwind",
+        "amount": 950,
+        "issue_date": "2026-11-26",
+        "due_date": "2026-12-26",
+        "status": "sent",
+        "drive_link": "https://drive.google.com/"
+      }
+    }
+  ]
+}

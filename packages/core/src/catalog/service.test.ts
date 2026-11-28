@@ -84,6 +84,14 @@ test("template, connector, creator detail", async () => {
   );
 });
 
+test("connector detail: readme from README.md, null when absent", async () => {
+  const mailer = await catalogService.getConnector("mailer");
+  assert.equal(mailer.readme, "# Mailer automations\n\nSend emails.\n");
+  assert.equal((await catalogService.getConnector("slack")).readme, null);
+  const list = await catalogService.listConnectors();
+  assert.ok(list.every((c) => !("readme" in c)));
+});
+
 test("clean 404: code, kind not_found and English message", async () => {
   for (const [p, code, msg] of [
     [

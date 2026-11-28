@@ -102,9 +102,19 @@ export const loop = defineBlock({
   }),
   branches: ["done"],
   raw: ["do"],
+  // Dry run: no iteration, but an output of the right shape so the steps
+  // after the loop can read `results`.
+  simulate: () => ({
+    branch: "done",
+    output: { results: [], iterations: [], truncated: false },
+  }),
   run: async ({ items, limit, include, do: steps }, ctx) => {
     const engine = ctx.engine;
-    if (!engine) throw appError("blocks.loopContextRequired", "loop: run context required");
+    if (!engine)
+      throw appError(
+        "blocks.loopContextRequired",
+        "loop: run context required",
+      );
     const run = ctx.scope ?? {};
     const runSteps = (run.steps ?? {}) as Record<string, unknown>;
     const state: LoopState = ((await ctx.checkpoint?.load()) as

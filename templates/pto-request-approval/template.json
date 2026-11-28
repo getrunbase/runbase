@@ -1,0 +1,9 @@
+{
+  "id": "pto-request-approval",
+  "slug": "pto-request-approval",
+  "name": "Time-off Request Approval",
+  "categories": ["hr", "operations"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}

@@ -10,6 +10,7 @@ import { templateSchema as manifestSchema } from "../templates/format";
 import { logoDataUrl } from "./logo";
 import {
   authorSchema,
+  categoryListSchema,
   checkDescription,
   connectorMetaSchema,
   connectorSchema,
@@ -25,8 +26,16 @@ export type Catalog = {
   connectors: CatalogConnector[];
   templates: CatalogTemplate[];
   authors: CatalogAuthor[];
+  // Allowed template categories (templates/categories.json); absent = no check.
+  categories?: { slug: string; name: string }[];
 };
 export type CatalogResult = Catalog & { issues: ErrorItem[] };
+
+type TemplateCtx = {
+  owners: Map<string, string>;
+  authors: Set<string>;
+  categories?: Set<string>;
+};
 
 type RegistryNode = { id: string; label?: string; description?: string };
 type Registry = { connectors?: { path: string; nodes?: RegistryNode[] }[] };
@@ -100,10 +109,15 @@ async function loadConnectors(root: string, issues: ErrorItem[]) {
     const isTrigger = (n: RegistryNode) =>
       (n as { kind?: string }).kind === "trigger";
     const logo = await logoDataUrl(join(dir, entry.path));
+    const readme = await readFile(
+      join(dir, entry.path, "README.md"),
+      "utf8",
+    ).catch(() => undefined);
     connectors.push(
       connectorSchema.parse({
         ...meta,
         ...(logo && { logo }),
+        ...(readme?.trim() && { readme }),
         triggers: nodes.filter(isTrigger).map(op),
         actions: nodes.filter((n) => !isTrigger(n)).map(op),
       }),
@@ -140,11 +154,41 @@ async function loadAuthors(root: string, issues: ErrorItem[]) {
   return authors;
 }
 
+// Categories outside the closed list (templates/categories.json).
+export function checkCategories(
+  categories: string[],
+  allowed: Set<string> | undefined,
+  where: string,
+): ErrorItem[] {
+  if (!allowed) return [];
+  return categories
+    .filter((c) => !allowed.has(c))
+    .map((category) =>
+      errorItem(
+        "catalog.unknownCategory",
+        '{where}: unknown category "{category}": use one from templates/categories.json, or add it there in your pull request',
+        { where, category },
+      ),
+    );
+}
+
+// Closed list of categories; undefined when templates/categories.json is absent.
+async function loadCategories(root: string, issues: ErrorItem[]) {
+  const path = join(root, "templates", "categories.json");
+  if (!(await stat(path).catch(() => null))) return undefined;
+  return parse(
+    categoryListSchema,
+    await readJson(path, "templates/categories.json", issues),
+    "templates/categories.json",
+    issues,
+  );
+}
+
 // Validates a template (folder or submission): metadata, description,
 // manifest, author profile. Returns the full template, or undefined + problems.
 export function buildTemplate(
   input: { slug: string; meta: unknown; readme: string; manifest: unknown },
-  ctx: { owners: Map<string, string>; authors: Set<string> },
+  ctx: TemplateCtx,
   issues: ErrorItem[],
 ): CatalogTemplate | undefined {
   const base = `templates/${input.slug}`;
@@ -175,6 +219,13 @@ export function buildTemplate(
           },
         ),
       );
+    issues.push(
+      ...checkCategories(
+        meta.categories,
+        ctx.categories,
+        `${base}/template.json`,
+      ),
+    );
     if (!ctx.authors.has(meta.authorId))
       issues.push(
         errorItem(
@@ -195,7 +246,7 @@ export function buildTemplate(
 
 async function loadTemplates(
   root: string,
-  ctx: { owners: Map<string, string>; authors: Set<string> },
+  ctx: TemplateCtx,
   issues: ErrorItem[],
 ) {
   const dir = join(root, "templates");
@@ -243,12 +294,23 @@ export async function loadCatalog(root: string): Promise<CatalogResult> {
   const issues: ErrorItem[] = [];
   const { connectors, owners } = await loadConnectors(root, issues);
   const authors = await loadAuthors(root, issues);
+  const categories = await loadCategories(root, issues);
   const templates = await loadTemplates(
     root,
-    { owners, authors: new Set(authors.map((a) => a.username)) },
+    {
+      owners,
+      authors: new Set(authors.map((a) => a.username)),
+      categories: categories && new Set(categories.map((c) => c.slug)),
+    },
     issues,
   );
-  return { connectors, templates, authors, issues };
+  return {
+    connectors,
+    templates,
+    authors,
+    ...(categories && { categories }),
+    issues,
+  };
 }
 
 // Error built from the problems (MCP, API).

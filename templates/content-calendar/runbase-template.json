@@ -1,0 +1,549 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Content Calendar",
+  "description": "A content calendar that puts every deadline on Google Calendar, files each brief in Google Drive and warns owners in Slack two days before it is due.",
+  "databases": [
+    {
+      "slug": "content",
+      "name": "Content"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "content_items",
+      "name": "Content items",
+      "icon": "calendar",
+      "database": "content",
+      "fields": [
+        {
+          "key": "title",
+          "label": "Title",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "channel",
+          "label": "Channel",
+          "type": "select",
+          "options": [
+            "blog",
+            "newsletter",
+            "linkedin",
+            "x",
+            "youtube",
+            "podcast",
+            "case-study"
+          ]
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": [
+            "idea",
+            "briefed",
+            "drafting",
+            "review",
+            "scheduled",
+            "published"
+          ],
+          "default": "idea"
+        },
+        {
+          "key": "owner",
+          "label": "Owner",
+          "type": "text"
+        },
+        {
+          "key": "owner_email",
+          "label": "Owner email",
+          "type": "email"
+        },
+        {
+          "key": "due",
+          "label": "Due date",
+          "type": "date"
+        },
+        {
+          "key": "topic",
+          "label": "Topic / keyword",
+          "type": "text"
+        },
+        {
+          "key": "brief",
+          "label": "Brief",
+          "type": "text"
+        },
+        {
+          "key": "brief_url",
+          "label": "Brief in Drive",
+          "type": "url"
+        },
+        {
+          "key": "calendar_event_id",
+          "label": "Calendar event id",
+          "type": "text"
+        },
+        {
+          "key": "calendar_link",
+          "label": "Calendar link",
+          "type": "url"
+        },
+        {
+          "key": "published_url",
+          "label": "Published URL",
+          "type": "url"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "content_items",
+      "name": "Upcoming",
+      "filter": {
+        "field": "status",
+        "op": "neq",
+        "value": "published"
+      },
+      "sort": [
+        {
+          "field": "due",
+          "dir": "asc"
+        }
+      ],
+      "columns": [
+        "title",
+        "channel",
+        "owner",
+        "due",
+        "status",
+        "brief_url"
+      ]
+    },
+    {
+      "object": "content_items",
+      "name": "In review",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "review"
+      },
+      "sort": [
+        {
+          "field": "due",
+          "dir": "asc"
+        }
+      ]
+    },
+    {
+      "object": "content_items",
+      "name": "Idea backlog",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "idea"
+      },
+      "sort": [
+        {
+          "field": "title",
+          "dir": "asc"
+        }
+      ]
+    },
+    {
+      "object": "content_items",
+      "name": "Published",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "published"
+      },
+      "sort": [
+        {
+          "field": "due",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "title",
+        "channel",
+        "owner",
+        "due",
+        "published_url"
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "key": "plan-content-item",
+      "name": "Add new content to Google Calendar and Drive",
+      "definition": {
+        "trigger": {
+          "type": "trigger.record_created",
+          "object": "$object:content_items"
+        },
+        "steps": [
+          {
+            "id": "has_due",
+            "type": "condition",
+            "input": {
+              "left": "{{record.due}}",
+              "op": "is_not_empty"
+            }
+          },
+          {
+            "id": "day",
+            "type": "date",
+            "input": {
+              "op": "format",
+              "date": "{{record.due}}",
+              "format": "YYYY-MM-DD"
+            }
+          },
+          {
+            "id": "next_day",
+            "type": "date",
+            "input": {
+              "op": "add",
+              "date": "{{record.due}}",
+              "amount": 1,
+              "unit": "days"
+            }
+          },
+          {
+            "id": "end_day",
+            "type": "date",
+            "input": {
+              "op": "format",
+              "date": "{{steps.next_day.output.value}}",
+              "format": "YYYY-MM-DD"
+            }
+          },
+          {
+            "id": "event",
+            "type": "node.google_calendar.create_event",
+            "input": {
+              "calendarId": "primary",
+              "summary": "[{{record.channel}}] {{record.title}}",
+              "description": "Owner: {{record.owner}}\nTopic: {{record.topic}}\nStatus: {{record.status}}\n\n{{record.brief}}",
+              "start": "{{steps.day.output.value}}",
+              "end": "{{steps.end_day.output.value}}",
+              "attendees": [
+                "{{record.owner_email}}"
+              ],
+              "sendUpdates": "none"
+            }
+          },
+          {
+            "id": "brief_file",
+            "type": "node.google_drive.upload_file",
+            "input": {
+              "name": "Brief - {{record.title}}.md",
+              "content": "# {{record.title}}\n\n- Channel: {{record.channel}}\n- Owner: {{record.owner}} ({{record.owner_email}})\n- Due: {{steps.day.output.value}}\n- Topic / keyword: {{record.topic}}\n\n## Brief\n\n{{record.brief}}\n\n## Outline\n\n## Sources\n\n## Call to action\n",
+              "mimeType": "text/markdown"
+            }
+          },
+          {
+            "id": "save_links",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "calendar_event_id": "{{steps.event.output.id}}",
+                "calendar_link": "{{steps.event.output.htmlLink}}",
+                "brief_url": "{{steps.brief_file.output.webViewLink}}"
+              }
+            }
+          }
+        ],
+        "next": {
+          "has_due": {
+            "true": [
+              "day"
+            ]
+          },
+          "day": {
+            "ok": [
+              "next_day"
+            ]
+          },
+          "next_day": {
+            "ok": [
+              "end_day"
+            ]
+          },
+          "end_day": {
+            "ok": [
+              "event"
+            ]
+          },
+          "event": {
+            "ok": [
+              "brief_file"
+            ]
+          },
+          "brief_file": {
+            "ok": [
+              "save_links"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "key": "sync-content-item",
+      "name": "Keep the Calendar event in sync",
+      "definition": {
+        "trigger": {
+          "type": "trigger.record_updated",
+          "object": "$object:content_items",
+          "fields": [
+            "title",
+            "channel",
+            "due",
+            "status",
+            "owner",
+            "owner_email"
+          ]
+        },
+        "steps": [
+          {
+            "id": "has_event",
+            "type": "condition",
+            "input": {
+              "left": "{{record.calendar_event_id}}",
+              "op": "is_not_empty"
+            }
+          },
+          {
+            "id": "has_due",
+            "type": "condition",
+            "input": {
+              "left": "{{record.due}}",
+              "op": "is_not_empty"
+            }
+          },
+          {
+            "id": "day",
+            "type": "date",
+            "input": {
+              "op": "format",
+              "date": "{{record.due}}",
+              "format": "YYYY-MM-DD"
+            }
+          },
+          {
+            "id": "next_day",
+            "type": "date",
+            "input": {
+              "op": "add",
+              "date": "{{record.due}}",
+              "amount": 1,
+              "unit": "days"
+            }
+          },
+          {
+            "id": "end_day",
+            "type": "date",
+            "input": {
+              "op": "format",
+              "date": "{{steps.next_day.output.value}}",
+              "format": "YYYY-MM-DD"
+            }
+          },
+          {
+            "id": "update",
+            "type": "node.google_calendar.update_event",
+            "input": {
+              "calendarId": "primary",
+              "eventId": "{{record.calendar_event_id}}",
+              "summary": "[{{record.channel}}] {{record.title}} ({{record.status}})",
+              "description": "Owner: {{record.owner}}\nTopic: {{record.topic}}\nStatus: {{record.status}}\nBrief: {{record.brief_url}}",
+              "start": "{{steps.day.output.value}}",
+              "end": "{{steps.end_day.output.value}}",
+              "attendees": [
+                "{{record.owner_email}}"
+              ],
+              "sendUpdates": "none"
+            }
+          }
+        ],
+        "next": {
+          "has_event": {
+            "true": [
+              "has_due"
+            ]
+          },
+          "has_due": {
+            "true": [
+              "day"
+            ]
+          },
+          "day": {
+            "ok": [
+              "next_day"
+            ]
+          },
+          "next_day": {
+            "ok": [
+              "end_day"
+            ]
+          },
+          "end_day": {
+            "ok": [
+              "update"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "key": "due-soon-reminders",
+      "name": "Remind owners in Slack before the deadline",
+      "definition": {
+        "trigger": {
+          "type": "trigger.schedule",
+          "cron": "0 9 * * 1-5",
+          "timezone": "Europe/Paris",
+          "object": "$object:content_items",
+          "filter": {
+            "all": [
+              {
+                "field": "status",
+                "op": "not_in",
+                "value": [
+                  "scheduled",
+                  "published"
+                ]
+              },
+              {
+                "field": "due",
+                "op": "is_not_empty"
+              }
+            ]
+          }
+        },
+        "steps": [
+          {
+            "id": "days_left",
+            "type": "date",
+            "input": {
+              "op": "diff",
+              "date": "{{today}}",
+              "to": "{{record.due}}",
+              "unit": "days"
+            }
+          },
+          {
+            "id": "due_soon",
+            "type": "condition",
+            "input": {
+              "left": "{{steps.days_left.output.value}}",
+              "op": "between",
+              "right": [
+                0,
+                2
+              ]
+            }
+          },
+          {
+            "id": "remind",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "Due soon: {{record.title}} ({{record.channel}}) is due {{record.due}}, still in {{record.status}}. Owner: {{record.owner}}. Brief: {{record.brief_url}}"
+            }
+          }
+        ],
+        "next": {
+          "days_left": {
+            "ok": [
+              "due_soon"
+            ]
+          },
+          "due_soon": {
+            "true": [
+              "remind"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": [
+    "SLACK_WEBHOOK_URL"
+  ],
+  "records": [
+    {
+      "key": "pricing-post",
+      "object": "content_items",
+      "data": {
+        "title": "How we priced our new plan",
+        "channel": "blog",
+        "status": "drafting",
+        "owner": "Maya Chen",
+        "owner_email": "maya@example.com",
+        "due": "2026-12-08",
+        "topic": "saas pricing page",
+        "brief": "Explain the three tiers, the reasoning behind usage limits and what changed for existing customers."
+      }
+    },
+    {
+      "key": "december-newsletter",
+      "object": "content_items",
+      "data": {
+        "title": "December product newsletter",
+        "channel": "newsletter",
+        "status": "briefed",
+        "owner": "Tom Ruiz",
+        "owner_email": "tom@example.com",
+        "due": "2026-12-15",
+        "topic": "product updates",
+        "brief": "Three shipped features, one customer story, one link to the pricing post."
+      }
+    },
+    {
+      "key": "case-study-acme",
+      "object": "content_items",
+      "data": {
+        "title": "Acme cut reporting time by 60%",
+        "channel": "case-study",
+        "status": "review",
+        "owner": "Maya Chen",
+        "owner_email": "maya@example.com",
+        "due": "2026-12-03",
+        "topic": "reporting automation case study",
+        "brief": "Interview notes in Drive. Lead with the before and after numbers, quote the ops lead."
+      }
+    },
+    {
+      "key": "linkedin-launch",
+      "object": "content_items",
+      "data": {
+        "title": "Launch carousel: new dashboards",
+        "channel": "linkedin",
+        "status": "idea",
+        "owner": "Sam Okafor",
+        "owner_email": "sam@example.com",
+        "due": "2026-12-10",
+        "topic": "dashboard launch"
+      }
+    },
+    {
+      "key": "webinar-replay",
+      "object": "content_items",
+      "data": {
+        "title": "Webinar replay: RevOps reporting",
+        "channel": "youtube",
+        "status": "published",
+        "owner": "Tom Ruiz",
+        "owner_email": "tom@example.com",
+        "due": "2026-11-20",
+        "topic": "revops reporting",
+        "published_url": "https://example.com/webinar-revops"
+      }
+    }
+  ]
+}

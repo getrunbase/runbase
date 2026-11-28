@@ -1,0 +1,9 @@
+{
+  "id": "meeting-booked-tracker",
+  "slug": "meeting-booked-tracker",
+  "name": "Sales Meeting Tracker",
+  "categories": ["sales",  "analytics"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}

@@ -1,0 +1,721 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Client Project Tracker",
+  "description": "Client project tracker for agencies: Drive brief, Calendar kickoff and Slack post per project, milestone reminders and a weekly Gmail status email.",
+  "databases": [
+    {
+      "slug": "client-work",
+      "name": "Client work"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "clients",
+      "name": "Clients",
+      "icon": "building-2",
+      "database": "client-work",
+      "fields": [
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "domain",
+          "label": "Domain",
+          "type": "text",
+          "unique": true
+        },
+        {
+          "key": "contact_name",
+          "label": "Main contact",
+          "type": "text"
+        },
+        {
+          "key": "contact_email",
+          "label": "Contact email",
+          "type": "email"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": ["prospect", "active", "paused", "former"]
+        },
+        {
+          "key": "notes",
+          "label": "Notes",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "slug": "projects",
+      "name": "Projects",
+      "icon": "briefcase",
+      "database": "client-work",
+      "fields": [
+        {
+          "key": "name",
+          "label": "Project",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "client",
+          "label": "Client",
+          "type": "ref",
+          "object": "clients"
+        },
+        {
+          "key": "client_contact_name",
+          "label": "Client contact",
+          "type": "text"
+        },
+        {
+          "key": "client_contact_email",
+          "label": "Client contact email",
+          "type": "email"
+        },
+        {
+          "key": "project_lead",
+          "label": "Project lead",
+          "type": "text"
+        },
+        {
+          "key": "lead_email",
+          "label": "Lead email",
+          "type": "email"
+        },
+        {
+          "key": "scope",
+          "label": "Scope",
+          "type": "text"
+        },
+        {
+          "key": "goals",
+          "label": "Goals",
+          "type": "text"
+        },
+        {
+          "key": "budget",
+          "label": "Budget",
+          "type": "number"
+        },
+        {
+          "key": "start_date",
+          "label": "Start date",
+          "type": "date"
+        },
+        {
+          "key": "due_date",
+          "label": "Delivery date",
+          "type": "date"
+        },
+        {
+          "key": "kickoff_date",
+          "label": "Kickoff date",
+          "type": "date"
+        },
+        {
+          "key": "time_zone",
+          "label": "Time zone",
+          "type": "text",
+          "default": "Europe/Paris"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": ["planned", "active", "on-hold", "delivered", "cancelled"]
+        },
+        {
+          "key": "health",
+          "label": "Health",
+          "type": "select",
+          "options": ["on-track", "at-risk", "off-track"]
+        },
+        {
+          "key": "status_notes",
+          "label": "Notes for this week's update",
+          "type": "text"
+        },
+        {
+          "key": "brief_file_id",
+          "label": "Brief file ID",
+          "type": "text"
+        },
+        {
+          "key": "kickoff_link",
+          "label": "Kickoff event link",
+          "type": "text"
+        },
+        {
+          "key": "last_update_sent_at",
+          "label": "Last status email",
+          "type": "date"
+        }
+      ]
+    },
+    {
+      "slug": "milestones",
+      "name": "Milestones",
+      "icon": "flag",
+      "database": "client-work",
+      "fields": [
+        {
+          "key": "title",
+          "label": "Milestone",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "project",
+          "label": "Project",
+          "type": "ref",
+          "object": "projects"
+        },
+        {
+          "key": "project_name",
+          "label": "Project name",
+          "type": "text"
+        },
+        {
+          "key": "owner",
+          "label": "Owner",
+          "type": "text"
+        },
+        {
+          "key": "owner_email",
+          "label": "Owner email",
+          "type": "email"
+        },
+        {
+          "key": "due_date",
+          "label": "Due date",
+          "type": "date"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": ["planned", "in-progress", "waiting-on-client", "done"]
+        },
+        {
+          "key": "client_facing",
+          "label": "Client-facing",
+          "type": "bool"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "projects",
+      "name": "Active projects",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "active"
+      },
+      "sort": [
+        {
+          "field": "due_date",
+          "dir": "asc"
+        }
+      ],
+      "columns": [
+        "name",
+        "client",
+        "project_lead",
+        "health",
+        "due_date",
+        "budget"
+      ]
+    },
+    {
+      "object": "projects",
+      "name": "At risk",
+      "filter": {
+        "all": [
+          {
+            "field": "status",
+            "op": "eq",
+            "value": "active"
+          },
+          {
+            "field": "health",
+            "op": "in",
+            "value": ["at-risk", "off-track"]
+          }
+        ]
+      },
+      "sort": [
+        {
+          "field": "due_date",
+          "dir": "asc"
+        }
+      ]
+    },
+    {
+      "object": "milestones",
+      "name": "Open milestones",
+      "filter": {
+        "field": "status",
+        "op": "neq",
+        "value": "done"
+      },
+      "sort": [
+        {
+          "field": "due_date",
+          "dir": "asc"
+        }
+      ],
+      "columns": ["title", "project", "owner", "due_date", "status"]
+    },
+    {
+      "object": "milestones",
+      "name": "Waiting on client",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "waiting-on-client"
+      },
+      "sort": [
+        {
+          "field": "due_date",
+          "dir": "asc"
+        }
+      ]
+    },
+    {
+      "object": "clients",
+      "name": "Active clients",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "active"
+      },
+      "sort": [
+        {
+          "field": "name",
+          "dir": "asc"
+        }
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "key": "kick-off-project",
+      "name": "Kick off a new client project",
+      "definition": {
+        "trigger": {
+          "type": "trigger.record_created",
+          "object": "$object:projects"
+        },
+        "steps": [
+          {
+            "id": "brief",
+            "type": "node.google_drive.upload_file",
+            "input": {
+              "connection": "google",
+              "name": "Project brief - {{record.name}}.md",
+              "mimeType": "text/markdown",
+              "content": "# Project brief: {{record.name}}\n\nClient contact: {{record.client_contact_name}} ({{record.client_contact_email}})\nProject lead: {{record.project_lead}} ({{record.lead_email}})\nStart: {{record.start_date}}\nDelivery: {{record.due_date}}\nBudget: {{record.budget}}\n\n## Goals\n\n{{record.goals}}\n\n## Scope\n\n{{record.scope}}\n\n## Out of scope\n\n- To agree at the kickoff\n\n## Milestones\n\n- To confirm at the kickoff\n\n## Contacts and access\n\n- Shared folder, tools and logins to collect at the kickoff"
+            }
+          },
+          {
+            "id": "kickoff",
+            "type": "node.google_calendar.create_event",
+            "input": {
+              "connection": "google",
+              "calendarId": "primary",
+              "summary": "Kickoff: {{record.name}}",
+              "description": "Kickoff for {{record.name}}.\n\nAgenda: goals and success criteria, scope and out of scope, milestones and dates, who approves what, how we share weekly updates.\n\nProject brief: {{steps.brief.output.webViewLink}}",
+              "start": "{{record.kickoff_date}}T10:00:00",
+              "end": "{{record.kickoff_date}}T11:00:00",
+              "timeZone": "{{record.time_zone}}",
+              "attendees": [
+                "{{record.client_contact_email}}",
+                "{{record.lead_email}}"
+              ],
+              "addMeet": true,
+              "sendUpdates": "all"
+            }
+          },
+          {
+            "id": "save",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "status": "active",
+                "health": "on-track",
+                "brief_file_id": "{{steps.brief.output.id}}",
+                "kickoff_link": "{{steps.kickoff.output.htmlLink}}"
+              }
+            }
+          },
+          {
+            "id": "milestone_kickoff",
+            "type": "record.create",
+            "input": {
+              "object": "$object:milestones",
+              "data": {
+                "title": "Kickoff and brief sign-off",
+                "project": "{{record.id}}",
+                "project_name": "{{record.name}}",
+                "owner": "{{record.project_lead}}",
+                "owner_email": "{{record.lead_email}}",
+                "due_date": "{{record.kickoff_date}}",
+                "status": "planned",
+                "client_facing": true
+              }
+            }
+          },
+          {
+            "id": "milestone_delivery",
+            "type": "record.create",
+            "input": {
+              "object": "$object:milestones",
+              "data": {
+                "title": "Final delivery",
+                "project": "{{record.id}}",
+                "project_name": "{{record.name}}",
+                "owner": "{{record.project_lead}}",
+                "owner_email": "{{record.lead_email}}",
+                "due_date": "{{record.due_date}}",
+                "status": "planned",
+                "client_facing": true
+              }
+            }
+          },
+          {
+            "id": "announce",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "New client project: {{record.name}}. Lead: {{record.project_lead}}. Kickoff on {{record.kickoff_date}}, delivery on {{record.due_date}}. Brief saved to Drive, kickoff invite sent to {{record.client_contact_name}}."
+            }
+          }
+        ],
+        "next": {
+          "brief": {
+            "ok": ["kickoff"]
+          },
+          "kickoff": {
+            "ok": ["save"]
+          },
+          "save": {
+            "ok": ["milestone_kickoff"]
+          },
+          "milestone_kickoff": {
+            "ok": ["milestone_delivery"]
+          },
+          "milestone_delivery": {
+            "ok": ["announce"]
+          }
+        }
+      }
+    },
+    {
+      "key": "milestone-reminders",
+      "name": "Remind owners of milestones due in the next 3 days",
+      "definition": {
+        "trigger": {
+          "type": "trigger.schedule",
+          "cron": "0 8 * * 1-5",
+          "timezone": "Europe/Paris"
+        },
+        "steps": [
+          {
+            "id": "horizon",
+            "type": "date",
+            "input": {
+              "op": "add",
+              "date": "{{now}}",
+              "amount": 3,
+              "unit": "days"
+            }
+          },
+          {
+            "id": "due",
+            "type": "record.search",
+            "input": {
+              "object": "$object:milestones",
+              "filter": {
+                "all": [
+                  {
+                    "field": "status",
+                    "op": "neq",
+                    "value": "done"
+                  },
+                  {
+                    "field": "due_date",
+                    "op": "before",
+                    "value": "{{steps.horizon.output.value}}"
+                  }
+                ]
+              },
+              "limit": 200
+            }
+          },
+          {
+            "id": "remind_all",
+            "type": "loop",
+            "input": {
+              "items": "{{steps.due.output.records}}",
+              "limit": 200,
+              "do": [
+                {
+                  "id": "email",
+                  "type": "node.gmail.send",
+                  "input": {
+                    "connection": "google",
+                    "to": "{{item.data.owner_email}}",
+                    "subject": "Due {{item.data.due_date}}: {{item.data.title}} ({{item.data.project_name}})",
+                    "text": "Hi {{item.data.owner}},\n\nThe milestone \"{{item.data.title}}\" on {{item.data.project_name}} is due on {{item.data.due_date}} and is still marked {{item.data.status}}.\n\nIf it is done, mark it done in the tracker. If the date moves, update it now so the client's Friday status email stays accurate."
+                  }
+                },
+                {
+                  "id": "slack",
+                  "type": "node.slack.send",
+                  "input": {
+                    "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+                    "text": "Milestone due {{item.data.due_date}}: {{item.data.title}} on {{item.data.project_name}} (owner: {{item.data.owner}}, status: {{item.data.status}})."
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "next": {
+          "horizon": {
+            "ok": ["due"]
+          },
+          "due": {
+            "found": ["remind_all"]
+          }
+        }
+      }
+    },
+    {
+      "key": "weekly-status-email",
+      "name": "Send the weekly client status email",
+      "definition": {
+        "trigger": {
+          "type": "trigger.schedule",
+          "cron": "0 15 * * 5",
+          "timezone": "Europe/Paris",
+          "object": "$object:projects",
+          "filter": {
+            "field": "status",
+            "op": "eq",
+            "value": "active"
+          }
+        },
+        "steps": [
+          {
+            "id": "milestones",
+            "type": "record.search",
+            "input": {
+              "object": "$object:milestones",
+              "filter": {
+                "field": "project",
+                "op": "eq",
+                "value": "{{record.id}}"
+              },
+              "limit": 100
+            }
+          },
+          {
+            "id": "draft",
+            "type": "ai.run",
+            "input": {
+              "prompt": "You write the weekly status email an agency sends to its client. Use only the data given: the project, its health, the lead's notes for this week and the milestones with their status and due dates. Structure: one sentence on overall progress, a short list of what was done this week, what comes next with dates, and anything we need from the client (milestones waiting on the client). Plain text, friendly and factual, no greetings line, no sign-off, no emojis, under 180 words. Never invent work, dates or figures. Also write a one-line internal summary for the team's Slack channel.",
+              "context": {
+                "project": "{{record.name}}",
+                "health": "{{record.health}}",
+                "delivery_date": "{{record.due_date}}",
+                "notes": "{{record.status_notes}}",
+                "milestones": "{{steps.milestones.output.records}}"
+              },
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "body": {
+                    "type": "string"
+                  },
+                  "internal_summary": {
+                    "type": "string"
+                  }
+                },
+                "required": ["body", "internal_summary"]
+              }
+            }
+          },
+          {
+            "id": "email",
+            "type": "node.gmail.send",
+            "input": {
+              "connection": "google",
+              "to": "{{record.client_contact_email}}",
+              "cc": "{{record.lead_email}}",
+              "replyTo": "{{record.lead_email}}",
+              "subject": "{{record.name}}: weekly status",
+              "text": "Hi {{record.client_contact_name}},\n\n{{steps.draft.output.result.body}}\n\nReply to this email with any question.\n\n{{record.project_lead}}"
+            }
+          },
+          {
+            "id": "save",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "last_update_sent_at": "{{now}}",
+                "status_notes": ""
+              }
+            }
+          },
+          {
+            "id": "slack",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "Status email sent for {{record.name}} ({{record.health}}): {{steps.draft.output.result.internal_summary}}"
+            }
+          }
+        ],
+        "next": {
+          "milestones": {
+            "found": ["draft"],
+            "empty": ["draft"]
+          },
+          "draft": {
+            "ok": ["email"]
+          },
+          "email": {
+            "ok": ["save"]
+          },
+          "save": {
+            "ok": ["slack"]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": ["SLACK_WEBHOOK_URL"],
+  "records": [
+    {
+      "key": "c1",
+      "object": "clients",
+      "data": {
+        "name": "Northwind Coffee",
+        "domain": "northwind.example",
+        "contact_name": "Emma Clarke",
+        "contact_email": "emma@northwind.example",
+        "status": "active",
+        "notes": "Prefers updates by email, decisions on Mondays."
+      }
+    },
+    {
+      "key": "c2",
+      "object": "clients",
+      "data": {
+        "name": "Bluepeak Software",
+        "domain": "bluepeak.example",
+        "contact_name": "Lucas Moreau",
+        "contact_email": "lucas@bluepeak.example",
+        "status": "active"
+      }
+    },
+    {
+      "key": "p1",
+      "object": "projects",
+      "data": {
+        "name": "Northwind website redesign",
+        "client": "$record:c1",
+        "client_contact_name": "Emma Clarke",
+        "client_contact_email": "emma@northwind.example",
+        "project_lead": "Sam Rivera",
+        "lead_email": "sam@youragency.example",
+        "scope": "New homepage, product pages and online shop theme.",
+        "goals": "Lift online orders by 20% before the spring launch.",
+        "budget": 18000,
+        "start_date": "2026-11-16",
+        "due_date": "2027-01-29",
+        "kickoff_date": "2026-11-18",
+        "time_zone": "Europe/Paris",
+        "status": "active",
+        "health": "on-track",
+        "status_notes": "Homepage design approved, product page wireframes in review."
+      }
+    },
+    {
+      "key": "p2",
+      "object": "projects",
+      "data": {
+        "name": "Bluepeak product launch campaign",
+        "client": "$record:c2",
+        "client_contact_name": "Lucas Moreau",
+        "client_contact_email": "lucas@bluepeak.example",
+        "project_lead": "Nora Klein",
+        "lead_email": "nora@youragency.example",
+        "scope": "Launch landing page, email sequence and paid social ads.",
+        "goals": "500 qualified sign-ups in the first month.",
+        "budget": 9500,
+        "start_date": "2026-11-23",
+        "due_date": "2026-12-18",
+        "kickoff_date": "2026-11-24",
+        "time_zone": "Europe/Paris",
+        "status": "active",
+        "health": "at-risk",
+        "status_notes": "Still waiting on final product screenshots from the client."
+      }
+    },
+    {
+      "key": "m1",
+      "object": "milestones",
+      "data": {
+        "title": "Homepage design sign-off",
+        "project": "$record:p1",
+        "project_name": "Northwind website redesign",
+        "owner": "Sam Rivera",
+        "owner_email": "sam@youragency.example",
+        "due_date": "2026-11-27",
+        "status": "done",
+        "client_facing": true
+      }
+    },
+    {
+      "key": "m2",
+      "object": "milestones",
+      "data": {
+        "title": "Product page wireframes",
+        "project": "$record:p1",
+        "project_name": "Northwind website redesign",
+        "owner": "Sam Rivera",
+        "owner_email": "sam@youragency.example",
+        "due_date": "2026-12-04",
+        "status": "in-progress",
+        "client_facing": true
+      }
+    },
+    {
+      "key": "m3",
+      "object": "milestones",
+      "data": {
+        "title": "Product screenshots from client",
+        "project": "$record:p2",
+        "project_name": "Bluepeak product launch campaign",
+        "owner": "Nora Klein",
+        "owner_email": "nora@youragency.example",
+        "due_date": "2026-11-30",
+        "status": "waiting-on-client",
+        "client_facing": true
+      }
+    }
+  ]
+}

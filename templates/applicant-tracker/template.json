@@ -1,0 +1,9 @@
+{
+  "id": "applicant-tracker",
+  "slug": "applicant-tracker",
+  "name": "Applicant Tracking from Google Sheets",
+  "categories": ["hr"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}

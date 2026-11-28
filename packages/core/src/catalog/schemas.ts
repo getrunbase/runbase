@@ -19,6 +19,11 @@ export const usernameSchema = z
     "username: a GitHub login",
   );
 const category = z.string().regex(/^[a-z0-9-]+$/, "category: [a-z0-9-]");
+
+// templates/categories.json: closed list of template categories.
+export const categoryListSchema = z
+  .array(z.object({ slug: category, name: z.string().min(1) }))
+  .min(1);
 const date = z.iso.date();
 
 const operation = z.strictObject({
@@ -43,6 +48,8 @@ export const connectorSchema = connectorMetaSchema.extend({
   logo: z.string().startsWith("data:image/svg+xml;base64,").optional(),
   triggers: z.array(operation),
   actions: z.array(operation),
+  // Long description: the connector's README.md (markdown), when present.
+  readme: z.string().optional(),
 });
 export type CatalogConnector = z.output<typeof connectorSchema>;
 

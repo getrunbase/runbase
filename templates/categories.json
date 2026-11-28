@@ -1,0 +1,82 @@
+[
+  {
+    "slug": "sales",
+    "name": "Sales"
+  },
+  {
+    "slug": "crm",
+    "name": "CRM"
+  },
+  {
+    "slug": "marketing",
+    "name": "Marketing"
+  },
+  {
+    "slug": "support",
+    "name": "Support"
+  },
+  {
+    "slug": "customer-success",
+    "name": "Customer success"
+  },
+  {
+    "slug": "communication",
+    "name": "Communication"
+  },
+  {
+    "slug": "chat",
+    "name": "Chat"
+  },
+  {
+    "slug": "email",
+    "name": "Email"
+  },
+  {
+    "slug": "finance",
+    "name": "Finance"
+  },
+  {
+    "slug": "accounting",
+    "name": "Accounting"
+  },
+  {
+    "slug": "hr",
+    "name": "HR"
+  },
+  {
+    "slug": "operations",
+    "name": "Operations"
+  },
+  {
+    "slug": "productivity",
+    "name": "Productivity"
+  },
+  {
+    "slug": "project-management",
+    "name": "Project management"
+  },
+  {
+    "slug": "developer-tools",
+    "name": "Developer tools"
+  },
+  {
+    "slug": "analytics",
+    "name": "Analytics"
+  },
+  {
+    "slug": "ecommerce",
+    "name": "E-commerce"
+  },
+  {
+    "slug": "ai",
+    "name": "AI"
+  },
+  {
+    "slug": "storage",
+    "name": "Storage"
+  },
+  {
+    "slug": "other",
+    "name": "Other"
+  }
+]

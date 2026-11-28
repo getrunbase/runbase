@@ -1,0 +1,555 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Partner Referral Tracker",
+  "description": "Partner referral tracking on autopilot: log each lead, alert sales in Slack, thank partners from Gmail and send monthly commission statements.",
+  "databases": [
+    {
+      "slug": "partners",
+      "name": "Partners"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "partners",
+      "name": "Partners",
+      "icon": "handshake",
+      "database": "partners",
+      "fields": [
+        {
+          "key": "name",
+          "label": "Partner",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "code",
+          "label": "Referral code",
+          "type": "text",
+          "unique": true
+        },
+        {
+          "key": "contact_name",
+          "label": "Contact name",
+          "type": "text"
+        },
+        {
+          "key": "email",
+          "label": "Email",
+          "type": "email"
+        },
+        {
+          "key": "type",
+          "label": "Type",
+          "type": "select",
+          "options": [
+            "agency",
+            "affiliate",
+            "reseller",
+            "customer",
+            "integration"
+          ]
+        },
+        {
+          "key": "commission_rate",
+          "label": "Commission %",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": ["active", "paused", "ended"]
+        },
+        {
+          "key": "joined_on",
+          "label": "Joined on",
+          "type": "date"
+        }
+      ]
+    },
+    {
+      "slug": "referrals",
+      "name": "Referrals",
+      "icon": "users",
+      "database": "partners",
+      "fields": [
+        {
+          "key": "lead_name",
+          "label": "Lead",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "lead_email",
+          "label": "Lead email",
+          "type": "email",
+          "unique": true
+        },
+        {
+          "key": "company",
+          "label": "Company",
+          "type": "text"
+        },
+        {
+          "key": "partner_code",
+          "label": "Referral code",
+          "type": "text"
+        },
+        {
+          "key": "partner",
+          "label": "Partner",
+          "type": "ref",
+          "object": "partners"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": ["new", "qualified", "won", "lost"],
+          "default": "new"
+        },
+        {
+          "key": "deal_value",
+          "label": "Deal value",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "key": "won_on",
+          "label": "Won on",
+          "type": "date"
+        },
+        {
+          "key": "notes",
+          "label": "Notes",
+          "type": "text"
+        },
+        {
+          "key": "created_at",
+          "label": "Created",
+          "type": "created_at"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "referrals",
+      "name": "New referrals",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "new"
+      },
+      "sort": [
+        {
+          "field": "created_at",
+          "dir": "desc"
+        }
+      ],
+      "columns": ["lead_name", "lead_email", "company", "partner", "created_at"]
+    },
+    {
+      "object": "referrals",
+      "name": "Open referrals",
+      "filter": {
+        "field": "status",
+        "op": "in",
+        "value": ["new", "qualified"]
+      },
+      "sort": [
+        {
+          "field": "deal_value",
+          "dir": "desc"
+        }
+      ],
+      "columns": ["lead_name", "company", "partner", "status", "deal_value"]
+    },
+    {
+      "object": "referrals",
+      "name": "Won last 30 days",
+      "filter": {
+        "all": [
+          {
+            "field": "status",
+            "op": "eq",
+            "value": "won"
+          },
+          {
+            "field": "won_on",
+            "op": "within",
+            "value": 30
+          }
+        ]
+      },
+      "sort": [
+        {
+          "field": "won_on",
+          "dir": "desc"
+        }
+      ],
+      "columns": ["lead_name", "company", "partner", "deal_value", "won_on"]
+    },
+    {
+      "object": "referrals",
+      "name": "Unmatched referrals",
+      "filter": {
+        "field": "partner",
+        "op": "is_empty"
+      },
+      "columns": ["lead_name", "lead_email", "partner_code", "created_at"]
+    },
+    {
+      "object": "partners",
+      "name": "Active partners",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "active"
+      },
+      "sort": [
+        {
+          "field": "name",
+          "dir": "asc"
+        }
+      ],
+      "columns": [
+        "name",
+        "code",
+        "contact_name",
+        "email",
+        "type",
+        "commission_rate"
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "compute-partner-commissions",
+      "code": "// Computes last month's partner commissions from won referrals and builds\n// the sheet rows, one email statement per partner and a Slack summary.\nexport default ({ partners, referrals, today, currency, senderName }) => {\n  const cur = currency || \"EUR\";\n  const now = new Date(today);\n  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));\n  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));\n  const month = start.toISOString().slice(0, 7);\n  const money = (n) => Math.round(n * 100) / 100;\n  const fmt = (n) => money(n).toLocaleString(\"en-US\") + \" \" + cur;\n  const won = (referrals || [])\n    .map((r) => ({ id: r.id, ...(r.data || r) }))\n    .filter((r) => {\n      if (r.status !== \"won\" || !r.won_on) return false;\n      const t = Date.parse(r.won_on);\n      return t >= start.getTime() && t < end.getTime();\n    });\n  const rows = [];\n  const statements = [];\n  let total = 0;\n  for (const p of partners || []) {\n    const partner = { id: p.id, ...(p.data || p) };\n    const mine = won.filter((r) => r.partner === partner.id || r.partner_code === partner.code);\n    if (!mine.length) continue;\n    const rate = Number(partner.commission_rate) || 0;\n    const revenue = mine.reduce((s, r) => s + (Number(r.deal_value) || 0), 0);\n    const commission = money((revenue * rate) / 100);\n    total += commission;\n    rows.push({\n      Month: month,\n      Partner: partner.name,\n      Code: partner.code,\n      \"Won referrals\": mine.length,\n      Revenue: money(revenue),\n      \"Rate %\": rate,\n      Commission: commission,\n      Currency: cur,\n    });\n    if (partner.email) {\n      const lines = mine.map((r) => `- ${r.company || r.lead_name}: ${fmt(Number(r.deal_value) || 0)}`);\n      statements.push({\n        to: partner.email,\n        subject: `Your referral statement for ${month}`,\n        text: [\n          `Hi ${partner.contact_name || partner.name},`,\n          \"\",\n          `Here is your referral statement for ${month}.`,\n          \"\",\n          ...lines,\n          \"\",\n          `Won revenue: ${fmt(revenue)}`,\n          `Commission at ${rate}%: ${fmt(commission)}`,\n          \"\",\n          \"Thank you for the introductions. Reply to this email if anything looks wrong.\",\n          \"\",\n          senderName || \"The partnerships team\",\n        ].join(\"\\n\"),\n      });\n    }\n  }\n  const summary = rows.length\n    ? `Partner commissions for ${month}: ${rows.length} partners, ${won.length} won referrals, ${fmt(total)} to pay. Statements sent: ${statements.length}.`\n    : `Partner commissions for ${month}: no won referrals this month.`;\n  if (!rows.length)\n    rows.push({ Month: month, Partner: \"none\", Code: \"\", \"Won referrals\": 0, Revenue: 0, \"Rate %\": 0, Commission: 0, Currency: cur });\n  return { month, rows, statements, summary, total: money(total) };\n};\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "partners": {
+            "type": "array"
+          },
+          "referrals": {
+            "type": "array"
+          },
+          "today": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "senderName": {
+            "type": "string"
+          }
+        },
+        "required": ["partners", "referrals", "today"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string"
+          },
+          "rows": {
+            "type": "array"
+          },
+          "statements": {
+            "type": "array"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": ["month", "rows", "statements", "summary", "total"]
+      },
+      "permissions": {
+        "domains": [],
+        "secrets": []
+      },
+      "limits": {
+        "timeoutMs": 5000
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "key": "capture-referral",
+      "name": "Capture partner referrals",
+      "definition": {
+        "trigger": {
+          "type": "trigger.webhook",
+          "webhook": "partner-referral",
+          "object": "$object:referrals",
+          "match": "lead_email",
+          "mapping": {
+            "lead_email": "email",
+            "lead_name": "name",
+            "company": "company",
+            "partner_code": "partner_code",
+            "notes": "message"
+          }
+        },
+        "steps": [
+          {
+            "id": "find_partner",
+            "type": "record.search",
+            "input": {
+              "object": "$object:partners",
+              "filter": {
+                "field": "code",
+                "op": "eq",
+                "value": "{{record.partner_code}}"
+              },
+              "limit": 1
+            }
+          },
+          {
+            "id": "link",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "partner": "{{steps.find_partner.output.records.0.id}}"
+              }
+            }
+          },
+          {
+            "id": "alert_sales",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "New partner referral from {{steps.find_partner.output.records.0.data.name}}: {{record.lead_name}} <{{record.lead_email}}> at {{record.company}}. Note: {{record.notes}}"
+            }
+          },
+          {
+            "id": "thank_partner",
+            "type": "node.gmail.send",
+            "input": {
+              "connection": "google",
+              "to": "{{steps.find_partner.output.records.0.data.email}}",
+              "subject": "Thanks for introducing {{record.company}}",
+              "text": "Hi {{steps.find_partner.output.records.0.data.contact_name}},\n\nThank you for referring {{record.lead_name}} from {{record.company}}. Our sales team has the introduction and will reach out within one business day.\n\nWe will keep you posted, and any commission will show up in your monthly statement.\n\nBest regards,\nThe partnerships team"
+            }
+          },
+          {
+            "id": "alert_unmatched",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "Referral with an unknown code \"{{record.partner_code}}\": {{record.lead_name}} <{{record.lead_email}}> at {{record.company}}. Link it to a partner in the Unmatched referrals view."
+            }
+          }
+        ],
+        "next": {
+          "find_partner": {
+            "found": ["link"],
+            "empty": ["alert_unmatched"]
+          },
+          "link": {
+            "ok": ["alert_sales"]
+          },
+          "alert_sales": {
+            "ok": ["thank_partner"]
+          }
+        }
+      }
+    },
+    {
+      "key": "monthly-commissions",
+      "name": "Send monthly commission statements",
+      "definition": {
+        "trigger": {
+          "type": "trigger.schedule",
+          "cron": "0 8 1 * *",
+          "timezone": "Europe/Paris"
+        },
+        "steps": [
+          {
+            "id": "partners",
+            "type": "record.search",
+            "input": {
+              "object": "$object:partners",
+              "filter": {
+                "field": "status",
+                "op": "in",
+                "value": ["active", "paused"]
+              },
+              "limit": 500
+            }
+          },
+          {
+            "id": "won",
+            "type": "record.search",
+            "input": {
+              "object": "$object:referrals",
+              "filter": {
+                "all": [
+                  {
+                    "field": "status",
+                    "op": "eq",
+                    "value": "won"
+                  },
+                  {
+                    "field": "won_on",
+                    "op": "within",
+                    "value": 62
+                  }
+                ]
+              },
+              "limit": 500
+            }
+          },
+          {
+            "id": "compute",
+            "type": "fn.compute-partner-commissions",
+            "input": {
+              "partners": "{{steps.partners.output.records}}",
+              "referrals": "{{steps.won.output.records}}",
+              "today": "{{now}}",
+              "currency": "EUR",
+              "senderName": "The partnerships team"
+            }
+          },
+          {
+            "id": "sheet",
+            "type": "node.google_sheets.append_rows",
+            "input": {
+              "connection": "google",
+              "spreadsheetId": "{{secret.COMMISSIONS_SPREADSHEET_ID}}",
+              "range": "Commissions",
+              "rows": "{{steps.compute.output.rows}}"
+            }
+          },
+          {
+            "id": "statements",
+            "type": "loop",
+            "input": {
+              "items": "{{steps.compute.output.statements}}",
+              "limit": 200,
+              "do": [
+                {
+                  "id": "statement",
+                  "type": "node.gmail.send",
+                  "input": {
+                    "connection": "google",
+                    "to": "{{item.to}}",
+                    "subject": "{{item.subject}}",
+                    "text": "{{item.text}}"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "summary",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "{{steps.compute.output.summary}}"
+            }
+          }
+        ],
+        "next": {
+          "partners": {
+            "found": ["won"]
+          },
+          "won": {
+            "found": ["compute"],
+            "empty": ["compute"]
+          },
+          "compute": {
+            "ok": ["sheet"]
+          },
+          "sheet": {
+            "ok": ["statements"]
+          },
+          "statements": {
+            "done": ["summary"]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": ["SLACK_WEBHOOK_URL", "COMMISSIONS_SPREADSHEET_ID"],
+  "records": [
+    {
+      "key": "partner-lumen",
+      "object": "partners",
+      "data": {
+        "name": "Lumen Agency",
+        "code": "LUMEN",
+        "contact_name": "Clara Dupont",
+        "email": "clara@lumen.example",
+        "type": "agency",
+        "commission_rate": 15,
+        "status": "active",
+        "joined_on": "2026-03-02"
+      }
+    },
+    {
+      "key": "partner-stackwise",
+      "object": "partners",
+      "data": {
+        "name": "Stackwise Newsletter",
+        "code": "STACKWISE",
+        "contact_name": "Ben Ortiz",
+        "email": "ben@stackwise.example",
+        "type": "affiliate",
+        "commission_rate": 20,
+        "status": "active",
+        "joined_on": "2026-06-18"
+      }
+    },
+    {
+      "key": "ref-northwind",
+      "object": "referrals",
+      "data": {
+        "lead_name": "Maya Chen",
+        "lead_email": "maya@northwind.example",
+        "company": "Northwind",
+        "partner_code": "LUMEN",
+        "partner": "$record:partner-lumen",
+        "status": "won",
+        "deal_value": 12000,
+        "won_on": "2026-11-12"
+      }
+    },
+    {
+      "key": "ref-brightlane",
+      "object": "referrals",
+      "data": {
+        "lead_name": "Omar Haddad",
+        "lead_email": "omar@brightlane.example",
+        "company": "Brightlane",
+        "partner_code": "STACKWISE",
+        "partner": "$record:partner-stackwise",
+        "status": "qualified",
+        "deal_value": 4800,
+        "notes": "Read the review in the newsletter."
+      }
+    },
+    {
+      "key": "ref-kestrel",
+      "object": "referrals",
+      "data": {
+        "lead_name": "Ines Laurent",
+        "lead_email": "ines@kestrel.example",
+        "company": "Kestrel Studio",
+        "partner_code": "LUMEN",
+        "partner": "$record:partner-lumen",
+        "status": "new",
+        "notes": "Wants a call next week."
+      }
+    }
+  ]
+}

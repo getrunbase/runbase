@@ -1,0 +1,605 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Event Registration Manager",
+  "description": "Webinar registration automation: each signup joins the Google Calendar event, gets a Gmail confirmation, a Google Sheet row and a reminder the day before.",
+  "databases": [
+    {
+      "slug": "events",
+      "name": "Events"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "events",
+      "name": "Events",
+      "icon": "calendar",
+      "database": "events",
+      "fields": [
+        {
+          "key": "calendar_event_id",
+          "label": "Calendar event id",
+          "type": "text",
+          "unique": true
+        },
+        {
+          "key": "title",
+          "label": "Title",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "format",
+          "label": "Format",
+          "type": "select",
+          "options": ["webinar", "meetup", "workshop", "conference"]
+        },
+        {
+          "key": "starts_at",
+          "label": "Starts at",
+          "type": "date"
+        },
+        {
+          "key": "ends_at",
+          "label": "Ends at",
+          "type": "date"
+        },
+        {
+          "key": "timezone",
+          "label": "Time zone",
+          "type": "text"
+        },
+        {
+          "key": "join_link",
+          "label": "Join link or address",
+          "type": "text"
+        },
+        {
+          "key": "hosts",
+          "label": "Hosts and speakers (emails)",
+          "type": "text"
+        },
+        {
+          "key": "capacity",
+          "label": "Capacity",
+          "type": "number"
+        },
+        {
+          "key": "sheet_id",
+          "label": "Attendee sheet id",
+          "type": "text"
+        },
+        {
+          "key": "sheet_tab",
+          "label": "Attendee sheet tab",
+          "type": "text"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": ["draft", "open", "full", "done"]
+        }
+      ]
+    },
+    {
+      "slug": "registrations",
+      "name": "Registrations",
+      "icon": "ticket",
+      "database": "events",
+      "fields": [
+        {
+          "key": "registration_id",
+          "label": "Registration id",
+          "type": "text",
+          "unique": true
+        },
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "email",
+          "label": "Email",
+          "type": "email"
+        },
+        {
+          "key": "company",
+          "label": "Company",
+          "type": "text"
+        },
+        {
+          "key": "job_title",
+          "label": "Job title",
+          "type": "text"
+        },
+        {
+          "key": "event_id",
+          "label": "Calendar event id",
+          "type": "text"
+        },
+        {
+          "key": "source",
+          "label": "Source",
+          "type": "text"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": [
+            "registered",
+            "confirmed",
+            "reminded",
+            "attended",
+            "no_show",
+            "cancelled"
+          ]
+        },
+        {
+          "key": "registered_at",
+          "label": "Registered at",
+          "type": "date"
+        },
+        {
+          "key": "confirmed_at",
+          "label": "Confirmed at",
+          "type": "date"
+        },
+        {
+          "key": "reminded_at",
+          "label": "Reminded at",
+          "type": "date"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "events",
+      "name": "Upcoming events",
+      "filter": {
+        "field": "status",
+        "op": "in",
+        "value": ["open", "full"]
+      },
+      "sort": [
+        {
+          "field": "starts_at",
+          "dir": "asc"
+        }
+      ],
+      "columns": ["title", "format", "starts_at", "capacity", "status"]
+    },
+    {
+      "object": "registrations",
+      "name": "Latest registrations",
+      "sort": [
+        {
+          "field": "registered_at",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "name",
+        "email",
+        "company",
+        "event_id",
+        "source",
+        "status",
+        "registered_at"
+      ]
+    },
+    {
+      "object": "registrations",
+      "name": "Waiting for reminder",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "confirmed"
+      },
+      "sort": [
+        {
+          "field": "registered_at",
+          "dir": "asc"
+        }
+      ],
+      "columns": ["name", "email", "event_id", "confirmed_at"]
+    },
+    {
+      "object": "registrations",
+      "name": "No-shows to follow up",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "no_show"
+      },
+      "sort": [
+        {
+          "field": "registered_at",
+          "dir": "desc"
+        }
+      ],
+      "columns": ["name", "email", "company", "event_id"]
+    }
+  ],
+  "functions": [
+    {
+      "name": "plan-registration",
+      "code": "export default (input) => {\n  const flat = (r) => (r && r.data ? { ...r.data, id: r.id } : r || {});\n  const event = flat((input.events || [])[0]);\n  const regs = (input.registrations || []).map(flat);\n  const hosts = String(event.hosts || \"\").split(/[,;\\s]+/).map((e) => e.trim().toLowerCase()).filter(Boolean);\n  const guests = regs\n    .filter((r) => r.status !== \"cancelled\" && r.email)\n    .map((r) => String(r.email).toLowerCase());\n  const attendees = [...new Set([...hosts, ...guests])];\n  const tz = event.timezone || \"UTC\";\n  const start = event.starts_at ? new Date(event.starts_at) : null;\n  const when = start\n    ? start.toLocaleString(\"en-US\", { timeZone: tz, weekday: \"long\", month: \"long\", day: \"numeric\", hour: \"numeric\", minute: \"2-digit\", timeZoneName: \"short\" })\n    : \"the date in your calendar invite\";\n  const reminderAt = start ? new Date(start.getTime() - 24 * 3600 * 1000) : null;\n  const now = Date.now();\n  // Skip the reminder when the event starts in less than 25 hours: the\n  // reminder says \"tomorrow\" and would land right after the confirmation.\n  const sendReminder = !!start && start.getTime() - now > 25 * 3600 * 1000;\n  return {\n    attendees,\n    count: guests.length,\n    title: event.title || \"Our event\",\n    when,\n    joinLink: event.join_link || \"the link in your calendar invite\",\n    sheetId: event.sheet_id || \"\",\n    sheetTab: event.sheet_tab || \"Attendees\",\n    reminderAt: (reminderAt && reminderAt.getTime() > now ? reminderAt : new Date(now)).toISOString(),\n    sendReminder,\n  };\n};\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array"
+          },
+          "registrations": {
+            "type": "array"
+          }
+        },
+        "required": ["events", "registrations"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "attendees": {
+            "type": "array"
+          },
+          "count": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "when": {
+            "type": "string"
+          },
+          "joinLink": {
+            "type": "string"
+          },
+          "sheetId": {
+            "type": "string"
+          },
+          "sheetTab": {
+            "type": "string"
+          },
+          "reminderAt": {
+            "type": "string"
+          },
+          "sendReminder": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "attendees",
+          "count",
+          "title",
+          "when",
+          "joinLink",
+          "sheetId",
+          "sheetTab",
+          "reminderAt",
+          "sendReminder"
+        ]
+      },
+      "permissions": {
+        "domains": [],
+        "secrets": []
+      },
+      "limits": {
+        "timeoutMs": 5000
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "key": "register-attendee",
+      "name": "Register an attendee from the signup form",
+      "definition": {
+        "trigger": {
+          "type": "trigger.webhook",
+          "webhook": "event-registration-form",
+          "object": "$object:registrations",
+          "match": "registration_id",
+          "mapping": {
+            "registration_id": "payload.id",
+            "name": "payload.name",
+            "email": "payload.email",
+            "company": "payload.company",
+            "job_title": "payload.job_title",
+            "event_id": "payload.event_id",
+            "source": "payload.utm_source",
+            "registered_at": "payload.submitted_at"
+          }
+        },
+        "steps": [
+          {
+            "id": "find_event",
+            "type": "record.search",
+            "input": {
+              "object": "$object:events",
+              "filter": {
+                "field": "calendar_event_id",
+                "op": "eq",
+                "value": "{{record.event_id}}"
+              },
+              "limit": 1
+            }
+          },
+          {
+            "id": "unknown_event",
+            "type": "stop.error",
+            "input": {
+              "message": "No event in Runbase matches calendar event id {{record.event_id}}. Add the event to the Events object first."
+            }
+          },
+          {
+            "id": "find_regs",
+            "type": "record.search",
+            "input": {
+              "object": "$object:registrations",
+              "filter": {
+                "field": "event_id",
+                "op": "eq",
+                "value": "{{record.event_id}}"
+              },
+              "limit": 500
+            }
+          },
+          {
+            "id": "plan",
+            "type": "fn.plan-registration",
+            "input": {
+              "events": "{{steps.find_event.output.records}}",
+              "registrations": "{{steps.find_regs.output.records}}"
+            }
+          },
+          {
+            "id": "invite",
+            "type": "node.google_calendar.update_event",
+            "input": {
+              "calendarId": "primary",
+              "eventId": "{{record.event_id}}",
+              "attendees": "{{steps.plan.output.attendees}}",
+              "sendUpdates": "none"
+            }
+          },
+          {
+            "id": "confirm",
+            "type": "node.gmail.send",
+            "input": {
+              "to": "{{record.email}}",
+              "subject": "You're registered: {{steps.plan.output.title}}",
+              "text": "Hi {{record.name}},\n\nYou're registered for {{steps.plan.output.title}}.\n\nWhen: {{steps.plan.output.when}}\nJoin: {{steps.plan.output.joinLink}}\n\nYou are on the guest list of the calendar event, so it shows up in your Google Calendar. We will send you a short reminder the day before.\n\nCan't make it anymore? Just reply to this email.\n\nSee you there"
+            }
+          },
+          {
+            "id": "mark_confirmed",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "status": "confirmed",
+                "confirmed_at": "{{now}}"
+              }
+            }
+          },
+          {
+            "id": "log_sheet",
+            "type": "node.google_sheets.append_rows",
+            "input": {
+              "spreadsheetId": "{{steps.plan.output.sheetId}}",
+              "range": "{{steps.plan.output.sheetTab}}",
+              "rows": [
+                [
+                  "{{now}}",
+                  "{{record.name}}",
+                  "{{record.email}}",
+                  "{{record.company}}",
+                  "{{record.job_title}}",
+                  "{{steps.plan.output.title}}",
+                  "{{record.source}}",
+                  "confirmed"
+                ]
+              ]
+            }
+          },
+          {
+            "id": "needs_reminder",
+            "type": "condition",
+            "input": {
+              "left": "{{steps.plan.output.sendReminder}}",
+              "op": "eq",
+              "right": true
+            }
+          },
+          {
+            "id": "wait_day_before",
+            "type": "wait.until",
+            "input": {
+              "until": "{{steps.plan.output.reminderAt}}"
+            }
+          },
+          {
+            "id": "still_registered",
+            "type": "condition",
+            "input": {
+              "object": "registrations",
+              "recordId": "{{record.id}}",
+              "condition": {
+                "field": "status",
+                "op": "eq",
+                "value": "confirmed"
+              }
+            }
+          },
+          {
+            "id": "reminder",
+            "type": "node.gmail.send",
+            "input": {
+              "to": "{{record.email}}",
+              "subject": "Tomorrow: {{steps.plan.output.title}}",
+              "text": "Hi {{record.name}},\n\nA quick reminder: {{steps.plan.output.title}} is tomorrow.\n\nWhen: {{steps.plan.output.when}}\nJoin: {{steps.plan.output.joinLink}}\n\nIf you can't attend, reply to this email and we will send you the recording or the notes.\n\nSee you tomorrow"
+            }
+          },
+          {
+            "id": "mark_reminded",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "status": "reminded",
+                "reminded_at": "{{now}}"
+              }
+            }
+          }
+        ],
+        "next": {
+          "find_event": {
+            "found": ["find_regs"],
+            "empty": ["unknown_event"]
+          },
+          "find_regs": {
+            "found": ["plan"]
+          },
+          "plan": {
+            "ok": ["invite"]
+          },
+          "invite": {
+            "ok": ["confirm"]
+          },
+          "confirm": {
+            "ok": ["mark_confirmed"]
+          },
+          "mark_confirmed": {
+            "ok": ["log_sheet"]
+          },
+          "log_sheet": {
+            "ok": ["needs_reminder"]
+          },
+          "needs_reminder": {
+            "true": ["wait_day_before"]
+          },
+          "wait_day_before": {
+            "done": ["still_registered"]
+          },
+          "still_registered": {
+            "true": ["reminder"]
+          },
+          "reminder": {
+            "ok": ["mark_reminded"]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": [],
+  "records": [
+    {
+      "key": "e1",
+      "object": "events",
+      "externalId": "evt-webinar-dec",
+      "data": {
+        "calendar_event_id": "sample-webinar-1210",
+        "title": "Webinar: Pipeline reporting without a BI team",
+        "format": "webinar",
+        "starts_at": "2026-12-10T16:00:00Z",
+        "ends_at": "2026-12-10T17:00:00Z",
+        "timezone": "Europe/Paris",
+        "join_link": "https://meet.google.com/abc-defg-hij",
+        "hosts": "lea@yourcompany.example, sam@yourcompany.example",
+        "capacity": 300,
+        "sheet_id": "YOUR_SPREADSHEET_ID",
+        "sheet_tab": "Attendees",
+        "status": "open"
+      }
+    },
+    {
+      "key": "e2",
+      "object": "events",
+      "externalId": "evt-meetup-jan",
+      "data": {
+        "calendar_event_id": "sample-meetup-0115",
+        "title": "RevOps meetup Paris",
+        "format": "meetup",
+        "starts_at": "2027-01-15T18:00:00Z",
+        "ends_at": "2027-01-15T20:30:00Z",
+        "timezone": "Europe/Paris",
+        "join_link": "12 rue de la Paix, 75002 Paris",
+        "hosts": "lea@yourcompany.example",
+        "capacity": 60,
+        "sheet_id": "YOUR_SPREADSHEET_ID",
+        "sheet_tab": "Meetup January",
+        "status": "open"
+      }
+    },
+    {
+      "key": "r1",
+      "object": "registrations",
+      "externalId": "reg-2001",
+      "data": {
+        "registration_id": "reg-2001",
+        "name": "Maya Chen",
+        "email": "maya@northwind.example",
+        "company": "Northwind",
+        "job_title": "Head of RevOps",
+        "event_id": "sample-webinar-1210",
+        "source": "linkedin",
+        "status": "confirmed",
+        "registered_at": "2026-11-26T09:12:00Z",
+        "confirmed_at": "2026-11-26T09:12:05Z"
+      }
+    },
+    {
+      "key": "r2",
+      "object": "registrations",
+      "externalId": "reg-2002",
+      "data": {
+        "registration_id": "reg-2002",
+        "name": "Daniel Ortiz",
+        "email": "daniel@brightlane.example",
+        "company": "Brightlane",
+        "job_title": "Growth lead",
+        "event_id": "sample-webinar-1210",
+        "source": "newsletter",
+        "status": "confirmed",
+        "registered_at": "2026-11-27T07:40:00Z",
+        "confirmed_at": "2026-11-27T07:40:04Z"
+      }
+    },
+    {
+      "key": "r3",
+      "object": "registrations",
+      "externalId": "reg-2003",
+      "data": {
+        "registration_id": "reg-2003",
+        "name": "Priya Nair",
+        "email": "priya@quillstack.example",
+        "company": "Quillstack",
+        "job_title": "Marketing ops manager",
+        "event_id": "sample-meetup-0115",
+        "source": "website",
+        "status": "registered",
+        "registered_at": "2026-11-28T08:05:00Z"
+      }
+    },
+    {
+      "key": "r4",
+      "object": "registrations",
+      "externalId": "reg-2004",
+      "data": {
+        "registration_id": "reg-2004",
+        "name": "Tom Becker",
+        "email": "tom@ferrovia.example",
+        "company": "Ferrovia",
+        "job_title": "Sales director",
+        "event_id": "sample-webinar-1210",
+        "source": "partner",
+        "status": "cancelled",
+        "registered_at": "2026-11-20T14:30:00Z"
+      }
+    }
+  ]
+}

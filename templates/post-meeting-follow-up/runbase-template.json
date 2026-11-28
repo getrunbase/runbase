@@ -1,0 +1,456 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Post-meeting Follow-up Email",
+  "description": "Send an automatic follow-up email after every client meeting: AI drafts the recap from Google Calendar notes, you approve, Gmail sends it.",
+  "databases": [
+    {
+      "slug": "meeting-follow-ups",
+      "name": "Meeting follow-ups"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "follow-ups",
+      "name": "Follow-ups",
+      "icon": "mail-check",
+      "database": "meeting-follow-ups",
+      "fields": [
+        {
+          "key": "meeting",
+          "label": "Meeting",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "event_id",
+          "label": "Calendar event id",
+          "type": "text",
+          "unique": true
+        },
+        {
+          "key": "attendees",
+          "label": "Attendees",
+          "type": "text"
+        },
+        {
+          "key": "start",
+          "label": "Started at",
+          "type": "date"
+        },
+        {
+          "key": "ended_at",
+          "label": "Ended at",
+          "type": "date"
+        },
+        {
+          "key": "notes",
+          "label": "Meeting notes",
+          "type": "text"
+        },
+        {
+          "key": "subject",
+          "label": "Email subject",
+          "type": "text"
+        },
+        {
+          "key": "draft",
+          "label": "Email draft",
+          "type": "text"
+        },
+        {
+          "key": "next_steps",
+          "label": "Next steps",
+          "type": "text"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": ["pending", "awaiting approval", "sent", "skipped"],
+          "default": "pending"
+        },
+        {
+          "key": "sent_at",
+          "label": "Sent at",
+          "type": "date"
+        },
+        {
+          "key": "thread_id",
+          "label": "Gmail thread id",
+          "type": "text"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "follow-ups",
+      "name": "Awaiting approval",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "awaiting approval"
+      },
+      "sort": [
+        {
+          "field": "ended_at",
+          "dir": "asc"
+        }
+      ],
+      "columns": ["meeting", "attendees", "ended_at", "subject"]
+    },
+    {
+      "object": "follow-ups",
+      "name": "Sent follow-ups",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "sent"
+      },
+      "sort": [
+        {
+          "field": "sent_at",
+          "dir": "desc"
+        }
+      ],
+      "columns": ["meeting", "attendees", "sent_at", "next_steps"]
+    },
+    {
+      "object": "follow-ups",
+      "name": "Skipped",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "skipped"
+      },
+      "sort": [
+        {
+          "field": "ended_at",
+          "dir": "desc"
+        }
+      ],
+      "columns": ["meeting", "attendees", "ended_at"]
+    }
+  ],
+  "functions": [
+    {
+      "name": "pick-ended-meetings",
+      "code": "export default (input) => {\n  const internal = String(input.internalDomain || \"\").toLowerCase().replace(/^@/, \"\");\n  const owner = String(input.ownerEmail || \"\").toLowerCase();\n  const skip = String(input.skipKeyword || \"\").toLowerCase();\n  const meetings = [];\n  for (const ev of input.events || []) {\n    if (ev.status === \"cancelled\" || !ev.end) continue;\n    const ended = new Date(ev.end).getTime();\n    if (!(ended <= Date.parse(input.until) && ended > Date.parse(input.since))) continue;\n    const title = ev.summary || \"Our meeting\";\n    if (skip && title.toLowerCase().includes(skip)) continue;\n    const attendees = [];\n    for (const a of ev.attendees || []) {\n      const email = String(a.email || \"\").toLowerCase();\n      if (!email || email === owner) continue;\n      if (internal && email.endsWith(\"@\" + internal)) continue;\n      if (a.responseStatus === \"declined\") continue;\n      attendees.push(email);\n    }\n    if (attendees.length === 0) continue;\n    meetings.push({\n      eventId: ev.id,\n      title,\n      start: ev.start,\n      end: ev.end,\n      attendees: attendees.join(\", \"),\n      notes: ev.description || \"\",\n    });\n  }\n  return { meetings, count: meetings.length };\n};",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array"
+          },
+          "since": {
+            "type": "string"
+          },
+          "until": {
+            "type": "string"
+          },
+          "internalDomain": {
+            "type": "string"
+          },
+          "ownerEmail": {
+            "type": "string"
+          },
+          "skipKeyword": {
+            "type": "string"
+          }
+        },
+        "required": ["events", "since", "until"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "meetings": {
+            "type": "array"
+          },
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": ["meetings", "count"]
+      },
+      "permissions": {
+        "domains": [],
+        "secrets": []
+      },
+      "limits": {
+        "timeoutMs": 5000
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "key": "collect-ended-meetings",
+      "name": "Collect client meetings that just ended",
+      "definition": {
+        "trigger": {
+          "type": "trigger.schedule",
+          "cron": "*/30 * * * *",
+          "timezone": "Europe/Paris"
+        },
+        "steps": [
+          {
+            "id": "since",
+            "type": "date",
+            "input": {
+              "op": "add",
+              "date": "{{now}}",
+              "amount": -30,
+              "unit": "minutes"
+            }
+          },
+          {
+            "id": "lookback",
+            "type": "date",
+            "input": {
+              "op": "add",
+              "date": "{{now}}",
+              "amount": -8,
+              "unit": "hours"
+            }
+          },
+          {
+            "id": "events",
+            "type": "node.google_calendar.list_events",
+            "input": {
+              "calendarId": "primary",
+              "timeMin": "{{steps.lookback.output.value}}",
+              "timeMax": "{{now}}",
+              "maxResults": 100
+            }
+          },
+          {
+            "id": "pick",
+            "type": "fn.pick-ended-meetings",
+            "input": {
+              "events": "{{steps.events.output.events}}",
+              "since": "{{steps.since.output.value}}",
+              "until": "{{now}}",
+              "internalDomain": "yourcompany.com",
+              "ownerEmail": "you@yourcompany.com",
+              "skipKeyword": "[no follow-up]"
+            }
+          },
+          {
+            "id": "save_all",
+            "type": "loop",
+            "input": {
+              "items": "{{steps.pick.output.meetings}}",
+              "limit": 50,
+              "do": [
+                {
+                  "id": "save",
+                  "type": "record.upsert",
+                  "input": {
+                    "object": "$object:follow-ups",
+                    "match": "event_id",
+                    "data": {
+                      "event_id": "{{item.eventId}}",
+                      "meeting": "{{item.title}}",
+                      "attendees": "{{item.attendees}}",
+                      "start": "{{item.start}}",
+                      "ended_at": "{{item.end}}",
+                      "notes": "{{item.notes}}"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "next": {
+          "since": {
+            "ok": ["lookback"]
+          },
+          "lookback": {
+            "ok": ["events"]
+          },
+          "events": {
+            "ok": ["pick"]
+          },
+          "pick": {
+            "ok": ["save_all"]
+          }
+        }
+      }
+    },
+    {
+      "key": "draft-approve-send",
+      "name": "Draft, approve and send the follow-up email",
+      "definition": {
+        "trigger": {
+          "type": "trigger.record_created",
+          "object": "$object:follow-ups"
+        },
+        "steps": [
+          {
+            "id": "draft",
+            "type": "ai.run",
+            "input": {
+              "prompt": "Write the follow-up email for this client meeting, sent by the account executive to the attendees right after the call. Use only the meeting title and notes in the data: never invent figures, dates or commitments. Structure: one line of thanks, a short recap of what was discussed (3 to 5 bullet points), the agreed next steps with an owner and a date when the notes give one, and a clear closing question. Plain text, friendly and professional, under 200 words, no signature. If the notes are empty, write a short thank-you that asks the attendees to confirm the next step.",
+              "context": "{{record}}",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "subject": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  },
+                  "next_steps": {
+                    "type": "string"
+                  }
+                },
+                "required": ["subject", "body", "next_steps"]
+              }
+            }
+          },
+          {
+            "id": "save_draft",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "subject": "{{steps.draft.output.result.subject}}",
+                "draft": "{{steps.draft.output.result.body}}",
+                "next_steps": "{{steps.draft.output.result.next_steps}}",
+                "status": "awaiting approval"
+              }
+            }
+          },
+          {
+            "id": "approve",
+            "type": "human.approve",
+            "input": {
+              "message": "Follow-up for \"{{record.meeting}}\" to {{record.attendees}}.\n\nSubject: {{steps.draft.output.result.subject}}\n\n{{steps.draft.output.result.body}}",
+              "timeout": "3d"
+            }
+          },
+          {
+            "id": "send",
+            "type": "node.gmail.send",
+            "input": {
+              "to": "{{record.attendees}}",
+              "subject": "{{steps.draft.output.result.subject}}",
+              "text": "{{steps.draft.output.result.body}}"
+            }
+          },
+          {
+            "id": "mark_sent",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "status": "sent",
+                "sent_at": "{{now}}",
+                "thread_id": "{{steps.send.output.threadId}}"
+              }
+            }
+          },
+          {
+            "id": "mark_skipped",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "status": "skipped"
+              }
+            }
+          }
+        ],
+        "next": {
+          "draft": {
+            "ok": ["save_draft"]
+          },
+          "save_draft": {
+            "ok": ["approve"]
+          },
+          "approve": {
+            "approved": ["send"],
+            "rejected": ["mark_skipped"],
+            "expired": ["mark_skipped"]
+          },
+          "send": {
+            "ok": ["mark_sent"]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": [],
+  "records": [
+    {
+      "key": "f1",
+      "object": "follow-ups",
+      "data": {
+        "event_id": "sample-evt-101",
+        "meeting": "Discovery call: Northwind",
+        "attendees": "maria@northwind.example, tom@northwind.example",
+        "start": "2026-11-27T09:00:00Z",
+        "ended_at": "2026-11-27T09:45:00Z",
+        "notes": "Team of 25 in RevOps. Pain: pipeline data spread across 3 spreadsheets. Want a pilot in January. Maria to share current pipeline export. We send pricing for 25 seats by Friday.",
+        "subject": "Recap of our call and next steps",
+        "draft": "Hi Maria, hi Tom,\n\nThanks for your time today. A quick recap:\n- Your RevOps team (25 people) tracks pipeline across 3 spreadsheets\n- The goal is one source of truth before the January planning\n- You would like a pilot starting in January\n\nNext steps:\n- Maria: share the current pipeline export\n- Us: send pricing for 25 seats by Friday\n\nDoes a 30-minute kickoff in the week of January 5 work for you?",
+        "next_steps": "Maria shares pipeline export. We send pricing for 25 seats by Friday.",
+        "status": "awaiting approval"
+      }
+    },
+    {
+      "key": "f2",
+      "object": "follow-ups",
+      "data": {
+        "event_id": "sample-evt-102",
+        "meeting": "Demo: Bright Labs",
+        "attendees": "james@brightlabs.example",
+        "start": "2026-11-26T14:00:00Z",
+        "ended_at": "2026-11-26T14:30:00Z",
+        "notes": "Liked the approval flow. Needs SSO. Security review with IT next week.",
+        "subject": "Thanks for the demo, James",
+        "draft": "Hi James,\n\nThanks for joining the demo...",
+        "next_steps": "James books the security review with IT. We send the SSO documentation.",
+        "status": "sent",
+        "sent_at": "2026-11-26T15:05:00Z",
+        "thread_id": "sample-thread-102"
+      }
+    },
+    {
+      "key": "f3",
+      "object": "follow-ups",
+      "data": {
+        "event_id": "sample-evt-103",
+        "meeting": "Renewal review: Greenleaf",
+        "attendees": "sofia@greenleaf.example",
+        "start": "2026-11-25T10:00:00Z",
+        "ended_at": "2026-11-25T10:30:00Z",
+        "notes": "Renewal agreed in principle, legal reviews the new terms.",
+        "subject": "Next steps for your renewal",
+        "draft": "Hi Sofia,\n\nThanks for the review today...",
+        "next_steps": "Sofia sends terms to legal. We hold the current price until December 15.",
+        "status": "sent",
+        "sent_at": "2026-11-25T11:10:00Z",
+        "thread_id": "sample-thread-103"
+      }
+    },
+    {
+      "key": "f4",
+      "object": "follow-ups",
+      "data": {
+        "event_id": "sample-evt-104",
+        "meeting": "Quick sync: Acme",
+        "attendees": "li@acme.example",
+        "start": "2026-11-24T08:00:00Z",
+        "ended_at": "2026-11-24T08:15:00Z",
+        "notes": "",
+        "subject": "Thanks for the quick sync",
+        "draft": "Hi Li,\n\nThanks for the quick sync this morning...",
+        "next_steps": "Li confirms the next step.",
+        "status": "skipped"
+      }
+    }
+  ]
+}

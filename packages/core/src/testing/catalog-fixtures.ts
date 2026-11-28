@@ -106,6 +106,11 @@ export function catalogFixture(): string {
       docsUrl: `https://example.com/${slug}`,
       credentialType: "oauth2",
     });
+    if (slug === "mailer")
+      writeFileSync(
+        join(root, "connectors", slug, "README.md"),
+        "# Mailer automations\n\nSend emails.\n",
+      );
   }
   writeAuthor(root, "octocat");
   writeAuthor(root, "hubot");

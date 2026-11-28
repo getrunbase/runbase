@@ -2,7 +2,7 @@
   "format": "runbase-template",
   "version": 1,
   "name": "Light CRM",
-  "description": "Companies, contacts and deals with a pipeline view, and a Slack message for every new deal.",
+  "description": "A simple CRM for companies, contacts and deals, with an open pipeline view and a Slack alert the moment a new deal is created.",
   "databases": [{ "slug": "crm", "name": "CRM" }],
   "objects": [
     {

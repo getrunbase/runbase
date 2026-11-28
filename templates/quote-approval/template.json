@@ -1,0 +1,9 @@
+{
+  "id": "quote-approval",
+  "slug": "quote-approval",
+  "name": "Quote and Discount Approval",
+  "categories": ["sales", "finance"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}

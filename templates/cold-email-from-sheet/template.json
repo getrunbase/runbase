@@ -1,0 +1,9 @@
+{
+  "id": "cold-email-from-sheet",
+  "slug": "cold-email-from-sheet",
+  "name": "Cold Email Campaign from Google Sheets",
+  "categories": ["sales", "marketing", "email"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}

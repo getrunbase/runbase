@@ -2,7 +2,7 @@
   "format": "runbase-template",
   "version": 1,
   "name": "Customer onboarding",
-  "description": "Tracks onboarding progress for every new customer and announces them to the team in Slack.",
+  "description": "Customer onboarding tracker that marks every new customer as welcomed and announces their name, plan and email to your team in Slack.",
   "databases": [
     {
       "slug": "customers",

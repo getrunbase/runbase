@@ -1,0 +1,578 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Contract Renewal Reminders",
+  "description": "Contract renewal reminders on autopilot: renewal dates on Google Calendar, Slack alerts and Gmail check-ins 90, 60 and 30 days before a contract ends.",
+  "databases": [
+    {
+      "slug": "renewals",
+      "name": "Renewals"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "accounts",
+      "name": "Accounts",
+      "icon": "building",
+      "database": "renewals",
+      "fields": [
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "domain",
+          "label": "Domain",
+          "type": "text",
+          "unique": true
+        },
+        {
+          "key": "segment",
+          "label": "Segment",
+          "type": "select",
+          "options": ["smb", "mid_market", "enterprise"]
+        },
+        {
+          "key": "health",
+          "label": "Health",
+          "type": "select",
+          "options": ["healthy", "at_risk", "churn_risk"]
+        },
+        {
+          "key": "notes",
+          "label": "Notes",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "slug": "contracts",
+      "name": "Contracts",
+      "icon": "file-text",
+      "database": "renewals",
+      "fields": [
+        {
+          "key": "name",
+          "label": "Contract",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "account",
+          "label": "Account",
+          "type": "ref",
+          "object": "accounts"
+        },
+        {
+          "key": "account_name",
+          "label": "Account name",
+          "type": "text"
+        },
+        {
+          "key": "plan",
+          "label": "Plan",
+          "type": "text"
+        },
+        {
+          "key": "annual_value",
+          "label": "Annual value",
+          "type": "number"
+        },
+        {
+          "key": "currency",
+          "label": "Currency",
+          "type": "text"
+        },
+        {
+          "key": "start_date",
+          "label": "Start date",
+          "type": "date"
+        },
+        {
+          "key": "end_date",
+          "label": "End date",
+          "type": "date"
+        },
+        {
+          "key": "auto_renew",
+          "label": "Auto-renew",
+          "type": "bool"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": ["active", "renewal_in_progress", "renewed", "churned"]
+        },
+        {
+          "key": "owner_name",
+          "label": "Owner",
+          "type": "text"
+        },
+        {
+          "key": "owner_email",
+          "label": "Owner email",
+          "type": "email"
+        },
+        {
+          "key": "owner_slack",
+          "label": "Owner Slack mention",
+          "type": "text"
+        },
+        {
+          "key": "customer_first_name",
+          "label": "Customer first name",
+          "type": "text"
+        },
+        {
+          "key": "customer_email",
+          "label": "Customer email",
+          "type": "email"
+        },
+        {
+          "key": "email_customer",
+          "label": "Email the customer",
+          "type": "bool"
+        },
+        {
+          "key": "last_reminder_stage",
+          "label": "Last reminder (days before)",
+          "type": "number"
+        },
+        {
+          "key": "last_reminder_at",
+          "label": "Last reminder at",
+          "type": "date"
+        },
+        {
+          "key": "calendar_event_id",
+          "label": "Calendar event id",
+          "type": "text"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "contracts",
+      "name": "Renewing soon",
+      "filter": {
+        "field": "status",
+        "op": "in",
+        "value": ["active", "renewal_in_progress"]
+      },
+      "sort": [
+        {
+          "field": "end_date",
+          "dir": "asc"
+        }
+      ],
+      "columns": [
+        "name",
+        "account_name",
+        "annual_value",
+        "end_date",
+        "owner_name",
+        "last_reminder_stage",
+        "status"
+      ]
+    },
+    {
+      "object": "contracts",
+      "name": "Renewal in progress",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "renewal_in_progress"
+      },
+      "sort": [
+        {
+          "field": "end_date",
+          "dir": "asc"
+        }
+      ],
+      "columns": [
+        "name",
+        "account_name",
+        "annual_value",
+        "end_date",
+        "owner_name"
+      ]
+    },
+    {
+      "object": "contracts",
+      "name": "Renewed",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "renewed"
+      },
+      "sort": [
+        {
+          "field": "end_date",
+          "dir": "desc"
+        }
+      ],
+      "columns": ["name", "account_name", "annual_value", "end_date"]
+    },
+    {
+      "object": "contracts",
+      "name": "Churned",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "churned"
+      },
+      "columns": [
+        "name",
+        "account_name",
+        "annual_value",
+        "end_date",
+        "owner_name"
+      ]
+    },
+    {
+      "object": "accounts",
+      "name": "At risk",
+      "filter": {
+        "field": "health",
+        "op": "in",
+        "value": ["at_risk", "churn_risk"]
+      },
+      "columns": ["name", "segment", "health", "notes"]
+    }
+  ],
+  "functions": [
+    {
+      "name": "build-renewal-event",
+      "code": "// Builds the Google Calendar event for a contract renewal date.\n// The event is all-day on the end date. hasDate is false when the contract\n// has no end date, so the workflow skips the event.\nexport default (input) => {\n  const d = input.contract || {};\n  const end = String(d.end_date || \"\").slice(0, 10);\n  if (!end) return { hasDate: false, summary: \"\", start: \"\", end: \"\", description: \"\" };\n  const next = new Date(end + \"T00:00:00Z\");\n  next.setUTCDate(next.getUTCDate() + 1);\n  const value = d.annual_value ? ` (${d.annual_value} ${d.currency || \"USD\"} per year)` : \"\";\n  return {\n    hasDate: true,\n    summary: `Renewal: ${d.account_name || d.name}${value}`,\n    start: end,\n    end: next.toISOString().slice(0, 10),\n    description: `Contract ${d.name} ends on ${end}.\\nOwner: ${d.owner_name || \"unassigned\"}\\nCustomer contact: ${d.customer_email || \"none\"}\\nAuto-renew: ${d.auto_renew ? \"yes\" : \"no\"}`,\n  };\n};\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "contract": {
+            "type": "object"
+          }
+        },
+        "required": ["contract"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "hasDate": {
+            "type": "boolean"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string"
+          },
+          "end": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": ["hasDate"]
+      },
+      "permissions": {
+        "domains": [],
+        "secrets": []
+      },
+      "limits": {
+        "timeoutMs": 5000
+      }
+    },
+    {
+      "name": "plan-renewal-reminders",
+      "code": "// Picks the contracts that reach a 90, 60 or 30-day milestone before their\n// end date and that have not had this reminder yet. Builds the Slack alert\n// for the owner and the check-in email for the customer.\nconst STAGES = [90, 60, 30];\nconst DAY = 86400000;\n\nexport default (input) => {\n  const today = new Date(String(input.today || new Date().toISOString()).slice(0, 10) + \"T00:00:00Z\");\n  const sender = input.senderName || \"Your account manager\";\n  const reminders = [];\n  for (const r of input.contracts || []) {\n    const d = r.data || r;\n    if (!d.end_date) continue;\n    const left = Math.round((new Date(String(d.end_date).slice(0, 10) + \"T00:00:00Z\") - today) / DAY);\n    if (left < 0) continue;\n    // Smallest milestone already reached, e.g. 45 days left = the 60-day stage.\n    const reached = STAGES.filter((s) => left <= s);\n    if (!reached.length) continue;\n    const stage = Math.min(...reached);\n    const last = Number(d.last_reminder_stage) || 0;\n    if (last && last <= stage) continue;\n    const end = String(d.end_date).slice(0, 10);\n    const name = d.customer_first_name || \"there\";\n    const value = d.annual_value ? `${d.annual_value} ${d.currency || \"USD\"}` : \"n/a\";\n    const slack = `Renewal in ${left} days: ${d.account_name} (${d.name}), ends ${end}, ${value} per year. Owner: ${d.owner_name || \"unassigned\"}${d.owner_slack ? \" \" + d.owner_slack : \"\"}.${d.auto_renew ? \" Auto-renews.\" : \" Needs a signed renewal.\"}`;\n    const intro = {\n      90: `Your ${d.name} contract with us runs until ${end}. It is a good moment to look back at the last year and plan the next one.`,\n      60: `Your ${d.name} contract ends on ${end}, about two months from now. I would like to make sure the renewal fits what your team needs.`,\n      30: `Your ${d.name} contract ends on ${end}, in ${left} days. I want to make sure nothing gets interrupted on your side.`,\n    }[stage];\n    const ask = stage === 30\n      ? \"Could you confirm who signs the renewal on your side, or tell me if anything should change?\"\n      : \"Would you have 20 minutes in the next two weeks for a short review call?\";\n    reminders.push({\n      recordId: r.id,\n      stage,\n      daysLeft: left,\n      slack,\n      sendEmail: Boolean(d.customer_email) && d.email_customer !== false,\n      to: d.customer_email || \"\",\n      subject: `${d.account_name}: your contract renewal on ${end}`,\n      text: `Hi ${name},\\n\\n${intro}\\n\\n${ask}\\n\\nBest regards,\\n${d.owner_name || sender}`,\n    });\n  }\n  const emails = reminders.filter((x) => x.sendEmail);\n  return { reminders, emails, count: reminders.length };\n};\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "contracts": {
+            "type": "array"
+          },
+          "today": {
+            "type": "string"
+          },
+          "senderName": {
+            "type": "string"
+          }
+        },
+        "required": ["contracts"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "reminders": {
+            "type": "array"
+          },
+          "emails": {
+            "type": "array"
+          },
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": ["reminders"]
+      },
+      "permissions": {
+        "domains": [],
+        "secrets": []
+      },
+      "limits": {
+        "timeoutMs": 5000
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "key": "renewal-calendar-event",
+      "name": "Add renewal date to Google Calendar",
+      "definition": {
+        "trigger": {
+          "type": "trigger.record_created",
+          "object": "$object:contracts"
+        },
+        "steps": [
+          {
+            "id": "build",
+            "type": "fn.build-renewal-event",
+            "input": {
+              "contract": "{{record}}"
+            }
+          },
+          {
+            "id": "has_date",
+            "type": "condition",
+            "input": {
+              "left": "{{steps.build.output.hasDate}}",
+              "op": "eq",
+              "right": true
+            }
+          },
+          {
+            "id": "event",
+            "type": "node.google_calendar.create_event",
+            "input": {
+              "calendarId": "primary",
+              "summary": "{{steps.build.output.summary}}",
+              "description": "{{steps.build.output.description}}",
+              "start": "{{steps.build.output.start}}",
+              "end": "{{steps.build.output.end}}",
+              "attendees": ["{{record.owner_email}}"],
+              "sendUpdates": "none"
+            }
+          },
+          {
+            "id": "save",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "calendar_event_id": "{{steps.event.output.id}}"
+              }
+            }
+          }
+        ],
+        "next": {
+          "build": {
+            "ok": ["has_date"]
+          },
+          "has_date": {
+            "true": ["event"]
+          },
+          "event": {
+            "ok": ["save"]
+          }
+        }
+      }
+    },
+    {
+      "key": "daily-renewal-reminders",
+      "name": "Send 90/60/30-day renewal reminders",
+      "definition": {
+        "trigger": {
+          "type": "trigger.schedule",
+          "cron": "0 8 * * 1-5",
+          "timezone": "Europe/Paris"
+        },
+        "steps": [
+          {
+            "id": "upcoming",
+            "type": "record.search",
+            "input": {
+              "object": "$object:contracts",
+              "filter": {
+                "field": "status",
+                "op": "in",
+                "value": ["active", "renewal_in_progress"]
+              },
+              "limit": 500
+            }
+          },
+          {
+            "id": "plan",
+            "type": "fn.plan-renewal-reminders",
+            "input": {
+              "contracts": "{{steps.upcoming.output.records}}",
+              "today": "{{now}}",
+              "senderName": "Your name, Your company"
+            }
+          },
+          {
+            "id": "each",
+            "type": "loop",
+            "input": {
+              "items": "{{steps.plan.output.reminders}}",
+              "limit": 100,
+              "do": [
+                {
+                  "id": "alert",
+                  "type": "node.slack.send",
+                  "input": {
+                    "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+                    "text": "{{item.slack}}"
+                  }
+                },
+                {
+                  "id": "save",
+                  "type": "record.update",
+                  "input": {
+                    "recordId": "{{item.recordId}}",
+                    "data": {
+                      "last_reminder_stage": "{{item.stage}}",
+                      "last_reminder_at": "{{today}}"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "emails",
+            "type": "loop",
+            "input": {
+              "items": "{{steps.plan.output.emails}}",
+              "limit": 100,
+              "do": [
+                {
+                  "id": "email",
+                  "type": "node.gmail.send",
+                  "input": {
+                    "to": "{{item.to}}",
+                    "subject": "{{item.subject}}",
+                    "text": "{{item.text}}"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "next": {
+          "upcoming": {
+            "found": ["plan"]
+          },
+          "plan": {
+            "ok": ["each"]
+          },
+          "each": {
+            "done": ["emails"]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": ["SLACK_WEBHOOK_URL"],
+  "records": [
+    {
+      "key": "a1",
+      "object": "accounts",
+      "data": {
+        "name": "Northwind Studio",
+        "domain": "northwind.example",
+        "segment": "mid_market",
+        "health": "healthy"
+      }
+    },
+    {
+      "key": "a2",
+      "object": "accounts",
+      "data": {
+        "name": "Lumen Labs",
+        "domain": "lumen.example",
+        "segment": "enterprise",
+        "health": "at_risk",
+        "notes": "Usage down 30% since September."
+      }
+    },
+    {
+      "key": "c1",
+      "object": "contracts",
+      "data": {
+        "name": "Northwind annual plan 2026",
+        "account": "$record:a1",
+        "account_name": "Northwind Studio",
+        "plan": "Team",
+        "annual_value": 18000,
+        "currency": "USD",
+        "start_date": "2026-02-15",
+        "end_date": "2027-02-14",
+        "auto_renew": false,
+        "status": "active",
+        "owner_name": "Jordan Lee",
+        "owner_email": "jordan@yourcompany.example",
+        "owner_slack": "<@U012ABCDEF>",
+        "customer_first_name": "Maya",
+        "customer_email": "maya@northwind.example",
+        "email_customer": true
+      }
+    },
+    {
+      "key": "c2",
+      "object": "contracts",
+      "data": {
+        "name": "Lumen Labs enterprise 2026",
+        "account": "$record:a2",
+        "account_name": "Lumen Labs",
+        "plan": "Enterprise",
+        "annual_value": 64000,
+        "currency": "USD",
+        "start_date": "2026-01-01",
+        "end_date": "2026-12-31",
+        "auto_renew": false,
+        "status": "renewal_in_progress",
+        "owner_name": "Priya Shah",
+        "owner_email": "priya@yourcompany.example",
+        "customer_first_name": "Tom",
+        "customer_email": "tom@lumen.example",
+        "email_customer": true,
+        "last_reminder_stage": 60
+      }
+    },
+    {
+      "key": "c3",
+      "object": "contracts",
+      "data": {
+        "name": "Lumen Labs add-on seats",
+        "account": "$record:a2",
+        "account_name": "Lumen Labs",
+        "plan": "Seats add-on",
+        "annual_value": 6000,
+        "currency": "USD",
+        "start_date": "2026-04-01",
+        "end_date": "2027-03-31",
+        "auto_renew": true,
+        "status": "active",
+        "owner_name": "Priya Shah",
+        "owner_email": "priya@yourcompany.example",
+        "customer_first_name": "Tom",
+        "customer_email": "tom@lumen.example",
+        "email_customer": false
+      }
+    }
+  ]
+}

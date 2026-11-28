@@ -1,0 +1,476 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Daily Agenda Digest",
+  "description": "A daily agenda email from Google Calendar: every weekday at 7:30, your meetings and an AI prep brief on each attendee land in Slack and Gmail.",
+  "databases": [
+    {
+      "slug": "agenda",
+      "name": "Agenda"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "contacts",
+      "name": "Contacts",
+      "icon": "users",
+      "database": "agenda",
+      "fields": [
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "email",
+          "label": "Email",
+          "type": "email",
+          "unique": true
+        },
+        {
+          "key": "company",
+          "label": "Company",
+          "type": "text"
+        },
+        {
+          "key": "role",
+          "label": "Role",
+          "type": "text"
+        },
+        {
+          "key": "relationship",
+          "label": "Relationship",
+          "type": "select",
+          "options": [
+            "prospect",
+            "customer",
+            "partner",
+            "investor",
+            "candidate",
+            "other"
+          ]
+        },
+        {
+          "key": "notes",
+          "label": "Notes",
+          "type": "text"
+        },
+        {
+          "key": "last_met",
+          "label": "Last met",
+          "type": "date"
+        }
+      ]
+    },
+    {
+      "slug": "agenda_digests",
+      "name": "Agenda digests",
+      "icon": "calendar",
+      "database": "agenda",
+      "fields": [
+        {
+          "key": "day",
+          "label": "Day",
+          "type": "text",
+          "title": true,
+          "unique": true
+        },
+        {
+          "key": "meetings",
+          "label": "Meetings",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "key": "known_attendees",
+          "label": "Known attendees",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "key": "unknown_attendees",
+          "label": "Unknown attendees",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "key": "brief",
+          "label": "Brief",
+          "type": "text"
+        },
+        {
+          "key": "sent_at",
+          "label": "Sent at",
+          "type": "date"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "contacts",
+      "name": "Customers",
+      "filter": {
+        "field": "relationship",
+        "op": "eq",
+        "value": "customer"
+      },
+      "sort": [
+        {
+          "field": "last_met",
+          "dir": "desc"
+        }
+      ],
+      "columns": ["name", "company", "role", "last_met", "notes"]
+    },
+    {
+      "object": "contacts",
+      "name": "Recently met",
+      "sort": [
+        {
+          "field": "last_met",
+          "dir": "desc"
+        }
+      ],
+      "columns": ["name", "company", "relationship", "last_met"]
+    },
+    {
+      "object": "agenda_digests",
+      "name": "Digest history",
+      "sort": [
+        {
+          "field": "day",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "day",
+        "meetings",
+        "known_attendees",
+        "unknown_attendees",
+        "sent_at"
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "prepare-agenda",
+      "code": "export default (input) => {\n  const internal = String(input.internalDomain || \"\").toLowerCase().replace(/^@/, \"\");\n  const owner = String(input.ownerEmail || \"\").toLowerCase();\n  const tz = input.timezone || \"UTC\";\n  const time = (d) => d ? new Date(d).toLocaleTimeString(\"en-US\", { timeZone: tz, hour: \"numeric\", minute: \"2-digit\" }) : \"\";\n  const meetings = [];\n  const emails = new Set();\n  for (const ev of input.events || []) {\n    if (ev.status === \"cancelled\" || !ev.start) continue;\n    const attendees = [];\n    for (const a of ev.attendees || []) {\n      const email = String(a.email || \"\").toLowerCase();\n      if (!email || email === owner || a.responseStatus === \"declined\") continue;\n      const external = !internal || !email.endsWith(\"@\" + internal);\n      attendees.push({ email, external, response: a.responseStatus || null });\n      if (external) emails.add(email);\n    }\n    meetings.push({\n      id: ev.id,\n      title: ev.summary || \"Untitled meeting\",\n      start: ev.start,\n      end: ev.end,\n      time: time(ev.start) + (ev.end ? \" - \" + time(ev.end) : \"\"),\n      join: ev.meetLink || ev.location || ev.htmlLink || null,\n      agenda: ev.description || null,\n      attendees,\n    });\n  }\n  const date = new Date().toLocaleDateString(\"en-US\", { timeZone: tz, weekday: \"long\", month: \"long\", day: \"numeric\" });\n  const day = new Date().toLocaleDateString(\"en-CA\", { timeZone: tz });\n  // The contacts search needs a non-empty list: a placeholder when every attendee is internal.\n  const list = emails.size ? [...emails] : [\"no-external-attendee@invalid.example\"];\n  return { meetings, count: meetings.length, emails: list, date, day };\n};",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array"
+          },
+          "internalDomain": {
+            "type": "string"
+          },
+          "ownerEmail": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          }
+        },
+        "required": ["events"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "meetings": {
+            "type": "array"
+          },
+          "count": {
+            "type": "number"
+          },
+          "emails": {
+            "type": "array"
+          },
+          "date": {
+            "type": "string"
+          },
+          "day": {
+            "type": "string"
+          }
+        },
+        "required": ["meetings", "count", "emails", "date", "day"]
+      },
+      "permissions": {
+        "domains": [],
+        "secrets": []
+      },
+      "limits": {
+        "timeoutMs": 5000
+      }
+    },
+    {
+      "name": "merge-attendee-context",
+      "code": "export default (input) => {\n  const byEmail = {};\n  for (const r of input.contacts || []) {\n    const d = r.data || r;\n    if (d.email) byEmail[String(d.email).toLowerCase()] = d;\n  }\n  let known = 0;\n  let unknown = 0;\n  const meetings = (input.meetings || []).map((m) => ({\n    ...m,\n    attendees: m.attendees.map((a) => {\n      const c = byEmail[a.email];\n      if (a.external) c ? known++ : unknown++;\n      return c\n        ? { ...a, name: c.name || null, company: c.company || null, role: c.role || null, relationship: c.relationship || null, notes: c.notes || null, last_met: c.last_met || null }\n        : { ...a, name: null, inCrm: a.external ? false : null };\n    }),\n  }));\n  const lines = meetings.map((m) => {\n    const who = m.attendees.filter((a) => a.external).map((a) => a.name ? a.name + (a.company ? \" (\" + a.company + \")\" : \"\") : a.email);\n    return \"- \" + m.time + \"  \" + m.title + (who.length ? \"  with \" + who.join(\", \") : \"  (internal)\") + (m.join ? \"\\n  \" + m.join : \"\");\n  });\n  const schedule = lines.length ? lines.join(\"\\n\") : \"No meetings today.\";\n  return { meetings, schedule, known, unknown };\n};",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "meetings": {
+            "type": "array"
+          },
+          "contacts": {
+            "type": "array"
+          }
+        },
+        "required": ["meetings"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "meetings": {
+            "type": "array"
+          },
+          "schedule": {
+            "type": "string"
+          },
+          "known": {
+            "type": "number"
+          },
+          "unknown": {
+            "type": "number"
+          }
+        },
+        "required": ["meetings", "schedule", "known", "unknown"]
+      },
+      "permissions": {
+        "domains": [],
+        "secrets": []
+      },
+      "limits": {
+        "timeoutMs": 5000
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "key": "daily-agenda-digest",
+      "name": "Send today's agenda digest",
+      "definition": {
+        "trigger": {
+          "type": "trigger.schedule",
+          "cron": "30 7 * * 1-5",
+          "timezone": "Europe/Paris"
+        },
+        "steps": [
+          {
+            "id": "until",
+            "type": "date",
+            "input": {
+              "op": "add",
+              "date": "{{now}}",
+              "amount": 15,
+              "unit": "hours"
+            }
+          },
+          {
+            "id": "events",
+            "type": "node.google_calendar.list_events",
+            "input": {
+              "connection": "google",
+              "calendarId": "primary",
+              "timeMin": "{{now}}",
+              "timeMax": "{{steps.until.output.value}}",
+              "maxResults": 50
+            }
+          },
+          {
+            "id": "prepare",
+            "type": "fn.prepare-agenda",
+            "input": {
+              "events": "{{steps.events.output.events}}",
+              "internalDomain": "yourcompany.com",
+              "ownerEmail": "you@yourcompany.com",
+              "timezone": "Europe/Paris"
+            }
+          },
+          {
+            "id": "has_meetings",
+            "type": "condition",
+            "input": {
+              "left": "{{steps.prepare.output.count}}",
+              "op": "gt",
+              "right": 0
+            }
+          },
+          {
+            "id": "contacts",
+            "type": "record.search",
+            "input": {
+              "object": "$object:contacts",
+              "filter": {
+                "field": "email",
+                "op": "in",
+                "value": "{{steps.prepare.output.emails}}"
+              },
+              "limit": 200
+            }
+          },
+          {
+            "id": "merge",
+            "type": "fn.merge-attendee-context",
+            "input": {
+              "meetings": "{{steps.prepare.output.meetings}}",
+              "contacts": "{{steps.contacts.output.records}}"
+            }
+          },
+          {
+            "id": "brief",
+            "type": "ai.run",
+            "input": {
+              "prompt": "You prepare a manager's morning brief. For each meeting in the data, in time order, write one or two short lines: who they are meeting (name, role, company, relationship) and what to keep in mind, based only on the contact notes, last meeting date and invite agenda. If an external attendee is not in the contacts, say so plainly. End with one line naming the meeting that needs the most preparation. Plain text, no greetings, no emojis, under 180 words. Never invent facts.",
+              "context": {
+                "date": "{{steps.prepare.output.date}}",
+                "meetings": "{{steps.merge.output.meetings}}"
+              },
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "brief": {
+                    "type": "string"
+                  }
+                },
+                "required": ["brief"]
+              }
+            }
+          },
+          {
+            "id": "slack",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "*Your agenda for {{steps.prepare.output.date}}*\n{{steps.merge.output.schedule}}\n\n*Prep brief*\n{{steps.brief.output.result.brief}}"
+            }
+          },
+          {
+            "id": "email",
+            "type": "node.gmail.send",
+            "input": {
+              "connection": "google",
+              "to": "you@yourcompany.com",
+              "subject": "Your agenda for {{steps.prepare.output.date}}: {{steps.prepare.output.count}} meetings",
+              "text": "Good morning,\n\nToday's schedule:\n{{steps.merge.output.schedule}}\n\nPrep brief:\n{{steps.brief.output.result.brief}}\n\nAttendees not in your contacts today: {{steps.merge.output.unknown}}. Add them in Runbase to get context next time."
+            }
+          },
+          {
+            "id": "log",
+            "type": "record.upsert",
+            "input": {
+              "object": "$object:agenda_digests",
+              "match": "day",
+              "data": {
+                "day": "{{steps.prepare.output.day}}",
+                "meetings": "{{steps.prepare.output.count}}",
+                "known_attendees": "{{steps.merge.output.known}}",
+                "unknown_attendees": "{{steps.merge.output.unknown}}",
+                "brief": "{{steps.brief.output.result.brief}}",
+                "sent_at": "{{now}}"
+              }
+            }
+          }
+        ],
+        "next": {
+          "until": {
+            "ok": ["events"]
+          },
+          "events": {
+            "ok": ["prepare"]
+          },
+          "prepare": {
+            "ok": ["has_meetings"]
+          },
+          "has_meetings": {
+            "true": ["contacts"]
+          },
+          "contacts": {
+            "found": ["merge"],
+            "empty": ["merge"]
+          },
+          "merge": {
+            "ok": ["brief"]
+          },
+          "brief": {
+            "ok": ["slack"]
+          },
+          "slack": {
+            "ok": ["email"]
+          },
+          "email": {
+            "ok": ["log"]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": ["SLACK_WEBHOOK_URL"],
+  "records": [
+    {
+      "key": "c1",
+      "object": "contacts",
+      "data": {
+        "name": "Maria Lopez",
+        "email": "maria@northwind.example",
+        "company": "Northwind",
+        "role": "Head of Operations",
+        "relationship": "customer",
+        "notes": "Renewal due in January. Asked for a seat count review and SSO.",
+        "last_met": "2026-11-14"
+      }
+    },
+    {
+      "key": "c2",
+      "object": "contacts",
+      "data": {
+        "name": "James Carter",
+        "email": "james@brightlabs.example",
+        "company": "Bright Labs",
+        "role": "VP Sales",
+        "relationship": "prospect",
+        "notes": "Evaluating us against two vendors. Budget owner is the CFO. Wants a pricing proposal before Christmas.",
+        "last_met": "2026-11-20"
+      }
+    },
+    {
+      "key": "c3",
+      "object": "contacts",
+      "data": {
+        "name": "Li Wei",
+        "email": "li@acme.example",
+        "company": "Acme",
+        "role": "Founder",
+        "relationship": "partner",
+        "notes": "Co-marketing webinar planned for Q1. Prefers short agendas.",
+        "last_met": "2026-10-30"
+      }
+    },
+    {
+      "key": "c4",
+      "object": "contacts",
+      "data": {
+        "name": "Sofia Rossi",
+        "email": "sofia@greenleaf.example",
+        "company": "Greenleaf Capital",
+        "role": "Partner",
+        "relationship": "investor",
+        "notes": "Monthly update call. Interested in churn and net revenue retention.",
+        "last_met": "2026-10-28"
+      }
+    },
+    {
+      "key": "d1",
+      "object": "agenda_digests",
+      "data": {
+        "day": "2026-11-27",
+        "meetings": 4,
+        "known_attendees": 3,
+        "unknown_attendees": 1,
+        "brief": "9:30 Northwind QBR with Maria Lopez (Head of Operations, customer): renewal in January, bring the seat count review.\n14:00 Bright Labs pricing call with James Carter (VP Sales, prospect): he needs a proposal before Christmas.\nMost preparation: Bright Labs.",
+        "sent_at": "2026-11-27T06:30:00Z"
+      }
+    }
+  ]
+}

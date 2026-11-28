@@ -1,0 +1,542 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "NPS Survey and Feedback Loop",
+  "description": "NPS survey automation: send NPS surveys from Gmail, tag each answer with AI, log it to Google Sheets and alert Slack on every detractor.",
+  "databases": [
+    {
+      "slug": "customer_feedback",
+      "name": "Customer feedback"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "customers",
+      "name": "Customers",
+      "icon": "users",
+      "database": "customer_feedback",
+      "fields": [
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "email",
+          "label": "Email",
+          "type": "email",
+          "unique": true
+        },
+        {
+          "key": "company",
+          "label": "Company",
+          "type": "text"
+        },
+        {
+          "key": "plan",
+          "label": "Plan",
+          "type": "select",
+          "options": ["starter", "pro", "enterprise"]
+        },
+        {
+          "key": "account_owner",
+          "label": "Account owner",
+          "type": "text"
+        },
+        {
+          "key": "survey_status",
+          "label": "Survey status",
+          "type": "select",
+          "options": ["due", "sent", "answered", "opted_out"]
+        },
+        {
+          "key": "last_survey_at",
+          "label": "Last survey sent",
+          "type": "date"
+        },
+        {
+          "key": "last_nps_score",
+          "label": "Last NPS score",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "slug": "nps_responses",
+      "name": "NPS responses",
+      "icon": "message-square-heart",
+      "database": "customer_feedback",
+      "fields": [
+        {
+          "key": "response_id",
+          "label": "Response ID",
+          "type": "text",
+          "title": true,
+          "unique": true
+        },
+        {
+          "key": "email",
+          "label": "Respondent email",
+          "type": "email"
+        },
+        {
+          "key": "customer",
+          "label": "Customer",
+          "type": "ref",
+          "object": "customers"
+        },
+        {
+          "key": "score",
+          "label": "Score (0-10)",
+          "type": "number"
+        },
+        {
+          "key": "comment",
+          "label": "Comment",
+          "type": "text"
+        },
+        {
+          "key": "category",
+          "label": "NPS category",
+          "type": "select",
+          "options": ["promoter", "passive", "detractor"]
+        },
+        {
+          "key": "sentiment",
+          "label": "Sentiment",
+          "type": "select",
+          "options": ["positive", "neutral", "negative"]
+        },
+        {
+          "key": "theme",
+          "label": "Main theme",
+          "type": "select",
+          "options": [
+            "product",
+            "support",
+            "pricing",
+            "onboarding",
+            "performance",
+            "other"
+          ]
+        },
+        {
+          "key": "ai_summary",
+          "label": "AI summary",
+          "type": "text"
+        },
+        {
+          "key": "follow_up",
+          "label": "Follow-up",
+          "type": "select",
+          "options": ["none", "to_contact", "contacted", "closed"]
+        },
+        {
+          "key": "created_at",
+          "label": "Created",
+          "type": "created_at"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "nps_responses",
+      "name": "Detractors to contact",
+      "filter": {
+        "all": [
+          {
+            "field": "category",
+            "op": "eq",
+            "value": "detractor"
+          },
+          {
+            "field": "follow_up",
+            "op": "eq",
+            "value": "to_contact"
+          }
+        ]
+      },
+      "sort": [
+        {
+          "field": "created_at",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "response_id",
+        "customer",
+        "score",
+        "theme",
+        "ai_summary",
+        "follow_up"
+      ]
+    },
+    {
+      "object": "nps_responses",
+      "name": "Responses by theme",
+      "sort": [
+        {
+          "field": "theme",
+          "dir": "asc"
+        }
+      ],
+      "columns": [
+        "response_id",
+        "score",
+        "category",
+        "sentiment",
+        "theme",
+        "comment"
+      ]
+    },
+    {
+      "object": "nps_responses",
+      "name": "Promoters",
+      "filter": {
+        "field": "category",
+        "op": "eq",
+        "value": "promoter"
+      },
+      "sort": [
+        {
+          "field": "created_at",
+          "dir": "desc"
+        }
+      ]
+    },
+    {
+      "object": "customers",
+      "name": "Surveys due",
+      "filter": {
+        "field": "survey_status",
+        "op": "eq",
+        "value": "due"
+      },
+      "columns": ["name", "email", "company", "plan", "last_survey_at"]
+    }
+  ],
+  "functions": [
+    {
+      "name": "nps-category",
+      "code": "// Standard NPS buckets: 9-10 promoter, 7-8 passive, 0-6 detractor.\nexport default ({ score }) => {\n  const n = Number(score);\n  if (!Number.isFinite(n) || n < 0 || n > 10) throw new Error(\"Score must be between 0 and 10\");\n  const category = n >= 9 ? \"promoter\" : n >= 7 ? \"passive\" : \"detractor\";\n  return { category, followUp: category === \"detractor\" ? \"to_contact\" : \"none\" };\n};\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "score": {
+            "type": ["number", "string"]
+          }
+        },
+        "required": ["score"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": ["promoter", "passive", "detractor"]
+          },
+          "followUp": {
+            "type": "string"
+          }
+        }
+      },
+      "permissions": {}
+    }
+  ],
+  "workflows": [
+    {
+      "key": "send-nps-survey",
+      "name": "Send NPS surveys",
+      "definition": {
+        "trigger": {
+          "type": "trigger.schedule",
+          "cron": "0 10 * * 2",
+          "timezone": "Europe/Paris",
+          "object": "$object:customers",
+          "filter": {
+            "field": "survey_status",
+            "op": "eq",
+            "value": "due"
+          }
+        },
+        "steps": [
+          {
+            "id": "survey_email",
+            "type": "node.gmail.send",
+            "input": {
+              "connection": "google",
+              "to": "{{record.email}}",
+              "subject": "{{record.name}}, how likely are you to recommend us?",
+              "text": "Hi {{record.name}},\n\nOne question, ten seconds: on a scale from 0 to 10, how likely are you to recommend us to a friend or colleague?\n\nAnswer here: {{secret.NPS_SURVEY_URL}}?email={{record.email}}\n\nA short comment on why helps us even more. Every answer is read by the team.\n\nThank you,\n{{record.account_owner}}"
+            }
+          },
+          {
+            "id": "mark_sent",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "survey_status": "sent",
+                "last_survey_at": "{{today}}"
+              }
+            }
+          }
+        ],
+        "next": {
+          "survey_email": {
+            "ok": ["mark_sent"]
+          }
+        }
+      }
+    },
+    {
+      "key": "process-nps-answer",
+      "name": "Classify NPS answers and alert on detractors",
+      "definition": {
+        "trigger": {
+          "type": "trigger.webhook",
+          "webhook": "nps-answer",
+          "object": "$object:nps_responses",
+          "match": "response_id",
+          "mapping": {
+            "response_id": "response_id",
+            "email": "email",
+            "score": "score",
+            "comment": "comment"
+          }
+        },
+        "steps": [
+          {
+            "id": "category",
+            "type": "fn.nps-category",
+            "input": {
+              "score": "{{record.score}}"
+            }
+          },
+          {
+            "id": "classify",
+            "type": "ai.run",
+            "input": {
+              "prompt": "You analyse NPS survey answers for a customer success team. From the score (0-10) and the comment, return: the sentiment of the comment (positive, neutral or negative), the main theme it is about (product, support, pricing, onboarding, performance, or other when unclear or empty), and a one-sentence factual summary a CSM can act on. Do not invent details that are not in the comment. If the comment is empty, base the sentiment on the score and use the theme other.",
+              "context": "{{record}}",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sentiment": {
+                    "type": "string",
+                    "enum": ["positive", "neutral", "negative"]
+                  },
+                  "theme": {
+                    "type": "string",
+                    "enum": [
+                      "product",
+                      "support",
+                      "pricing",
+                      "onboarding",
+                      "performance",
+                      "other"
+                    ]
+                  },
+                  "summary": {
+                    "type": "string"
+                  }
+                },
+                "required": ["sentiment", "theme", "summary"]
+              }
+            }
+          },
+          {
+            "id": "save",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "category": "{{steps.category.output.category}}",
+                "follow_up": "{{steps.category.output.followUp}}",
+                "sentiment": "{{steps.classify.output.result.sentiment}}",
+                "theme": "{{steps.classify.output.result.theme}}",
+                "ai_summary": "{{steps.classify.output.result.summary}}"
+              }
+            }
+          },
+          {
+            "id": "log_sheet",
+            "type": "node.google_sheets.append_rows",
+            "input": {
+              "connection": "google",
+              "spreadsheetId": "{{secret.NPS_SPREADSHEET_ID}}",
+              "range": "NPS",
+              "rows": [
+                {
+                  "Date": "{{now}}",
+                  "Email": "{{record.email}}",
+                  "Score": "{{record.score}}",
+                  "Category": "{{steps.category.output.category}}",
+                  "Sentiment": "{{steps.classify.output.result.sentiment}}",
+                  "Theme": "{{steps.classify.output.result.theme}}",
+                  "Summary": "{{steps.classify.output.result.summary}}",
+                  "Comment": "{{record.comment}}"
+                }
+              ]
+            }
+          },
+          {
+            "id": "find_customer",
+            "type": "record.search",
+            "input": {
+              "object": "customers",
+              "filter": {
+                "field": "email",
+                "op": "eq",
+                "value": "{{record.email}}"
+              },
+              "limit": 1
+            }
+          },
+          {
+            "id": "link_customer",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "customer": "{{steps.find_customer.output.records.0.id}}"
+              }
+            }
+          },
+          {
+            "id": "update_customer",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{steps.find_customer.output.records.0.id}}",
+              "data": {
+                "survey_status": "answered",
+                "last_nps_score": "{{record.score}}"
+              }
+            }
+          },
+          {
+            "id": "is_detractor",
+            "type": "condition",
+            "input": {
+              "left": "{{steps.category.output.category}}",
+              "op": "eq",
+              "right": "detractor"
+            }
+          },
+          {
+            "id": "alert",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "Detractor alert: {{record.email}} scored {{record.score}}/10. Theme: {{steps.classify.output.result.theme}}. {{steps.classify.output.result.summary}} Comment: \"{{record.comment}}\""
+            }
+          }
+        ],
+        "next": {
+          "category": {
+            "ok": ["classify"]
+          },
+          "classify": {
+            "ok": ["save"]
+          },
+          "save": {
+            "ok": ["log_sheet"]
+          },
+          "log_sheet": {
+            "ok": ["find_customer"]
+          },
+          "find_customer": {
+            "found": ["link_customer"],
+            "empty": ["is_detractor"]
+          },
+          "link_customer": {
+            "ok": ["update_customer"]
+          },
+          "update_customer": {
+            "ok": ["is_detractor"]
+          },
+          "is_detractor": {
+            "true": ["alert"]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": ["NPS_SURVEY_URL", "NPS_SPREADSHEET_ID", "SLACK_WEBHOOK_URL"],
+  "records": [
+    {
+      "key": "cust-maya",
+      "object": "customers",
+      "data": {
+        "name": "Maya Chen",
+        "email": "maya@northwind.example",
+        "company": "Northwind",
+        "plan": "pro",
+        "account_owner": "Julie",
+        "survey_status": "answered",
+        "last_survey_at": "2026-11-17",
+        "last_nps_score": 10
+      }
+    },
+    {
+      "key": "cust-omar",
+      "object": "customers",
+      "data": {
+        "name": "Omar Haddad",
+        "email": "omar@brightlane.example",
+        "company": "Brightlane",
+        "plan": "enterprise",
+        "account_owner": "Julie",
+        "survey_status": "answered",
+        "last_survey_at": "2026-11-17",
+        "last_nps_score": 4
+      }
+    },
+    {
+      "key": "cust-lena",
+      "object": "customers",
+      "data": {
+        "name": "Lena Fischer",
+        "email": "lena@kestrel.example",
+        "company": "Kestrel Studio",
+        "plan": "starter",
+        "account_owner": "Marc",
+        "survey_status": "due"
+      }
+    },
+    {
+      "key": "resp-maya",
+      "object": "nps_responses",
+      "data": {
+        "response_id": "resp-1001",
+        "email": "maya@northwind.example",
+        "customer": "$record:cust-maya",
+        "score": 10,
+        "comment": "The weekly report saves my team hours. Support answered in minutes last time.",
+        "category": "promoter",
+        "sentiment": "positive",
+        "theme": "product",
+        "ai_summary": "Values the weekly report and fast support; good candidate for a case study.",
+        "follow_up": "none"
+      }
+    },
+    {
+      "key": "resp-omar",
+      "object": "nps_responses",
+      "data": {
+        "response_id": "resp-1002",
+        "email": "omar@brightlane.example",
+        "customer": "$record:cust-omar",
+        "score": 4,
+        "comment": "Exports keep timing out on large accounts and nobody told us when it would be fixed.",
+        "category": "detractor",
+        "sentiment": "negative",
+        "theme": "performance",
+        "ai_summary": "Large exports time out and there was no status update; needs a call about the fix timeline.",
+        "follow_up": "to_contact"
+      }
+    }
+  ]
+}

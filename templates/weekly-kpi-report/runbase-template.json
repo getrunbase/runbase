@@ -1,0 +1,568 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Weekly KPI Report",
+  "description": "A weekly KPI report every Monday: pipeline, won revenue and win rate from your deals, logged to Google Sheets and sent to Slack and Gmail.",
+  "databases": [
+    {
+      "slug": "revenue",
+      "name": "Revenue"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "deals",
+      "name": "Deals",
+      "icon": "handshake",
+      "database": "revenue",
+      "fields": [
+        {
+          "key": "name",
+          "label": "Deal",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "company",
+          "label": "Company",
+          "type": "text"
+        },
+        {
+          "key": "owner",
+          "label": "Owner",
+          "type": "text"
+        },
+        {
+          "key": "amount",
+          "label": "Amount",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "key": "stage",
+          "label": "Stage",
+          "type": "select",
+          "options": [
+            "lead",
+            "qualified",
+            "proposal",
+            "negotiation",
+            "won",
+            "lost"
+          ]
+        },
+        {
+          "key": "source",
+          "label": "Source",
+          "type": "select",
+          "options": [
+            "inbound",
+            "outbound",
+            "referral",
+            "partner",
+            "expansion"
+          ]
+        },
+        {
+          "key": "opened_on",
+          "label": "Opened on",
+          "type": "date"
+        },
+        {
+          "key": "closed_on",
+          "label": "Closed on",
+          "type": "date"
+        },
+        {
+          "key": "lost_reason",
+          "label": "Lost reason",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "slug": "kpi_snapshots",
+      "name": "KPI snapshots",
+      "icon": "chart",
+      "database": "revenue",
+      "fields": [
+        {
+          "key": "week",
+          "label": "Week of",
+          "type": "text",
+          "title": true,
+          "unique": true
+        },
+        {
+          "key": "new_deals",
+          "label": "New deals",
+          "type": "number"
+        },
+        {
+          "key": "new_pipeline",
+          "label": "New pipeline",
+          "type": "number"
+        },
+        {
+          "key": "open_deals",
+          "label": "Open deals",
+          "type": "number"
+        },
+        {
+          "key": "open_pipeline",
+          "label": "Open pipeline",
+          "type": "number"
+        },
+        {
+          "key": "won_deals",
+          "label": "Won deals",
+          "type": "number"
+        },
+        {
+          "key": "won_revenue",
+          "label": "Won revenue",
+          "type": "number"
+        },
+        {
+          "key": "lost_deals",
+          "label": "Lost deals",
+          "type": "number"
+        },
+        {
+          "key": "win_rate",
+          "label": "Win rate %",
+          "type": "number"
+        },
+        {
+          "key": "avg_deal_size",
+          "label": "Avg won deal",
+          "type": "number"
+        },
+        {
+          "key": "commentary",
+          "label": "Commentary",
+          "type": "text"
+        },
+        {
+          "key": "sent_at",
+          "label": "Sent at",
+          "type": "date"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "deals",
+      "name": "Open pipeline",
+      "filter": {
+        "field": "stage",
+        "op": "not_in",
+        "value": [
+          "won",
+          "lost"
+        ]
+      },
+      "sort": [
+        {
+          "field": "amount",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "name",
+        "company",
+        "owner",
+        "amount",
+        "stage",
+        "opened_on"
+      ]
+    },
+    {
+      "object": "deals",
+      "name": "Closed this month",
+      "filter": {
+        "all": [
+          {
+            "field": "stage",
+            "op": "in",
+            "value": [
+              "won",
+              "lost"
+            ]
+          },
+          {
+            "field": "closed_on",
+            "op": "within",
+            "value": 30
+          }
+        ]
+      },
+      "sort": [
+        {
+          "field": "closed_on",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "name",
+        "company",
+        "owner",
+        "amount",
+        "stage",
+        "closed_on",
+        "lost_reason"
+      ]
+    },
+    {
+      "object": "kpi_snapshots",
+      "name": "KPI history",
+      "sort": [
+        {
+          "field": "week",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "week",
+        "new_deals",
+        "new_pipeline",
+        "won_deals",
+        "won_revenue",
+        "win_rate",
+        "open_pipeline"
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "compute-weekly-kpis",
+      "code": "// Computes the weekly pipeline and revenue KPIs from the deals, for the\n// week that just ended and the week before it (week-over-week deltas).\nexport default ({ records, since, until, weekLabel, currency }) => {\n  const cur = currency || \"EUR\";\n  const start = Date.parse(since);\n  const end = Date.parse(until);\n  const prevStart = start - (end - start);\n  const deals = (records || []).map((r) => r.data || r);\n  const inRange = (d, a, b) => {\n    if (!d) return false;\n    const t = Date.parse(d);\n    return t >= a && t < b;\n  };\n  const sum = (list) => list.reduce((s, d) => s + (Number(d.amount) || 0), 0);\n  const week = (a, b) => {\n    const created = deals.filter((d) => inRange(d.opened_on, a, b));\n    const won = deals.filter((d) => d.stage === \"won\" && inRange(d.closed_on, a, b));\n    const lost = deals.filter((d) => d.stage === \"lost\" && inRange(d.closed_on, a, b));\n    return { created, won, lost };\n  };\n  const now = week(start, end);\n  const prev = week(prevStart, start);\n  const open = deals.filter((d) => d.stage !== \"won\" && d.stage !== \"lost\");\n  const closed = now.won.length + now.lost.length;\n  const wonRevenue = sum(now.won);\n  const kpis = {\n    week: weekLabel,\n    new_deals: now.created.length,\n    new_pipeline: sum(now.created),\n    open_deals: open.length,\n    open_pipeline: sum(open),\n    won_deals: now.won.length,\n    won_revenue: wonRevenue,\n    lost_deals: now.lost.length,\n    win_rate: closed ? Math.round((now.won.length / closed) * 100) : 0,\n    avg_deal_size: now.won.length ? Math.round(wonRevenue / now.won.length) : 0,\n  };\n  const prevWon = sum(prev.won);\n  const prevPipe = sum(prev.created);\n  const delta = (a, b) => (b ? (a >= b ? \"+\" : \"\") + Math.round(((a - b) / b) * 100) + \"%\" : \"n/a\");\n  const money = (n) => Math.round(n).toLocaleString(\"en-US\") + \" \" + cur;\n  const text = [\n    `Weekly KPI report, week of ${weekLabel}`,\n    `- New deals: ${kpis.new_deals} (${money(kpis.new_pipeline)} pipeline, ${delta(kpis.new_pipeline, prevPipe)} vs last week)`,\n    `- Won: ${kpis.won_deals} deals, ${money(wonRevenue)} (${delta(wonRevenue, prevWon)} vs last week)`,\n    `- Lost: ${kpis.lost_deals} deals, win rate ${kpis.win_rate}%`,\n    `- Average won deal: ${money(kpis.avg_deal_size)}`,\n    `- Open pipeline: ${kpis.open_deals} deals, ${money(kpis.open_pipeline)}`,\n  ].join(\"\\n\");\n  const row = {\n    Week: weekLabel,\n    \"New deals\": kpis.new_deals,\n    \"New pipeline\": kpis.new_pipeline,\n    \"Open deals\": kpis.open_deals,\n    \"Open pipeline\": kpis.open_pipeline,\n    \"Won deals\": kpis.won_deals,\n    \"Won revenue\": kpis.won_revenue,\n    \"Lost deals\": kpis.lost_deals,\n    \"Win rate %\": kpis.win_rate,\n    \"Avg deal size\": kpis.avg_deal_size,\n  };\n  return {\n    kpis,\n    previous: { new_pipeline: prevPipe, won_revenue: prevWon, won_deals: prev.won.length },\n    row,\n    text,\n  };\n};\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "records": {
+            "type": "array"
+          },
+          "since": {
+            "type": "string"
+          },
+          "until": {
+            "type": "string"
+          },
+          "weekLabel": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "records",
+          "since",
+          "until",
+          "weekLabel"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "kpis": {
+            "type": "object"
+          },
+          "previous": {
+            "type": "object"
+          },
+          "row": {
+            "type": "object"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kpis",
+          "previous",
+          "row",
+          "text"
+        ]
+      },
+      "permissions": {
+        "domains": [],
+        "secrets": []
+      },
+      "limits": {
+        "timeoutMs": 5000
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "key": "weekly-kpi-report",
+      "name": "Send the weekly KPI report",
+      "definition": {
+        "trigger": {
+          "type": "trigger.schedule",
+          "cron": "0 9 * * 1",
+          "timezone": "Europe/Paris"
+        },
+        "steps": [
+          {
+            "id": "since",
+            "type": "date",
+            "input": {
+              "op": "add",
+              "date": "{{now}}",
+              "amount": -7,
+              "unit": "days"
+            }
+          },
+          {
+            "id": "label",
+            "type": "date",
+            "input": {
+              "op": "format",
+              "date": "{{steps.since.output.value}}",
+              "format": "YYYY-MM-DD"
+            }
+          },
+          {
+            "id": "deals",
+            "type": "record.search",
+            "input": {
+              "object": "$object:deals",
+              "limit": 500
+            }
+          },
+          {
+            "id": "compute",
+            "type": "fn.compute-weekly-kpis",
+            "input": {
+              "records": "{{steps.deals.output.records}}",
+              "since": "{{steps.since.output.value}}",
+              "until": "{{now}}",
+              "weekLabel": "{{steps.label.output.value}}",
+              "currency": "EUR"
+            }
+          },
+          {
+            "id": "comment",
+            "type": "ai.run",
+            "input": {
+              "prompt": "You write the two or three sentence commentary of a weekly sales KPI report for a founder and the RevOps team. Use only the numbers in the data: this week's KPIs and the previous week's figures. Say what moved the most versus last week, and name one thing to watch this week (for example a thin new pipeline or a low win rate). Plain text, factual, no greetings, no emojis, under 70 words. Never invent figures.",
+              "context": {
+                "kpis": "{{steps.compute.output.kpis}}",
+                "previous": "{{steps.compute.output.previous}}"
+              },
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "commentary": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "commentary"
+                ]
+              }
+            }
+          },
+          {
+            "id": "snapshot",
+            "type": "record.upsert",
+            "input": {
+              "object": "$object:kpi_snapshots",
+              "match": "week",
+              "data": {
+                "week": "{{steps.label.output.value}}",
+                "new_deals": "{{steps.compute.output.kpis.new_deals}}",
+                "new_pipeline": "{{steps.compute.output.kpis.new_pipeline}}",
+                "open_deals": "{{steps.compute.output.kpis.open_deals}}",
+                "open_pipeline": "{{steps.compute.output.kpis.open_pipeline}}",
+                "won_deals": "{{steps.compute.output.kpis.won_deals}}",
+                "won_revenue": "{{steps.compute.output.kpis.won_revenue}}",
+                "lost_deals": "{{steps.compute.output.kpis.lost_deals}}",
+                "win_rate": "{{steps.compute.output.kpis.win_rate}}",
+                "avg_deal_size": "{{steps.compute.output.kpis.avg_deal_size}}",
+                "commentary": "{{steps.comment.output.result.commentary}}",
+                "sent_at": "{{now}}"
+              }
+            }
+          },
+          {
+            "id": "history",
+            "type": "node.google_sheets.append_rows",
+            "input": {
+              "connection": "google",
+              "spreadsheetId": "{{secret.KPI_SPREADSHEET_ID}}",
+              "range": "KPI history",
+              "rows": [
+                "{{steps.compute.output.row}}"
+              ]
+            }
+          },
+          {
+            "id": "slack",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "{{steps.compute.output.text}}\n\n{{steps.comment.output.result.commentary}}"
+            }
+          },
+          {
+            "id": "email",
+            "type": "node.gmail.send",
+            "input": {
+              "connection": "google",
+              "to": [
+                "founder@yourcompany.com",
+                "revops@yourcompany.com"
+              ],
+              "subject": "Weekly KPI report, week of {{steps.label.output.value}}",
+              "text": "Hi,\n\nHere are last week's pipeline and revenue numbers.\n\n{{steps.compute.output.text}}\n\nCommentary:\n{{steps.comment.output.result.commentary}}\n\nThe full history is in the KPI history sheet."
+            }
+          }
+        ],
+        "next": {
+          "since": {
+            "ok": [
+              "label"
+            ]
+          },
+          "label": {
+            "ok": [
+              "deals"
+            ]
+          },
+          "deals": {
+            "found": [
+              "compute"
+            ],
+            "empty": [
+              "compute"
+            ]
+          },
+          "compute": {
+            "ok": [
+              "comment"
+            ]
+          },
+          "comment": {
+            "ok": [
+              "snapshot"
+            ]
+          },
+          "snapshot": {
+            "created": [
+              "history"
+            ],
+            "updated": [
+              "history"
+            ]
+          },
+          "history": {
+            "ok": [
+              "slack"
+            ]
+          },
+          "slack": {
+            "ok": [
+              "email"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": [
+    "KPI_SPREADSHEET_ID",
+    "SLACK_WEBHOOK_URL"
+  ],
+  "records": [
+    {
+      "key": "deal-northwind",
+      "object": "deals",
+      "data": {
+        "name": "Northwind annual plan",
+        "company": "Northwind",
+        "owner": "Sarah",
+        "amount": 18000,
+        "stage": "won",
+        "source": "inbound",
+        "opened_on": "2026-10-14",
+        "closed_on": "2026-11-24"
+      }
+    },
+    {
+      "key": "deal-brightlane",
+      "object": "deals",
+      "data": {
+        "name": "Brightlane pilot",
+        "company": "Brightlane",
+        "owner": "Karim",
+        "amount": 6500,
+        "stage": "proposal",
+        "source": "outbound",
+        "opened_on": "2026-11-25"
+      }
+    },
+    {
+      "key": "deal-kestrel",
+      "object": "deals",
+      "data": {
+        "name": "Kestrel Studio expansion",
+        "company": "Kestrel Studio",
+        "owner": "Sarah",
+        "amount": 9200,
+        "stage": "negotiation",
+        "source": "expansion",
+        "opened_on": "2026-11-03"
+      }
+    },
+    {
+      "key": "deal-fieldworks",
+      "object": "deals",
+      "data": {
+        "name": "Fieldworks starter",
+        "company": "Fieldworks",
+        "owner": "Karim",
+        "amount": 3400,
+        "stage": "lost",
+        "source": "referral",
+        "opened_on": "2026-10-28",
+        "closed_on": "2026-11-26",
+        "lost_reason": "Chose to build in-house"
+      }
+    },
+    {
+      "key": "deal-orbit",
+      "object": "deals",
+      "data": {
+        "name": "Orbit Logistics rollout",
+        "company": "Orbit Logistics",
+        "owner": "Lina",
+        "amount": 24000,
+        "stage": "qualified",
+        "source": "partner",
+        "opened_on": "2026-11-26"
+      }
+    },
+    {
+      "key": "snapshot-nov-16",
+      "object": "kpi_snapshots",
+      "data": {
+        "week": "2026-11-16",
+        "new_deals": 3,
+        "new_pipeline": 21500,
+        "open_deals": 7,
+        "open_pipeline": 64300,
+        "won_deals": 1,
+        "won_revenue": 7800,
+        "lost_deals": 1,
+        "win_rate": 50,
+        "avg_deal_size": 7800,
+        "commentary": "New pipeline held steady. Won revenue came from one mid-size deal; watch the two proposals older than 30 days."
+      }
+    }
+  ]
+}

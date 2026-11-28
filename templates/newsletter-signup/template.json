@@ -1,0 +1,9 @@
+{
+  "id": "newsletter-signup",
+  "slug": "newsletter-signup",
+  "name": "Newsletter Signups with Welcome Email",
+  "categories": ["marketing", "email"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}
