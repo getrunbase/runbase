@@ -59,7 +59,11 @@ test("function written, tested then used in a workflow through MCP", async () =>
     results: [dry],
   } = await call("workflows.dry_run", {
     workflow: wf.id,
-    records: [lead.record.id],
+    // The same lead, pinned to the other branch: both writes reached.
+    records: [
+      lead.record.id,
+      { id: lead.record.id, pins: { s: { branch: "cold" } } },
+    ],
   });
   assert.deepEqual(
     dry.path.map((p: { stepId: string }) => p.stepId),

@@ -122,7 +122,7 @@ test("workflow created, tested in dry run then activated through MCP", async () 
   const dry2 = await call("workflows.dry_run", {
     workflow: wf.id,
     version: 2,
-    records: [hot.record.id],
+    records: [hot.record.id, cold.record.id],
   });
   assert.equal(dry2.tested, true);
   assert.equal(

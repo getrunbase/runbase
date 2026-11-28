@@ -9,9 +9,14 @@ export type Graph = {
   next: Record<string, Record<string, string[]>>;
 };
 
-// Targets of a branch, without duplicates; missing = none.
+// Targets of a branch (a list or a single id), without duplicates;
+// missing = none.
 export function targetsOf(v: unknown): string[] {
-  const list: unknown[] = Array.isArray(v) ? v : [];
+  const list: unknown[] = Array.isArray(v)
+    ? v
+    : typeof v === "string"
+      ? [v]
+      : [];
   return [...new Set(list.filter((t): t is string => typeof t === "string"))];
 }
 

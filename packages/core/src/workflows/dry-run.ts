@@ -30,7 +30,13 @@ import {
   notFound,
   type ErrorItem,
 } from "../errors/app-error";
-import { functionsService } from "../functions";
+import {
+  functionsService,
+  runLogged,
+  type FunctionRow,
+  type PlannedWrite,
+} from "../functions";
+import { decryptAll, secretsService } from "../secrets";
 import { validateSchema } from "../functions/sandbox";
 import { branchesOf, fnName, type Step } from "./validate-shared";
 
@@ -52,6 +58,8 @@ export type DryRunStep = {
   pinned?: boolean;
   // Non-blocking findings, e.g. a {{record.*}} ref that renders empty.
   warnings?: string[];
+  // fn.* steps: record / event writes the function planned (simulated).
+  writes?: PlannedWrite[];
 };
 export type DryRunPath = {
   id: string;
@@ -130,6 +138,22 @@ async function execStep(
   const input = await stepInput(ctx, o.input ?? step.input, raw, scope);
   const warnings = await emptyRefs(ctx, o.input ?? step.input, raw, scope);
   const pin = definition.pins?.[step.id] as Pin | undefined;
+  // A pinned stop.* step stops the path on purpose: expected outcome.
+  if (pin && step.type.startsWith("stop.")) {
+    const message =
+      pin.error ??
+      String((step.input as { message?: unknown } | undefined)?.message ?? "");
+    return {
+      input,
+      warnings,
+      result: { branch: "stop", output: { stopped: message } } as BlockResult,
+      simulated: false,
+      pinned: true,
+      reason: errorItem("workflows.reasonStopped", "stops the run: {message}", {
+        message,
+      }),
+    };
+  }
   if (pin?.error !== undefined) {
     const branches = branchesOf(step, block);
     if (!branches.includes("error"))
@@ -159,13 +183,41 @@ async function execStep(
       reason: errorItem("workflows.reasonPinned", "pinned output"),
     };
   const parsed = block.inputSchema.parse(input);
-  // Simulated function (side effect): its inputSchema is still checked
-  // on the rendered input (ref resolving to undefined…), readable error.
+  // Like validate: a missing secret makes a continueOnFail step take its
+  // error branch; otherwise the path fails.
+  const missing = !o.live && (await missingSecret(ctx, step));
+  if (missing) {
+    const error = `Missing secret ${missing}`;
+    if (!step.retry?.continueOnFail)
+      throw appError("workflows.missingSecret", "Missing secret {name}", {
+        name: missing,
+      });
+    return {
+      input,
+      warnings,
+      result: { branch: "error", output: { error } } as BlockResult,
+      simulated: false,
+      pinned: false,
+      reason: errorItem(
+        "workflows.reasonContinueOnFail",
+        "failed, continued: {error}",
+        { error },
+      ),
+    };
+  }
+  // Function: its inputSchema is checked on the rendered input (ref
+  // resolving to undefined…), readable error. Without network access it
+  // runs like functions.test { dryRun: true }: real reads, record and
+  // event writes simulated and listed in `writes`.
+  let fn: FunctionRow | undefined;
   if (step.type.startsWith("fn.")) {
     const { name, version } = fnName(step.type);
     const f = await functionsService.get(ctx, name, version);
-    if (f)
+    if (f) {
       validateSchema(f.inputSchema as Record<string, unknown>, input, "input");
+      const perms = f.permissions as { domains?: string[] };
+      if (!perms.domains?.length) fn = f;
+    }
   }
   if (step.type === "human.approve")
     return {
@@ -180,7 +232,8 @@ async function execStep(
       ),
     };
   const simulated =
-    !o.live && (block.sideEffect || (!o.ai && step.type.startsWith("ai.")));
+    !o.live &&
+    ((block.sideEffect && !fn) || (!o.ai && step.type.startsWith("ai.")));
   if (simulated)
     return {
       input,
@@ -200,12 +253,19 @@ async function execStep(
   // Real AI: cap and budget applied as in a run.
   const ai = step.type.startsWith("ai.");
   let result: BlockResult;
+  const writes: PlannedWrite[] | undefined = fn && !o.live ? [] : undefined;
   try {
     if (ai) await assertAiAllowed(ctx);
-    result = await block.run(
-      parsed,
-      blockContext(ctx, 0, { scope: { ...scope }, engine: blockEngine(ctx) }),
-    );
+    result =
+      fn && writes
+        ? await runFunctionDry(ctx, fn, parsed, block.branches, writes)
+        : await block.run(
+            parsed,
+            blockContext(ctx, 0, {
+              scope: { ...scope },
+              engine: blockEngine(ctx),
+            }),
+          );
   } catch (e) {
     // stop.* ends the path on purpose (expected outcome of a branch): it
     // is recorded in the trace, not reported as a failing path.
@@ -248,6 +308,7 @@ async function execStep(
     warnings,
     result,
     simulated,
+    ...(writes && { writes }),
     pinned: false,
     reason:
       typeof out?.reason === "string"
@@ -256,6 +317,63 @@ async function execStep(
             branch: result.branch,
           }),
   };
+}
+
+// Function run with dry-run semantics (functions.test { dryRun: true }):
+// same branch and failure convention as the fn.* block.
+async function runFunctionDry(
+  ctx: TenantContext,
+  f: FunctionRow,
+  input: unknown,
+  branches: readonly string[] | undefined,
+  writes: PlannedWrite[],
+): Promise<BlockResult> {
+  const perms = f.permissions as { secrets?: string[] };
+  const { output } = await runLogged(ctx, f, input, {
+    source: "test",
+    secrets: perms.secrets?.length ? await decryptAll(ctx) : {},
+    writes,
+  });
+  const res = output as { branch?: unknown; ok?: unknown; error?: unknown };
+  if (res && typeof res === "object" && res.ok === false)
+    throw appError("workflows.functionFailed", "{fn}: {error}", {
+      fn: f.name,
+      error:
+        typeof res.error === "string"
+          ? res.error
+          : (JSON.stringify(res.error) ?? "returned ok: false"),
+    });
+  return {
+    branch:
+      typeof res?.branch === "string" ? res.branch : (branches?.[0] ?? "ok"),
+    output,
+  };
+}
+
+// First secret a step needs that is not set: `{{secret.X}}` refs,
+// `input.secret`, and the function's permissions.secrets.
+async function missingSecret(ctx: TenantContext, step: Step) {
+  const input = (step.input ?? {}) as Record<string, unknown>;
+  const needed = new Set<string>();
+  for (const ref of templatePaths(input)) {
+    const [root, name] = ref.split(".");
+    if (root === "secret" && name) needed.add(name);
+  }
+  if (
+    step.type === "webhook.emit" &&
+    typeof input.secret === "string" &&
+    !input.secret.includes("{{")
+  )
+    needed.add(input.secret);
+  if (step.type.startsWith("fn.")) {
+    const { name, version } = fnName(step.type);
+    const f = await functionsService.get(ctx, name, version);
+    const perms = (f?.permissions ?? {}) as { secrets?: string[] };
+    for (const s of perms.secrets ?? []) needed.add(s);
+  }
+  if (!needed.size) return undefined;
+  const defined = new Set((await secretsService.list(ctx)).map((x) => x.name));
+  return [...needed].find((n) => !defined.has(n));
 }
 
 const empty = (v: unknown) => v === undefined || v === null || v === "";
@@ -269,6 +387,12 @@ async function syntheticWrite(
   type: string,
   input: unknown,
 ): Promise<BlockResult | null> {
+  // Simulated event: same output shape as a real emit.
+  if (type === "event.emit")
+    return {
+      branch: "ok",
+      output: { eventId: "dry", id: "dry", duplicate: false },
+    };
   if (type !== "record.upsert" && type !== "record.create") return null;
   const i = input as {
     object?: string;
@@ -377,6 +501,13 @@ export async function dryRunTargets(
     return { recordIds, event: opts.event, warnings };
   }
   if (recordIds.length || !t) return { recordIds, event: opts.event };
+  if (t.type === "trigger.event" && opts.event === undefined)
+    throw appError(
+      "workflows.dryRunEventMissing",
+      'This workflow starts on event {type}: pass `event` (the event payload, e.g. events.list { type: "{type}" } for a real one) or `events` for one run per payload, or `records` to run on records',
+      { type: t.event },
+      { kind: "invalid_input" },
+    );
   if (t.type === "trigger.webhook") {
     const hook = (await webhooksService.list(ctx)).find(
       (h) => h.name === t.webhook || h.id === t.webhook,
@@ -606,6 +737,7 @@ export async function dryRun(
           input: r.input,
           output: r.result?.output ?? null,
           ...(r.pinned && { pinned: true }),
+          ...("writes" in r && r.writes && { writes: r.writes }),
           ...(r.warnings.length && {
             warnings: r.warnings.map((w) => w.message),
           }),
@@ -656,11 +788,16 @@ export async function dryRun(
       }
     }
     const failed = paths.find((p) => p.error);
+    const stop = stoppedAtCondition(flat, next);
+    const untested = stop?.untested;
     const warnings = [
-      ...new Set([...eventWarnings, ...flat.flatMap((s) => s.warnings ?? [])]),
+      ...new Set([
+        ...eventWarnings,
+        ...flat.flatMap((s) => s.warnings ?? []),
+        ...(stop?.warning ? [stop.warning] : []),
+      ]),
     ];
     const coverage = coverageOf(steps, [flat]);
-    const untested = stoppedAtCondition(flat, next);
     results.push({
       recordId,
       path: flat,
@@ -677,7 +814,10 @@ export async function dryRun(
 }
 
 // Steps reached across runs, out of all steps.
-export function coverageOf(steps: Step[], runs: DryRunStep[][]): Coverage {
+export function coverageOf(
+  steps: Step[],
+  runs: { stepId: string }[][],
+): Coverage {
   const ran = new Set(runs.flat().map((s) => s.stepId));
   const unreached = steps.map((s) => s.id).filter((id) => !ran.has(id));
   return {
@@ -689,11 +829,12 @@ export function coverageOf(steps: Step[], runs: DryRunStep[][]): Coverage {
 
 // A run whose first condition (or switch) is its last step although that
 // step has connected branches: nothing behind the filter was exercised.
-// The pin hint names a connected branch the run did not take.
+// The pin hint names a connected branch the run did not take. A branch
+// declared empty on purpose (`false: []`) is a deliberate end: warning.
 function stoppedAtCondition(
   flat: DryRunStep[],
   next: Record<string, Record<string, string[]>>,
-) {
+): { untested?: string; warning?: string } | undefined {
   const i = flat.findIndex(
     (s) => s.type === "condition" || s.type === "switch",
   );
@@ -703,14 +844,24 @@ function stoppedAtCondition(
     .filter(([, t]) => t.length)
     .map(([b]) => b);
   if (!connected.length) return undefined;
+  if (c.branch !== undefined && next[c.stepId]?.[c.branch]?.length === 0)
+    return {
+      warning: errorItem(
+        "workflows.dryRunDeliberateEnd",
+        "{step} took branch {branch}, declared empty: the run ends there on purpose and nothing after {step} was exercised by this run",
+        { step: c.stepId, branch: c.branch },
+      ).message,
+    };
   const fallback = c.type === "switch" ? "else" : "true";
   const pin =
     connected.find((b) => b !== c.branch && b !== "error") ?? fallback;
-  return errorItem(
-    "workflows.dryRunStoppedAtCondition",
-    'Nothing ran after {step} (branch {branch}): pass `records` that take a connected branch, or pin it: definition.pins = { "{step}": { branch: "{pin}" } }',
-    { step: c.stepId, branch: c.branch ?? "none", pin },
-  ).message;
+  return {
+    untested: errorItem(
+      "workflows.dryRunStoppedAtCondition",
+      'Nothing ran after {step} (branch {branch}): pass `records` that take a connected branch, or pin it: definition.pins = { "{step}": { branch: "{pin}" } }',
+      { step: c.stepId, branch: c.branch ?? "none", pin },
+    ).message,
+  };
 }
 
 // Side-effect steps (writes, sends) that no dry run reached, except those

@@ -156,5 +156,10 @@
   "workflows.invalidDate": "{step}.{field} : date invalide {value} (date ISO, \"now\", \"today\" ou un modèle {{…}})",
   "workflows.placeholderRecipient": "{step}.{field} : destinataire fictif {value} ; indiquez une vraie adresse avant d'activer",
   "workflows.orphanWebhookRecord": "{step} : stop.error s'exécute alors que trigger.webhook a déjà créé ou mis à jour l'enregistrement {object} ; validez le payload dans une condition avant d'écrire, ou supprimez l'enregistrement sur ce chemin",
-  "workflows.scheduleFilterNeedsObject": "trigger.filter : requiert trigger.object (le filtre sélectionne les enregistrements de cet objet)"
+  "workflows.scheduleFilterNeedsObject": "trigger.filter : requiert trigger.object (le filtre sélectionne les enregistrements de cet objet)",
+  "workflows.untestedBlocked": "La version {version} du workflow {id} n'est pas encore testée. Le dernier workflows.dry_run était bloqué par : {blocking}. Atteindre ces étapes avec des `records` / `events` qui prennent leur branche, ou épingler la branche qui y mène (definition.pins = { \"<stepId>\": { branch: \"<branch>\" } }, records: [{ id, pins }] par enregistrement) ; la couverture s'additionne entre les simulations de cette version. Puis workflows.activate { id: \"{id}\" }.",
+  "workflows.untestedDraft": "La version {version} (brouillon) du workflow {id} n'a jamais été testée. Lancer workflows.dry_run { workflow: \"{id}\", version: {version} } sans chemin en échec, puis workflows.activate { id: \"{id}\" } la promeut.",
+  "workflows.dryRunEventMissing": "Ce workflow démarre sur l'événement {type} : passer `event` (le contenu de l'événement, par exemple events.list { type: \"{type}\" } pour un vrai), ou `events` pour une exécution par contenu, ou `records` pour exécuter sur des enregistrements",
+  "workflows.dryRunDeliberateEnd": "{step} a pris la branche {branch}, déclarée vide : l'exécution s'arrête là volontairement et rien après {step} n'a été exercé par cette exécution",
+  "workflows.functionFailed": "{fn} : {error}"
 }
