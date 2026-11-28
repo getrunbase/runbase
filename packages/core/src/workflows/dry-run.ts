@@ -1,5 +1,6 @@
 // Dry run of a workflow and single-step test (no side effects by default).
 import { getBlock, blockContext, type BlockResult } from "../blocks";
+import { StopError } from "../blocks/block";
 import { blockEngine } from "../blocks/engine";
 import { assertAiAllowed, chargeAi } from "../runs/budget";
 import { recordsService } from "../records";
@@ -189,6 +190,24 @@ async function execStep(
       blockContext(ctx, 0, { scope: { ...scope }, engine: blockEngine(ctx) }),
     );
   } catch (e) {
+    // stop.* ends the path on purpose (expected outcome of a branch): it
+    // is recorded in the trace, not reported as a failing path.
+    if (e instanceof StopError)
+      return {
+        input,
+        warnings,
+        result: {
+          branch: "stop",
+          output: { stopped: e.message },
+        } as BlockResult,
+        simulated: false,
+        pinned: false,
+        reason: errorItem(
+          "workflows.reasonStopped",
+          "stops the run: {message}",
+          { message: e.message },
+        ),
+      };
     // Like the engine: continueOnFail turns the failure into { error }.
     if (!step.retry?.continueOnFail) throw e;
     const error = (e as Error).message;
@@ -653,6 +672,7 @@ export function coverageOf(steps: Step[], runs: DryRunStep[][]): Coverage {
 
 // A run whose first condition (or switch) is its last step although that
 // step has connected branches: nothing behind the filter was exercised.
+// The pin hint names a connected branch the run did not take.
 function stoppedAtCondition(
   flat: DryRunStep[],
   next: Record<string, Record<string, string[]>>,
@@ -662,13 +682,41 @@ function stoppedAtCondition(
   );
   if (i < 0 || i < flat.length - 1) return undefined;
   const c = flat[i]!;
-  if (!Object.values(next[c.stepId] ?? {}).some((t) => t.length))
-    return undefined;
+  const connected = Object.entries(next[c.stepId] ?? {})
+    .filter(([, t]) => t.length)
+    .map(([b]) => b);
+  if (!connected.length) return undefined;
+  const fallback = c.type === "switch" ? "else" : "true";
+  const pin =
+    connected.find((b) => b !== c.branch && b !== "error") ?? fallback;
   return errorItem(
     "workflows.dryRunStoppedAtCondition",
-    'Nothing ran after {step} (branch {branch}): pass `records` that take a connected branch, or pin it: definition.pins = { "{step}": { branch: "true" } }',
-    { step: c.stepId, branch: c.branch ?? "none" },
+    'Nothing ran after {step} (branch {branch}): pass `records` that take a connected branch, or pin it: definition.pins = { "{step}": { branch: "{pin}" } }',
+    { step: c.stepId, branch: c.branch ?? "none", pin },
   ).message;
+}
+
+// Side-effect steps (writes, sends) that no dry run reached, except those
+// reached only through error branches (failure handling, hard to force).
+export async function unreachedWrites(
+  ctx: TenantContext,
+  steps: Step[],
+  next: Record<string, Record<string, string[]>>,
+  unreached: string[],
+) {
+  const out: string[] = [];
+  for (const id of unreached) {
+    const s = steps.find((x) => x.id === id);
+    if (!s || !(await getBlock(ctx, s.type))?.sideEffect) continue;
+    const incoming = Object.values(next).flatMap((byBranch) =>
+      Object.entries(byBranch)
+        .filter(([, t]) => t.includes(id))
+        .map(([b]) => b),
+    );
+    if (incoming.length && incoming.every((b) => b === "error")) continue;
+    out.push(id);
+  }
+  return out;
 }
 
 // Runs a single step with a provided input (or the definition's), in

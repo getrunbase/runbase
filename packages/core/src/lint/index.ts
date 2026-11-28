@@ -402,13 +402,28 @@ export function lintWorkflow(definition: {
       ),
     );
   const byId = new Map(steps.map((s) => [String(s.id), s]));
+  // The path after `id` reaches stop.error: the run still fails visibly,
+  // so recording the error on the record first is deliberate.
+  const endsInStopError = (id: string) => {
+    const seen = new Set<string>();
+    const queue = Object.values(next[id] ?? {}).flatMap(targets);
+    while (queue.length) {
+      const x = queue.shift()!;
+      if (seen.has(x)) continue;
+      seen.add(x);
+      if (byId.get(x)?.type === "stop.error") return true;
+      queue.push(...Object.values(next[x] ?? {}).flatMap(targets));
+    }
+    return false;
+  };
   for (const s of steps) {
     const id = String(s.id ?? "?");
     const type = typeof s.type === "string" ? s.type : "";
     const out_ = next[id] ?? {};
     if (
       type.startsWith("record.") &&
-      ERROR_REF.test(JSON.stringify(s.input ?? {}))
+      ERROR_REF.test(JSON.stringify(s.input ?? {})) &&
+      !endsInStopError(id)
     )
       out.push(
         w(

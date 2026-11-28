@@ -195,3 +195,55 @@ test("test_step: saved workflow by name, live writes flagged isTest", async () =
     await sql`select is_test from records where id = ${r.output.record.id}`;
   assert.equal(row!.is_test, true);
 });
+
+test("a branch ending in stop.error is an expected stop; unreached writes block tested", async () => {
+  const a = await owner("Stop");
+  await objectsService.create(a, {
+    slug: "memo",
+    name: "Memo",
+    fields: [{ key: "title", label: "Title", type: "text" }],
+  });
+  const stop = {
+    trigger: manual,
+    steps: [
+      {
+        id: "c",
+        type: "condition",
+        input: { left: "a", op: "eq", right: "b" },
+      },
+      { id: "fail", type: "stop.error", input: { message: "Not eligible" } },
+      { id: "s2", type: "wait", input: { duration: "1s" } },
+    ],
+    next: { c: { true: ["s2"], false: ["fail"] } },
+  };
+  const w = await wf.create(a, { name: "Stop", definition: stop });
+  const dry = (await wf.dryRunWorkflow(a, w.id))!;
+  assert.equal(dry.tested, true);
+  const last = dry.results[0]!.path.at(-1)!;
+  assert.equal(last.stepId, "fail");
+  assert.match(last.reason, /stops the run: Not eligible/);
+
+  // The write behind the branch not taken was never exercised.
+  const write = {
+    trigger: manual,
+    steps: [
+      {
+        id: "c",
+        type: "condition",
+        input: { left: "a", op: "eq", right: "b" },
+      },
+      { id: "s2", type: "wait", input: { duration: "1s" } },
+      {
+        id: "save",
+        type: "record.create",
+        input: { object: "memo", data: { title: "x" } },
+      },
+    ],
+    next: { c: { true: ["save"], false: ["s2"] } },
+  };
+  const unreached = (await wf.dryRunWorkflow(a, w.id, [], {
+    definition: write,
+  }))!;
+  assert.equal(unreached.tested, false);
+  assert.match(unreached.blocking!.join("\n"), /side-effect steps save/);
+});
