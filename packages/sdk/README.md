@@ -25,7 +25,7 @@ export default function Deals() {
 | `useMutation`: optimistic `create/update/remove`, rolled back on error | `write` |
 | `useUpload`: uploads a file, returns a `file` field value | `files: true` |
 | `useRun`: `startWorkflow` + run status polling | `workflows` |
-| `useUser`, `useParam`, `useNow`, `toast`, `navigate` | none |
+| `useUser`, `useParam`, `useNow`, `toast`, `navigate`, `openUrl` | none |
 
 An undeclared call is refused.
 

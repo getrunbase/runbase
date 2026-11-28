@@ -136,6 +136,13 @@ export interface RunbaseSdk {
   now(): Date;
   toast(text: string, level?: "info" | "success" | "error"): void;
   navigate(to: { page: string; recordId?: string }): void;
+  /**
+   * Opens an external https link in a new browser tab, after the user confirms
+   * ("You are leaving Runbase"). Call it from a click handler: without a recent
+   * click, or for any other scheme, nothing happens. At most 1 per second.
+   * `<a href="https://..." target="_blank">` links go through the same path.
+   */
+  openUrl(url: string): void;
   startWorkflow(
     id: string,
     opts?: { recordId?: string },

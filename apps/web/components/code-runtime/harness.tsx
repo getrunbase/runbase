@@ -79,6 +79,7 @@ export default function render({ bundle, props, data }: Input) {
     format,
     toast() {},
     navigate() {},
+    openUrl() {},
     startWorkflow: (id: string, opts?: object) =>
       later("workflow", { id, ...opts }),
   };

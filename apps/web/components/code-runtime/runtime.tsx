@@ -275,6 +275,12 @@ function useNow(ms = 60_000) {
   return now;
 }
 
+// External link: the sandbox blocks popups, so the request goes to the app,
+// which validates it (https only, recent click, 1/s) and asks for confirmation.
+function openUrl(url: string) {
+  post({ type: "openUrl", url: String(url) });
+}
+
 const sdk = {
   useQuery,
   useInfiniteQuery,
@@ -302,6 +308,7 @@ const sdk = {
   toast,
   navigate: (to: { page: string; recordId?: string }) =>
     post({ type: "navigate", page: to.page, recordId: to.recordId }),
+  openUrl,
   startWorkflow: (id: string, opts?: { recordId?: string }) =>
     call("workflow", { id, ...opts }),
 } as unknown as RunbaseSdk;
@@ -396,6 +403,16 @@ addEventListener("message", (e) => {
     if (typeof m.error === "string") p?.ko(new Error(m.error));
     else p?.ok(m.result);
   }
+});
+// `<a target="_blank">` is blocked by the sandbox: https links are routed to
+// openUrl (same checks on the app side); others are left to the browser.
+addEventListener("click", (e) => {
+  if (e.defaultPrevented || e.button !== 0) return;
+  const a = (e.target as Element | null)?.closest?.("a[href]");
+  if (!(a instanceof HTMLAnchorElement) || a.target !== "_blank") return;
+  if (a.protocol !== "https:") return;
+  e.preventDefault();
+  openUrl(a.href);
 });
 addEventListener("error", (e) => {
   const d = describeError(e.error ?? e.message);
