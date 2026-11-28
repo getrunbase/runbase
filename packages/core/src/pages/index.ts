@@ -13,11 +13,13 @@ import { checkQuota } from "../entitlements";
 import { withTenant, type TenantContext, type Tx } from "../tenant";
 import {
   compilePackage,
+  formatCompileError,
   originalPosition,
   packageCompileError,
 } from "../components/compile";
 import { handleSdkCall, permissionsSchema } from "../components/sdk";
 import { parseIcon } from "./icon";
+import { isUuid } from "../lib/uuid";
 
 // Marker the web runtime puts before the React component stack.
 const COMPONENT_STACK = "Component stack:";
@@ -90,8 +92,16 @@ const inWs = (ctx: TenantContext, id: string) =>
   and(eq(pages.id, id), eq(pages.workspaceId, ctx.workspaceId));
 
 async function load(tx: Tx, ctx: TenantContext, id: string) {
+  if (!isUuid(id)) return null;
   const [p] = await tx.select().from(pages).where(inWs(ctx, id));
   return p ?? null;
+}
+
+// Refuses to publish a package that does not compile, whatever the renderer
+// status: the server-side build is the floor of every publish.
+async function assertCompiles(p: { files: PageFiles; entry: string }) {
+  const r = await compilePackage(p.files, p.entry);
+  if (!r.bundle) throw packageCompileError(r.errors);
 }
 type PageRow = NonNullable<Awaited<ReturnType<typeof load>>>;
 
@@ -223,6 +233,30 @@ const meta = {
 };
 
 export const pagesService = {
+  // Page id given by id or, failing that, by name (oldest first when names
+  // repeat), like workflows. null: unknown.
+  resolveId: async (ctx: TenantContext, ref: string) => {
+    await requireScope(ctx, "read");
+    return withTenant(ctx, async (tx) => {
+      const p = await load(tx, ctx, ref);
+      if (p) return p.id;
+      const [byName] = await tx
+        .select({ id: pages.id })
+        .from(pages)
+        .where(and(eq(pages.workspaceId, ctx.workspaceId), eq(pages.name, ref)))
+        .orderBy(pages.createdAt)
+        .limit(1);
+      return byName?.id ?? null;
+    });
+  },
+  // Server-side build of a package: {ok: true} or the compile errors
+  // (file:line:col text).
+  bundleStatus: async (p: { files: PageFiles; entry: string }) => {
+    const r = await compilePackage(p.files, p.entry);
+    return r.bundle
+      ? { ok: true as const, errors: [] as string[] }
+      : { ok: false as const, errors: r.errors.map(formatCompileError) };
+  },
   list: async (ctx: TenantContext) => {
     await requireScope(ctx, "read");
     return withTenant(ctx, (tx) =>
@@ -288,6 +322,7 @@ export const pagesService = {
     checkFiles(input.files, entry);
     checkPermissions(input.permissions);
     const icon = input.icon ? parseIcon(input.icon) : undefined;
+    if (input.publish) await assertCompiles({ files: input.files, entry });
     return withTenant(ctx, async (tx) => {
       const [p] = await tx
         .insert(pages)
@@ -391,7 +426,9 @@ export const pagesService = {
     return withTenant(ctx, async (tx) => {
       const p = await load(tx, ctx, id);
       if (!p) return null;
-      return p.hasDraft ? publishRow(tx, ctx, p) : p;
+      if (!p.hasDraft) return p;
+      await assertCompiles(p);
+      return publishRow(tx, ctx, p);
     });
   },
   // Resets the draft to the published version (no effect if never published).

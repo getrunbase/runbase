@@ -1,7 +1,36 @@
 // Compilation of code components (no database).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { compileComponent, MAX_SOURCE } from "./compile";
+import {
+  compileComponent,
+  formatCompileError,
+  MAX_SOURCE,
+  stripInternalPaths,
+} from "./compile";
+
+test("strips internal node_modules paths from errors", () => {
+  assert.equal(
+    stripInternalPaths(
+      'Could not resolve "node:crypto" in /srv/app/node_modules/.pnpm/bullmq@5.0.0/node_modules/bullmq/dist/x.js',
+    ),
+    'Could not resolve "node:crypto" in bullmq/dist/x.js',
+  );
+  assert.equal(
+    formatCompileError({ file: "index.tsx", line: 3, col: 2, text: "boom" }),
+    "index.tsx:3:2 boom",
+  );
+  assert.equal(formatCompileError({ text: "boom" }), "boom");
+});
+
+test("compiles a trivial TSX page package (page.test with files)", async () => {
+  const r = await compilePackage({
+    "index.tsx": `import { Hello } from "./hello";
+export default function Page() { return <Hello />; }`,
+    "hello.tsx": `export const Hello = () => <p>hello</p>;`,
+  });
+  assert.deepEqual(r.errors, []);
+  assert.match(r.bundle!, /hello/);
+});
 
 test("compiles a TSX: allowed imports read from __vendor", async () => {
   const r = await compileComponent(

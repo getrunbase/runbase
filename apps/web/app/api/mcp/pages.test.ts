@@ -72,13 +72,43 @@ test("TSX package page: creation, file patch, errors, publication, restore", asy
     changes: [{ op: "edit", path: "index.tsx", old: "</p>", new: "</p" }],
   });
   assert.equal(broken.errors.length > 0, true);
+  assert.match(broken.errors[0], /^index\.tsx:\d+:\d+ /);
+  // page.get shows the compile status of the draft.
+  const brokenDraft = await call("page.get", { id: page.id, draft: true });
+  assert.equal(brokenDraft.bundle.ok, false);
+  // A draft that does not compile is never published, even with force.
+  const refused = await raw(ctx)("page.publish", { id: page.id, force: true });
+  assert.equal(refused.isError, true);
+  assert.match(refused.content[0]!.text, /does not compile/);
+  const viaUpdate = await call("page.update", {
+    id: page.id,
+    review: false,
+    publish: true,
+    force: true,
+    name: "Leads",
+  });
+  assert.equal(viaUpdate.published, false);
+  assert.match(viaUpdate.publishBlocked, /does not compile/);
   await call("page.update", {
     id: page.id,
     review: false,
     changes: [{ op: "edit", path: "index.tsx", old: "</p", new: "</p>" }],
   });
+  assert.equal(
+    (await call("page.get", { id: page.id, draft: true })).bundle.ok,
+    true,
+  );
 
-  await call("page.publish", { id: page.id });
+  // No renderer in tests: the render was not checked, publish needs force.
+  const unverified = await raw(ctx)("page.publish", { id: page.id });
+  assert.equal(unverified.isError, true);
+  assert.match(unverified.content[0]!.text, /render not checked/);
+  const shot = await call("page.screenshot", { id: page.id, draft: true });
+  assert.equal(shot.rendered, false);
+  assert.match(shot.notice, /platform outage/);
+  assert.equal(shot.compile.ok, true);
+  // Page name accepted wherever an id is.
+  await call("page.publish", { id: "Leads", force: true });
   assert.equal(
     (await call("page.get", { id: page.id })).files["index.tsx"],
     tsx("v2"),

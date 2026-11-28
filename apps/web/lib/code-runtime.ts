@@ -22,9 +22,34 @@ const shared: Plugin = {
   },
 };
 
+// Browser target: server code must never reach a runtime bundle. Only the
+// dependency-free mock of @getrunbase/core is allowed (page.test harness);
+// any other core module (queues, database, bullmq...) is replaced by an empty
+// module, and node:* builtins stay external instead of failing the build
+// ("Could not resolve node:crypto").
+export const CORE_BROWSER_SAFE = /^@getrunbase\/core\/components\/mock$/;
+export const browserOnly: Plugin = {
+  name: "browser-only",
+  setup(b) {
+    b.onResolve({ filter: /^node:/ }, (a) => ({
+      path: a.path,
+      external: true,
+    }));
+    b.onResolve({ filter: /^@getrunbase\/core(\/.*)?$/ }, (a) =>
+      CORE_BROWSER_SAFE.test(a.path)
+        ? undefined
+        : { path: a.path, namespace: "server-only" },
+    );
+    b.onLoad({ filter: /.*/, namespace: "server-only" }, () => ({
+      contents: "module.exports = {};",
+      loader: "js",
+    }));
+  },
+};
+
 async function bundle(entry: string, format: "iife" | "esm") {
   const r = await build({
-    plugins: entry.startsWith("chunks/") ? [shared] : [],
+    plugins: [browserOnly, ...(entry.startsWith("chunks/") ? [shared] : [])],
     // The harness runs under Deno (no document): non-DOM builds
     // (e.g. decode-named-character-reference from react-markdown).
     conditions: format === "esm" ? ["deno"] : [],
