@@ -338,6 +338,14 @@ const unknownFunction = (name: string, version?: number) =>
         { name },
       );
 
+// Keys declared in outputSchema.properties but absent from a returned object.
+export function missingOutputKeys(schema: unknown, output: unknown): string[] {
+  const props = (schema as { properties?: unknown } | null)?.properties;
+  if (!props || typeof props !== "object") return [];
+  if (!output || typeof output !== "object" || Array.isArray(output)) return [];
+  return Object.keys(props).filter((k) => !(k in output));
+}
+
 export const functionsService = {
   // Latest version of each workspace function.
   list: async (ctx: TenantContext) => {
@@ -438,7 +446,14 @@ export const functionsService = {
       secrets: await decryptAll(ctx),
       writes,
     });
-    return writes ? { ...r, writes } : r;
+    const warnings = missingOutputKeys(f.outputSchema, r.output).map(
+      (k) => `outputSchema declares "${k}" but the function did not return it`,
+    );
+    return {
+      ...r,
+      ...(writes && { writes }),
+      ...(warnings.length && { warnings }),
+    };
   },
   // Call from a page: latest version, output only.
   call: async (ctx: TenantContext, name: string, input: unknown) => {

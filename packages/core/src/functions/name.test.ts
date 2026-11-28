@@ -12,3 +12,12 @@ test("function names are strict kebab-case", () => {
   assert.equal(ok("score.lead"), false);
   assert.equal(ok("-score"), false);
 });
+
+test("missingOutputKeys lists declared keys never returned", async () => {
+  const { missingOutputKeys } = await import("./index");
+  const schema = { type: "object", properties: { a: {}, b: {} } };
+  assert.deepEqual(missingOutputKeys(schema, { a: 1 }), ["b"]);
+  assert.deepEqual(missingOutputKeys(schema, { a: 1, b: null }), []);
+  assert.deepEqual(missingOutputKeys({}, { a: 1 }), []);
+  assert.deepEqual(missingOutputKeys(schema, [1]), []);
+});

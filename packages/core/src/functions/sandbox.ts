@@ -19,7 +19,7 @@ import { env } from "../env";
 // in the sandbox, written next to fn.ts (no npm import at runtime).
 import LINKEDOM from "./linkedom.gen";
 import { execRemote } from "./sandbox-client";
-import { cleanError, cleanText } from "../errors/clean";
+import { cleanError, cleanText, thrownMessage } from "../errors/clean";
 import { IP_FILTER_JS, privateNetworkAllowed } from "../lib/ip-filter";
 
 export type SandboxFunction = {
@@ -392,6 +392,17 @@ export async function execLocal(
       host,
       signal,
     );
+    // { ok: false, error } is an explicit failure: reported as-is,
+    // before the outputSchema check (which would hide the real cause).
+    if (isFailure(out))
+      throw new FunctionError(
+        cleanError(
+          typeof out.error === "string" && out.error.trim()
+            ? out.error
+            : JSON.stringify(out.error ?? "function returned ok: false"),
+        ),
+        logs,
+      );
     try {
       return { output: validateSchema(f.outputSchema, out, "output"), logs };
     } catch (e) {
@@ -405,6 +416,9 @@ export async function execLocal(
     await rm(dir, { recursive: true, force: true });
   }
 }
+
+const isFailure = (o: unknown): o is { ok: false; error?: unknown } =>
+  !!o && typeof o === "object" && (o as { ok?: unknown }).ok === false;
 
 // Deno process env: empty except the bare minimum, never
 // process.env (DATABASE_URL, REDIS_URL, master keys…). Without --allow-env,
@@ -543,8 +557,9 @@ function runDeno(
       else
         reject(
           new FunctionError(
-            cleanError(`function failed (${code}): ${err.text.trim()}`),
-            err.text,
+            thrownMessage(err.text) ??
+              cleanError(`function failed (${code}): ${err.text.trim()}`),
+            cleanText(err.text),
           ),
         );
     });
