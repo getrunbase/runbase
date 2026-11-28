@@ -54,7 +54,7 @@ export default function Page() {
   if (q.loading) return <Skeleton />;
   if (q.error) return <p className="text-destructive">{q.error}</p>;
   if (!q.data.length) return <p className="text-muted-foreground">No deals</p>;
-  return <div className="p-4 bg-muted text-muted-foreground">{q.data.map((r) => r.data.name)}</div>;
+  return <main className="mx-auto max-w-7xl p-4 md:p-6 bg-muted text-muted-foreground">{q.data.map((r) => r.data.name)}</main>;
 }`;
   assert.deepEqual(rules({ "index.tsx": good }), []);
 });
@@ -63,7 +63,9 @@ test("kit-only pages and non-code files are ignored", () => {
   assert.deepEqual(
     rules({
       "index.tsx": `import { DataTable } from "@getrunbase/kit";
-export default () => <DataTable object="o" />;`,
+export default () => (
+  <main className="mx-auto max-w-7xl p-4 md:p-6"><DataTable object="o" /></main>
+);`,
       "notes.md": "bg-red-500 p-[3px]",
     }),
     [],
@@ -81,6 +83,48 @@ test("hard-coded options are fine when the schema is read", () => {
   assert.deepEqual(
     rules({ "a.tsx": `<SelectItem value="a" /> <SelectItem value="b" />` }),
     ["hardcoded-options"],
+  );
+});
+
+test("page layout: h1 classes, main landmark, width, padding", () => {
+  assert.deepEqual(
+    rules({
+      "index.tsx": `export default () => (
+  <div className="p-2">
+    <h1 className="text-2xl font-bold">Deals</h1>
+  </div>
+);`,
+    }),
+    ["page-heading", "page-landmark"],
+  );
+  assert.deepEqual(
+    rules({
+      "index.tsx": `export default () => <main className="flex flex-col gap-6 p-8"><h1 className="text-xl font-semibold tracking-tight">A</h1></main>;`,
+    }),
+    ["page-width", "page-padding"],
+  );
+  // The landmark may live in another file of the package.
+  assert.deepEqual(
+    rules({
+      "index.tsx": `import { Shell } from "./shell";
+export default () => <Shell />;`,
+      "shell.tsx": `export const Shell = () => <main className="mx-auto max-w-7xl p-4 md:p-6" />;`,
+    }),
+    [],
+  );
+});
+
+test("unused @getrunbase/kit imports warn", () => {
+  const w = lintPackage({
+    "index.tsx": `import { DataTable, KpiCard, type Row as R } from "@getrunbase/kit";
+export default () => <main className="mx-auto max-w-7xl p-4 md:p-6"><DataTable object="o" /></main>;`,
+  });
+  assert.deepEqual(
+    w.map((x) => [x.rule, x.text.split('"')[1]]),
+    [
+      ["unused-import", "KpiCard"],
+      ["unused-import", "R"],
+    ],
   );
 });
 

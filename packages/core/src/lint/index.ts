@@ -149,6 +149,14 @@ const singular = (slug: string) =>
     .replace(/(x|ch|sh)es$/, "$1")
     .replace(/s$/, "");
 
+// Casing family of an option value; null when it has no letters.
+const casingOf = (o: string): string | null => {
+  if (!/[a-z]/i.test(o)) return null;
+  if (o === o.toLowerCase()) return "lowercase";
+  if (o === o.toUpperCase()) return "UPPERCASE";
+  return "Capitalized";
+};
+
 type FieldLike = { key?: unknown; type?: unknown; options?: unknown };
 
 export function lintObject(input: {
@@ -169,6 +177,21 @@ export function lintObject(input: {
         ),
       );
   }
+  const casings = new Map<string, string>();
+  for (const f of input.fields ?? [])
+    if (Array.isArray(f.options))
+      for (const o of f.options)
+        if (typeof o === "string" && casingOf(o) && !casings.has(casingOf(o)!))
+          casings.set(casingOf(o)!, `${String(f.key)}.${o}`);
+  if (casings.size > 1)
+    out.push(
+      w(
+        "option.mixedCasing",
+        [...casings.values()].join(", "),
+        `Select option values mix casings (${[...casings.keys()].join(", ")}).`,
+        "Use one casing for every option value of the object (e.g. snake_case: new, in_progress, won); filters and conditions compare exact values.",
+      ),
+    );
   for (const f of input.fields ?? []) {
     if (typeof f.key === "string") out.push(...lintKey("Field key", f.key));
     if (!Array.isArray(f.options)) continue;
@@ -217,7 +240,7 @@ const BOOL_OUTCOME = /^(found|ok|success|succeeded|exists|is_[a-z0-9_]+)$/;
 export function lintFunction(input: {
   code?: string;
   outputSchema?: unknown;
-  permissions?: { domains?: string[] };
+  permissions?: { domains?: string[]; secrets?: string[] };
 }): LintWarning[] {
   const out: LintWarning[] = [];
   if (input.permissions?.domains?.includes("*"))
@@ -242,7 +265,12 @@ export function lintFunction(input: {
     ?.properties ?? {}) as Record<string, { type?: unknown; enum?: unknown }>;
   if (!Array.isArray(props.branch?.enum))
     for (const [k, v] of Object.entries(props))
-      if (BOOL_OUTCOME.test(k) && v?.type === "boolean")
+      if (
+        BOOL_OUTCOME.test(k) &&
+        v?.type === "boolean" &&
+        // { ok: false, error } is the failure convention, not an outcome.
+        !(k === "ok" && "error" in props)
+      )
         out.push(
           w(
             "function.booleanOutcome",
@@ -268,10 +296,49 @@ export function lintFunction(input: {
         "function.errorInRecord",
         "code",
         "Function writes an error into a record field instead of failing.",
-        "Throw (or return { ok: false, error }) so the step fails, retries and shows in errors.list.",
+        'Do not catch the error into a field: return { ok: false, error: "message" } or throw, so the step fails, retries and shows in errors.list.',
+      ),
+    );
+  // Skipping an external side effect (Slack post, email) in a test run is
+  // the documented pattern; without any external call there is nothing to
+  // skip, so the branch only fakes the result.
+  const external =
+    !!input.permissions?.domains?.length ||
+    !!input.permissions?.secrets?.length;
+  if (!external && CTX_TEST.some((r) => r.test(code)))
+    out.push(
+      w(
+        "function.branchesOnTest",
+        "code",
+        "Function branches on the test flag but makes no external call: test runs do not exercise the real code path.",
+        "Run the same code in test and live runs (test records are flagged automatically); use functions.test { dryRun: true } to simulate writes. Reserve if (test) for skipping an external side effect.",
       ),
     );
   return out;
+}
+
+// `ctx.test`, or a destructured `test` used as a condition.
+const CTX_TEST = [
+  /\bctx\.test\b/,
+  /\bif\s*\(\s*!?\s*test\b|\btest\s*\?[^.?]|\btest\s*(&&|\|\|)/,
+];
+
+// Missing note: the next agent has no record of the decisions.
+export function lintNote(
+  kind: "workflow" | "function",
+  name: string,
+  hasNote: boolean,
+): LintWarning[] {
+  return hasNote
+    ? []
+    : [
+        w(
+          `${kind}.noNote`,
+          name,
+          `The ${kind} "${name}" has no note.`,
+          `Call notes.save on the ${kind} with the why (decisions, local conventions, known pitfalls), not the structure.`,
+        ),
+      ];
 }
 
 type StepLike = {
@@ -290,13 +357,70 @@ const STATEFUL =
 const targets = (v: unknown): string[] =>
   Array.isArray(v) ? v.map(String) : typeof v === "string" ? [v] : [];
 
+// Select fields that hold a pipeline stage (heuristic on the key).
+const STAGE_KEY = /(^|_)(stage|status|state|step|phase)$/;
+const dataKeys = (s: StepLike): string[] => {
+  const data = (s.input as { data?: unknown } | undefined)?.data;
+  return data && typeof data === "object" ? Object.keys(data) : [];
+};
+
 export function lintWorkflow(definition: {
+  trigger?: unknown;
   steps?: StepLike[];
   next?: unknown;
+  concurrencyKey?: unknown;
 }): LintWarning[] {
   const steps = definition.steps ?? [];
   const next = (definition.next ?? {}) as NextLike;
   const out: LintWarning[] = [];
+  const trigger = (definition.trigger ?? {}) as {
+    type?: unknown;
+    fields?: unknown;
+  };
+  const updates = steps.filter((s) => s.type === "record.update");
+  if (trigger.type === "trigger.record_updated") {
+    const watched = Array.isArray(trigger.fields)
+      ? trigger.fields.map(String)
+      : [];
+    // Only writes to the trigger record itself loop.
+    const self = updates.filter((s) =>
+      /\{\{\s*record\.id\s*\}\}/.test(
+        String((s.input as { recordId?: unknown } | undefined)?.recordId),
+      ),
+    );
+    for (const s of self) {
+      const loop = dataKeys(s).filter(
+        (k) => !watched.length || watched.includes(k),
+      );
+      if (loop.length)
+        out.push(
+          w(
+            "workflow.writesTriggerField",
+            String(s.id ?? "?"),
+            `Step ${String(s.id ?? "?")} writes ${loop.join(", ")}, which the record_updated trigger watches: the workflow retriggers itself.`,
+            "Set trigger.fields to the fields that should start the run, and do not write them back in the workflow.",
+          ),
+        );
+    }
+  }
+  if (
+    trigger.type === "trigger.event" &&
+    !(
+      typeof definition.concurrencyKey === "string" && definition.concurrencyKey
+    )
+  )
+    for (const s of updates) {
+      const stage = dataKeys(s).filter((k) => STAGE_KEY.test(k));
+      if (stage.length)
+        out.push(
+          w(
+            "workflow.stageRaceNoConcurrencyKey",
+            String(s.id ?? "?"),
+            `Step ${String(s.id ?? "?")} updates ${stage.join(", ")} from an event trigger without concurrencyKey: concurrent events race on the same record.`,
+            'Set concurrencyKey (e.g. "{{event.recordId}}") so runs on one record wait their turn.',
+          ),
+        );
+    }
   const only = steps[0];
   if (
     steps.length === 1 &&
@@ -325,7 +449,7 @@ export function lintWorkflow(definition: {
           "workflow.errorInRecord",
           id,
           `Step ${id} writes a step error into a record field.`,
-          "Let the run fail (errors.list shows it), or connect the error branch to stop.error or a notification, not to a record write.",
+          "Let the step fail (remove continueOnFail): the run fails and errors.list shows it. To handle it, connect the error branch to a notification or event.emit, not to a record write; test that branch with a pin { error } in workflows.dry_run.",
         ),
       );
     if (s.retry?.continueOnFail && !("error" in out_))
