@@ -50,6 +50,7 @@
   "blocks.mapInvalidValue": "{step} : mapping.{field} : valeur invalide",
   "blocks.mapUnknownPath": "{step} : mapping.{field} : chemin source inconnu {path}",
   "runs.notFinished": "Le run n'est pas terminé : annulez-le d'abord",
+  "runs.webhookNeedsRecord": "Le workflow {workflow} est déclenché par le webhook {webhook} : runs.start avec un event saute son mapping. Utilisez webhooks.test pour simuler un appel signé (mapping et upsert appliqués), ou passez recordId",
   "runs.stepNeverRan": "Step {step} jamais exécuté dans ce run",
   "webhooks.nameTaken": "Un webhook porte déjà ce nom dans ce workspace",
   "webhooks.notFound": "Webhook introuvable",

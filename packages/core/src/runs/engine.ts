@@ -187,7 +187,13 @@ async function runStep(job: Job<StepJob>) {
   );
   const scope = {
     ...(run.input as object),
-    ...builtins({ runId, workflowId: run.workflowId, test: run.isTest }),
+    ...builtins({
+      runId,
+      workflowId: run.workflowId,
+      test: run.isTest,
+      timeZone: (definition.trigger as { timezone?: string } | undefined)
+        ?.timezone,
+    }),
     steps: stepsScope(done, path),
   };
   const block = step && (await getBlock(ctx, step.type));
@@ -230,8 +236,9 @@ async function runStep(job: Job<StepJob>) {
               "runs.maxDurationExceeded",
               "Maximum run duration reached ({seconds} s)",
               {
-              seconds: maxRunMs / 1000,
-            })
+                seconds: maxRunMs / 1000,
+              },
+            )
           : appError("runs.timedOut", "Timed out ({seconds} s)", {
               seconds: opts.timeoutMs / 1000,
             }),

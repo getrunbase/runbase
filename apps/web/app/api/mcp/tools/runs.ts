@@ -17,7 +17,7 @@ export function defineRunTools(server: McpServer, ctx: TenantContext) {
     "runs.start",
     {
       description:
-        "Starts a run of a workflow's current version, on an optional record, with an optional event payload (`event`, read by {{event.…}} as if the event had triggered the run). Refused if a run of the same workflow is already active on that record. `test: true`: test run, deleted by workspace.purge_test.",
+        "Starts a run of a workflow's current version, on an optional record, with an optional event payload (`event`, read by {{event.…}} as if the event had triggered the run). Refused if a run of the same workflow is already active on that record. Refused for a trigger.webhook workflow on an object given an `event` without `recordId` (the mapping would be skipped): use webhooks.test instead. `test: true`: test run, deleted by workspace.purge_test.",
       inputSchema: z.object({
         id: wfId,
         recordId: z.string().optional(),
@@ -171,7 +171,7 @@ export function defineRunTools(server: McpServer, ctx: TenantContext) {
     "runs.decide",
     {
       description:
-        "Approves or rejects a paused run (human.approve): it resumes on the approved or rejected branch. Returns { runId, branch, status }; the step output carries { message, approved, by, decidedAt, comment? }. not_found error (unknown run) or not_waiting (run or path not waiting, with the reason).",
+        "Approves or rejects a paused run (human.approve): it resumes on the approved or rejected branch. Returns { runId, branch, status }; the step output carries { message, approved, by, decidedAt, comment? } (`by` includes decidedBy when given). not_found error (unknown run) or not_waiting (run or path not waiting, with the reason).",
       inputSchema: z.object({
         id: z.string().describe("Run id"),
         approved: z.boolean(),
@@ -183,9 +183,15 @@ export function defineRunTools(server: McpServer, ctx: TenantContext) {
           .string()
           .optional()
           .describe("Reason for the decision, stored in the step output"),
+        decidedBy: z
+          .string()
+          .optional()
+          .describe(
+            "Who decided (e.g. the user's name when an agent relays their answer), stored in the output's `by`",
+          ),
       }),
     },
-    ({ id, approved, path, comment }) =>
+    ({ id, approved, path, comment, decidedBy }) =>
       run(async () => {
         const decided = await runsService.decide(
           ctx,
@@ -193,6 +199,7 @@ export function defineRunTools(server: McpServer, ctx: TenantContext) {
           approved,
           path,
           comment,
+          decidedBy,
         );
         if (decided) return decided;
         const r = await runsService.get(ctx, id);

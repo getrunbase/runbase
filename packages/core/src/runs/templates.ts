@@ -8,17 +8,36 @@ import type { TenantContext } from "../tenant";
 
 const TEMPLATE = /\{\{([^}]+)\}\}/g;
 
-// Built-in variables, available in every step: `{{now}}` (ISO),
-// `{{today}}` (AAAA-MM-JJ, UTC), `{{run.id}}`, `{{run.test}}`, `{{workflow.id}}`.
+// Calendar date (YYYY-MM-DD) of an instant in an IANA time zone.
+// Unknown zone: UTC.
+export function dateIn(d: Date, timeZone?: string): string {
+  if (!timeZone) return d.toISOString().slice(0, 10);
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(d);
+  } catch {
+    return d.toISOString().slice(0, 10);
+  }
+}
+
+// Built-in variables, available in every step: `{{now}}` (ISO instant, UTC),
+// `{{today}}` (YYYY-MM-DD in `timeZone`, the trigger.schedule timezone when
+// set, otherwise UTC), `{{run.id}}`, `{{run.test}}`, `{{workflow.id}}`.
 export const builtins = (ids: {
   runId?: string;
   workflowId?: string;
   test?: boolean;
+  timeZone?: string;
+  at?: Date;
 }) => {
-  const now = new Date().toISOString();
+  const at = ids.at ?? new Date();
   return {
-    now,
-    today: now.slice(0, 10),
+    now: at.toISOString(),
+    today: dateIn(at, ids.timeZone),
     run: { id: ids.runId ?? null, test: ids.test ?? false },
     workflow: { id: ids.workflowId ?? null },
   };
