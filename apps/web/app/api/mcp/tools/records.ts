@@ -78,7 +78,12 @@ export const migrateOperation = z.discriminatedUnion("op", [
     field: z.string(),
     default: z.unknown().optional(),
   }),
-  z.object({ op: z.literal("delete"), field: z.string() }),
+  z.object({
+    op: z.literal("delete"),
+    field: z.string(),
+    force: z.boolean().optional(),
+  }),
+  z.object({ op: z.literal("rename_slug"), to: z.string().min(1) }),
 ]);
 type Exact<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 // Compile error if the MCP schema and the core MigrateOp diverge.
@@ -138,7 +143,7 @@ export function defineRecordTools(server: McpServer, ctx: TenantContext) {
     "objects.migrate",
     {
       description:
-        "Evolves an object's schema while carrying the data over. op: rename { field, to, label? } (values copied); change_type { field, type, options?, object?, dropInvalid?, map?, caseInsensitive? } (values converted; map rewrites values first, e.g. { Won: 'won' }; caseInsensitive matches map keys and select options ignoring case; refused if invalid values remain, unless dropInvalid empties them); update { field, label?, options?, expression?, validation?, dropInvalid? } (field properties merged, existing values checked); add { field: definition, default? } (default written to existing records, mandatory if required); require { field, default? } (default for empty records); delete { field } (purged from records). Always call with dryRun: true first: returns { records, touched, invalid, samples }.",
+        "Evolves an object's schema while carrying the data over. op: rename { field, to, label? } (values copied; rewrites the formulas, lookups and rollups that read it); change_type { field, type, options?, object?, dropInvalid?, map?, caseInsensitive? } (values converted; map rewrites values first, e.g. { Won: 'won' }; caseInsensitive matches map keys and select options ignoring case; refused if invalid values remain, unless dropInvalid empties them); update { field, label?, options?, expression?, validation?, dropInvalid? } (field properties merged, existing values checked); add { field: definition, default? } (default written to existing records, mandatory if required); require { field, default? } (default for empty records); delete { field, force? } (purged from records; refused while a formula, lookup or rollup uses it, unless force); rename_slug { to } (object slug renamed; refused while other objects point to it). Always call with dryRun: true first: returns { records, touched, invalid, samples, dependents, examples: [{ id, before, after, computed: [{ field, before, after }] }] }.",
       inputSchema: z.object({
         object: slug,
         operation: migrateOperation,

@@ -247,3 +247,17 @@ export function evalFormula(src: string, data: Record<string, unknown>) {
     return null;
   }
 }
+
+// Formula with every reference to field `from` renamed to `to`. Strings and
+// function names are left untouched (token-aware, not a text replace).
+export function renameFormulaRef(src: string, from: string, to: string) {
+  const re = new RegExp(TOKEN.source, "g");
+  return src.replace(
+    re,
+    (m: string, _n, _s, ident: string | undefined, _o, at: number) => {
+      if (ident !== from) return m;
+      if (/^\s*\(/.test(src.slice(at + m.length))) return m;
+      return m.slice(0, m.length - ident.length) + to;
+    },
+  );
+}

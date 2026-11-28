@@ -11,9 +11,9 @@ test("database CRM via MCP", async () => {
   const call = client(ctx);
   await call("databases.create", { slug: "crm", name: "CRM" });
   for (const [slug, name] of [
-    ["contacts", "Contacts"],
-    ["companies", "Entreprises"],
-    ["deals", "Deals"],
+    ["contact", "Contacts"],
+    ["company", "Entreprises"],
+    ["deal", "Deals"],
   ])
     await call("objects.create", {
       slug,

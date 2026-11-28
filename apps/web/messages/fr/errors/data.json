@@ -70,5 +70,10 @@
   "query.roleNotRestricted": "Requêtes SQL désactivées : le rôle runbase_query n'est pas restreint ({items}). Relancez pnpm db:migrate avec un compte superutilisateur.",
   "objects.indexQuota": "Limite d'index atteinte pour ce workspace ({max})",
   "filter.invalidDays": "{field} {op} : nombre entier de jours attendu, reçu {value}",
-  "filter.invalidRegex": "Regex de {field} : motif {pattern} invalide (syntaxe POSIX, comme l'opérateur ~ de PostgreSQL ; sensible à la casse)"
+  "filter.invalidRegex": "Regex de {field} : motif {pattern} invalide (syntaxe POSIX, comme l'opérateur ~ de PostgreSQL ; sensible à la casse)",
+  "objects.pluralSlug": "Le slug d'objet {slug} semble au pluriel : les slugs sont au singulier. Utiliser {suggestion}",
+  "objects.fieldInUse": "Le champ {field} est utilisé par {dependents} : les modifier d'abord, ou passer force: true",
+  "objects.slugInUse": "L'objet {slug} est utilisé par {dependents} : un slug ne peut être renommé que si aucun autre objet ne pointe vers lui",
+  "objects.slugExists": "Slug d'objet déjà utilisé : {slug}",
+  "objects.invalidSlug": "Slug d'objet invalide {slug} : {hint}"
 }

@@ -1,6 +1,27 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { evalFormula, formulaRefs, parseFormula } from "./formula";
+import {
+  evalFormula,
+  formulaRefs,
+  parseFormula,
+  renameFormulaRef,
+} from "./formula";
+
+test("formula: renameFormulaRef rewrites identifiers only", () => {
+  assert.equal(
+    renameFormulaRef(
+      'amount * qty + len("amount") + round(amount)',
+      "amount",
+      "total",
+    ),
+    'total * qty + len("amount") + round(total)',
+  );
+  assert.equal(renameFormulaRef("round(x)", "round", "r"), "round(x)");
+  assert.equal(
+    renameFormulaRef("amounts + amount", "amount", "a"),
+    "amounts + a",
+  );
+});
 
 test("formula: arithmetic, precedence, concatenation and functions", () => {
   const d = { price: 10, qte: 3, name: "Acme", remise: null };
