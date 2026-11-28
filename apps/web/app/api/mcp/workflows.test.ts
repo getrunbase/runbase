@@ -99,6 +99,19 @@ test("workflow created, tested in dry run then activated through MCP", async () 
     call("workflows.update", { id: wf.id, definition, status: "active" }),
     /Version 2 .* never been tested/,
   );
+  // Same without status: an active workflow cannot get an untested version.
+  await assert.rejects(
+    call("workflows.update", { id: wf.id, definition }),
+    /Version 2 .* never been tested/,
+  );
+  assert.equal((await call("workflows.get", { id: wf.id })).currentVersion, 1);
+  // Already active, unrelated change: no gate.
+  const renamed = await call("workflows.update", {
+    id: wf.id,
+    name: "Qualif",
+    status: "active",
+  });
+  assert.equal(renamed.status, "active");
 
   const runs = await call("workflows.run_manual", {
     id: wf.id,

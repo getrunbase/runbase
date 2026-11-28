@@ -144,8 +144,18 @@ export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
     },
     ({ id, ...patch }) =>
       run(async () => {
-        // Same test gate as workflows.activate.
-        if (patch.status === "active")
+        // Same test gate as workflows.activate. The gate applies whenever the
+        // workflow ends up active: activating it, or sending a new (untested)
+        // definition to a workflow that is already active. Re-sending
+        // status "active" with no definition keeps the tested state as is.
+        const current = await workflowsService.get(ctx, id);
+        const staysActive =
+          patch.status === "active" ||
+          (patch.status === undefined && current?.status === "active");
+        if (
+          staysActive &&
+          (patch.definition || current?.status !== "active")
+        )
           await workflowsService.requireTested(ctx, id, {
             newDefinition: Boolean(patch.definition),
           });
