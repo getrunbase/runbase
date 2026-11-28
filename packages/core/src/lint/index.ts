@@ -113,6 +113,42 @@ const toSnake = (s: string) =>
     .replace(/^_+|_+$/g, "")
     .replace(/^(\d)/, "f_$1");
 
+// Singular words ending in "s" (last token of a slug).
+const SINGULAR_S = new Set([
+  "status",
+  "address",
+  "news",
+  "series",
+  "species",
+  "canvas",
+  "alias",
+  "atlas",
+  "gas",
+  "lens",
+  "chassis",
+  "kudos",
+  "settings",
+  "analytics",
+  "metrics",
+  "economics",
+  "logistics",
+  "sales",
+]);
+const isPlural = (slug: string) => {
+  const last = slug.split("_").pop() ?? "";
+  return (
+    last.length > 2 &&
+    last.endsWith("s") &&
+    !/(ss|us|is)$/.test(last) &&
+    !SINGULAR_S.has(last)
+  );
+};
+const singular = (slug: string) =>
+  slug
+    .replace(/ies$/, "y")
+    .replace(/(x|ch|sh)es$/, "$1")
+    .replace(/s$/, "");
+
 type FieldLike = { key?: unknown; type?: unknown; options?: unknown };
 
 export function lintObject(input: {
@@ -120,7 +156,19 @@ export function lintObject(input: {
   fields?: FieldLike[];
 }): LintWarning[] {
   const out: LintWarning[] = [];
-  if (input.slug) out.push(...lintKey("Object slug", input.slug));
+  if (input.slug) {
+    const key = lintKey("Object slug", input.slug);
+    out.push(...key);
+    if (!key.length && isPlural(input.slug))
+      out.push(
+        w(
+          "key.pluralSlug",
+          input.slug,
+          `Object slug "${input.slug}" looks plural.`,
+          `Use the singular: ${singular(input.slug)} (one record = one ${singular(input.slug)}).`,
+        ),
+      );
+  }
   for (const f of input.fields ?? []) {
     if (typeof f.key === "string") out.push(...lintKey("Field key", f.key));
     if (!Array.isArray(f.options)) continue;
@@ -163,6 +211,9 @@ const ERROR_WRITE = [
   /records\.(update|upsert)\s*\([^;]*String\(\s*(e|err|error)\s*\)/s,
 ];
 
+// Boolean outputs that are really outcomes (should be branches).
+const BOOL_OUTCOME = /^(found|ok|success|succeeded|exists|is_[a-z0-9_]+)$/;
+
 export function lintFunction(input: {
   code?: string;
   outputSchema?: unknown;
@@ -187,6 +238,19 @@ export function lintFunction(input: {
         'Declare the returned fields, e.g. { "type": "object", "properties": { "score": { "type": "number" } } }.',
       ),
     );
+  const props = ((input.outputSchema as { properties?: unknown } | null)
+    ?.properties ?? {}) as Record<string, { type?: unknown; enum?: unknown }>;
+  if (!Array.isArray(props.branch?.enum))
+    for (const [k, v] of Object.entries(props))
+      if (BOOL_OUTCOME.test(k) && v?.type === "boolean")
+        out.push(
+          w(
+            "function.booleanOutcome",
+            `outputSchema.properties.${k}`,
+            `Output "${k}" is a boolean outcome: the workflow cannot branch on it.`,
+            'Declare a "branch" output with an enum (e.g. { "type": "string", "enum": ["found", "not_found"] }) and connect each branch in next.',
+          ),
+        );
   const code = input.code ?? "";
   const lines = code.split("\n").filter((l) => l.trim()).length;
   if (lines > MAX_FUNCTION_LINES)
@@ -210,27 +274,86 @@ export function lintFunction(input: {
   return out;
 }
 
-type StepLike = { id?: unknown; type?: unknown };
+type StepLike = {
+  id?: unknown;
+  type?: unknown;
+  input?: unknown;
+  retry?: { continueOnFail?: boolean };
+};
+type NextLike = Record<string, Record<string, unknown> | undefined>;
+
+// `{{steps.X.output.error}}`, `{{steps.X.error.message}}`...
+const ERROR_REF = /\{\{\s*steps\.[\w-]+\.(output\.)?error(\.message)?\s*\}\}/;
+// Steps that change state (a write, an event, a failure, a call).
+const STATEFUL =
+  /^(record\.(update|create|upsert|delete|merge|transact)|event\.emit|webhook\.emit|workflow\.run|stop\.error|http\.request|fn\.)/;
+const targets = (v: unknown): string[] =>
+  Array.isArray(v) ? v.map(String) : typeof v === "string" ? [v] : [];
 
 export function lintWorkflow(definition: {
   steps?: StepLike[];
+  next?: unknown;
 }): LintWarning[] {
   const steps = definition.steps ?? [];
+  const next = (definition.next ?? {}) as NextLike;
+  const out: LintWarning[] = [];
   const only = steps[0];
   if (
     steps.length === 1 &&
     typeof only?.type === "string" &&
     only.type.startsWith("fn.")
   )
-    return [
+    out.push(
       w(
         "workflow.singleFunction",
         String(only.id ?? "steps[0]"),
         `Workflow is a single ${only.type} step: the function holds the whole workflow.`,
         "Model the steps in the workflow (records.*, condition, ai.*, small fn.* steps) so each one is visible, retried and testable.",
       ),
-    ];
-  return [];
+    );
+  const byId = new Map(steps.map((s) => [String(s.id), s]));
+  for (const s of steps) {
+    const id = String(s.id ?? "?");
+    const type = typeof s.type === "string" ? s.type : "";
+    const out_ = next[id] ?? {};
+    if (
+      type.startsWith("record.") &&
+      ERROR_REF.test(JSON.stringify(s.input ?? {}))
+    )
+      out.push(
+        w(
+          "workflow.errorInRecord",
+          id,
+          `Step ${id} writes a step error into a record field.`,
+          "Let the run fail (errors.list shows it), or connect the error branch to stop.error or a notification, not to a record write.",
+        ),
+      );
+    if (s.retry?.continueOnFail && !("error" in out_))
+      out.push(
+        w(
+          "workflow.continueOnFailNoErrorBranch",
+          id,
+          `Step ${id} has continueOnFail but no error branch in next.`,
+          `Connect next.${id}.error to the step that handles the failure, or remove continueOnFail so the run fails.`,
+        ),
+      );
+    if (
+      type === "human.approve" &&
+      "expired" in out_ &&
+      !targets(out_.expired).some((x) =>
+        STATEFUL.test(String(byId.get(x)?.type ?? "")),
+      )
+    )
+      out.push(
+        w(
+          "workflow.approveExpiredNoop",
+          id,
+          `Step ${id}: the expired branch changes nothing.`,
+          "On expiry, record the outcome (record.update a status, event.emit) or fail the run with stop.error, so the request does not vanish silently.",
+        ),
+      );
+  }
+  return out;
 }
 
 // Strict mode: lint warnings become a blocking error.

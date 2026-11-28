@@ -115,10 +115,10 @@ test("validate: runtime-only mistakes caught before the run", async () => {
     ],
     next: { sum: { ok: ["call"] } },
   });
-  assert.deepEqual(
-    r.errors.map((e) => e.message).sort(),
-    ["Missing secret AI_K", "Missing secret API_K"],
-  );
+  assert.deepEqual(r.errors.map((e) => e.message).sort(), [
+    "Missing secret AI_K",
+    "Missing secret API_K",
+  ]);
 
   // (4) Filter value schemas: durations in integer days.
   r = await check({
@@ -181,7 +181,7 @@ test("validate: runtime-only mistakes caught before the run", async () => {
       {
         id: "b",
         type: "ai.run",
-        input: { prompt: "x" },
+        input: { prompt: "x", ai: { provider: "anthropic", secret: "AI_K" } },
         retry: { continueOnFail: true },
       },
       { id: "c", type: "wait", input: { duration: "1s" } },
@@ -193,6 +193,8 @@ test("validate: runtime-only mistakes caught before the run", async () => {
     ["a: unknown branch yes (valid: ok, error)"],
   );
   assert.equal(r.errors[0]!.params.valid, "ok, error");
+  // Missing secret on a step whose error branch is connected: warning.
+  assert.deepEqual(codes(r.warnings), ["workflows.missingSecretHandled"]);
 
   // (8) Switch without default; unconnected empty / false branches in a
   // webhook workflow. (9) http host outside allowedDomains.
@@ -226,8 +228,8 @@ test("validate: runtime-only mistakes caught before the run", async () => {
     r.warnings.map((w) => w.message),
     [
       "sw: switch has no default (else) branch connected",
-      "find: branch empty is not connected, the run ends there silently",
-      "cond: branch false is not connected, the run ends there silently",
+      "find: branch empty is not connected, the run ends there silently (set next.find.empty: [] to end on purpose)",
+      "cond: branch false is not connected, the run ends there silently (set next.cond.false: [] to end on purpose)",
       "out: evil.io is not in the workspace allowed domains, the request will be refused",
     ],
   );
@@ -248,4 +250,78 @@ test("validate: runtime-only mistakes caught before the run", async () => {
     ],
   });
   assert.deepEqual(r.errors, []);
+
+  // (11) ai.* without input.ai: error (no default provider).
+  r = await check({
+    trigger: { type: "trigger.manual" },
+    steps: [{ id: "sum", type: "ai.run", input: { prompt: "Hi" } }],
+  });
+  assert.ok(codes(r.errors).includes("workflows.missingAiConfig"));
+
+  // (12) Branch warnings for any trigger (record.get included);
+  // `next.X.empty: []` is an explicit end.
+  r = await check({
+    trigger: { type: "trigger.manual" },
+    steps: [
+      { id: "get", type: "record.get", input: { id: "{{record.id}}" } },
+      { id: "find", type: "record.search", input: { object: "lead" } },
+    ],
+    next: { get: { found: ["find"] }, find: { found: [], empty: [] } },
+  });
+  assert.deepEqual(r.errors, []);
+  assert.deepEqual(
+    r.warnings.map((w) => `${w.code} ${w.params.step}`),
+    ["workflows.unhandledBranch get"],
+  );
+
+  // (13) Unknown step object; writes to computed fields.
+  await objectsService.create(ctx, {
+    slug: "deal",
+    name: "Deal",
+    fields: [
+      { key: "amount", label: "Amount", type: "number" },
+      { key: "total", label: "Total", type: "formula", formula: "amount * 2" },
+      { key: "ref", label: "Ref", type: "autonumber" },
+    ],
+  } as never);
+  r = await check({
+    trigger: { type: "trigger.record_created", object: "deal" },
+    steps: [
+      { id: "a", type: "record.create", input: { object: "nope", data: {} } },
+      {
+        id: "b",
+        type: "record.create",
+        input: { object: "deal", data: { amount: 1, ref: 3 } },
+      },
+      {
+        id: "c",
+        type: "record.update",
+        input: { recordId: "{{record.id}}", data: { total: 5 } },
+      },
+    ],
+    next: { a: { ok: ["b"] }, b: { ok: ["c"] } },
+  });
+  assert.deepEqual(
+    r.errors.map((e) => `${e.code} ${e.params.step}`),
+    [
+      "workflows.unknownStepObject a",
+      "workflows.computedFieldWrite b",
+      "workflows.computedFieldWrite c",
+    ],
+  );
+
+  // (14) Activation returns the remaining warnings.
+  const created = await wf.create(ctx, {
+    name: "warned",
+    definition: {
+      trigger: { type: "trigger.manual" },
+      steps: [{ id: "find", type: "record.search", input: { object: "lead" } }],
+    } as never,
+  });
+  const activated = (await wf.update(ctx, created.id, {
+    status: "active",
+  })) as { warnings?: string[] };
+  assert.deepEqual(activated.warnings, [
+    "find: branch empty is not connected, the run ends there silently (set next.find.empty: [] to end on purpose)",
+  ]);
 });

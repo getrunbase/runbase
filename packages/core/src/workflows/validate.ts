@@ -23,6 +23,7 @@ import {
   branchWarnings,
   filterChecks,
   httpDomainChecks,
+  recordWriteChecks,
   sampleEvent,
   templateRefChecks,
   webhookMappingChecks,
@@ -184,7 +185,8 @@ export async function validateItems(
           "trigger.match: {field} must be a unique field",
           { field: t.match },
         ),
-      );    webhookMappingChecks(t, event, errors, warnings);
+      );
+    webhookMappingChecks(t, event, errors, warnings);
   }
   if (trigger.success && trigger.data.type === "trigger.run_failed") {
     const w = trigger.data.workflow;
@@ -325,7 +327,12 @@ export async function validateItems(
       }
     }
   }
-  await functionSecretsChecks(ctx, steps, errors, warnings);
+  const triggerObject =
+    trigger.success && "object" in trigger.data
+      ? (trigger.data.object ?? undefined)
+      : undefined;
+  await functionSecretsChecks(ctx, steps, errors, warnings, next);
+  await recordWriteChecks(ctx, triggerObject, steps, errors);
   await templateRefChecks(ctx, steps, event, errors, warnings);
   await filterChecks(
     ctx,
@@ -333,13 +340,7 @@ export async function validateItems(
     steps,
     errors,
   );
-  await branchWarnings(
-    ctx,
-    steps,
-    next,
-    trigger.success && trigger.data.type === "trigger.webhook",
-    warnings,
-  );
+  await branchWarnings(ctx, steps, next, warnings);
   await httpDomainChecks(ctx, steps, warnings);
   for (const id of Object.keys(next))
     if (!ids.has(id))

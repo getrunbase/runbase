@@ -191,7 +191,9 @@ test("validate, activation refused, dry run without side effects", async () => {
   const results = await wf.dryRun(ctx, definition, ids, { ai: true });
   assert.deepEqual(await count(), before);
   assert.ok(
-    outbound.every((u) => u.startsWith("https://api.anthropic.com/v1/messages")),
+    outbound.every((u) =>
+      u.startsWith("https://api.anthropic.com/v1/messages"),
+    ),
   );
   assert.equal(outbound.length, 10); // ai.decide actually executed
   for (const id of ids)

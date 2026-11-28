@@ -374,9 +374,13 @@ export async function execLocal(
       .map((m) => m.specifier)
       .filter((s) => !allowed.has(s));
     if (outside.length)
-      throw appError("functions.importForbidden", "import forbidden: {modules}", {
-        modules: outside.join(", "),
-      });
+      throw appError(
+        "functions.importForbidden",
+        "import forbidden: {modules}",
+        {
+          modules: outside.join(", "),
+        },
+      );
 
     const [out, logs] = await runDeno(
       [
@@ -466,11 +470,15 @@ function spawnDeno(
       if (code === 0) resolve([out, err]);
       else
         reject(
-          appError("functions.processFailed", "{label} failed ({code}): {detail}", {
-            label,
-            code: String(code),
-            detail: cleanError(err.trim()),
-          }),
+          appError(
+            "functions.processFailed",
+            "{label} failed ({code}): {detail}",
+            {
+              label,
+              code: String(code),
+              detail: cleanError(err.trim()),
+            },
+          ),
         );
     });
     p.stdin.end(stdin);
