@@ -4,6 +4,7 @@ import { requireScope } from "../api-keys";
 import { errors, workflowRuns } from "../db/schema";
 import { replayIngest } from "../ingest";
 import { retryRun } from "../runs";
+import { retryTrigger } from "../triggers";
 import { withTenant, type TenantContext } from "../tenant";
 import { isUuid } from "../lib/uuid";
 import { cleanError, fingerprint, truncateStack } from "./clean";
@@ -95,6 +96,14 @@ async function reportComponent(
       .returning({ id: errors.id });
     return { id: row!.id, duplicate: false };
   });
+}
+
+// Failed trigger fan-out (webhook mapping): event and workflow to replay.
+function triggerRef(p: unknown) {
+  const o = p as { eventId?: unknown; workflowId?: unknown } | null;
+  return typeof o?.eventId === "string" && typeof o.workflowId === "string"
+    ? { eventId: o.eventId, workflowId: o.workflowId }
+    : null;
 }
 
 export const errorsService = {
@@ -204,7 +213,10 @@ export const errorsService = {
       ok = res.ok;
       result = { status: res.status, body: res.body };
     } else if (e.runId) ok = await retryRun(ctx, e.runId);
-    else throw appError("errors.notRetryable", "Error cannot be retried");
+    else if (triggerRef(e.payload)) {
+      const { eventId, workflowId } = triggerRef(e.payload)!;
+      ok = await retryTrigger(ctx, eventId, workflowId);
+    } else throw appError("errors.notRetryable", "Error cannot be retried");
     if (ok) await setStatus(ctx, id, "resolved");
     return { ok, result };
   },
