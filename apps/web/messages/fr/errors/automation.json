@@ -131,5 +131,14 @@
   "workflows.unknownEventPath": "{step} : {variable} absent de l'échantillon du webhook (event est le payload lui-même)",
   "workflows.switchNoDefault": "{step} : le switch n'a pas de branche par défaut (else) connectée",
   "workflows.unhandledBranch": "{step} : la branche {branch} n'est pas connectée, l'exécution s'y arrête sans bruit",
-  "workflows.domainNotAllowed": "{step} : {host} n'est pas dans les domaines autorisés de l'espace, la requête sera refusée"
+  "workflows.domainNotAllowed": "{step} : {host} n'est pas dans les domaines autorisés de l'espace, la requête sera refusée",
+  "workflows.notFound": "Workflow {id} introuvable",
+  "workflows.pinnedError": "{step} : erreur épinglée : {error}",
+  "workflows.reasonContinueOnFail": "échec, exécution poursuivie : {error}",
+  "workflows.dryRunSimulatedRunRef": "`{ref}` est nul en dry run ; une vraie exécution le renseigne (vérifier avec runs.start { test: true })",
+  "workflows.dryRunEmptyRef": "`{ref}` est vide dans ce dry run : vérifier le chemin (épingler la sortie de l'étape ou passer `event`)",
+  "workflows.dryRunEventPayloadKey": "`event` a une clé `payload` au premier niveau, mais la variable event est le payload lui-même : passer directement son contenu",
+  "workflows.dryRunEventSampleShape": "`event` n'a aucune clé en commun avec le dernier événement {type} ({keys}) : passer la même forme",
+  "workflows.dryRunApprovalHint": "Le chemin s'arrête à {step} (décision humaine attendue). Épingler sa branche pour tester la suite : definition.pins = { \"{step}\": { branch: \"approved\" } } (ou \"rejected\", \"expired\")",
+  "workflows.dryRunStoppedAtCondition": "Rien ne s'est exécuté après {step} (branche {branch}) : passer des `records` qui prennent une branche connectée, ou l'épingler : definition.pins = { \"{step}\": { branch: \"true\" } }"
 }

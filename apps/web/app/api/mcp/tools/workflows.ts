@@ -18,6 +18,12 @@ const missingDryRunTarget = () =>
     "workflows.dry_run needs `definition` or `workflow` (saved workflow id)",
   );
 
+const missingTestStepTarget = () =>
+  appError(
+    "workflows.testStepTarget",
+    "workflows.test_step needs `definition` or `workflow` (saved workflow id or name)",
+  );
+
 export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
   // Guide and reference examples, to read before building a workflow.
   server.registerTool(
@@ -120,7 +126,7 @@ export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
     "workflows.dry_run",
     {
       description:
-        "Runs a definition (or, with `workflow`, a saved workflow: `version`, else its staged draft, else its live version; or `workflow` + `definition` to test a definition before saving it) without ever writing anything: writes, sends, external calls, loops and functions with network or 'write' permissions are simulated (first branch, null output); reads are real. AI blocks (ai.*) simulated by default, real and billed only with ai: true. One run per record in `records`. Without records: trigger.webhook uses the webhook's stored sample (or `event`, which must have the sample's shape), applies the mapping and runs on a synthetic record ({{record.id}} resolves, nothing is written); trigger.schedule on an object runs on up to 5 records matching its filter (none: tested false with `skipped`); otherwise a single run without a record. `event` = payload of the triggering event ({{event.…}}). Simulated record.upsert / record.create return a synthetic record. A failure caused by a simulated null output carries a `hint` (pin it); `warnings` lists {{record.*}} refs that render empty. Pinned outputs (`definition.pins[stepId] = { output, branch? }`) replayed instead of running the step. A `join: true` step runs once, after the other paths. Returns per run the paths taken (`paths`, one per parallel execution branch; `path`: all steps flattened), with for each step input, output, branch and reason. With `workflow`: returns { version, liveVersion, tested, next?, results }; tested = no failing path, which unlocks workflows.activate for that version (activate promotes a tested draft).",
+        "Runs a definition (or, with `workflow`, a saved workflow: `version`, else its staged draft, else its live version; or `workflow` + `definition` to test a definition before saving it) without ever writing anything: writes, sends, external calls, loops and functions with network or 'write' permissions are simulated (first branch, null output); reads are real. AI blocks (ai.*) simulated by default, real and billed only with ai: true. One run per record in `records`. Without records: trigger.webhook uses the webhook's stored sample (or `event`, which must have the sample's shape), applies the mapping and runs on a synthetic record ({{record.id}} resolves, nothing is written); trigger.schedule on an object runs on up to 5 records matching its filter (none: tested false with `skipped`); otherwise a single run without a record. `event` = payload of the triggering event ({{event.…}}). Simulated record.upsert / record.create return a synthetic record. A failure caused by a simulated null output carries a `hint` (pin it); `warnings` lists {{record.*}} refs that render empty. Pinned outputs (`definition.pins[stepId] = { output, branch? }`) replayed instead of running the step. A `join: true` step runs once, after the other paths. Returns per run the paths taken (`paths`, one per parallel execution branch; `path`: all steps flattened), with for each step input, output, branch and reason. Each run carries `coverage` { ran, total, unreached } and `untested` when it stopped at its first condition with nothing after it. `pins[stepId] = { branch: 'approved' }` drives a human.approve step (a path stopping there carries a `hint`); `pins[stepId] = { error: '...' }` forces the step to fail (error branch). ai: true with a failing AI call follows retry.continueOnFail like a real run. `warnings` also lists empty {{event.*}} / {{steps.*}} refs, {{run.*}} refs (null in a dry run) and, for trigger.event, an `event` whose shape differs from the latest received event (e.g. wrapped in { payload }). Without `workflow`: an array of runs, each with `validationErrors` when the definition is invalid. With `workflow`: returns { version, liveVersion, tested, blocking?, coverage, next?, results }; tested = valid definition, no failing or skipped run, and not every run stopped at its first condition; otherwise `blocking` lists why. tested unlocks workflows.activate for that version (activate promotes a tested draft).",
       inputSchema: z.object({
         definition: definitionSchema
           .optional()
@@ -170,19 +176,29 @@ export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
             "See workflows.list.",
           );
         if (!definition) throw missingDryRunTarget();
-        return workflowsService.dryRun(ctx, definition, records ?? [], {
-          ai,
-          event,
-        });
+        const results = await workflowsService.dryRun(
+          ctx,
+          definition,
+          records ?? [],
+          { ai, event },
+        );
+        // Validation errors would block activation: shown on every run.
+        const { errors } = await workflowsService.check(ctx, definition);
+        if (!errors.length) return results;
+        const validationErrors = errors.map((e) => e.message);
+        return results.map((r) => ({ ...r, validationErrors }));
       }),
   );
   server.registerTool(
     "workflows.test_step",
     {
       description:
-        "Tests a single step of a definition: `input` provided (otherwise the definition's, templates rendered), context `recordId` and/or `event`, outputs of previous steps via `steps` { stepId: output } (otherwise pinned outputs `definition.pins`). Side effects simulated unless `live: true` (real execution: writes, sends, paid AI). Returns rendered input, branch, output.",
+        "Tests a single step of a `definition`, or of a saved `workflow` (id or name: its staged draft, else its live version): `input` provided (otherwise the definition's, templates rendered), context `recordId` and/or `event`, outputs of previous steps via `steps` { stepId: output } (otherwise pinned outputs `definition.pins`). Side effects simulated unless `live: true` (real execution: writes, sends, paid AI, run as a test so records and events it creates are flagged isTest and removed by workspace.purge_test). Returns rendered input, branch, output, warnings.",
       inputSchema: z.object({
-        definition: definitionSchema,
+        definition: definitionSchema.optional(),
+        workflow: wfId
+          .optional()
+          .describe("Saved workflow id or name, instead of `definition`"),
         stepId: z.string(),
         input: z.record(z.string(), z.unknown()).optional(),
         recordId: z.string().optional(),
@@ -191,8 +207,16 @@ export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
         live: z.boolean().optional(),
       }),
     },
-    ({ definition, stepId, ...opts }) =>
-      run(() => workflowsService.testStep(ctx, definition, stepId, opts)),
+    ({ definition, workflow, stepId, ...opts }) =>
+      run(() => {
+        if (!definition && !workflow) throw missingTestStepTarget();
+        return workflowsService.testStep(
+          ctx,
+          definition ?? { workflow },
+          stepId,
+          opts,
+        );
+      }),
   );
   server.registerTool(
     "workflows.create",

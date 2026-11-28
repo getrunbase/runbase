@@ -10,6 +10,8 @@ import {
   stepInput,
 } from "../runs/templates";
 import { objectsService } from "../objects";
+import { withDefaults, type Field } from "../objects/fields";
+import { eventsService } from "../events";
 import { pick, webhooksService } from "../webhooks";
 import { triggerSchema } from "../triggers/schema";
 import type { TenantContext } from "../tenant";
@@ -62,6 +64,10 @@ export type DryRunResult = {
   warnings?: string[];
   // Synthetic record built from the webhook sample and mapping.
   record?: Record<string, unknown>;
+  // Steps reached in this run out of all steps of the definition.
+  coverage?: Coverage;
+  // Why this run does not count as a test (e.g. stopped at a condition).
+  untested?: string;
   // Nothing to run on (no sample, no matching record): not a test.
   skipped?: string;
   skippedItem?: ErrorItem;
@@ -72,7 +78,11 @@ const SCHEDULE_SAMPLE = 5;
 
 // Pinned output of a step (`definition.pins[stepId]`): replayed in dry run and
 // in step tests instead of running the block (frozen sample data).
-export type Pin = { output: unknown; branch?: string };
+// `error`: forces the step to fail with that message (error branch, or
+// continueOnFail fallback, or a failed path).
+export type Pin = { output?: unknown; branch?: string; error?: string };
+
+export type Coverage = { ran: number; total: number; unreached: string[] };
 
 export type DryRunOptions = {
   // Actually runs the AI blocks (paid).
@@ -100,13 +110,24 @@ async function execStep(
     });
   const raw = new Set(block.raw);
   const input = await stepInput(ctx, o.input ?? step.input, raw, scope);
-  const warnings = await emptyRecordRefs(
-    ctx,
-    o.input ?? step.input,
-    raw,
-    scope,
-  );
+  const warnings = await emptyRefs(ctx, o.input ?? step.input, raw, scope);
   const pin = definition.pins?.[step.id] as Pin | undefined;
+  if (pin?.error !== undefined) {
+    const branches = branchesOf(step, block);
+    if (!branches.includes("error"))
+      throw appError("workflows.pinnedError", "{step}: pinned error: {error}", {
+        step: step.id,
+        error: pin.error,
+      });
+    return {
+      input,
+      warnings,
+      result: { branch: "error", output: { error: pin.error } } as BlockResult,
+      simulated: false,
+      pinned: true,
+      reason: errorItem("workflows.reasonPinned", "pinned output"),
+    };
+  }
   if (pin)
     return {
       input,
@@ -147,7 +168,7 @@ async function execStep(
       input,
       warnings,
       result: block.simulate?.(parsed) ??
-        syntheticWrite(step.type, parsed) ?? {
+        (await syntheticWrite(ctx, step.type, parsed)) ?? {
           branch: branchesOf(step, block)[0] ?? "ok",
           output: null,
         },
@@ -160,11 +181,30 @@ async function execStep(
     };
   // Real AI: cap and budget applied as in a run.
   const ai = step.type.startsWith("ai.");
-  if (ai) await assertAiAllowed(ctx);
-  const result = await block.run(
-    parsed,
-    blockContext(ctx, 0, { scope: { ...scope }, engine: blockEngine(ctx) }),
-  );
+  let result: BlockResult;
+  try {
+    if (ai) await assertAiAllowed(ctx);
+    result = await block.run(
+      parsed,
+      blockContext(ctx, 0, { scope: { ...scope }, engine: blockEngine(ctx) }),
+    );
+  } catch (e) {
+    // Like the engine: continueOnFail turns the failure into { error }.
+    if (!step.retry?.continueOnFail) throw e;
+    const error = (e as Error).message;
+    return {
+      input,
+      warnings,
+      result: { branch: "error", output: { error } } as BlockResult,
+      simulated: false,
+      pinned: false,
+      reason: errorItem(
+        "workflows.reasonContinueOnFail",
+        "failed, continued: {error}",
+        { error },
+      ),
+    };
+  }
   if (ai) await chargeAi(ctx, result.cost);
   const out = result.output as { reason?: string } | null;
   return {
@@ -182,14 +222,40 @@ async function execStep(
   };
 }
 
+const empty = (v: unknown) => v === undefined || v === null || v === "";
+
 // Simulated record writes return a synthetic record (fresh id, the written
-// data) so that later {{steps.x.output.record.id}} refs resolve.
-function syntheticWrite(type: string, input: unknown): BlockResult | null {
+// data with field defaults) so that later {{steps.x.output.record.id}} refs
+// resolve. The checks of a real write that do not need the database apply:
+// an upsert without key, or with an empty match value, fails here too.
+async function syntheticWrite(
+  ctx: TenantContext,
+  type: string,
+  input: unknown,
+): Promise<BlockResult | null> {
   if (type !== "record.upsert" && type !== "record.create") return null;
-  const data = ((input as { data?: unknown }).data ?? {}) as Record<
-    string,
-    unknown
-  >;
+  const i = input as {
+    object?: string;
+    data?: Record<string, unknown>;
+    match?: string;
+    externalId?: string;
+  };
+  const written = i.data ?? {};
+  if (type === "record.upsert" && !i.externalId) {
+    if (!i.match)
+      throw appError(
+        "blocks.matchOrExternalIdRequired",
+        "match or externalId required",
+      );
+    if (empty(written[i.match]))
+      throw appError(
+        "records.matchValueRequired",
+        "match: value required ({field})",
+        { field: i.match },
+      );
+  }
+  const object = i.object ? await objectsService.get(ctx, i.object) : null;
+  const data = withDefaults((object?.fields ?? []) as Field[], written);
   const record = { ...data, id: crypto.randomUUID(), data, dryRun: true };
   return type === "record.create"
     ? { branch: "ok", output: { record } }
@@ -199,9 +265,11 @@ function syntheticWrite(type: string, input: unknown): BlockResult | null {
       };
 }
 
-// {{record.*}} refs of a step input that render empty (missing field, no
-// record): a warning, since the real run would write or send blanks.
-async function emptyRecordRefs(
+// Refs of a step input that render empty: {{record.*}} (missing field),
+// {{event.*}} (absent from the payload), {{steps.*}} (absent or simulated
+// null output), {{run.*}} (null in a dry run, set in a real run). A
+// warning, since the real run would write or send blanks.
+async function emptyRefs(
   ctx: TenantContext,
   input: unknown,
   raw: Set<string>,
@@ -214,13 +282,31 @@ async function emptyRecordRefs(
   );
   const out: ErrorItem[] = [];
   for (const ref of templatePaths(kept)) {
-    if (!/^record\./.test(ref)) continue;
+    const kind = /^(record|event|steps|run)\./.exec(ref)?.[1];
+    if (!kind) continue;
     const v = await renderInputs(ctx, `{{${ref}}}`, scope);
-    if (v === undefined || v === null || v === "")
+    if (!empty(v)) continue;
+    if (kind === "record")
       out.push(
         errorItem(
           "workflows.dryRunEmptyRecordRef",
           "`{ref}` renders empty: the record has no value for this field",
+          { ref },
+        ),
+      );
+    else if (kind === "run")
+      out.push(
+        errorItem(
+          "workflows.dryRunSimulatedRunRef",
+          "`{ref}` is null in a dry run; a real run sets it (use runs.start { test: true } to check it)",
+          { ref },
+        ),
+      );
+    else
+      out.push(
+        errorItem(
+          "workflows.dryRunEmptyRef",
+          "`{ref}` renders empty in this dry run: check the path (pin the step output or pass `event`)",
           { ref },
         ),
       );
@@ -236,6 +322,8 @@ type Targets = {
   synthetic?: Synthetic;
   // Nothing to run on: the dry run cannot mark the version tested.
   skipped?: ErrorItem;
+  // Findings on the provided event (shape unlike the real payload).
+  warnings?: ErrorItem[];
 };
 
 // What a dry run without `records` runs on, like the real trigger:
@@ -248,6 +336,10 @@ export async function dryRunTargets(
   opts: DryRunOptions,
 ): Promise<Targets> {
   const t = triggerSchema.safeParse(definition.trigger).data;
+  if (t?.type === "trigger.event" && opts.event !== undefined) {
+    const warnings = await eventShape(ctx, t.event, opts.event);
+    return { recordIds, event: opts.event, warnings };
+  }
   if (recordIds.length || !t) return { recordIds, event: opts.event };
   if (t.type === "trigger.webhook") {
     const hook = (await webhooksService.list(ctx)).find(
@@ -285,9 +377,9 @@ export async function dryRunTargets(
       if (v !== undefined && v !== null && v !== "") data[field] = v;
     }
     const object = await objectsService.get(ctx, t.object);
-    const blanks = Object.fromEntries(
-      ((object?.fields ?? []) as { key: string }[]).map((f) => [f.key, null]),
-    );
+    const fields = (object?.fields ?? []) as Field[];
+    const blanks = Object.fromEntries(fields.map((f) => [f.key, null]));
+    Object.assign(data, withDefaults(fields, data));
     const synthetic: Synthetic = {
       ...blanks,
       ...data,
@@ -323,6 +415,34 @@ export async function dryRunTargets(
     return { recordIds: records.map((r) => r.id), event: opts.event };
   }
   return { recordIds, event: opts.event };
+}
+
+// {{event}} is the payload itself: an `event` wrapped in { payload } (or
+// with keys unlike the latest received event of that type) renders every
+// {{event.x}} empty in a real run.
+async function eventShape(ctx: TenantContext, type: string, event: unknown) {
+  if (!event || typeof event !== "object" || Array.isArray(event)) return [];
+  const keys = Object.keys(event);
+  const latest = (await eventsService.list(ctx, { type, limit: 1 })).items[0];
+  const sample = latest?.payload as Record<string, unknown> | undefined;
+  const sampleKeys =
+    sample && typeof sample === "object" ? Object.keys(sample) : null;
+  if (keys.includes("payload") && !sampleKeys?.includes("payload"))
+    return [
+      errorItem(
+        "workflows.dryRunEventPayloadKey",
+        "`event` has a top-level `payload` key, but the event variable is the payload itself: pass its content directly",
+      ),
+    ];
+  if (sampleKeys?.length && !keys.some((k) => sampleKeys.includes(k)))
+    return [
+      errorItem(
+        "workflows.dryRunEventSampleShape",
+        "`event` shares no key with the latest {type} event ({keys}): pass the same shape",
+        { type, keys: sampleKeys.slice(0, 10).join(", ") },
+      ),
+    ];
+  return [];
 }
 
 // Steps whose simulated output is null and that `step` reads: the usual
@@ -377,6 +497,7 @@ export async function dryRun(
       },
     ];
   opts = { ...opts, event: targets.event };
+  const eventWarnings = (targets.warnings ?? []).map((w) => w.message);
   const results: DryRunResult[] = [];
   for (const recordId of targets.recordIds.length
     ? targets.recordIds
@@ -455,9 +576,27 @@ export async function dryRun(
         };
         path.steps.push(full);
         flat.push(full);
-        if (!r.result) continue;
+        if (!r.result) {
+          if (step.type === "human.approve")
+            path.hint = errorItem(
+              "workflows.dryRunApprovalHint",
+              'The path stops at {step} (awaiting a human decision). Pin its branch to test what follows: definition.pins = { "{step}": { branch: "approved" } } (or "rejected", "expired")',
+              { step: step.id },
+            ).message;
+          continue;
+        }
         const done = { ...cur.done, [step.id]: { output: r.result.output } };
-        const targets = next[step.id]?.[r.result.branch] ?? [];
+        let targets = next[step.id]?.[r.result.branch] ?? [];
+        // continueOnFail without a connected error branch: first branch.
+        if (
+          r.result.branch === "error" &&
+          !targets.length &&
+          step.retry?.continueOnFail
+        ) {
+          const block = await getBlock(ctx, step.type);
+          const first = block ? branchesOf(step, block)[0] : undefined;
+          targets = (first && next[step.id]?.[first]) || [];
+        }
         const childIds = ids(targets.length, path.id);
         const children: Todo[] = targets.map((stepId, i) => ({
           id: childIds[i]!,
@@ -481,7 +620,11 @@ export async function dryRun(
       }
     }
     const failed = paths.find((p) => p.error);
-    const warnings = [...new Set(flat.flatMap((s) => s.warnings ?? []))];
+    const warnings = [
+      ...new Set([...eventWarnings, ...flat.flatMap((s) => s.warnings ?? [])]),
+    ];
+    const coverage = coverageOf(steps, [flat]);
+    const untested = stoppedAtCondition(flat, next);
     results.push({
       recordId,
       path: flat,
@@ -490,9 +633,42 @@ export async function dryRun(
       ...(failed?.hint && { hint: failed.hint }),
       ...(warnings.length && { warnings }),
       ...(targets.synthetic && { record: targets.synthetic }),
+      coverage,
+      ...(untested && { untested }),
     });
   }
   return results;
+}
+
+// Steps reached across runs, out of all steps.
+export function coverageOf(steps: Step[], runs: DryRunStep[][]): Coverage {
+  const ran = new Set(runs.flat().map((s) => s.stepId));
+  const unreached = steps.map((s) => s.id).filter((id) => !ran.has(id));
+  return {
+    ran: steps.length - unreached.length,
+    total: steps.length,
+    unreached,
+  };
+}
+
+// A run whose first condition (or switch) is its last step although that
+// step has connected branches: nothing behind the filter was exercised.
+function stoppedAtCondition(
+  flat: DryRunStep[],
+  next: Record<string, Record<string, string[]>>,
+) {
+  const i = flat.findIndex(
+    (s) => s.type === "condition" || s.type === "switch",
+  );
+  if (i < 0 || i < flat.length - 1) return undefined;
+  const c = flat[i]!;
+  if (!Object.values(next[c.stepId] ?? {}).some((t) => t.length))
+    return undefined;
+  return errorItem(
+    "workflows.dryRunStoppedAtCondition",
+    'Nothing ran after {step} (branch {branch}): pass `records` that take a connected branch, or pin it: definition.pins = { "{step}": { branch: "true" } }',
+    { step: c.stepId, branch: c.branch ?? "none" },
+  ).message;
 }
 
 // Runs a single step with a provided input (or the definition's), in
@@ -515,6 +691,9 @@ export async function testStep(
     throw notFound("workflows.unknownStep", "step {id} does not exist", {
       id: stepId,
     });
+  // A live step test writes like a test run: records and events it
+  // creates are flagged isTest (workspace.purge_test removes them).
+  if (o.live) ctx = { ...ctx, test: true };
   const record = o.recordId ? await recordsService.get(ctx, o.recordId) : null;
   const known = {
     ...Object.fromEntries(
@@ -542,5 +721,7 @@ export async function testStep(
     pinned: r.pinned,
     reason: r.reason.message,
     reasonItem: r.reason,
+    ...(o.live && { test: true }),
+    ...(r.warnings.length && { warnings: r.warnings.map((w) => w.message) }),
   };
 }
