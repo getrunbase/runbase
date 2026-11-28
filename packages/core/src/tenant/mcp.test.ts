@@ -96,3 +96,19 @@ test("API key: workspaces.use default is per MCP session", async () => {
   await assert.rejects(resolveMcpContext(s3, undefined, undefined, w));
   assert.equal((await resolveMcpContext(s3, undefined, b, w)).workspaceId, b);
 });
+
+test("account tools: no workspace choice inside one organization; list capped", async () => {
+  const { uid, ids } = await org(["A1", "A2", "A3", "A4", "A5", "A6", "A7"]);
+  const p: McpPrincipal = { key: `user:${uid}:acc`, actor: { userId: uid } };
+  const ctx = await resolveMcpContext(p, undefined, undefined, {
+    write: true,
+    account: true,
+  });
+  assert.ok(ids.includes(ctx.workspaceId));
+  await assert.rejects(
+    resolveMcpContext(p, undefined, undefined, { write: true }),
+    (e: Error) =>
+      /\+2 more, see workspaces\.list/.test(e.message) &&
+      !e.message.includes("A6"),
+  );
+});

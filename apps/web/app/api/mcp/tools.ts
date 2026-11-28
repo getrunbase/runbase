@@ -194,6 +194,7 @@ export function registerTools(server: McpServer) {
           const target = byId.has(name) ? (ref ?? input.id) : ref;
           ctx = await resolveMcpContext(p, target, header, {
             write: isWriteTool(name),
+            account: isAccountTool(name),
           });
           await rateLimit(ctx, "api");
         } catch (e) {
@@ -219,7 +220,7 @@ export function registerTools(server: McpServer) {
               name?: string;
             } | null;
             if (created?.id)
-              text = `workspace: created ${label(created.id, created.name)}; active is still ${used}`;
+              text = `workspace: created ${label(created.id, created.name)}; active is still ${used}. Call workspaces.use { workspace: "${created.id}" } to work in it.`;
           }
           res.content.push({ type: "text", text } as { text: string });
         }
@@ -253,6 +254,9 @@ function parseJson(text?: string): unknown {
 // because functions.test can write.
 const READ_VERBS =
   /\.(list|get|describe|search|dependencies|settings|history|logs|versions|types|funnel|export|download|errors|guide|examples|screenshot|saved|sql|waiting|providers|ai_budget|trash|validate|dry_run|test_step)$/;
+// Organization-level tools: no workspace choice needed inside one organization.
+export const isAccountTool = (name: string) =>
+  name === "workspaces.create" || name.startsWith("members.");
 export const isWriteTool = (name: string) => !READ_VERBS.test(name);
 
 function defineTools(server: McpServer, ctx: TenantContext) {

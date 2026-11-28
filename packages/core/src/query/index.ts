@@ -39,8 +39,7 @@ function queryPool() {
   const url = env().QUERY_DATABASE_URL;
   // eslint-disable-next-line no-restricted-syntax -- deployment invariant
   if (!url) throw new Error("QUERY_DATABASE_URL missing");
-  pool ??= drizzle(postgres(url, poolOptions(env().QUERY_PG_POOL_MAX)))
-    .$client;
+  pool ??= drizzle(postgres(url, poolOptions(env().QUERY_PG_POOL_MAX))).$client;
   observePool("query", pool);
   return pool;
 }
@@ -157,11 +156,18 @@ async function sqlError(
   if (cited.length)
     hints.push(...cited.map((v) => `Columns of ${describeView(v)}`));
   else hints.push(`Available views: ${views.map((v) => v.name).join(", ")}`);
-  return appError(
-    "query.sqlError",
-    "{message}\n{hint}",
-    { message: e.message, hint: hints.join("\n") },
-  );
+  return appError("query.sqlError", "{message}\n{hint}", {
+    message: e.message,
+    hint: hints.join("\n"),
+  });
+}
+
+// Result column names that appear more than once.
+export function duplicateColumns(cols?: { name: string }[]): string[] {
+  const seen = new Set<string>();
+  const dup = new Set<string>();
+  for (const c of cols ?? []) (seen.has(c.name) ? dup : seen).add(c.name);
+  return [...dup];
 }
 
 export const queryService = {
@@ -243,7 +249,17 @@ export const queryService = {
             throw e instanceof postgres.PostgresError
               ? await sqlError(e, q, objs)
               : e;
-          })) as Record<string, unknown>[];
+          })) as Record<string, unknown>[] & { columns?: { name: string }[] };
+        // Two result columns with the same name (count(*) twice, a.id and
+        // b.id): JS rows keep only the last one. Refused, with the names.
+        const dup = duplicateColumns(list.columns);
+        if (dup.length)
+          throw appError(
+            "query.duplicateColumns",
+            "Duplicate result column names: {columns}. Give each column a unique alias (e.g. count(*) as total, a.id as a_id).",
+            { columns: dup.join(", ") },
+            { kind: "invalid_input" },
+          );
         return {
           rows: [...list].slice(0, MAX_ROWS),
           truncated: list.length > MAX_ROWS,
