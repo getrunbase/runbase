@@ -165,7 +165,7 @@ export const catalogService = {
       .filter((c) => !query.category || c.categories.includes(query.category))
       .sort((a, b) => a.slug.localeCompare(b.slug))
       // The long description stays on the detail endpoint.
-      .map(({ readme: _readme, ...rest }) => rest);
+      .map((c) => ({ ...c, readme: undefined }));
   },
 
   async getConnector(slug: string) {
