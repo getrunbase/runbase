@@ -31,16 +31,30 @@ const eventAlias = (v: unknown) => {
   return v;
 };
 
+// Delivery while a run of the workflow is active on the same record:
+// `latest` (default) coalesces them into one follow-up that replays the
+// latest one (older ones are marked superseded), `each` queues every one.
+const queueMode = z.enum(["latest", "each"]).optional();
+
 // Trigger variants, also exposed in the blocks catalog (blocks.list).
 export const triggerVariants = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("trigger.record_created"), object: z.string() }),
+  z.object({
+    type: z.literal("trigger.record_created"),
+    object: z.string(),
+    queue: queueMode,
+  }),
   z.object({
     type: z.literal("trigger.record_updated"),
     object: z.string(),
     // Empty or missing: any change triggers.
     fields: z.array(z.string()).optional(),
+    queue: queueMode,
   }),
-  z.object({ type: z.literal("trigger.event"), event: z.string() }),
+  z.object({
+    type: z.literal("trigger.event"),
+    event: z.string(),
+    queue: queueMode,
+  }),
   // With `object`: one run per record of the filter; without: a simple run.
   // `timezone` (IANA, e.g. Europe/Paris): cron time zone, default UTC.
   z.object({
@@ -60,6 +74,7 @@ export const triggerVariants = z.discriminatedUnion("type", [
     object: z.string().optional(),
     match: z.string().optional(),
     mapping: z.record(z.string(), z.string()).optional(),
+    queue: queueMode,
   }),
   // Error workflow: started when a run of another workflow fails
   // (`workflow`: id or name to watch only one). Payload in

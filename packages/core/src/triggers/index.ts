@@ -21,6 +21,7 @@ import {
 } from "../bus";
 import { fairProcessor } from "../queues/fair";
 import { objectsService } from "../objects";
+import { fieldsSchema, valueProblem } from "../objects/fields";
 import { recordsService } from "../records";
 import { recordError, resolveFanOutErrors } from "../errors/record";
 import { RunAlreadyActive, runsService } from "../runs";
@@ -66,6 +67,8 @@ async function start(
     manual?: boolean;
     test?: boolean;
     origin?: Origin;
+    // Trigger `queue: "each"`: one follow-up per delivery, no coalescing.
+    each?: boolean;
   } = {},
 ) {
   try {
@@ -82,7 +85,8 @@ async function start(
     if (o.origin && o.recordId) {
       if (await isSelfTrigger(ctx, workflowId, o.recordId, o.origin))
         return null;
-      if (await followUp(ctx, workflowId, o.recordId, o.origin)) return null;
+      if (await followUp(ctx, workflowId, o.recordId, o.origin, o.each))
+        return null;
     }
     if (!o.quiet)
       await recordError(ctx, {
@@ -133,12 +137,16 @@ async function followUp(
   workflowId: string,
   recordId: string,
   origin: Origin,
+  each = false,
 ) {
   const n = (origin.data.followups ?? 0) + 1;
   if (n > MAX_FOLLOWUPS) return false;
   const data: FollowUpJob = { ...origin.data };
   delete data.fq;
-  const jobId = `followup-${ctx.workspaceId}-${workflowId}-${recordId}-${n}`;
+  // `each`: the trigger id makes the job unique, nothing is coalesced.
+  const jobId =
+    `followup-${ctx.workspaceId}-${workflowId}-${recordId}-${n}` +
+    (each ? `-${data.id}` : "");
   const queued = await busQueue().getJob(jobId);
   const prev = (queued?.data as FollowUpJob | undefined)?.coalesced ?? [];
   const next: FollowUpJob = {
@@ -149,7 +157,10 @@ async function followUp(
     coalesced: [...new Set([...prev, ...(data.coalesced ?? []), data.id])],
   };
   if (queued && (await queued.isDelayed())) {
+    const old = (queued.data as FollowUpJob).id;
     await queued.updateData(next);
+    // The replaced trigger will not be replayed itself: said loudly.
+    if (old && old !== data.id) await supersede(ctx, workflowId, old, data.id);
     return true;
   }
   await busQueue().add(origin.name, next, {
@@ -159,6 +170,55 @@ async function followUp(
     removeOnFail: 100,
   });
   return true;
+}
+
+// Trigger folded into a later one (coalescing): its event is marked
+// `superseded` (payload `_runbase.supersededBy`, visible in events.list) and
+// a warning goes to the error center. Ids that are not events (record
+// triggers) only get the warning.
+export async function supersede(
+  ctx: TenantContext,
+  workflowId: string,
+  id: string,
+  by: string,
+) {
+  const [ev] = await withTenant(ctx, (tx) =>
+    tx
+      .select({ payload: events.payload, isTest: events.isTest })
+      .from(events)
+      .where(eq(events.id, id)),
+  ).catch(() => []);
+  if (ev)
+    await withTenant(ctx, (tx) =>
+      tx
+        .update(events)
+        .set({ payload: supersededPayload(ev.payload, workflowId, by) })
+        .where(eq(events.id, id)),
+    );
+  await recordError(ctx, {
+    source: "workflow",
+    message: `Trigger superseded: ${id} was coalesced into ${by} while a run of this workflow was active (set queue: "each" on the trigger to run every delivery)`,
+    payload: {
+      kind: "superseded",
+      workflowId,
+      supersededId: id,
+      supersededBy: by,
+      ...(ev?.isTest && { test: true }),
+    },
+  });
+}
+
+// Event payload with the superseded marker (meta key, original fields kept).
+export function supersededPayload(
+  payload: Record<string, unknown>,
+  workflowId: string,
+  by: string,
+) {
+  const meta = (payload._runbase ?? {}) as Record<string, unknown>;
+  return {
+    ...payload,
+    _runbase: { ...meta, status: "superseded", supersededBy: by, workflowId },
+  };
 }
 
 // Follow-up job data: ids (events or records) of the triggers it coalesces.
@@ -221,13 +281,24 @@ export async function checkWebhookMapping(
     path: string | null;
     item: number;
   }[] = [];
+  const invalid: {
+    workflowId: string;
+    field: string;
+    value: unknown;
+    problem: string;
+    item: number;
+  }[] = [];
   const warnings: string[] = [];
   for (const { id, trigger: t } of await activeTriggers(ctx)) {
     if (t.type !== "trigger.webhook" || t.webhook !== hookName) continue;
     if (!t.object || !t.mapping) continue;
+    const object = await objectsService.get(ctx, t.object).catch(() => null);
+    const fields = object ? fieldsSchema.parse(object.fields) : [];
     for (const [i, item] of items.entries()) {
       const data = mapPayload(t.mapping, item);
       const at = items.length > 1 ? ` (item ${i})` : "";
+      for (const p of mappedValueProblems(fields, data))
+        invalid.push({ workflowId: id, ...p, item: i });
       if (t.match && empty(data[t.match])) {
         missing.push({
           workflowId: id,
@@ -244,7 +315,25 @@ export async function checkWebhookMapping(
           );
     }
   }
-  return { missing, warnings };
+  return { missing, invalid, warnings };
+}
+
+// Mapped values the record write would refuse: unknown field, invalid
+// email, unknown select option, wrong type...
+export function mappedValueProblems(
+  fields: { key: string }[],
+  data: Record<string, unknown>,
+) {
+  if (!fields.length) return [];
+  const out: { field: string; value: unknown; problem: string }[] = [];
+  for (const [field, value] of Object.entries(data)) {
+    const f = (fields as Parameters<typeof valueProblem>[0][]).find(
+      (x) => x.key === field,
+    );
+    const problem = f ? valueProblem(f, value) : "unknown field";
+    if (problem) out.push({ field, value, problem });
+  }
+  return out;
 }
 
 // Active workflows and current definition, in one query (no more
@@ -437,6 +526,8 @@ export async function resolve(job: { name: BusEvent; data: BusJob }) {
             workflowId: wfId,
             eventId: id,
             payload: ev!.payload,
+            // Test delivery (x-runbase-test): deleted by workspace.purge_test.
+            ...(ev!.isTest && { test: true }),
           },
         });
         continue;
@@ -451,6 +542,7 @@ export async function resolve(job: { name: BusEvent; data: BusJob }) {
         event: ev && withEventMeta(ev, ev.recordId ?? target),
         key: key && `bus:${key}`,
         origin: job,
+        each: "queue" in t && t.queue === "each",
       }),
     );
   }

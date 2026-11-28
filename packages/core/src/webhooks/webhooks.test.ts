@@ -9,6 +9,7 @@ import { secretsService } from "../secrets";
 import { eventsService } from "../events";
 import type { TenantContext } from "../tenant";
 import {
+  parseBody,
   receiveWebhook,
   signFor,
   verifySignature,
@@ -436,4 +437,16 @@ test("dedupe: id (default) discards an enriched resend, id+hash accepts it, none
   await receiveWebhook(none.id, b1, h1);
   assert.equal(dup(await receiveWebhook(none.id, b1, h1)), false);
   assert.equal(await count("d.none"), 2);
+});
+
+test("parseBody: JSON, form posts (repeated keys as arrays), invalid", () => {
+  assert.deepEqual(parseBody('{"a":1}', "application/json"), { a: 1 });
+  assert.deepEqual(
+    parseBody(
+      "email=a%40x.io&tag=a&tag=b&name=Jo+Do",
+      "application/x-www-form-urlencoded; charset=utf-8",
+    ),
+    { email: "a@x.io", tag: ["a", "b"], name: "Jo Do" },
+  );
+  assert.equal(parseBody("email=a", "application/json"), undefined);
 });

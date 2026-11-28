@@ -199,5 +199,121 @@ test("follow-up coalesces triggers during an active run and replays the latest o
   assert.equal(pending[0]!.recordId, record.id);
   assert.equal(pending[0]!.replays, third.id);
   assert.deepEqual(pending[0]!.coalesced, [second.id, third.id]);
+  // The replaced trigger is marked superseded and a warning is recorded.
+  const [sup] = await sql`select payload from events where id = ${second.id}`;
+  assert.equal(sup!.payload._runbase.status, "superseded");
+  assert.equal(sup!.payload._runbase.supersededBy, third.id);
+  assert.equal(sup!.payload.n, 2);
+  const warns =
+    await sql`select message from errors where workspace_id = ${ctx.workspaceId} and payload->>'kind' = 'superseded'`;
+  assert.equal(warns.length, 1);
+  assert.match(warns[0]!.message, /queue: "each"/);
   await busQueue().obliterate({ force: true });
+});
+
+test("trigger queue: each keeps one follow-up per delivery", async () => {
+  await busQueue().obliterate({ force: true });
+  const ctx = await owner("QueueEach");
+  const obj = await objectsService.create(ctx, {
+    slug: "deal",
+    name: "Deal",
+    fields: [{ key: "stage", label: "Stage", type: "text" }],
+  });
+  const wf = await workflowsService.create(ctx, {
+    name: "Each",
+    definition: {
+      trigger: { type: "trigger.event", event: "deal.each", queue: "each" },
+      steps: [{ id: "w", type: "wait", input: { duration: "1h" } }],
+    },
+  });
+  await workflowsService.update(ctx, wf.id, { status: "active" });
+  const { record } = await recordsService.upsert(ctx, {
+    objectId: obj.id,
+    data: { stage: "new" },
+  });
+  for (const n of [1, 2, 3]) {
+    const ev = await eventsService.insert(ctx, {
+      type: "deal.each",
+      recordId: record.id,
+      payload: { n },
+    });
+    await resolve({ name: "event.received", data: { ...ctx, id: ev.id } });
+  }
+  const delayed = (await busQueue().getDelayed()).filter((j) =>
+    j.id?.startsWith(`followup-${ctx.workspaceId}`),
+  );
+  assert.equal(delayed.length, 2);
+  const warns =
+    await sql`select id from errors where workspace_id = ${ctx.workspaceId} and payload->>'kind' = 'superseded'`;
+  assert.equal(warns.length, 0);
+  await busQueue().obliterate({ force: true });
+});
+
+test("trigger.webhook reception: 422 on a mapped value the object refuses, warning otherwise", async () => {
+  const ctx = await owner("WebhookValues");
+  await objectsService.create(ctx, {
+    slug: "lead",
+    name: "Lead",
+    fields: [
+      { key: "email", label: "Email", type: "email", unique: true },
+      { key: "plan", label: "Plan", type: "select", options: ["free", "pro"] },
+    ],
+  });
+  await secretsService.set(ctx, "H", "k");
+  const hook = await webhooksService.create(ctx, {
+    name: "signup",
+    eventType: "signup.sent",
+    secretName: "H",
+    config: { format: "hmac", header: "x-sig", idPath: "uid" } as never,
+  });
+  const wf = await workflowsService.create(ctx, {
+    name: "Signup",
+    definition: {
+      trigger: {
+        type: "trigger.webhook",
+        webhook: "signup",
+        object: "lead",
+        match: "email",
+        mapping: { email: "email", plan: "plan" },
+      },
+      steps: [{ id: "w", type: "wait", input: { duration: "1h" } }],
+    },
+  });
+  await workflowsService.update(ctx, wf.id, { status: "active" });
+  const send = (p: unknown) => {
+    const body = JSON.stringify(p);
+    return receiveWebhook(
+      hook.id,
+      body,
+      { "x-sig": createHmac("sha256", "k").update(body).digest("hex") },
+      { check: checkWebhookMapping },
+    );
+  };
+  const bad = await send({ uid: "v1", email: "a@x.io", plan: "gold" });
+  assert.equal(bad.status, 422);
+  const invalid = (bad.body as { invalid: { field: string; value: unknown }[] })
+    .invalid;
+  assert.equal(invalid[0]!.field, "plan");
+  assert.equal(invalid[0]!.value, "gold");
+  const badMail = await send({ uid: "v2", email: "not-an-email" });
+  assert.equal(badMail.status, 422);
+  assert.equal(
+    (await sql`select id from events where workspace_id = ${ctx.workspaceId}`)
+      .length,
+    0,
+  );
+  await webhooksService.update(ctx, hook.id, {
+    config: {
+      format: "hmac",
+      header: "x-sig",
+      idPath: "uid",
+      rejectUnmapped: false,
+    } as never,
+  });
+  const soft = await send({ uid: "v3", email: "b@x.io", plan: "gold" });
+  assert.equal(soft.status, 200);
+  assert.match(
+    (soft.body as { warnings: string[] }).warnings[0]!,
+    /field plan: value "gold" rejected/,
+  );
 });

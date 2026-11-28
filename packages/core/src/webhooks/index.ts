@@ -288,8 +288,31 @@ export type MappingCheck = (
   items: unknown[],
 ) => Promise<{
   missing: { field: string; path: string | null }[];
+  // Mapped values the record write would refuse (field, value, problem).
+  invalid?: { field: string; value: unknown; problem: string; item: number }[];
   warnings: string[];
 }>;
+
+// Body -> payload: JSON, or a form post (application/x-www-form-urlencoded,
+// repeated keys become arrays). undefined when the body cannot be parsed.
+export function parseBody(body: string, contentType?: string | null) {
+  if (
+    contentType?.toLowerCase().includes("application/x-www-form-urlencoded")
+  ) {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of new URLSearchParams(body)) {
+      const prev = out[k];
+      out[k] =
+        prev === undefined ? v : Array.isArray(prev) ? [...prev, v] : [prev, v];
+    }
+    return out;
+  }
+  try {
+    return JSON.parse(body) as unknown;
+  } catch {
+    return undefined;
+  }
+}
 
 export async function receiveWebhook(
   id: string,
@@ -317,12 +340,9 @@ export async function receiveWebhook(
   if (!signatureMatches(config, secret, body, signed))
     return { status: 401, body: { error: "Invalid signature" } };
   const headerId = signed.id;
-  let payload: unknown;
-  try {
-    payload = JSON.parse(body);
-  } catch {
+  const payload = parseBody(body, headers["content-type"]);
+  if (payload === undefined)
     return { status: 422, body: { error: "Invalid JSON" } };
-  }
   const o = hook.config as WebhookOptions;
   const saveSample = () =>
     db
@@ -351,7 +371,19 @@ export async function receiveWebhook(
           missing: c.missing,
         },
       };
+    const invalid = c.invalid ?? [];
+    // Same contract as a missing match field: refused before acknowledging,
+    // the sender sees which field and value are wrong.
+    if (invalid.length && o.rejectUnmapped)
+      return {
+        status: 422,
+        body: { error: "Mapped value rejected by the object", invalid },
+      };
     warnings.push(
+      ...invalid.map(
+        (m) =>
+          `field ${m.field}: value ${JSON.stringify(m.value)} rejected (${m.problem})${c.invalid!.length > 1 || items.length > 1 ? ` (item ${m.item})` : ""}`,
+      ),
       ...c.missing.map(
         (m) =>
           `match field ${m.field}: path ${m.path ?? "(unmapped)"} resolved to nothing`,

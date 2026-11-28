@@ -2,7 +2,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { z } from "zod";
-import { errorText, mapPayload, mappingProblem, pickMapped } from "./index";
+import {
+  errorText,
+  mapPayload,
+  mappedValueProblems,
+  mappingProblem,
+  pickMapped,
+  supersededPayload,
+} from "./index";
 
 test("pickMapped: literal path first, then without the deprecated payload. prefix", () => {
   assert.equal(pickMapped({ a: { b: 1 } }, "payload.a.b"), 1);
@@ -45,4 +52,31 @@ test("errorText: Zod issues as field: message lines", () => {
   );
   assert.match(errorText(r.error), /^email: .+\nage: .+$/);
   assert.equal(errorText(new Error("boom")), "boom");
+});
+
+test("supersededPayload: marker under _runbase, payload kept", () => {
+  assert.deepEqual(supersededPayload({ n: 1 }, "wf", "e2"), {
+    n: 1,
+    _runbase: { status: "superseded", supersededBy: "e2", workflowId: "wf" },
+  });
+});
+
+test("mappedValueProblems: invalid email, unknown option, unknown field", () => {
+  const fields = [
+    { key: "email", label: "Email", type: "email" as const },
+    { key: "plan", label: "Plan", type: "select" as const, options: ["a"] },
+  ];
+  const p = mappedValueProblems(fields as never, {
+    email: "nope",
+    plan: "b",
+    other: 1,
+  });
+  assert.deepEqual(
+    p.map((x) => x.field),
+    ["email", "plan", "other"],
+  );
+  assert.deepEqual(
+    mappedValueProblems(fields as never, { email: "a@x.io", plan: "a" }),
+    [],
+  );
 });

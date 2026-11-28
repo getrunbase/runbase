@@ -275,9 +275,13 @@ export const overviewService = {
       ACTIVE_RUN_STATUSES.map((s) => sql`${s}`),
       sql`, `,
     )}))`;
+    // Plus errors flagged as test (caused by an x-runbase-test delivery).
     const runErrors = and(
       eq(errors.workspaceId, ctx.workspaceId),
-      sql`${errors.runId} in ${purgeableRuns}`,
+      or(
+        sql`${errors.runId} in ${purgeableRuns}`,
+        sql`${errors.payload}->>'test' = 'true'`,
+      ),
     );
     if (opts.dryRun)
       return withTenant(ctx, async (tx) => {
