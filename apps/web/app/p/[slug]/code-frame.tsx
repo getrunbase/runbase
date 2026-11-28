@@ -159,6 +159,10 @@ export function CodeFrame({
   const [done, setDone] = useState(false);
   // External link waiting for the user's confirmation.
   const [leaving, setLeaving] = useState<URL | null>(null);
+  // While the dialog is open, new requests are ignored: the page cannot swap
+  // the link the user is reading for another one before they click Open.
+  const leavingRef = useRef<URL | null>(null);
+  leavingRef.current = leaving;
   const propsRef = useRef(props);
   propsRef.current = props;
   const send = useRef<(m: object) => void>(() => {});
@@ -268,6 +272,7 @@ export function CodeFrame({
           recordId: m.recordId as string | undefined,
         });
       else if (m.type === "openUrl") {
+        if (leavingRef.current) return;
         const url = openGate(
           e,
           el.contentWindow,
@@ -373,7 +378,7 @@ export function CodeFrame({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
+            <AlertDialogTitle className="break-all">
               {t("leaving", { host: leaving?.host ?? "" })}
             </AlertDialogTitle>
             <AlertDialogDescription className="break-all">
