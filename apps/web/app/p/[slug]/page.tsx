@@ -6,6 +6,7 @@ import { LivePage } from "./live";
 import { pageOr404 } from "./load";
 import { showBadge } from "./badge";
 import { PoweredBadge } from "./powered-badge";
+import { PAGE_HOST } from "./host";
 import { pageTitle } from "@/lib/page-title";
 
 export const generateMetadata = pageTitle("page");
@@ -13,7 +14,6 @@ export const generateMetadata = pageTitle("page");
 // Page: multi-file TSX package rendered in the sandbox iframe. The
 // builders get the draft / publish / history bar; `?draft=1`
 // (or a never-published page) shows the draft. The slug is the id.
-// Margins: boards E3GYQo (32/48) and W7AQ2B for end_user (40/96).
 export default async function PageView({
   params,
   searchParams,
@@ -42,16 +42,12 @@ export default async function PageView({
   );
   const badge = await showBadge(ctx, { draft, shot: !!shot, builder });
   return (
-    <main
-      className={
-        role === "end_user"
-          ? "flex w-full flex-1 flex-col gap-6 px-24 py-10"
-          : "flex w-full flex-1 flex-col gap-6 px-12 py-8"
-      }
-    >
-      {bar}
+    // No padding here: the page code owns its spacing, and the frame
+    // fills the rest of the screen (no scrollbar when the content fits).
+    <div className={PAGE_HOST}>
+      {bar && <div className="px-4 pt-4 md:px-6">{bar}</div>}
       <LivePage id={page.id} draft={draft} />
       {badge && <PoweredBadge />}
-    </main>
+    </div>
   );
 }

@@ -50,7 +50,7 @@ Data-bound blocks, built on the SDK and @ui. Each one handles its own loading, e
 - \`toast(text, kind)\`, \`navigate({page, recordId?})\`, \`openUrl(url)\` (external https link in a new tab after a confirm, from a click only; \`<a target="_blank">\` does the same), \`useParam(key, fallback)\` (state in the URL), \`startWorkflow(id, {recordId?})\`, \`format.date/currency/number/percent/relative\`.
 
 ## Design rules (strict)
-- **Spacing**: 4/8 px grid only. Page \`p-4 md:p-6\`, sections \`gap-6\`, inside a card \`gap-4\`, inline \`gap-2\`. No arbitrary values (\`p-[13px]\`).
+- **Spacing**: 4/8 px grid only. Page \`p-4 md:p-6\` (the host adds no padding around the page: set it on the root element), sections \`gap-6\`, inside a card \`gap-4\`, inline \`gap-2\`. No arbitrary values (\`p-[13px]\`).
 - **Width**: page content in \`mx-auto max-w-7xl\`. Grids: \`grid gap-4 sm:grid-cols-2 lg:grid-cols-4\` for KPIs, \`lg:grid-cols-3\` for charts.
 - **Hierarchy**: exactly one \`h1\` per page (\`text-xl font-semibold tracking-tight\`) with a one-line \`text-sm text-muted-foreground\` subtitle. Card titles \`text-base\`. Labels \`text-xs font-medium text-muted-foreground\`. Three text levels at most.
 - **Colors**: semantic tokens only (bg-background, bg-card, bg-muted, text-foreground, text-muted-foreground, border, primary, destructive, chart-1 to chart-5). Never \`#hex\`, \`rgb()\` or palette classes (\`bg-blue-500\`). No custom colors, fonts, radii or shadows: the look is fixed by the platform.

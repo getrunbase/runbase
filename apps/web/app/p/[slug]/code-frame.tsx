@@ -54,7 +54,7 @@ export type CodeHost = {
   navigate?: (to: { page: string; recordId?: string }) => void;
   // Subscription to changed objects ("*": reload everything).
   live?: (fn: (objects: string[] | "*") => void) => () => void;
-  // Full page: screen height by default and keys relayed to the iframe.
+  // Full page: fills the rest of the screen and keys relayed to the iframe.
   screen?: boolean;
 };
 
@@ -366,7 +366,9 @@ export function CodeFrame({
     );
   return (
     <div
-      className="flex flex-col gap-2"
+      className={
+        screen ? "flex min-h-0 flex-1 flex-col gap-2" : "flex flex-col gap-2"
+      }
       data-code-block={id}
       data-code-state={error ? "error" : done ? "ready" : "loading"}
       data-code-error={error?.message}
@@ -404,12 +406,16 @@ export function CodeFrame({
         sandbox="allow-scripts"
         referrerPolicy="no-referrer"
         title={id}
-        className="w-full border-0"
+        // Full page: fills the space left by its container (flex-1)
+        // instead of a fixed screen height that the bar would overflow.
+        className={
+          screen ? "min-h-0 w-full flex-1 border-0" : "w-full border-0"
+        }
         // color-scheme aligned with the iframe document (never declared):
         // otherwise, with a dark page, the browser paints an opaque white background.
         style={{
           colorScheme: "normal",
-          height: screen ? "calc(100dvh - var(--header-h, 4rem))" : h,
+          height: screen ? undefined : h,
         }}
       />
     </div>

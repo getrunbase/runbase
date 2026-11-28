@@ -8,6 +8,7 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { NextIntlClientProvider } from "next-intl";
 import { CodeFrame } from "./code-frame";
+import { PAGE_HOST } from "./host";
 
 const win = new Window({ url: "http://localhost:7100/p/demo" });
 Object.assign(globalThis, {
@@ -67,5 +68,36 @@ test("CodeFrame: sandbox iframe mounted with the compiled bundle", async () => {
   const init = sent.find((m) => m.type === "init");
   assert.equal(init?.bundle, "COMPILED_BUNDLE");
 
+  await act(async () => root.unmount());
+});
+
+// Full page: the host adds no padding and the frame fills the space
+// left under the bar, so a page that fits never scrolls.
+test("CodeFrame: full page fills its padding-free host", async () => {
+  assert.doesNotMatch(PAGE_HOST, /(^|\s)(p|px|py|pt|pb|pl|pr)-/);
+  assert.match(PAGE_HOST, /flex-1/);
+  const el = document.createElement("div");
+  el.className = PAGE_HOST;
+  document.body.appendChild(el);
+  const root = createRoot(el);
+  await act(async () => {
+    root.render(
+      <NextIntlClientProvider locale="en" messages={{}} onError={() => {}}>
+        <CodeFrame
+          id="full"
+          props={{}}
+          host={{
+            screen: true,
+            bundle: async () => ({ bundle: "B", css: "" }),
+            call: async () => null,
+          }}
+        />
+      </NextIntlClientProvider>,
+    );
+  });
+  const iframe = el.querySelector("iframe")!;
+  assert.equal(iframe.style.height, "", "no fixed screen height");
+  assert.match(iframe.className, /flex-1/);
+  assert.match(iframe.parentElement!.className, /flex-1/);
   await act(async () => root.unmount());
 });
