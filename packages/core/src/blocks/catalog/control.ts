@@ -54,7 +54,21 @@ export const humanApprove = defineBlock({
     message: z.string().default(""),
     timeout: durationSchema.optional(),
   }),
-  outputSchema: z.object({ message: z.string() }),
+  // Output of the decided step (runs.decide); while waiting, only `message`.
+  outputSchema: z.object({
+    message: z.string(),
+    approved: z.boolean().optional(),
+    by: z
+      .object({
+        userId: z.string().optional(),
+        apiKeyId: z.string().optional(),
+        scopes: z.array(z.string()),
+        label: z.string().optional(),
+      })
+      .optional(),
+    decidedAt: z.string().optional(),
+    comment: z.string().optional(),
+  }),
   branches: ["approved", "rejected", "expired"],
   run: async ({ message, timeout }) => ({
     branch: "",

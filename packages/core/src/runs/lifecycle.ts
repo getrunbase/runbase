@@ -96,7 +96,7 @@ export async function resumeWaiting(
   runId: string,
   match: (path: string, p: PathState) => boolean,
   branch: string,
-  output: unknown,
+  output: unknown | ((p: PathState) => unknown),
 ) {
   const found = await withTenant(ctx, async (tx) => {
     const [run] = await tx
@@ -128,7 +128,11 @@ export async function resumeWaiting(
     if (dead) {
       paths[id] = { ...p, status: "failed" };
       error ??= `${p.step} : ${message}`;
-    } else paths[id] = { ...p, status: "running" };
+    } else {
+      const rest = { ...p, status: "running" as const };
+      delete rest.message;
+      paths[id] = rest;
+    }
     const released: Staged[] = [];
     for (const job of dead ? releaseJoins(runId, paths) : [])
       released.push(await stage(tx, runCtx(run), job));
@@ -151,7 +155,7 @@ export async function resumeWaiting(
     });
     if (FINISHED.includes(found.state.status))
       await afterFinish(found.run, found.state.status);
-    return true;
+    return { path: found.path, status: found.state.status };
   }
   await advance(
     rctx,
@@ -159,10 +163,10 @@ export async function resumeWaiting(
     found.definition,
     found.p.step,
     null,
-    { branch, output },
+    { branch, output: typeof output === "function" ? output(found.p) : output },
     { durationMs: 0 },
   );
-  return true;
+  return { path: found.path, status: found.state.status };
 }
 
 // Rendered concurrency key (A8): non-empty string, otherwise undefined.

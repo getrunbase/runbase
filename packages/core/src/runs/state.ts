@@ -57,6 +57,9 @@ export type PathState = {
   n: number;
   status: PathStatus;
   failedSeq?: number;
+  // human.approve: rendered message, shown by runs.waiting / runs.get
+  // while the path waits for a decision.
+  message?: string;
 };
 export type Paths = Record<string, PathState>;
 

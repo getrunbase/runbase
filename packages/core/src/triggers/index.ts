@@ -64,6 +64,7 @@ async function start(
     key?: string;
     quiet?: boolean;
     manual?: boolean;
+    test?: boolean;
     origin?: Origin;
   } = {},
 ) {
@@ -74,6 +75,7 @@ async function start(
       event: o.event,
       idempotencyKey: o.key,
       manual: o.manual,
+      test: o.test,
     });
   } catch (e) {
     if (!(e instanceof RunAlreadyActive)) throw e;
@@ -625,12 +627,19 @@ export const triggersService = {
     ctx: TenantContext,
     workflowId: string,
     recordIds: string[],
+    opts: { test?: boolean } = {},
   ) => {
     // A manual run is activity: it also resumes a paused workspace.
     await touchActivity(ctx.workspaceId);
     const runs = [];
     for (const recordId of recordIds.length ? recordIds : [undefined])
-      runs.push(await start(ctx, workflowId, { recordId, manual: true }));
+      runs.push(
+        await start(ctx, workflowId, {
+          recordId,
+          manual: true,
+          ...(opts.test && { test: true }),
+        }),
+      );
     return runs.filter(Boolean);
   },
 };

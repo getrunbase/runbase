@@ -285,10 +285,16 @@ test("wait survives a worker restart, approve resumes, loop iterates", async () 
     },
   });
   for (const approved of [true, false]) {
-    const r = await runsService.start(ctx, approval.id);
-    await until(
+    // Started by name: the run carries the resolved workflow id.
+    const r = await runsService.start(ctx, "Validation");
+    assert.equal(r!.workflowId, approval.id);
+    const w = await until(
       () => runsService.get(ctx, r!.id),
       (x) => x!.status === "waiting",
+    );
+    assert.equal(
+      (w!.paths as Record<string, { message?: string }>)["0"]!.message,
+      "Go ?",
     );
     assert.ok((await runsService.waiting(ctx)).some((x) => x.id === r!.id));
     assert.ok(
@@ -296,7 +302,16 @@ test("wait survives a worker restart, approve resumes, loop iterates", async () 
         (x) => x.id === r!.id,
       ),
     );
-    assert.equal(await runsService.decide(ctx, r!.id, approved), true);
+    const decided = await runsService.decide(
+      ctx,
+      r!.id,
+      approved,
+      undefined,
+      "checked",
+    );
+    assert.ok(decided);
+    assert.equal(decided.runId, r!.id);
+    assert.equal(decided.branch, approved ? "approved" : "rejected");
     assert.equal(await runsService.decide(ctx, r!.id, approved), false);
     const done = await until(
       () => runsService.get(ctx, r!.id),
@@ -309,6 +324,12 @@ test("wait survives a worker restart, approve resumes, loop iterates", async () 
         [approved ? "yes" : "no", "ok"],
       ],
     );
+    const out = done!.steps[0]!.output as Record<string, unknown>;
+    assert.equal(out.message, "Go ?");
+    assert.equal(out.approved, approved);
+    assert.equal(out.comment, "checked");
+    assert.ok(typeof out.decidedAt === "string");
+    assert.ok(Array.isArray((out.by as { scopes: unknown }).scopes));
   }
 
   // loop: subgraph over a list, capped by limit.

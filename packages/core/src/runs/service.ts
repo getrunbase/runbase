@@ -16,6 +16,7 @@ import { track } from "../extensions";
 import {
   FINISHED,
   type Paths,
+  type PathState,
   runCtx,
   runState,
   uniqueViolation,
@@ -54,11 +55,13 @@ export const runsService = {
     await rateLimit(ctx, "runs");
     const wf = await workflowsService.get(ctx, workflowId);
     if (!wf) return null;
+    // workflowId may be a name: use the resolved id from here on.
+    const id = wf.id;
     const version = opts.version ?? wf.currentVersion;
     const definition =
       version === wf.currentVersion
         ? wf.definition
-        : (await workflowsService.versions(ctx, workflowId)).find(
+        : (await workflowsService.versions(ctx, id)).find(
             (v) => v.version === version,
           )?.definition;
     if (!definition) return null;
@@ -85,7 +88,7 @@ export const runsService = {
         .values({
           organizationId: ctx.organizationId,
           workspaceId: ctx.workspaceId,
-          workflowId,
+          workflowId: id,
           version,
           recordId: opts.recordId ?? null,
           actor: ctx.actor,
@@ -129,7 +132,7 @@ export const runsService = {
           .from(workflowRuns)
           .where(
             and(
-              eq(workflowRuns.workflowId, workflowId),
+              eq(workflowRuns.workflowId, id),
               eq(workflowRuns.idempotencyKey, opts.idempotencyKey!),
             ),
           ),
@@ -142,7 +145,7 @@ export const runsService = {
     void track("run.started", {
       organizationId: ctx.organizationId,
       workspaceId: ctx.workspaceId,
-      workflowId,
+      workflowId: id,
       runId: run.row!.id,
       test: run.row!.isTest,
     });
@@ -368,20 +371,43 @@ export const runsService = {
   // Decision on a paused run: persists the human.approve step with the
   // approved / rejected branch and restarts the run. false if not waiting.
   // Several waiting paths: `path` chooses which one (default: the first).
+  // Returns { runId, branch, status } (run status after the decision).
   decide: async (
     ctx: TenantContext,
     runId: string,
     approved: boolean,
     path?: string,
+    comment?: string,
   ) => {
     await requireScope(ctx, "write");
-    return resumeWaiting(
+    const branch = approved ? "approved" : "rejected";
+    const a = ctx.actor;
+    const by = {
+      ...("userId" in a ? { userId: a.userId } : { apiKeyId: a.apiKeyId }),
+      scopes: a.scopes ?? [],
+      ...("label" in a && typeof a.label === "string" && { label: a.label }),
+    };
+    const r = await resumeWaiting(
       ctx,
       runId,
       (id) => !path || id === path,
-      approved ? "approved" : "rejected",
-      { approved, by: ctx.actor },
+      branch,
+      (p: PathState) => ({
+        message: p.message ?? "",
+        approved,
+        by,
+        decidedAt: new Date().toISOString(),
+        ...(comment && { comment }),
+      }),
     );
+    if (!r) return false;
+    const [row] = await withTenant(ctx, (tx) =>
+      tx
+        .select({ status: workflowRuns.status })
+        .from(workflowRuns)
+        .where(eq(workflowRuns.id, runId)),
+    );
+    return { runId, branch, status: row?.status ?? r.status };
   },
 };
 
