@@ -1,5 +1,15 @@
 // Workspace error center: filterable list, replay, resolution.
-import { and, count, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  gte,
+  inArray,
+  lte,
+  notInArray,
+  sql,
+} from "drizzle-orm";
 import { requireScope } from "../api-keys";
 import { errors, workflowRuns } from "../db/schema";
 import { replayIngest } from "../ingest";
@@ -10,6 +20,7 @@ import { cleanError, fingerprint, truncateStack } from "./clean";
 import { appError } from "./app-error";
 
 export { recordError } from "./record";
+export { cleanStack } from "./clean";
 export {
   AppError,
   appError,
@@ -29,6 +40,8 @@ export {
 export type ErrorRow = typeof errors.$inferSelect;
 type Filter = {
   source?: ErrorRow["source"];
+  // Sources left out when `source` is not given (MCP: agent tool errors).
+  excludeSources?: ErrorRow["source"][];
   status?: ErrorRow["status"];
   // Errors of a workflow's runs, of a record, or of a run.
   workflowId?: string;
@@ -113,6 +126,9 @@ export const errorsService = {
           and(
             eq(errors.workspaceId, ctx.workspaceId),
             f.source && eq(errors.source, f.source),
+            !f.source && f.excludeSources?.length
+              ? notInArray(errors.source, f.excludeSources)
+              : undefined,
             f.status && eq(errors.status, f.status),
             f.runId ? eq(errors.runId, f.runId) : undefined,
             f.workflowId

@@ -125,7 +125,7 @@ async function execStep(
     pinned: false,
     reason:
       typeof out?.reason === "string"
-        ? { code: "error", params: {}, message: out.reason }
+        ? errorItem("switch.matched", "{reason}", { reason: out.reason })
         : errorItem("workflows.reasonBranch", "branch {branch}", {
             branch: result.branch,
           }),

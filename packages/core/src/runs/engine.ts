@@ -14,7 +14,9 @@ import {
 import { queueOptions } from "../bus";
 import { fairProcessor } from "../queues/fair";
 import { runSteps, workflowRuns } from "../db/schema";
-import { appError } from "../errors/app-error";
+import { AppError, appError } from "../errors/app-error";
+import { formatIssues } from "../errors/clean";
+import { isNonRetryable } from "./retryable";
 import { recordError } from "../errors/record";
 import { builtins, stepInput } from "./templates";
 import { withTenant, type TenantContext } from "../tenant";
@@ -262,8 +264,14 @@ async function runStep(job: Job<StepJob>) {
     await addActiveMs(ctx, runId, startedAt);
     const cap = e instanceof CostCapExceeded ? e : undefined;
     // Step retry according to its policy: new delayed job (exponential
-    // backoff), the path stays at the same rank.
-    if (!cap && !(e instanceof StopError) && attempt + 1 < opts.attempts) {
+    // backoff), the path stays at the same rank. Configuration and
+    // authorization errors are not retried: a new attempt would fail the same.
+    if (
+      !cap &&
+      !(e instanceof StopError) &&
+      !isNonRetryable(e) &&
+      attempt + 1 < opts.attempts
+    ) {
       await enqueue(ctx, ref, {
         delay: opts.backoffMs * 2 ** attempt,
         retry: true,
@@ -273,7 +281,8 @@ async function runStep(job: Job<StepJob>) {
     }
     // Secret masking in run logs.
     const values = await decryptAll(ctx);
-    const error = redact((e as Error).message, values);
+    // Zod issues as `field: message` lines rather than a JSON dump.
+    const error = redact(formatIssues((e as Error).message), values);
     const attempts = attempt + 1;
     // Error center: step failed after retries, cost cap
     // exceeded, invalid AI branch.
@@ -311,7 +320,11 @@ async function runStep(job: Job<StepJob>) {
       attempts,
       cost: cap?.cost,
       tokens: cap?.tokens,
-      stack: redact((e as Error).stack ?? "", values),
+      // An AppError is an expected, explained failure: no stack stored.
+      stack:
+        e instanceof AppError
+          ? undefined
+          : redact((e as Error).stack ?? "", values),
     });
     return;
   }
