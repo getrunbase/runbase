@@ -78,6 +78,17 @@ test("fn.<name>: valid refs, ref to a missing field, missing required input", as
   );
   assert.match(bad.errors[0]!.message, /a has no output field lead_id/);
 
+  // continueOnFail: the step outputs { error } on failure, a known field.
+  const onFail = def({
+    leadId: "{{steps.a.output.leadId}}",
+    email: "{{steps.a.output.error}}",
+  });
+  (onFail.steps[0] as Record<string, unknown>).retry = {
+    continueOnFail: true,
+  };
+  (onFail.next as Record<string, unknown>).a = { ok: ["b"], error: ["b"] };
+  assert.deepEqual((await wf.check(ctx, onFail)).errors, []);
+
   const missing = await wf.check(ctx, def({ email: "{{record.email}}" }));
   assert.equal(missing.errors[0]!.code, "workflows.missingFunctionInput");
   assert.match(missing.errors[0]!.message, /missing required input leadId/);

@@ -22,6 +22,7 @@ import {
   coverageOf,
   dryRun,
   testStep,
+  unreachedWrites,
   validateDefinition,
   validateItems,
   type DryRunOptions,
@@ -33,6 +34,8 @@ import {
   type ErrorItem,
 } from "../errors/app-error";
 import { isUuid } from "../lib/uuid";
+import { normalizeGraph } from "./graph";
+import { errorItem } from "../errors/app-error";
 export { normalizeGraph, targetsOf, type Graph } from "./graph";
 export { WORKFLOWS_GUIDE } from "./guide";
 export { WORKFLOW_EXAMPLES, type WorkflowExample } from "./examples";
@@ -532,6 +535,15 @@ export const workflowsService = {
     if (!draft && wf.status === "active")
       return workflowsService.update(ctx, id, patch);
     const target = draft?.version ?? wf.currentVersion;
+    // Blocking validation errors (missing connection, secret...) first:
+    // testing cannot clear them, so reporting `untested` would mislead.
+    const targetDef = draft
+      ? (draft.definition as Definition)
+      : (await workflowsService.get(ctx, id))?.definition;
+    if (targetDef) {
+      const invalid = await validateItems(ctx, targetDef);
+      if (invalid.length) throw new InvalidWorkflow(invalid);
+    }
     if (!(await withTenant(ctx, (tx) => isTested(tx, ctx, id, target))))
       throw untested(id, target);
     if (!draft) return workflowsService.update(ctx, id, patch);
@@ -623,6 +635,21 @@ export const workflowsService = {
       definition.steps as { id: string; type: string }[],
       results.map((r) => r.path),
     );
+    // A write or send no run reached was never exercised: not a test.
+    const writes = await unreachedWrites(
+      ctx,
+      definition.steps as { id: string; type: string }[],
+      normalizeGraph(definition).next,
+      coverage.unreached,
+    );
+    if (writes.length && !results.every((r) => r.skipped))
+      blocking.push(
+        errorItem(
+          "workflows.dryRunUnreachedWrites",
+          "No dry run reached the side-effect steps {steps}: pass `records` (or `event`) that take their branch, or pin the branch that leads to them",
+          { steps: writes.join(", ") },
+        ).message,
+      );
     const tested = blocking.length === 0;
     const hash = definitionHash(definition);
     if (tested)
