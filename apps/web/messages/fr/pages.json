@@ -17,7 +17,10 @@
     "previewUnavailable": "Composant code : aperçu indisponible ici.",
     "timeout": "Appel SDK trop long (max {ms} ms).",
     "details": "Détails",
-    "component": "Composant : {name}"
+    "component": "Composant : {name}",
+    "leaving": "Vous quittez Runbase : {host}",
+    "leavingOpen": "Ouvrir le lien",
+    "leavingCancel": "Annuler"
   },
   "badge": {
     "text": "Propulsé par Runbase",
