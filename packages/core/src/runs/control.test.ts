@@ -13,7 +13,7 @@ import { functionsService } from "../functions";
 import { objectsService } from "../objects";
 import { recordsService } from "../records";
 import type { TenantContext } from "../tenant";
-import { resolve } from "../triggers";
+import { MAX_FOLLOWUPS, resolve } from "../triggers";
 import { workflowsService } from "../workflows";
 import {
   processStep,
@@ -253,7 +253,11 @@ test("retry per step, continueOnFail, timeout, loop without replaying iterations
       steps: [
         flaky("a", "retry", { retry: { attempts: 2, backoff: "1s" } }),
         flaky("b", "dead", { retry: { attempts: 1, continueOnFail: true } }),
-        { id: "c", type: "test.flaky", input: { key: "{{steps.b.output.error}}" } },
+        {
+          id: "c",
+          type: "test.flaky",
+          input: { key: "{{steps.b.output.error}}" },
+        },
       ],
       next: { a: { ok: ["b"] }, b: { error: ["c"] } },
     },
@@ -478,13 +482,25 @@ test("trigger: already active run visible in errors, bus replayed without duplic
   assert.deepEqual(await resolve(job), [id]);
   const before = (await errorsService.list(ctx, { source: "workflow" })).items
     .length;
-  // Other publication while the run is running: ignored but visible.
+  // Other publication by another member while the run is running,
+  // follow-ups exhausted: dropped but visible.
+  const other = crypto.randomUUID();
+  await sql`insert into "user" (id, name, email) values (${other}, 'o', ${other + "@x.io"})`;
+  await sql`insert into memberships (user_id, organization_id, role) values (${other}, ${ctx.organizationId}, 'owner')`;
   assert.deepEqual(
-    await resolve({ ...job, data: { ...job.data, key: crypto.randomUUID() } }),
+    await resolve({
+      ...job,
+      data: {
+        ...job.data,
+        key: crypto.randomUUID(),
+        actor: { userId: other },
+        followups: MAX_FOLLOWUPS,
+      },
+    }),
     [],
   );
   const errs = await errorsService.list(ctx, { source: "workflow" });
   assert.equal(errs.items.length, before + 1);
-  assert.match(errs.items[0]!.message, /already in progress/);
+  assert.match(errs.items[0]!.message, /stayed in progress/);
   await runsService.cancel(ctx, id!);
 });

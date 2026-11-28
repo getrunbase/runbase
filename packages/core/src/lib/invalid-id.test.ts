@@ -82,7 +82,7 @@ test("non-uuid ids: records, events, runs, refs -> clean errors", async () => {
   );
 });
 
-test("global safety net: pg error 22P02 in withTenant -> common.invalidValue", async () => {
+test("global safety net: pg error 22P02 in withTenant -> common.invalidValueOf", async () => {
   const ctx = await owner("22P02");
   await assert.rejects(
     withTenant(ctx, (tx) =>
@@ -90,6 +90,6 @@ test("global safety net: pg error 22P02 in withTenant -> common.invalidValue", a
         dsql`select * from records where id = ${"0e877df1"} and workspace_id = ${ctx.workspaceId}`,
       ),
     ),
-    clean(ctx, "common.invalidValue"),
+    clean(ctx, "common.invalidValueOf"),
   );
 });
