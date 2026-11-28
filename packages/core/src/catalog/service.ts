@@ -163,7 +163,9 @@ export const catalogService = {
     const { connectors } = await catalog();
     return connectors
       .filter((c) => !query.category || c.categories.includes(query.category))
-      .sort((a, b) => a.slug.localeCompare(b.slug));
+      .sort((a, b) => a.slug.localeCompare(b.slug))
+      // The long description stays on the detail endpoint.
+      .map(({ readme: _readme, ...rest }) => rest);
   },
 
   async getConnector(slug: string) {
@@ -177,6 +179,7 @@ export const catalogService = {
       );
     return {
       ...c,
+      readme: c.readme ?? null,
       templates: templates
         .filter((t) => t.connectors.includes(slug))
         .map(templateSummary),

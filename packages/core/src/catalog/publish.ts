@@ -74,7 +74,12 @@ export function prepareSubmission(
   };
   const t = buildTemplate(
     { slug: s.slug, meta, readme: s.description, manifest: s.manifest },
-    { owners, authors },
+    {
+      owners,
+      authors,
+      categories:
+        catalog.categories && new Set(catalog.categories.map((c) => c.slug)),
+    },
     issues,
   );
   if (!t) throw catalogInvalid(issues);

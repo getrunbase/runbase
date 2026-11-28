@@ -2116,6 +2116,12 @@
                         "none"
                       ]
                     },
+                    "readme": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "templates": {
                       "type": "array",
                       "items": {
@@ -2133,6 +2139,7 @@
                     "actions",
                     "docsUrl",
                     "credentialType",
+                    "readme",
                     "templates"
                   ],
                   "additionalProperties": false

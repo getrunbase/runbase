@@ -28,6 +28,7 @@
   "catalog.invalidFile": "{where} : {path}{message}",
   "catalog.invalidJson": "{where} : JSON invalide",
   "catalog.sectionMissing": "{where} : la section « ## {section} » manque dans la description",
+  "catalog.unknownCategory": "{where} : catégorie « {category} » inconnue : utilisez une catégorie de templates/categories.json, ou ajoutez-la dans votre pull request",
   "catalog.slugMismatch": "{where} : le slug {slug} doit être identique au nom du dossier {folder}",
   "extensions.invalid": "Module d'extension {module} invalide : {reason}",
   "email.fromRequired": "EMAIL_FROM est obligatoire quand un fournisseur d'e-mail ({provider}) est configuré",

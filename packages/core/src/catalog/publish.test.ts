@@ -169,3 +169,31 @@ test("revalidation: Bearer POST + signature to the configured URL", async () => 
     server.close();
   }
 });
+
+test("closed category list: unknown category refused, missing list skips the check", async () => {
+  const root = catalogFixture();
+  const { writeFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  writeFileSync(
+    join(root, "templates", "categories.json"),
+    JSON.stringify([{ slug: "sales", name: "Sales" }]),
+  );
+  const catalog = await loadCatalog(root);
+  assert.deepEqual(catalog.categories, [{ slug: "sales", name: "Sales" }]);
+  assert.doesNotThrow(() => prepareSubmission(submission, catalog));
+  assert.throws(
+    () =>
+      prepareSubmission({ ...submission, categories: ["sales", "x"] }, catalog),
+    (e: unknown) =>
+      e instanceof AppError &&
+      e.items?.some((i) => i.code === "catalog.unknownCategory") === true &&
+      /unknown category "x": use one from templates\/categories\.json/.test(
+        e.message,
+      ),
+  );
+  const open = await loadCatalog(catalogFixture());
+  assert.equal(open.categories, undefined);
+  assert.doesNotThrow(() =>
+    prepareSubmission({ ...submission, categories: ["anything"] }, open),
+  );
+});

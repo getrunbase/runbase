@@ -407,6 +407,12 @@ export const endpoints = {
     params: z.object({ slug: slugParam }),
     status: 200,
     response: CatalogConnectorSchema.extend({
+      readme: z
+        .string()
+        .nullable()
+        .describe(
+          "Long description of the connector (markdown, from its README.md), null when absent",
+        ),
       templates: z.array(TemplateSummarySchema),
     }),
   },

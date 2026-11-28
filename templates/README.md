@@ -33,3 +33,9 @@ The validator lives in `packages/core/src/templates/format.ts`.
 Import is refused when an object, function or component of the same name
 already exists. Workflows are created as drafts: set the secrets listed in
 `missingSecrets`, then activate them.
+
+## Categories
+
+`template.json` lists 1 to 3 `categories`, most relevant first (the first one is shown as the primary category). Every category must come from the closed list in [`categories.json`](categories.json); `pnpm catalog:validate` and in-app submissions refuse any other value.
+
+To propose a new category, add it to `templates/categories.json` (`slug` in `a-z0-9-`, English `name`) in the same pull request as the template that needs it. Maintainers review the new category with the template.
