@@ -58,6 +58,7 @@
     "./components/example-data": "./src/components/example-data.ts",
     "./components/live": "./src/components/live.ts",
     "./render": "./src/render/index.ts",
+    "./lint": "./src/lint/index.ts",
     "./logger": "./src/logger/index.ts",
     "./health": "./src/health/index.ts",
     "./catalog": "./src/catalog/index.ts",

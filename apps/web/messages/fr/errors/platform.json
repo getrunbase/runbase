@@ -77,5 +77,6 @@
   "http.unsupportedProtocol": "Protocole non pris en charge : {protocol}",
   "members.adminAllWorkspaces": "Les propriétaires et les administrateurs accèdent toujours à tous les workspaces",
   "members.noWorkspace": "Choisissez au moins un workspace, ou tous les workspaces",
-  "members.unknownWorkspace": "Workspace inconnu dans l'organisation"
+  "members.unknownWorkspace": "Workspace inconnu dans l'organisation",
+  "lint.failed": "Définition refusée par les standards de l'espace de travail : {issues}"
 }

@@ -54,6 +54,7 @@ test("workflow created, tested in dry run then activated through MCP", async () 
   assert.deepEqual(await call("workflows.validate", { definition }), {
     errors: [],
     warnings: [],
+    lint: [],
   });
   const wf = await call("workflows.create", { name: "Qualif", definition });
   assert.equal(wf.status, "draft");
