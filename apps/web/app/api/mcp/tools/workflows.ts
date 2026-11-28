@@ -4,7 +4,8 @@ import type { McpServer } from "@modelcontextprotocol/server";
 import type { TenantContext } from "@getrunbase/core/tenant";
 import { definitionSchema, workflowsService } from "@getrunbase/core/workflows";
 import { requireConfirm } from "@getrunbase/core/errors";
-import { run, must, wfId } from "./shared";
+import { lintWorkflow } from "@getrunbase/core/lint";
+import { run, must, wfId, linted } from "./shared";
 
 export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
   // Workflows
@@ -34,7 +35,7 @@ export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
     "workflows.validate",
     {
       description:
-        "Validates a definition: unconnected steps, branches, block inputs, conditions, fn.<name> inputs (required fields of the inputSchema, {{steps.x.output.y}} and {{record.y}} refs to declared fields). Returns { errors, warnings }: errors empty = valid; warnings = non-blocking (refs that cannot be checked before the run, such as {{event.…}}).",
+        "Validates a definition: unconnected steps, branches, block inputs, conditions, fn.<name> inputs (required fields of the inputSchema, {{steps.x.output.y}} and {{record.y}} refs to declared fields). Returns { errors, warnings }: errors empty = valid; warnings = non-blocking (refs that cannot be checked before the run, such as {{event.…}}); lint = workspace standards ({ code, path, message, hint }), also returned by workflows.create/update.",
       inputSchema: z.object({ definition: definitionSchema }),
     },
     ({ definition }) =>
@@ -43,6 +44,7 @@ export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
         return {
           errors: r.errors.map((e) => e.message),
           warnings: r.warnings.map((e) => e.message),
+          lint: lintWorkflow(definition),
         };
       }),
   );
@@ -101,7 +103,12 @@ export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
         definition: definitionSchema,
       }),
     },
-    (input) => run(() => workflowsService.create(ctx, input)),
+    (input) =>
+      run(() =>
+        linted(ctx, lintWorkflow(input.definition), () =>
+          workflowsService.create(ctx, input),
+        ),
+      ),
   );
   server.registerTool(
     "workflows.update",
@@ -115,7 +122,14 @@ export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
         definition: definitionSchema.optional(),
       }),
     },
-    ({ id, ...patch }) => run(() => workflowsService.update(ctx, id, patch)),
+    ({ id, ...patch }) =>
+      run(() =>
+        linted(
+          ctx,
+          patch.definition ? lintWorkflow(patch.definition) : [],
+          () => workflowsService.update(ctx, id, patch),
+        ),
+      ),
   );
   server.registerTool(
     "workflows.restore",

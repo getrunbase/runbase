@@ -4,6 +4,8 @@ import { type TenantContext } from "@getrunbase/core/tenant";
 import { objectsService } from "@getrunbase/core/objects";
 import { AppError, notFound } from "@getrunbase/core/errors";
 import { type ShotReport } from "@getrunbase/core/render";
+import { enforceLint, type LintWarning } from "@getrunbase/core/lint";
+import { lintStrict } from "@getrunbase/core/workspaces";
 
 // Machine code of an error: stable, message prefix (`[not_found] …`).
 export function errorCode(e: unknown): string {
@@ -135,3 +137,18 @@ export type ToolConfig = {
   description?: string;
   inputSchema?: z.ZodObject;
 };
+
+// Save with definition lint: strict workspace = blocking error before the
+// save; otherwise the result carries `lint` (warnings to fix) when any.
+export async function linted(
+  ctx: TenantContext,
+  warnings: LintWarning[],
+  save: () => Promise<unknown>,
+) {
+  if (warnings.length) enforceLint(warnings, await lintStrict(ctx));
+  const out = await save();
+  if (!warnings.length) return out;
+  return out && typeof out === "object" && !Array.isArray(out)
+    ? { ...out, lint: warnings }
+    : { result: out, lint: warnings };
+}

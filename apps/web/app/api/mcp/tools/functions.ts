@@ -16,7 +16,8 @@ import {
 import { runtimeCsp, runtimeHtml, testHarness } from "@/lib/code-runtime";
 import { componentCss } from "@/lib/component-css";
 import { render } from "@getrunbase/core/render";
-import { run, must, runImage, viewports, themes } from "./shared";
+import { lintFunction } from "@getrunbase/core/lint";
+import { run, must, runImage, viewports, themes, linted } from "./shared";
 
 export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
   // Functions
@@ -53,11 +54,14 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
     "functions.save",
     {
       description:
-        "Creates a TypeScript function or, if the name exists, creates a new version of it (admin scope). Permissions: network domains, secrets, records, events. " +
+        "Creates a TypeScript function or, if the name exists, creates a new version of it (admin scope). Permissions: network domains, secrets, records, events. Returns `lint` warnings ({ code, path, message, hint }) when the function breaks workspace standards: fix them and save again. " +
         fnSdk,
       inputSchema: functionInputSchema,
     },
-    (input) => run(() => functionsService.save(ctx, input)),
+    (input) =>
+      run(() =>
+        linted(ctx, lintFunction(input), () => functionsService.save(ctx, input)),
+      ),
   );
   server.registerTool(
     "functions.create",
@@ -67,7 +71,10 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
         fnSdk,
       inputSchema: functionInputSchema,
     },
-    (input) => run(() => functionsService.create(ctx, input)),
+    (input) =>
+      run(() =>
+        linted(ctx, lintFunction(input), () => functionsService.create(ctx, input)),
+      ),
   );
   server.registerTool(
     "functions.update",
@@ -76,7 +83,10 @@ export function defineFunctionTools(server: McpServer, ctx: TenantContext) {
         "Creates a new version of an existing function (admin scope). " + fnSdk,
       inputSchema: functionInputSchema,
     },
-    (input) => run(() => functionsService.update(ctx, input)),
+    (input) =>
+      run(() =>
+        linted(ctx, lintFunction(input), () => functionsService.update(ctx, input)),
+      ),
   );
   server.registerTool(
     "functions.delete",

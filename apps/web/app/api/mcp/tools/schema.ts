@@ -9,7 +9,8 @@ import { notFound } from "@getrunbase/core/errors";
 import { catalogService, submissionSchema } from "@getrunbase/core/catalog";
 import { viewsService } from "@getrunbase/core/views";
 import { MAX_SAMPLE_RECORDS, templatesService } from "@getrunbase/core/templates";
-import { run, getObject, objectId, slug } from "./shared";
+import { lintObject } from "@getrunbase/core/lint";
+import { run, getObject, objectId, slug, linted } from "./shared";
 
 export function defineSchemaTools(server: McpServer, ctx: TenantContext) {
   // Databases
@@ -107,7 +108,7 @@ export function defineSchemaTools(server: McpServer, ctx: TenantContext) {
     "objects.create",
     {
       description:
-        "Creates an object. Field types: text, number, bool, date, select, multi_select, email, url, json, ref, refs, currency { currency?: 'EUR' }, percent (12.5 = 12.5%), phone, rating { scale?: 5 }, user, file (list of { key, name, size, type } returned by files.upload). Computed (input value ignored): formula { formula: 'amount * qty', result?: text|number|bool|date } recomputed on every write (operators + - * / % = != < > and or not, functions if, concat, round, abs, min, max, upper, lower, len, coalesce, empty, today, days_between); lookup { through, field } and rollup { through, op: count|sum|avg|min|max, field? } computed on read (through = ref/refs field, or slug of an object that points to this one); created_at, updated_at, created_by, autonumber. Per-field validation: required, pattern (regex), minLength, maxLength, min, max; default = value set on creation. `unique: true` (text, email, url, number, phone): unique value in the database, even under concurrent writes (two simultaneous webhooks for the same email -> a single record, or a conflict error without match); serves as the `match` key for records.upsert. Email compared in lowercase.",
+        "Creates an object. Field types: text, number, bool, date, select, multi_select, email, url, json, ref, refs, currency { currency?: 'EUR' }, percent (12.5 = 12.5%), phone, rating { scale?: 5 }, user, file (list of { key, name, size, type } returned by files.upload). Computed (input value ignored): formula { formula: 'amount * qty', result?: text|number|bool|date } recomputed on every write (operators + - * / % = != < > and or not, functions if, concat, round, abs, min, max, upper, lower, len, coalesce, empty, today, days_between); lookup { through, field } and rollup { through, op: count|sum|avg|min|max, field? } computed on read (through = ref/refs field, or slug of an object that points to this one); created_at, updated_at, created_by, autonumber. Per-field validation: required, pattern (regex), minLength, maxLength, min, max; default = value set on creation. `unique: true` (text, email, url, number, phone): unique value in the database, even under concurrent writes (two simultaneous webhooks for the same email -> a single record, or a conflict error without match); serves as the `match` key for records.upsert. Email compared in lowercase. Returns `lint` warnings ({ code, path, message, hint }) when slugs, keys or options break workspace standards (snake_case English keys, plain options): fix them with objects.update_schema.",
       inputSchema: z.object({
         slug: z.string().min(1),
         name: z.string().min(1),
@@ -119,7 +120,10 @@ export function defineSchemaTools(server: McpServer, ctx: TenantContext) {
           .describe("Database slug (default: the default database)"),
       }),
     },
-    (input) => run(() => objectsService.create(ctx, input)),
+    (input) =>
+      run(() =>
+        linted(ctx, lintObject(input), () => objectsService.create(ctx, input)),
+      ),
   );
   server.registerTool(
     "objects.update_schema",
@@ -134,9 +138,12 @@ export function defineSchemaTools(server: McpServer, ctx: TenantContext) {
       }),
     },
     ({ object, ...patch }) =>
-      run(async () =>
-        objectsService.update(ctx, await objectId(ctx, object), patch),
-      ),
+      run(async () => {
+        const id = await objectId(ctx, object);
+        return linted(ctx, lintObject(patch), () =>
+          objectsService.update(ctx, id, patch),
+        );
+      }),
   );
   server.registerTool(
     "objects.delete",
