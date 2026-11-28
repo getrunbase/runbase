@@ -3,11 +3,24 @@ import { getBlock, blockContext, type BlockResult } from "../blocks";
 import { blockEngine } from "../blocks/engine";
 import { assertAiAllowed, chargeAi } from "../runs/budget";
 import { recordsService } from "../records";
-import { builtins, stepInput } from "../runs/templates";
+import {
+  builtins,
+  paths as templatePaths,
+  renderInputs,
+  stepInput,
+} from "../runs/templates";
+import { objectsService } from "../objects";
+import { pick, webhooksService } from "../webhooks";
+import { triggerSchema } from "../triggers/schema";
 import type { TenantContext } from "../tenant";
 import type { Definition } from "./index";
 import { normalizeGraph } from "./graph";
-import { errorItem, notFound, type ErrorItem } from "../errors/app-error";
+import {
+  appError,
+  errorItem,
+  notFound,
+  type ErrorItem,
+} from "../errors/app-error";
 import { functionsService } from "../functions";
 import { validateSchema } from "../functions/sandbox";
 import { branchesOf, fnName, type Step } from "./validate-shared";
@@ -28,8 +41,34 @@ export type DryRunStep = {
   output?: unknown;
   // Pinned output (`pins`) used instead of running the block.
   pinned?: boolean;
+  // Non-blocking findings, e.g. a {{record.*}} ref that renders empty.
+  warnings?: string[];
 };
-export type DryRunPath = { id: string; steps: DryRunStep[]; error?: string };
+export type DryRunPath = {
+  id: string;
+  steps: DryRunStep[];
+  error?: string;
+  // How to fix `error` when it comes from a simulated null output.
+  hint?: string;
+};
+
+// One dry run (one record, or none).
+export type DryRunResult = {
+  recordId: string | null;
+  path: DryRunStep[];
+  paths: DryRunPath[];
+  error?: string;
+  hint?: string;
+  warnings?: string[];
+  // Synthetic record built from the webhook sample and mapping.
+  record?: Record<string, unknown>;
+  // Nothing to run on (no sample, no matching record): not a test.
+  skipped?: string;
+  skippedItem?: ErrorItem;
+};
+
+// Records sampled for a scheduled workflow on an object.
+const SCHEDULE_SAMPLE = 5;
 
 // Pinned output of a step (`definition.pins[stepId]`): replayed in dry run and
 // in step tests instead of running the block (frozen sample data).
@@ -61,10 +100,17 @@ async function execStep(
     });
   const raw = new Set(block.raw);
   const input = await stepInput(ctx, o.input ?? step.input, raw, scope);
+  const warnings = await emptyRecordRefs(
+    ctx,
+    o.input ?? step.input,
+    raw,
+    scope,
+  );
   const pin = definition.pins?.[step.id] as Pin | undefined;
   if (pin)
     return {
       input,
+      warnings,
       result: {
         branch: pin.branch ?? branchesOf(step, block)[0] ?? "ok",
         output: pin.output,
@@ -85,6 +131,7 @@ async function execStep(
   if (step.type === "human.approve")
     return {
       input,
+      warnings,
       result: null,
       simulated: true,
       pinned: false,
@@ -98,10 +145,12 @@ async function execStep(
   if (simulated)
     return {
       input,
-      result: block.simulate?.(parsed) ?? {
-        branch: branchesOf(step, block)[0] ?? "ok",
-        output: null,
-      },
+      warnings,
+      result: block.simulate?.(parsed) ??
+        syntheticWrite(step.type, parsed) ?? {
+          branch: branchesOf(step, block)[0] ?? "ok",
+          output: null,
+        },
       simulated,
       pinned: false,
       reason: errorItem(
@@ -120,6 +169,7 @@ async function execStep(
   const out = result.output as { reason?: string } | null;
   return {
     input,
+    warnings,
     result,
     simulated,
     pinned: false,
@@ -130,6 +180,161 @@ async function execStep(
             branch: result.branch,
           }),
   };
+}
+
+// Simulated record writes return a synthetic record (fresh id, the written
+// data) so that later {{steps.x.output.record.id}} refs resolve.
+function syntheticWrite(type: string, input: unknown): BlockResult | null {
+  if (type !== "record.upsert" && type !== "record.create") return null;
+  const data = ((input as { data?: unknown }).data ?? {}) as Record<
+    string,
+    unknown
+  >;
+  const record = { ...data, id: crypto.randomUUID(), data, dryRun: true };
+  return type === "record.create"
+    ? { branch: "ok", output: { record } }
+    : {
+        branch: "created",
+        output: { record, created: true, changed: Object.keys(data) },
+      };
+}
+
+// {{record.*}} refs of a step input that render empty (missing field, no
+// record): a warning, since the real run would write or send blanks.
+async function emptyRecordRefs(
+  ctx: TenantContext,
+  input: unknown,
+  raw: Set<string>,
+  scope: Scope,
+) {
+  const kept = Object.fromEntries(
+    Object.entries((input ?? {}) as Record<string, unknown>).filter(
+      ([k]) => !raw.has(k),
+    ),
+  );
+  const out: ErrorItem[] = [];
+  for (const ref of templatePaths(kept)) {
+    if (!/^record\./.test(ref)) continue;
+    const v = await renderInputs(ctx, `{{${ref}}}`, scope);
+    if (v === undefined || v === null || v === "")
+      out.push(
+        errorItem(
+          "workflows.dryRunEmptyRecordRef",
+          "`{ref}` renders empty: the record has no value for this field",
+          { ref },
+        ),
+      );
+  }
+  return out;
+}
+
+type Synthetic = Record<string, unknown> & { id: string };
+type Targets = {
+  recordIds: string[];
+  event?: unknown;
+  // Record the webhook mapping would upsert (nothing is written).
+  synthetic?: Synthetic;
+  // Nothing to run on: the dry run cannot mark the version tested.
+  skipped?: ErrorItem;
+};
+
+// What a dry run without `records` runs on, like the real trigger:
+// webhook = stored sample mapped to a synthetic record; schedule on an
+// object = a sample of the records matching its filter.
+export async function dryRunTargets(
+  ctx: TenantContext,
+  definition: Definition,
+  recordIds: string[],
+  opts: DryRunOptions,
+): Promise<Targets> {
+  const t = triggerSchema.safeParse(definition.trigger).data;
+  if (recordIds.length || !t) return { recordIds, event: opts.event };
+  if (t.type === "trigger.webhook") {
+    const hook = (await webhooksService.list(ctx)).find(
+      (h) => h.name === t.webhook || h.id === t.webhook,
+    );
+    const sample = hook?.sample ?? undefined;
+    let event = opts.event;
+    if (event === undefined) {
+      if (sample === undefined || sample === null)
+        return {
+          recordIds,
+          skipped: errorItem(
+            "workflows.dryRunNoSample",
+            "Webhook {webhook} has no stored sample: call its testPath (or webhooks.test) first, or pass `event` with the provider payload",
+            { webhook: t.webhook },
+          ),
+        };
+      event = sample;
+    } else if (sample && t.mapping) {
+      const missing = Object.values(t.mapping).filter(
+        (p) => pick(sample, p) !== undefined && pick(event, p) === undefined,
+      );
+      if (missing.length)
+        throw appError(
+          "workflows.dryRunEventShape",
+          "`event` does not match the stored sample of webhook {webhook}: paths {paths} are missing. Pass the raw provider payload (same shape as the sample), not a record",
+          { webhook: t.webhook, paths: missing.join(", ") },
+          { kind: "invalid_input" },
+        );
+    }
+    if (!t.object || !t.mapping) return { recordIds, event };
+    const data: Record<string, unknown> = {};
+    for (const [field, p] of Object.entries(t.mapping)) {
+      const v = pick(event, p);
+      if (v !== undefined && v !== null && v !== "") data[field] = v;
+    }
+    const object = await objectsService.get(ctx, t.object);
+    const blanks = Object.fromEntries(
+      ((object?.fields ?? []) as { key: string }[]).map((f) => [f.key, null]),
+    );
+    const synthetic: Synthetic = {
+      ...blanks,
+      ...data,
+      id: crypto.randomUUID(),
+      objectId: object?.id ?? null,
+      data,
+      dryRun: true,
+    };
+    const withId =
+      event && typeof event === "object" && !Array.isArray(event)
+        ? { recordId: synthetic.id, ...event }
+        : event;
+    return { recordIds, event: withId, synthetic };
+  }
+  if (t.type === "trigger.schedule" && t.object) {
+    const object = await objectsService.get(ctx, t.object);
+    const records = object
+      ? await recordsService.search(ctx, object.id, {
+          filter: t.filter,
+          pagination: { limit: SCHEDULE_SAMPLE },
+        })
+      : [];
+    if (!records.length)
+      return {
+        recordIds,
+        event: opts.event,
+        skipped: errorItem(
+          "workflows.dryRunNoScheduleRecords",
+          "No {object} record matches the schedule filter, so there is nothing to run on. Add a matching record (test: true) or pass `records`",
+          { object: t.object },
+        ),
+      };
+    return { recordIds: records.map((r) => r.id), event: opts.event };
+  }
+  return { recordIds, event: opts.event };
+}
+
+// Steps whose simulated output is null and that `step` reads: the usual
+// cause of a dry-run failure that a real run would not have.
+function nullRefs(
+  step: Step | undefined,
+  done: Record<string, { output: unknown }>,
+) {
+  const raw = JSON.stringify(step?.input ?? {});
+  return Object.entries(done)
+    .filter(([id, v]) => v.output == null && raw.includes(`steps.${id}.`))
+    .map(([id]) => id);
 }
 
 const baseScope = (
@@ -157,12 +362,28 @@ export async function dryRun(
   definition: Definition,
   recordIds: string[],
   opts: DryRunOptions = {},
-) {
+): Promise<DryRunResult[]> {
   const steps = definition.steps as (Step & { join?: boolean })[];
   const { entry, next } = normalizeGraph(definition);
-  const results = [];
-  for (const recordId of recordIds.length ? recordIds : [null]) {
-    const record = recordId ? await recordsService.get(ctx, recordId) : null;
+  const targets = await dryRunTargets(ctx, definition, recordIds, opts);
+  if (targets.skipped)
+    return [
+      {
+        recordId: null,
+        path: [] as DryRunStep[],
+        paths: [] as DryRunPath[],
+        skipped: targets.skipped.message,
+        skippedItem: targets.skipped,
+      },
+    ];
+  opts = { ...opts, event: targets.event };
+  const results: DryRunResult[] = [];
+  for (const recordId of targets.recordIds.length
+    ? targets.recordIds
+    : [null]) {
+    const record = recordId
+      ? await recordsService.get(ctx, recordId)
+      : (targets.synthetic ?? null);
     const paths: DryRunPath[] = [];
     const flat: DryRunStep[] = [];
     // Queue of paths: id, current step, known outputs of the path.
@@ -228,6 +449,9 @@ export async function dryRun(
           input: r.input,
           output: r.result?.output ?? null,
           ...(r.pinned && { pinned: true }),
+          ...(r.warnings.length && {
+            warnings: r.warnings.map((w) => w.message),
+          }),
         };
         path.steps.push(full);
         flat.push(full);
@@ -247,10 +471,26 @@ export async function dryRun(
         todo.unshift(...children.filter((c) => !isJoin(c.stepId!)));
       } catch (e) {
         path.error = `${cur.stepId} : ${(e as Error).message}`;
+        const [nul] = nullRefs(step, cur.done);
+        if (nul)
+          path.hint = errorItem(
+            "workflows.dryRunPinHint",
+            'Step {step} is simulated in dry run and outputs null, so refs to it are empty. Pin a sample output: definition.pins = { "{step}": { output: { ... } } }, or use a test run (runs.start { test: true })',
+            { step: nul },
+          ).message;
       }
     }
-    const error = paths.find((p) => p.error)?.error;
-    results.push({ recordId, path: flat, paths, ...(error && { error }) });
+    const failed = paths.find((p) => p.error);
+    const warnings = [...new Set(flat.flatMap((s) => s.warnings ?? []))];
+    results.push({
+      recordId,
+      path: flat,
+      paths,
+      ...(failed && { error: failed.error }),
+      ...(failed?.hint && { hint: failed.hint }),
+      ...(warnings.length && { warnings }),
+      ...(targets.synthetic && { record: targets.synthetic }),
+    });
   }
   return results;
 }

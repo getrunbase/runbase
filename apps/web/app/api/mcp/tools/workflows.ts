@@ -83,10 +83,31 @@ export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
     {
       description:
         "Validates a definition: unconnected steps, branches, block inputs, conditions, fn.<name> inputs (required fields of the inputSchema, {{steps.x.output.y}} and {{record.y}} refs to declared fields). Returns { errors, warnings }: errors empty = valid; warnings = non-blocking (refs that cannot be checked before the run, such as {{event.…}}); lint = workspace standards ({ code, path, message, hint }), also returned by workflows.create/update.",
-      inputSchema: z.object({ definition: definitionSchema }),
+      inputSchema: z.object({
+        definition: definitionSchema.optional(),
+        id: wfId
+          .optional()
+          .describe(
+            "Stored workflow (id or name) to validate: its staged draft, otherwise its live version",
+          ),
+      }),
     },
-    ({ definition }) =>
+    ({ definition: given, id }) =>
       run(async () => {
+        const definition =
+          given ??
+          (id &&
+            (await must(
+              workflowsService.definitionOf(ctx, id),
+              "Workflow",
+              id,
+              "See workflows.list.",
+            )));
+        if (!definition)
+          throw appError(
+            "workflows.validateTarget",
+            "workflows.validate needs `definition` or `id` (stored workflow id or name)",
+          );
         const r = await workflowsService.check(ctx, definition);
         return {
           errors: r.errors.map((e) => e.message),
@@ -99,15 +120,25 @@ export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
     "workflows.dry_run",
     {
       description:
-        "Runs a definition (or, with `workflow`, the current version of a saved workflow) without ever writing anything: writes, sends, external calls, loops and functions with network or 'write' permissions are simulated (first branch, null output); reads are real. AI blocks (ai.*) simulated by default, real and billed only with ai: true. One run per record in `records`; without records, a single run without a record (useful for a workflow triggered by an event or webhook); `event` = payload of the triggering event ({{event.…}}). Pinned outputs (`definition.pins[stepId] = { output, branch? }`) replayed instead of running the step. A `join: true` step runs once, after the other paths. Returns per run the paths taken (`paths`, one per parallel execution branch; `path`: all steps flattened), with for each step input, output, branch and reason. With `workflow`: returns { version, tested, results }; tested = no failing path, which unlocks workflows.activate for that version.",
+        "Runs a definition (or, with `workflow`, a saved workflow: `version`, else its staged draft, else its live version; or `workflow` + `definition` to test a definition before saving it) without ever writing anything: writes, sends, external calls, loops and functions with network or 'write' permissions are simulated (first branch, null output); reads are real. AI blocks (ai.*) simulated by default, real and billed only with ai: true. One run per record in `records`. Without records: trigger.webhook uses the webhook's stored sample (or `event`, which must have the sample's shape), applies the mapping and runs on a synthetic record ({{record.id}} resolves, nothing is written); trigger.schedule on an object runs on up to 5 records matching its filter (none: tested false with `skipped`); otherwise a single run without a record. `event` = payload of the triggering event ({{event.…}}). Simulated record.upsert / record.create return a synthetic record. A failure caused by a simulated null output carries a `hint` (pin it); `warnings` lists {{record.*}} refs that render empty. Pinned outputs (`definition.pins[stepId] = { output, branch? }`) replayed instead of running the step. A `join: true` step runs once, after the other paths. Returns per run the paths taken (`paths`, one per parallel execution branch; `path`: all steps flattened), with for each step input, output, branch and reason. With `workflow`: returns { version, liveVersion, tested, next?, results }; tested = no failing path, which unlocks workflows.activate for that version (activate promotes a tested draft).",
       inputSchema: z.object({
         definition: definitionSchema
           .optional()
-          .describe("Definition to run (ignored with `workflow`)"),
+          .describe(
+            "Definition to run; with `workflow`, tested for that workflow (a later workflows.update with the same definition goes live directly)",
+          ),
         workflow: wfId
           .optional()
           .describe(
-            "Saved workflow id: runs its current version and records the test",
+            "Saved workflow id or name: runs a version of it and records the test",
+          ),
+        version: z
+          .number()
+          .int()
+          .min(1)
+          .optional()
+          .describe(
+            "With `workflow`: version to test (default: staged draft, else live)",
           ),
         records: z
           .array(z.string())
@@ -124,13 +155,15 @@ export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
           .describe("true: really runs the AI blocks (paid)"),
       }),
     },
-    ({ definition, workflow, records, event, ai }) =>
+    ({ definition, workflow, version, records, event, ai }) =>
       run(async () => {
         if (workflow)
           return must(
             workflowsService.dryRunWorkflow(ctx, workflow, records ?? [], {
               ai,
               event,
+              version,
+              definition,
             }),
             "Workflow",
             workflow,
@@ -182,7 +215,7 @@ export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
     "workflows.update",
     {
       description:
-        "Updates a workflow. A new definition creates a new version.",
+        "Updates a workflow (id or name). A new definition creates a new version; the result carries `errors`, `warnings` (validation) and `lint`. On an active workflow, an untested definition is staged as a draft (`draftVersion`, `staged: true`) while the live version keeps running: run workflows.dry_run { workflow: id, version: draftVersion } then workflows.activate promotes it. A definition already tested with workflows.dry_run { workflow, definition } goes live directly.",
       inputSchema: z.object({
         id: wfId,
         name: z.string().min(1).optional(),
@@ -191,28 +224,20 @@ export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
       }),
     },
     ({ id, ...patch }) =>
-      run(async () => {
-        // Same test gate as workflows.activate. The gate applies whenever the
-        // workflow ends up active: activating it, or sending a new (untested)
-        // definition to a workflow that is already active. Re-sending
-        // status "active" with no definition keeps the tested state as is.
-        const current = await workflowsService.get(ctx, id);
-        const staysActive =
-          patch.status === "active" ||
-          (patch.status === undefined && current?.status === "active");
-        if (
-          staysActive &&
-          (patch.definition || current?.status !== "active")
-        )
-          await workflowsService.requireTested(ctx, id, {
-            newDefinition: Boolean(patch.definition),
-          });
-        return linted(
+      run(async () =>
+        // Same test gate as workflows.activate (see updateTested).
+        linted(
           ctx,
           patch.definition ? lintWorkflow(patch.definition) : [],
-          () => workflowsService.update(ctx, id, patch),
-        );
-      }),
+          () =>
+            must(
+              workflowsService.updateTested(ctx, id, patch),
+              "Workflow",
+              id,
+              "See workflows.list.",
+            ),
+        ),
+      ),
   );
   server.registerTool(
     "workflows.restore",
@@ -228,7 +253,7 @@ export function defineWorkflowTools(server: McpServer, ctx: TenantContext) {
     "workflows.activate",
     {
       description:
-        "Activates a workflow: its triggers fire. Refused if its definition is invalid or if its current version was never tested: first run workflows.dry_run { workflow: id } with no failing path, or a test run runs.start { id, test: true } that succeeds. Use these native test modes ({{run.test}} in a test run) rather than a home-made simulation flag read from a settings object.",
+        "Activates a workflow: its triggers fire. Promotes a staged draft (see workflows.update). Refused if the definition is invalid or if the version to activate was never tested: first run workflows.dry_run { workflow: id } with no failing path, or a test run runs.start { id, test: true } that succeeds. Use these native test modes ({{run.test}} in a test run) rather than a home-made simulation flag read from a settings object.",
       inputSchema: z.object({ id: wfId }),
     },
     ({ id }) => run(() => workflowsService.activateTested(ctx, id)),

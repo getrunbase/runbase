@@ -64,6 +64,8 @@ export const SILENT = new Set([
   "not_found",
   "not_waiting",
   "conflict",
+  // Test gate (workflows.untested): expected, cleared by a dry run.
+  "untested",
 ]);
 
 // Image result: one PNG capture per viewport/theme (seen by the AI) then a
@@ -132,7 +134,7 @@ export const upsertItem = z.object({
   mode,
 });
 
-export const wfId = z.string().describe("Workflow id");
+export const wfId = z.string().describe("Workflow id or name");
 export type ToolConfig = {
   description?: string;
   inputSchema?: z.ZodObject;
