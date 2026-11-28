@@ -298,6 +298,108 @@ test("migrate: formula add counts touched, change_type map, update op, update_sc
   );
 });
 
+test("migrate: rename rewrites formulas, lookups and rollups; delete guarded", async () => {
+  const ctx = await owner("MigrateDeps");
+  const deal = await objectsService.create(ctx, {
+    slug: "deal",
+    name: "Deal",
+    fields: [
+      { key: "name", label: "Name", type: "text" },
+      { key: "amount", label: "Amount", type: "number" },
+      { key: "qty", label: "Qty", type: "number" },
+      {
+        key: "total",
+        label: "Total",
+        type: "formula",
+        formula: "amount * qty",
+        result: "number",
+      },
+    ],
+  });
+  const line = await objectsService.create(ctx, {
+    slug: "deal_note",
+    name: "Deal note",
+    fields: [
+      { key: "deal", label: "Deal", type: "ref", object: "deal" },
+      {
+        key: "deal_amount",
+        label: "Amount",
+        type: "lookup",
+        through: "deal",
+        field: "amount",
+      },
+    ],
+  });
+  await recordsService.upsert(ctx, {
+    objectId: deal.id,
+    data: { name: "A", amount: 2, qty: 3 },
+  });
+
+  // dryRun lists dependents; delete refused without force.
+  const preview = await objectsService.migrate(
+    ctx,
+    deal.id,
+    { op: "delete", field: "amount" },
+    { dryRun: true },
+  );
+  assert.deepEqual(preview.dependents.sort(), [
+    "deal.total",
+    "deal_note.deal_amount",
+  ]);
+  assert.deepEqual(preview.examples[0]!.computed, [
+    { field: "total", before: 6, after: null },
+  ]);
+  await assert.rejects(
+    objectsService.migrate(ctx, deal.id, { op: "delete", field: "amount" }),
+    /used by deal\.total/,
+  );
+
+  // rename: formula and remote lookup follow, values unchanged.
+  await objectsService.migrate(ctx, deal.id, {
+    op: "rename",
+    field: "amount",
+    to: "price",
+  });
+  const fields = (id: string) =>
+    objectsService
+      .get(ctx, id)
+      .then((o) => o!.fields as Record<string, unknown>[]);
+  assert.equal(
+    (await fields(deal.id)).find((f) => f.key === "total")!.formula,
+    "price * qty",
+  );
+  assert.equal(
+    (await fields(line.id)).find((f) => f.key === "deal_amount")!.field,
+    "price",
+  );
+  const [r] = await recordsService.search(ctx, deal.id);
+  assert.equal(r!.data.total, 6);
+
+  // rename_slug: refused while deal_note points to deal; allowed otherwise.
+  await assert.rejects(
+    objectsService.migrate(ctx, deal.id, {
+      op: "rename_slug",
+      to: "opportunity",
+    }),
+    /used by deal_note\.deal/,
+  );
+  await assert.rejects(
+    objectsService.migrate(ctx, line.id, { op: "rename_slug", to: "notes" }),
+    /plural/,
+  );
+  await objectsService.migrate(ctx, line.id, { op: "rename_slug", to: "note" });
+  assert.ok(await objectsService.get(ctx, "note"));
+
+  // force: delete despite dependents.
+  await objectsService.migrate(ctx, deal.id, {
+    op: "delete",
+    field: "qty",
+    force: true,
+  });
+  const [r2] = await recordsService.search(ctx, deal.id);
+  assert.equal(r2!.data.total, null);
+});
+
 test("objects.delete: explicit confirmation required", async () => {
   const ctx = await owner("ObjDelete");
   const obj = await objectsService.create(ctx, {

@@ -15,7 +15,7 @@ test("non-compliant definitions return lint warnings, strict mode blocks", async
   const call = client(ctx);
 
   const obj = await call("objects.create", {
-    slug: "prospects",
+    slug: "prospect",
     name: "Prospects",
     fields: [
       { key: "nom_societe", label: "Company", type: "text" },
@@ -29,13 +29,40 @@ test("non-compliant definitions return lint warnings, strict mode blocks", async
   });
   assert.deepEqual(codes(obj.lint), ["key.notEnglish", "option.numbered"]);
   const fixed = await call("objects.update_schema", {
-    object: "prospects",
+    object: "prospect",
     fields: [
       { key: "company", label: "Company", type: "text" },
       { key: "stage", label: "Stage", type: "select", options: ["New", "Won"] },
     ],
   });
   assert.equal(fixed.lint, undefined);
+
+  // Plural slug refused at creation, with the singular as suggestion.
+  const plural = await raw(ctx)("objects.create", {
+    slug: "prospects",
+    name: "Prospects",
+    fields: [{ key: "name", label: "Name", type: "text" }],
+  });
+  assert.equal(plural.isError, true);
+  assert.match(plural.content[0]!.text, /singular\. Use prospect/);
+
+  // update_schema lints the merged object: name-only patch keeps warnings.
+  await call("objects.update_schema", {
+    object: "prospect",
+    fields: [
+      { key: "company", label: "Company", type: "text" },
+      { key: "stage", label: "Stage", type: "select", options: ["New", "won"] },
+    ],
+  });
+  const renamed = await call("objects.update_schema", {
+    object: "prospect",
+    name: "Leads",
+  });
+  assert.deepEqual(codes(renamed.lint), ["option.mixedCase"]);
+
+  // databases.create: slug derived from the name when omitted.
+  const db = await call("databases.create", { name: "Sales Pipeline" });
+  assert.equal(db.slug, "sales_pipeline");
 
   const fn = await call("functions.save", {
     name: "do-everything",

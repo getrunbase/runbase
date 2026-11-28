@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { AppError } from "../errors/app-error";
 import {
+  assertSingularSlug,
+  toSnake,
   enforceLint,
   lintFunction,
   lintKey,
@@ -41,6 +43,36 @@ test("objects: slug, keys and select options", () => {
     lintObject({ fields: [{ key: "stage", options: ["New", "Won"] }] }),
     [],
   );
+});
+
+test("objects: option punctuation, mixed case and mixed language", () => {
+  const ws = lintObject({
+    fields: [
+      { key: "stage", options: ["New", "won", "Lost!"] },
+      { key: "status", options: ["Open", "Gagné"] },
+      { key: "tier", options: ["Gold", "Silver"] },
+    ],
+  });
+  assert.deepEqual(codes(ws), [
+    "option.punctuation",
+    "option.mixedCase",
+    "option.mixedLanguage",
+  ]);
+  assert.match(ws[0]!.hint, /"Lost"/);
+  assert.equal(ws[2]!.path, "status");
+});
+
+test("slugs: plural slug refused with the singular as suggestion", () => {
+  assert.throws(
+    () => assertSingularSlug("contacts"),
+    (e: unknown) =>
+      e instanceof AppError &&
+      e.code === "objects.pluralSlug" &&
+      /Use contact$/.test(e.message),
+  );
+  assert.doesNotThrow(() => assertSingularSlug("contact"));
+  assert.doesNotThrow(() => assertSingularSlug("status"));
+  assert.equal(toSnake("Sales Pipeline"), "sales_pipeline");
 });
 
 test("functions: wildcard domain, empty outputSchema, length, error write", () => {

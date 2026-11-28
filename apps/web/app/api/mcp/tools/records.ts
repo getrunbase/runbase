@@ -60,7 +60,7 @@ export function defineRecordTools(server: McpServer, ctx: TenantContext) {
     "objects.migrate",
     {
       description:
-        "Evolves an object's schema while carrying the data over. op: rename { field, to, label? } (values copied); change_type { field, type, options?, object?, dropInvalid? } (values converted; refused if invalid values remain, unless dropInvalid empties them); add { field: definition, default? } (default written to existing records, mandatory if required); require { field, default? } (default for empty records); delete { field } (purged from records). Always call with dryRun: true first: returns { records, touched, invalid, samples }.",
+        "Evolves an object's schema while carrying the data over. op: rename { field, to, label? } (values copied); change_type { field, type, options?, object?, dropInvalid? } (values converted; refused if invalid values remain, unless dropInvalid empties them); add { field: definition, default? } (default written to existing records, mandatory if required); require { field, default? } (default for empty records); delete { field, force? } (purged from records; refused while a formula, lookup or rollup uses it, unless force); rename_slug { to } (object slug renamed; refused while other objects point to it). A field rename rewrites the formulas, lookups and rollups that read it. Always call with dryRun: true first: returns { records, touched, invalid, samples, dependents, examples: [{ id, before, after, computed: [{ field, before, after }] }] }.",
       inputSchema: z.object({
         object: slug,
         operation: z.discriminatedUnion("op", [
@@ -105,7 +105,12 @@ export function defineRecordTools(server: McpServer, ctx: TenantContext) {
             field: z.string(),
             default: z.unknown().optional(),
           }),
-          z.object({ op: z.literal("delete"), field: z.string() }),
+          z.object({
+            op: z.literal("delete"),
+            field: z.string(),
+            force: z.boolean().optional(),
+          }),
+          z.object({ op: z.literal("rename_slug"), to: z.string().min(1) }),
         ]),
         dryRun: z.boolean().optional(),
       }),

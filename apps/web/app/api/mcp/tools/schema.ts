@@ -12,7 +12,7 @@ import {
   MAX_SAMPLE_RECORDS,
   templatesService,
 } from "@getrunbase/core/templates";
-import { lintObject } from "@getrunbase/core/lint";
+import { assertSingularSlug, lintObject, toSnake } from "@getrunbase/core/lint";
 import { run, getObject, objectId, slug, linted } from "./shared";
 
 export function defineSchemaTools(server: McpServer, ctx: TenantContext) {
@@ -45,15 +45,21 @@ export function defineSchemaTools(server: McpServer, ctx: TenantContext) {
     "databases.create",
     {
       description:
-        "Creates a database. Put objects in it with objects.create (database field).",
+        "Creates a database. Put objects in it with objects.create (database field). slug is optional: derived from name (snake_case) when omitted.",
       inputSchema: z.object({
-        slug: z.string().min(1),
+        slug: z.string().min(1).optional(),
         name: z.string().min(1),
         icon: z.string().optional(),
         description: z.string().optional(),
       }),
     },
-    (input) => run(() => databasesService.create(ctx, input)),
+    ({ slug, ...input }) =>
+      run(() =>
+        databasesService.create(ctx, {
+          ...input,
+          slug: slug ?? (toSnake(input.name) || "database"),
+        }),
+      ),
   );
   server.registerTool(
     "databases.rename",
@@ -111,7 +117,7 @@ export function defineSchemaTools(server: McpServer, ctx: TenantContext) {
     "objects.create",
     {
       description:
-        "Creates an object. Field types: text, number, bool, date, select, multi_select, email, url, json, ref, refs, currency { currency?: 'EUR' }, percent (12.5 = 12.5%), phone, rating { scale?: 5 }, user, file (list of { key, name, size, type } returned by files.upload). Computed (input value ignored): formula { formula: 'amount * qty', result?: text|number|bool|date } recomputed on every write (operators + - * / % = != < > and or not, functions if, concat, round, abs, min, max, upper, lower, len, coalesce, empty, today, days_between); lookup { through, field } and rollup { through, op: count|sum|avg|min|max, field? } computed on read (through = ref/refs field, or slug of an object that points to this one); created_at, updated_at, created_by, autonumber. Per-field validation: required, pattern (regex), minLength, maxLength, min, max; default = value set on creation. `unique: true` (text, email, url, number, phone): unique value in the database, even under concurrent writes (two simultaneous webhooks for the same email -> a single record, or a conflict error without match); serves as the `match` key for records.upsert. Email compared in lowercase. Returns `lint` warnings ({ code, path, message, hint }) when slugs, keys or options break workspace standards (snake_case English keys, plain options): fix them with objects.update_schema.",
+        "Creates an object. Slugs are singular snake_case English (contact, deal, invoice_line: one record = one contact); a plural slug is refused with the singular as suggestion. Field types: text, number, bool, date, select, multi_select, email, url, json, ref, refs, currency { currency?: 'EUR' }, percent (12.5 = 12.5%), phone, rating { scale?: 5 }, user, file (list of { key, name, size, type } returned by files.upload). Computed (input value ignored): formula { formula: 'amount * qty', result?: text|number|bool|date } recomputed on every write (operators + - * / % = != < > and or not, functions if, concat, round, abs, min, max, upper, lower, len, coalesce, empty, today, days_between); lookup { through, field } and rollup { through, op: count|sum|avg|min|max, field? } computed on read (through = ref/refs field, or slug of an object that points to this one); created_at, updated_at, created_by, autonumber. Per-field validation: required, pattern (regex), minLength, maxLength, min, max; default = value set on creation. `unique: true` (text, email, url, number, phone): unique value in the database, even under concurrent writes (two simultaneous webhooks for the same email -> a single record, or a conflict error without match); serves as the `match` key for records.upsert. Email compared in lowercase. Returns `lint` warnings ({ code, path, message, hint }) when slugs, keys or options break workspace standards (snake_case English keys, plain options in one style and one language). Fix them while the object is empty by recreating it (objects.delete, objects.create); once it holds data: field key with objects.migrate rename, slug with objects.migrate rename_slug, options with objects.migrate update (dryRun: true first).",
       inputSchema: z.object({
         slug: z.string().min(1),
         name: z.string().min(1),
@@ -125,6 +131,7 @@ export function defineSchemaTools(server: McpServer, ctx: TenantContext) {
     },
     (input) =>
       run(async () => {
+        assertSingularSlug(input.slug);
         // No database given and none exists yet: the default one is created.
         const fresh =
           !input.database && !(await databasesService.list(ctx)).length;
@@ -152,8 +159,14 @@ export function defineSchemaTools(server: McpServer, ctx: TenantContext) {
     },
     ({ object, ...patch }) =>
       run(async () => {
-        const id = await objectId(ctx, object);
-        return linted(ctx, lintObject(patch), () =>
+        const current = await getObject(ctx, object);
+        const id = current.id;
+        // Lint the object as it will be, not only the patch.
+        const merged = {
+          slug: current.slug,
+          fields: patch.fields ?? (current.fields as never),
+        };
+        return linted(ctx, lintObject(merged), () =>
           objectsService.update(ctx, id, patch),
         );
       }),

@@ -103,7 +103,7 @@ export function lintKey(kind: string, key: string): LintWarning[] {
   return [];
 }
 
-const toSnake = (s: string) =>
+export const toSnake = (s: string) =>
   s
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
@@ -134,7 +134,7 @@ const SINGULAR_S = new Set([
   "logistics",
   "sales",
 ]);
-const isPlural = (slug: string) => {
+export const isPlural = (slug: string) => {
   const last = slug.split("_").pop() ?? "";
   return (
     last.length > 2 &&
@@ -143,11 +143,86 @@ const isPlural = (slug: string) => {
     !SINGULAR_S.has(last)
   );
 };
-const singular = (slug: string) =>
+export const singular = (slug: string) =>
   slug
     .replace(/ies$/, "y")
     .replace(/(x|ch|sh)es$/, "$1")
     .replace(/s$/, "");
+
+// Object slugs are singular (one record = one contact): a plural slug is
+// refused at creation, with the singular as suggestion.
+export function assertSingularSlug(slug: string) {
+  if (SNAKE.test(slug) && isPlural(slug))
+    throw appError(
+      "objects.pluralSlug",
+      "Object slug {slug} looks plural: slugs are singular. Use {suggestion}",
+      { slug, suggestion: singular(slug) },
+      { kind: "invalid_input" },
+    );
+}
+
+// Trailing punctuation or surrounding spaces in a select option.
+const PUNCT = /^\s|\s$|[!?.;:,…]$/;
+const caseClass = (o: string) =>
+  !/\p{L}/u.test(o)
+    ? null
+    : o === o.toLowerCase()
+      ? "lower"
+      : o.length >= 4 && o === o.toUpperCase()
+        ? "upper"
+        : "capitalized";
+// Option words that reveal a language (whole words, lowercase, no accents).
+const FR_WORDS = new Set(
+  "nouveau nouvelle gagne perdu perdue en cours termine terminee annule annulee oui non qualifie contacte a faire fait ouvert ouverte ferme fermee attente brouillon envoye envoyee paye payee refuse accepte valide haute basse moyenne relance".split(
+    " ",
+  ),
+);
+const EN_WORDS = new Set(
+  "new won lost in progress done open closed yes no qualified contacted todo to do pending draft sent paid refused accepted approved rejected high low medium waiting active inactive cancelled canceled lead customer".split(
+    " ",
+  ),
+);
+const words = (o: string) =>
+  o
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .split(/[^a-z]+/)
+    .filter(Boolean);
+const language = (o: string): "fr" | "en" | null => {
+  if (/[àâçéèêëîïôûùüÿœ]/i.test(o)) return "fr";
+  const ws = words(o);
+  const fr = ws.some((x) => FR_WORDS.has(x) && !EN_WORDS.has(x));
+  const en = ws.some((x) => EN_WORDS.has(x) && !FR_WORDS.has(x));
+  return fr && !en ? "fr" : en && !fr ? "en" : null;
+};
+
+// Lint of the option list as a whole: one style, one language.
+function lintOptions(key: string, options: string[]): LintWarning[] {
+  const out: LintWarning[] = [];
+  const classes = new Set(options.map(caseClass).filter(Boolean));
+  if (classes.size > 1)
+    out.push(
+      w(
+        "option.mixedCase",
+        key,
+        `Select options of "${key}" mix capitalisation styles (${options.join(", ")}).`,
+        'Use one style for every option, e.g. "New", "In progress", "Won".',
+      ),
+    );
+  const langs = options.map((o) => [o, language(o)] as const);
+  const fr = langs.filter(([, l]) => l === "fr").map(([o]) => o);
+  if (fr.length && langs.some(([, l]) => l === "en"))
+    out.push(
+      w(
+        "option.mixedLanguage",
+        key,
+        `Select options of "${key}" mix languages (${fr.join(", ")} next to English options).`,
+        "Write every option in English; the interface translates labels, not the data.",
+      ),
+    );
+  return out;
+}
 
 type FieldLike = { key?: unknown; type?: unknown; options?: unknown };
 
@@ -174,6 +249,15 @@ export function lintObject(input: {
     if (!Array.isArray(f.options)) continue;
     for (const o of f.options) {
       if (typeof o !== "string") continue;
+      if (PUNCT.test(o))
+        out.push(
+          w(
+            "option.punctuation",
+            `${String(f.key)}.${o}`,
+            `Select option "${o}" has surrounding spaces or trailing punctuation.`,
+            `Use "${o.trim().replace(/[!?.;:,…]+$/, "")}".`,
+          ),
+        );
       if (EMOJI.test(o))
         out.push(
           w(
@@ -193,6 +277,12 @@ export function lintObject(input: {
           ),
         );
     }
+    out.push(
+      ...lintOptions(
+        String(f.key),
+        f.options.filter((o): o is string => typeof o === "string"),
+      ),
+    );
   }
   return out;
 }
