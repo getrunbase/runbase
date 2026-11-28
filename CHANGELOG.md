@@ -4,6 +4,18 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.4.4](https://github.com/getrunbase/runbase/compare/v0.4.3...v0.4.4) (2026-11-28)
+
+
+### Features
+
+* **web:** let interfaces open external links in a new tab ([#135](https://github.com/getrunbase/runbase/issues/135)) ([0dd7134](https://github.com/getrunbase/runbase/commit/0dd713402c94262437b0faf55c38de72f4f7148f))
+
+
+### Bug Fixes
+
+* **web:** drop host padding around interface pages ([#134](https://github.com/getrunbase/runbase/issues/134)) ([819ddf1](https://github.com/getrunbase/runbase/commit/819ddf16d6e9b0cbd21b041ea5ad7d83be56e670))
+
 ## [0.4.3](https://github.com/getrunbase/runbase/compare/v0.4.2...v0.4.3) (2026-11-28)
 
 
