@@ -3,11 +3,17 @@
 import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { requireScope } from "../api-keys";
 import { audit } from "../audit";
-import { runSteps, workflowRuns, workspaces } from "../db/schema";
+import {
+  apiKeys,
+  runSteps,
+  user,
+  workflowRuns,
+  workspaces,
+} from "../db/schema";
 import { recordsService } from "../records";
 import { countRun, exceedsLimit, rateLimit } from "../quotas";
 import { quotaOf } from "../entitlements";
-import { withTenant, type TenantContext } from "../tenant";
+import { withTenant, type TenantContext, type Tx } from "../tenant";
 import { workflowsService, type Definition } from "../workflows";
 import { normalizeGraph } from "../workflows/graph";
 import { appError } from "../errors/app-error";
@@ -26,7 +32,12 @@ import {
 } from "./state";
 import { type Staged, stage, dispatch } from "./outbox";
 import { readBudget, resumeBudgetRuns, unpauseBudget } from "./budget";
-import { cancelRuns, resumeWaiting, renderKey } from "./lifecycle";
+import {
+  cancelRuns,
+  resumeWaiting,
+  renderKey,
+  runDefinition,
+} from "./lifecycle";
 import { runQueries } from "./queries";
 
 export const runsService = {
@@ -385,7 +396,7 @@ export const runsService = {
     const by = {
       ...("userId" in a ? { userId: a.userId } : { apiKeyId: a.apiKeyId }),
       scopes: a.scopes ?? [],
-      ...("label" in a && typeof a.label === "string" && { label: a.label }),
+      label: await actorLabel(ctx),
     };
     const r = await resumeWaiting(
       ctx,
@@ -411,6 +422,60 @@ export const runsService = {
   },
 };
 
+// Human-readable decider of a human.approve step, always set: user name,
+// API key name, else `user:<id>` / `api_key:<id>`.
+export async function actorLabel(ctx: TenantContext): Promise<string> {
+  const a = ctx.actor;
+  const explicit = (a as { label?: unknown }).label;
+  if (typeof explicit === "string" && explicit) return explicit;
+  const [row] = await withTenant(ctx, (tx) =>
+    "userId" in a
+      ? tx.select({ name: user.name }).from(user).where(eq(user.id, a.userId))
+      : tx
+          .select({ name: apiKeys.name })
+          .from(apiKeys)
+          .where(eq(apiKeys.id, a.apiKeyId)),
+  ).catch(() => []);
+  if (row?.name) return row.name;
+  return "userId" in a ? `user:${a.userId}` : `api_key:${a.apiKeyId}`;
+}
+
+// A path stopped by stop.error would fail the same way on replay: refuse and
+// point to runs.retry_from on the upstream step (the one that leads to it).
+async function refuseDeliberateStops(
+  ctx: TenantContext,
+  tx: Tx,
+  run: typeof workflowRuns.$inferSelect,
+  failed: [string, PathState][],
+) {
+  const seqs = failed
+    .map(([, p]) => p.failedSeq)
+    .filter((s): s is number => s !== undefined);
+  if (!seqs.length) return;
+  const rows = await tx
+    .select({ stepId: runSteps.stepId })
+    .from(runSteps)
+    .where(and(eq(runSteps.runId, run.id), inArray(runSteps.seq, seqs)));
+  const { definition } = await runDefinition(ctx, run);
+  const steps = definition.steps as { id: string; type: string }[];
+  const stop = rows.find(
+    (r) => steps.find((s) => s.id === r.stepId)?.type === "stop.error",
+  );
+  if (!stop) return;
+  const { next } = normalizeGraph(definition);
+  const upstream =
+    Object.entries(next).find(([, out]) =>
+      Object.values(out).some((t) => t.includes(stop.stepId)),
+    )?.[0] ??
+    steps[steps.findIndex((s) => s.id === stop.stepId) - 1]?.id ??
+    null;
+  throw appError(
+    "errors.deliberateStop",
+    "Step {stepId} is a stop.error: a replay would stop again. Fix the data or the condition, then call runs.retry_from with stepId {upstream}",
+    { stepId: stop.stepId, upstream: upstream ?? "?" },
+  );
+}
+
 // Replays a failed run (error center): the failed step of
 // each failed path is cleared and re-executed. false if the run is not
 // failed.
@@ -434,6 +499,7 @@ export async function retryRun(ctx: TenantContext, runId: string) {
       ([, p]) => p.status === "failed",
     );
     if (!failed.length) return null;
+    await refuseDeliberateStops(ctx, tx, run, failed);
     for (const [path, { failedSeq, ...p }] of failed) {
       if (failedSeq !== undefined)
         await tx

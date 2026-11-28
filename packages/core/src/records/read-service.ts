@@ -120,13 +120,16 @@ export const readOps = {
           }
           cur = next;
         }
+        // `contact.id`: the related record's id (not a data field).
         const pick = (r: RecordRow) =>
-          segs
-            .slice(hops.length)
-            .reduce<unknown>(
-              (o, k) => (o == null ? undefined : (o as Data)[k]),
-              r.data,
-            );
+          hops.length && segs.length === hops.length + 1 && segs.at(-1) === "id"
+            ? r.id
+            : segs
+                .slice(hops.length)
+                .reduce<unknown>(
+                  (o, k) => (o == null ? undefined : (o as Data)[k]),
+                  r.data,
+                );
         out[path] = hops.every((h) => h.kind === "ref")
           ? cur[0] && pick(cur[0])
           : cur.map(pick);

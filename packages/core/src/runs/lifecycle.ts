@@ -7,7 +7,7 @@ import { decryptAll, redact } from "../secrets";
 import { type BlockResult } from "../blocks";
 import { publish } from "../bus";
 import { runSteps, workflowRuns } from "../db/schema";
-import { recordError } from "../errors/record";
+import { recordError, resolveRunErrors } from "../errors/record";
 import { renderInputs } from "./templates";
 import { withTenant, type TenantContext, type Tx } from "../tenant";
 import { workflowsService, type Definition } from "../workflows";
@@ -162,7 +162,9 @@ export async function resumeWaiting(
     { runId, path: found.path, n: found.p.n },
     found.definition,
     found.p.step,
-    null,
+    // Rendered input of the waiting step (human.approve message) kept on the
+    // persisted step, so runs.get shows what was approved.
+    found.p.message !== undefined ? { message: found.p.message } : null,
     { branch, output: typeof output === "function" ? output(found.p) : output },
     { durationMs: 0 },
   );
@@ -211,6 +213,8 @@ export async function afterFinish(run: RunRow, status: string) {
       id: run.id,
       depth: (input.depth ?? 0) + 1,
     });
+  // A replayed run that completes closes its errors (errors.retry is honest).
+  if (status === "succeeded") await resolveRunErrors(ctx, run.id);
   if (input.parent) await notifyParent(run, status);
 }
 

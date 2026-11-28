@@ -207,7 +207,9 @@ export const mcpTools: {
   runs: {
     start: "runs.start",
     get: "runs.get",
-    waiting: "runs.waiting",
+    // Excluded: full rows for the front end; runs.waiting is the compact form.
+    waiting: null,
+    waitingCompact: "runs.waiting",
     list: "runs.list",
     // Excluded: front-end record page view, runs.get covers the detail.
     forRecord: null,
