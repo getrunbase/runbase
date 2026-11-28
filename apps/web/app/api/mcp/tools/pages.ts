@@ -45,6 +45,17 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
   };
   const getPage = async (id: string, draft = false) => {
     const p = await pagesService.get(ctx, id, { draft });
+    // Draft-only page: say how to reach it instead of a plain not found.
+    if (
+      !p &&
+      !draft &&
+      (await pagesService.get(ctx, id, { draft: true }).catch(() => null))
+    )
+      throw notFound(
+        "mcp.pageNotPublished",
+        "Page {id} has no published version: pass draft: true or page.publish",
+        { id },
+      );
     if (!p)
       throw notFound(
         "mcp.pageNotFound",
@@ -193,7 +204,7 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
     "page.update",
     {
       description:
-        "Updates a page. Name and icon apply immediately. `changes` is a file patch applied in order to the draft, all or nothing: {op: write, path, source} creates or replaces a file, {op: edit, path, old, new} replaces text matching once, {op: rename, from, to} (the entry follows), {op: delete, path} (not the entry). `files` replaces the whole package. Draft changes are invisible to users until page.publish (`publish: true` publishes right away). The package is recompiled: returns {page, errors, warnings} (compile errors and static-check warnings, file:line), then, unless `review: false` or compile errors, `review` = {a11y (axe violations), pageErrors (runtime errors), renderErrors, warnings} followed by desktop and mobile screenshots of the draft.",
+        "Updates a page. Name and icon apply immediately. `changes` is a file patch applied in order to the draft, all or nothing: {op: write, path, source} creates or replaces a file, {op: edit, path, old, new} replaces text matching once, {op: rename, from, to} (the entry follows), {op: delete, path} (not the entry). `files` replaces the whole package. Draft changes are invisible to users until page.publish (`publish: true` publishes once the review rendered the draft: on compile errors, or when the renderer is down, the draft stays unpublished with `published: false` and `unverified`; `force: true` publishes anyway, `review: false` publishes without checking). The package is recompiled: returns {page, errors, warnings} (compile errors and static-check warnings, file:line), then, unless `review: false` or compile errors, `review` = {a11y (axe violations), pageErrors (runtime errors), renderErrors, warnings} followed by desktop and mobile screenshots of the draft.",
       inputSchema: z.object({
         id: pageId,
         name: z.string().min(1).optional(),
@@ -204,6 +215,12 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
         deps: pageDeps,
         permissions: pagePerms,
         publish: z.boolean().optional(),
+        force: z
+          .boolean()
+          .optional()
+          .describe(
+            "with publish: true, publish even when the review could not render the draft (renderer down); otherwise publish is held back",
+          ),
         review: z
           .boolean()
           .default(true)
@@ -212,13 +229,22 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
           ),
       }),
     },
-    async ({ id, changes, review, ...patch }) => {
+    async ({ id, changes, review, publish, force, ...patch }) => {
       let out: Record<string, unknown>;
       let page: Awaited<ReturnType<typeof getPage>>;
+      // With the review on, publishing waits for it: a draft nobody could
+      // render is not published unless `force`.
+      const deferPublish = !!publish && review;
       try {
         if (changes)
           await pageRow(pagesService.patchFiles(ctx, id, changes), id);
-        await pageRow(pagesService.update(ctx, id, patch), id);
+        await pageRow(
+          pagesService.update(ctx, id, {
+            ...patch,
+            publish: publish && !deferPublish,
+          }),
+          id,
+        );
         page = await getPage(id, true);
         const { errors } = await compilePackage(page.files, page.entry);
         out = {
@@ -233,8 +259,10 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
       } catch (e) {
         return run(() => Promise.reject(e));
       }
-      if (!review || (out.errors as string[]).length)
+      if (!review || (out.errors as string[]).length) {
+        if (deferPublish) out.published = false;
         return run(async () => out);
+      }
       // Review: captures, axe violations, runtime errors (page.errors).
       const r = await reviewPage(pageJob(page.id, true));
       const pageErrors = await pagesService
@@ -246,6 +274,18 @@ export function definePageTools(server: McpServer, ctx: TenantContext) {
         renderErrors: r.errors,
         warnings: r.warnings,
       };
+      if (deferPublish) {
+        const rendered = r.shots.length > 0;
+        if (rendered || force) {
+          await pagesService.publish(ctx, page.id);
+          out.published = true;
+          if (!rendered) out.unverified = "renderer down: published with force";
+        } else {
+          out.published = false;
+          out.unverified =
+            "renderer down: draft not published. Check it with page.test, then page.publish or page.update { publish: true, force: true }";
+        }
+      }
       return {
         content: [
           { type: "text" as const, text: JSON.stringify(out) },

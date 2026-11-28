@@ -48,7 +48,7 @@ export const switchBlock = defineBlock({
   type: "switch",
   label: "Switch",
   description:
-    'Routes to a branch based on a record field\'s value, or on any run value ({ value: "{{steps.x.output.y}}", cases }): one case per value, then Otherwise.',
+    'Routes to a branch based on a record field\'s value, or on any run value ({ value: "{{steps.x.output.y}}", cases }): one case per value. No match takes the branch named `else` (shown as Otherwise in the editor; never `default` or `otherwise`).',
   sideEffect: false,
   inputSchema: switchInput,
   outputSchema: z.object({

@@ -41,7 +41,13 @@ Goal: a workspace another person can read, debug and extend. The rules below are
 - Use stop.error in the workflow to fail a run on purpose with a clear message.
 - For optional steps only, retry.continueOnFail: true with the \`error\` branch connected. Never write {{steps.<id>.output.error}} into a record field.
 - Connect every empty / not_found / false branch. To end the run there on purpose, write it explicitly: \`next: { find: { empty: [] } }\`.
-- human.approve with a timeout: the \`expired\` branch must change state (record.update a status, event.emit, stop.error).
+- human.approve with a timeout: the \`expired\` branch must change state. Pattern: \`next: { approve: { approved: ["publish"], rejected: ["mark_rejected"], expired: ["mark_expired"] } }\` with mark_expired a record.update setting status to expired (then event.emit or stop.error if someone must act).
+- switch: the fallback branch is named \`else\` (shown as Otherwise in the editor), never \`default\` or \`otherwise\`.
+- Any step with retry.continueOnFail: true gets an \`error\` branch (blocks.list: failBranch).
+
+## Loops
+- loop { items, do }: inside \`do\`, \`{{item}}\` is the current item (a record: \`{{item.id}}\`, \`{{item.data.<field>}}\`), \`{{index}}\` its 0-based position, \`{{steps.<id>.output}}\` the steps of the iteration. After the loop, \`{{steps.<loop id>.output.results}}\`.
+- Dedupe example: a record.search step \`dupes\`, then loop { items: "{{steps.dupes.output.records}}", do: [{ id: "merge", type: "record.merge", input: { keep: "{{record.id}}", merge: ["{{item.id}}"] } }] }.
 - ai.* steps always set input.ai (provider, model, secret): there is no default provider.
 - Never write computed fields (formula, lookup, rollup, autonumber, created_at...): the platform sets them.
 

@@ -303,7 +303,19 @@ export async function validateItems(
     if (out) {
       const branches = branchesOf(s, block);
       for (const [b, targets] of Object.entries(out)) {
-        if (!branches.includes(b))
+        if (
+          !branches.includes(b) &&
+          branches.includes("else") &&
+          /^(default|otherwise|fallback)$/i.test(b)
+        )
+          errors.push(
+            errorItem(
+              "workflows.elseBranchName",
+              "{step}: no branch {branch}, the fallback branch is named else (rename next.{step}.{branch} to next.{step}.else)",
+              { step: s.id, branch: b },
+            ),
+          );
+        else if (!branches.includes(b))
           errors.push(
             errorItem(
               "workflows.unknownBranch",

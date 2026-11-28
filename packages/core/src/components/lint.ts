@@ -8,7 +8,8 @@ export type LintRule =
   | "hardcoded-options"
   | "client-grouping"
   | "any-sdk-result"
-  | "missing-state";
+  | "missing-state"
+  | "aggregate-total";
 
 export type LintWarning = {
   file: string;
@@ -32,6 +33,9 @@ const SDK_HOOK =
   /\b(useQuery|useInfiniteQuery|useAggregate|useRecord|useTimeline)\s*[<(]/;
 const EMPTY =
   /\.length\s*(?:===?\s*0|<\s*1|>\s*0|\?|&&|\|\|)|!\s*[\w$.?]+\.length|\bempty\b|Empty/i;
+
+const AGGREGATE = /\baggregate\s*:|\buseAggregate\s*[<(]/;
+const TOTAL = /\btotal\b/;
 
 const HIGH_LIMIT = 200;
 const MAX_ANY = 3;
@@ -86,6 +90,15 @@ function lintFile(file: string, src: string): LintWarning[] {
       lineOf(src, limit.index),
       "client-grouping",
       `useQuery with limit ${limit[1]} then client-side grouping: use useQuery/useAggregate with groupBy and aggregate instead.`,
+    );
+
+  // With groupBy/aggregate, `total` counts groups, not records.
+  const total = TOTAL.exec(src);
+  if (total && AGGREGATE.test(src))
+    add(
+      lineOf(src, total.index),
+      "aggregate-total",
+      '`total` with aggregate counts groups, not records: read the record count from a count aggregate (aggregate: [{op: "count", as: "count"}]).',
     );
 
   const anys = [...src.matchAll(ANY)];

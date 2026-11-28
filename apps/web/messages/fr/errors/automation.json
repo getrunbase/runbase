@@ -32,6 +32,7 @@
   "workflows.unknownBlock": "{step} : brique inconnue {type}",
   "workflows.unknownWorkflow": "{step} : workflow inconnu {workflow}",
   "workflows.unknownBranch": "{step} : branche {branch} inconnue (valides : {valid})",
+  "workflows.elseBranchName": "{step} : pas de branche {branch}, la branche par défaut s'appelle else (renommez next.{step}.{branch} en next.{step}.else)",
   "workflows.unknownTarget": "{step}.{branch} : step {target} inexistant",
   "workflows.unknownNext": "next : step {step} inexistant",
   "workflows.unlinkedStep": "{step} : étape non reliée (aucun lien depuis le déclencheur)",
