@@ -27,8 +27,7 @@ async function owner(name: string): Promise<TenantContext> {
   };
 }
 
-const code = (c: string) => (e: unknown) =>
-  (e as { code?: string }).code === c;
+const code = (c: string) => (e: unknown) => (e as { code?: string }).code === c;
 
 async function contacts(ctx: TenantContext) {
   return objectsService.create(ctx, {
@@ -110,14 +109,88 @@ test("CSV import: trimmed values, structured failures, test flag, purge", async 
   });
   assert.equal(ann[0]!.data.full_name, "Ann");
 
-  // Updating a test record: its timeline event is test data too.
-  await recordsService.update(ctx, ann[0]!.id, { score: 9 });
+  // Updating a test record in test mode: its timeline event is test data too.
+  await recordsService.update({ ...ctx, test: true }, ann[0]!.id, {
+    score: 9,
+  });
   const preview = await overviewService.purgeTest(ctx, { dryRun: true });
   assert.equal(preview.records, 2);
   await overviewService.purgeTest(ctx, { confirm: true });
   const [left] =
     await sql`select count(*)::int n from events where workspace_id = ${ctx.workspaceId}`;
   assert.equal(left!.n, 0);
+});
+
+test("live write promotes a test record: purge_test keeps it", async () => {
+  const ctx = await owner("Promote");
+  const o = await contacts(ctx);
+  const a = await recordsService.upsert(ctx, {
+    objectId: o.id,
+    data: { email: "a@x.io" },
+    test: true,
+  });
+  const b = await recordsService.upsert(ctx, {
+    objectId: o.id,
+    data: { email: "b@x.io" },
+    test: true,
+  });
+  await recordsService.upsert(ctx, {
+    objectId: o.id,
+    data: { email: "c@x.io" },
+    test: true,
+  });
+  // Live update by id, and live upsert by match with no data change.
+  await recordsService.update(ctx, a.record.id, { score: 1 });
+  await recordsService.upsert(ctx, {
+    objectId: o.id,
+    data: { email: "b@x.io" },
+    match: "email",
+  });
+  const preview = await overviewService.purgeTest(ctx, { dryRun: true });
+  assert.equal(preview.records, 1);
+  assert.deepEqual(
+    [...(preview as { keptLive: string[] }).keptLive].sort(),
+    [a.record.id, b.record.id].sort(),
+  );
+  await overviewService.purgeTest(ctx, { confirm: true });
+  const [left] =
+    await sql`select count(*)::int n from records where workspace_id = ${ctx.workspaceId}`;
+  assert.equal(left!.n, 2);
+});
+
+test("import: empty match key is counted, skipped or failed", async () => {
+  const ctx = await owner("Empty match");
+  const o = await contacts(ctx);
+  const csv = "Email,Name\na@x.io,Ann\n,NoMail\n,NoMail2";
+  const mapping = { Email: "email", Name: "full_name" };
+  const created = await recordsService.importCsv(ctx, o.id, {
+    csv,
+    mapping,
+    match: "email",
+    dryRun: true,
+  });
+  assert.equal(created.created, 3);
+  assert.equal(created.emptyMatchKey, 2);
+  assert.equal(created.warnings.length, 1);
+  const skipped = await recordsService.importCsv(ctx, o.id, {
+    csv,
+    mapping,
+    match: "email",
+    onEmptyMatch: "skip",
+    dryRun: true,
+  });
+  assert.equal(skipped.created, 1);
+  assert.equal(skipped.skipped, 2);
+  const failed = await recordsService.importCsv(ctx, o.id, {
+    csv,
+    mapping,
+    match: "email",
+    onEmptyMatch: "fail",
+  });
+  assert.equal(failed.created, 1);
+  assert.equal(failed.failedCount, 2);
+  assert.equal(failed.failed[0]!.field, "email");
+  assert.equal(failed.failed[0]!.line, 3);
 });
 
 test("databases: default slug, legacy alias, conflict", async () => {

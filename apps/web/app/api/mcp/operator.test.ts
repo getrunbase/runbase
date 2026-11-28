@@ -132,9 +132,17 @@ test("test data: label, purge_test and describe", async () => {
     records: 2,
     events: 3,
     runs: 0,
+    errors: 0,
+    keptLive: [],
   });
   const out = await call("workspace.purge_test", { confirm: true });
-  assert.deepEqual(out, { records: 2, events: 3, runs: 0, hasMore: false });
+  assert.deepEqual(out, {
+    records: 2,
+    events: 3,
+    runs: 0,
+    errors: 0,
+    hasMore: false,
+  });
   const left = await call("records.search", { object: "lead" });
   assert.deepEqual(
     left.records.map((r: { data: { name: string } }) => r.data.name),

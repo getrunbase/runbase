@@ -107,6 +107,10 @@ type ImportReport = {
   failed: ImportFailure[];
   // Rows that failed (`failed` lists at most MAX_FAILURES entries).
   failedCount: number;
+  // Rows whose `match` column is empty (handled per `onEmptyMatch`).
+  emptyMatchKey: number;
+  skipped: number;
+  warnings: string[];
 };
 
 // Aborts the transaction of a dry-run import, carrying its report out.
@@ -178,6 +182,9 @@ export const bulkOps = {
       csv: string;
       mapping: Record<string, string>;
       match?: string;
+      // Row with an empty `match` value: create a new record (default,
+      // possible duplicates), skip it, or report it as failed.
+      onEmptyMatch?: "create" | "skip" | "fail";
       dryRun?: boolean;
       // Created records are test data (workspace.purge_test).
       test?: boolean;
@@ -220,6 +227,9 @@ export const bulkOps = {
       const done: Awaited<ReturnType<typeof upsertInTx>>[] = [];
       const failed: ImportFailure[] = [];
       let failedCount = 0;
+      let emptyMatchKey = 0;
+      let skipped = 0;
+      const onEmpty = input.onEmptyMatch ?? "create";
       for (const [n, r] of rows.entries()) {
         const data: Data = {};
         for (const { i, f } of cols)
@@ -227,6 +237,24 @@ export const bulkOps = {
             data[f.key] = csvValue(f, r[i]);
         const match =
           input.match && data[input.match] != null ? input.match : undefined;
+        if (input.match && !match) {
+          emptyMatchKey++;
+          if (onEmpty === "skip") {
+            skipped++;
+            continue;
+          }
+          if (onEmpty === "fail") {
+            failedCount++;
+            if (failed.length < MAX_FAILURES)
+              failed.push({
+                line: n + 2,
+                field: input.match,
+                value: null,
+                message: `Empty match key “${input.match}”`,
+              });
+            continue;
+          }
+        }
         try {
           done.push(
             await tx.transaction((sp) => {
@@ -252,6 +280,19 @@ export const bulkOps = {
         unchanged: done.filter((d) => !d.created && !d.changed.length).length,
         failed: failed.slice(0, MAX_FAILURES),
         failedCount,
+        emptyMatchKey,
+        skipped,
+        warnings: emptyMatchKey
+          ? [
+              `${emptyMatchKey} row(s) have an empty “${input.match}”: ${
+                onEmpty === "create"
+                  ? "created as new records without deduplication"
+                  : onEmpty === "skip"
+                    ? "skipped"
+                    : "reported as failed"
+              } (onEmptyMatch: create | skip | fail).`,
+            ]
+          : [],
       };
       if (input.dryRun) throw new DryRun(report);
       return { report, done };

@@ -254,7 +254,11 @@ test("A3 A4 A5 A8 A10: run engine", async () => {
         },
         { id: "yes", type: "data.set", input: { values: { ok: true } } },
       ],
-      next: { decide: { ok: ["cond"] }, cond: { true: ["sw"] }, sw: { b: ["yes"] } },
+      next: {
+        decide: { ok: ["cond"] },
+        cond: { true: ["sw"] },
+        sw: { b: ["yes"] },
+      },
     };
     assert.deepEqual(await workflowsService.validate(ctx, branching), []);
     const bad = structuredClone(branching);
@@ -306,14 +310,20 @@ test("A3 A4 A5 A8 A10: run engine", async () => {
     assert.ok(start(rb) >= ra.finishedAt!.getTime(), "b waits for a to finish");
     assert.ok(start(rc) < ra.finishedAt!.getTime(), "other key: in parallel");
 
-    // A4: the purge removes everything the test run produced.
+    // A4: the purge removes everything the test run produced, including
+    // the errors linked to its runs.
+    await sql`insert into errors (organization_id, workspace_id, source, run_id, message)
+      values (${ctx.organizationId}, ${ctx.workspaceId}, 'workflow', (select id from workflow_runs where workspace_id = ${ctx.workspaceId} and is_test and status <> 'running' limit 1), 'boom')`;
+    const preview = await overviewService.purgeTest(ctx, { dryRun: true });
+    assert.equal((preview as { errors: number }).errors, 1);
     const purged = await overviewService.purgeTest(ctx, { confirm: true });
     assert.ok(purged.runs >= 3);
     const left = await sql`select
       (select count(*) from records where workspace_id = ${ctx.workspaceId} and is_test)::int as rec,
       (select count(*) from events where workspace_id = ${ctx.workspaceId} and is_test)::int as ev,
-      (select count(*) from workflow_runs where workspace_id = ${ctx.workspaceId} and is_test)::int as runs`;
-    assert.deepEqual(left[0], { rec: 0, ev: 0, runs: 0 });
+      (select count(*) from workflow_runs where workspace_id = ${ctx.workspaceId} and is_test)::int as runs,
+      (select count(*) from errors where workspace_id = ${ctx.workspaceId} and message = 'boom')::int as err`;
+    assert.deepEqual(left[0], { rec: 0, ev: 0, runs: 0, err: 0 });
   } finally {
     await worker.close();
   }

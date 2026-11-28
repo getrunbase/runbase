@@ -1,5 +1,6 @@
 {
   "common.invalidId": "Identifiant invalide : {id}",
+  "common.invalidValueOf": "Valeur {type} invalide : « {value} ». Vérifiez l’identifiant ou le champ transmis avec cette valeur.",
   "common.invalidValue": "Valeur invalide : un identifiant ou une valeur de champ est mal formé",
   "data.conflict": "Une database avec le slug {slug} existe déjà dans ce workspace",
   "databases.notEmpty": "Database non vide ({count} objet(s)) : exporter les objets (objects.export) puis confirmer (confirm: true) pour tout supprimer",
