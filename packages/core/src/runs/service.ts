@@ -76,6 +76,23 @@ export const runsService = {
             (v) => v.version === version,
           )?.definition;
     if (!definition) return null;
+    // A webhook trigger on an object maps the payload to a record before the
+    // run: a bare event here would skip that mapping and run without a record.
+    const trigger = (definition as Definition).trigger as
+      { type?: string; webhook?: string; object?: string } | undefined;
+    if (
+      trigger?.type === "trigger.webhook" &&
+      trigger.object &&
+      opts.event !== undefined &&
+      !opts.recordId &&
+      opts.input === undefined &&
+      !opts.parent
+    )
+      throw appError(
+        "runs.webhookNeedsRecord",
+        "Workflow {workflow} is triggered by webhook {webhook}: runs.start with an event skips its mapping. Use webhooks.test to simulate a signed call (mapping and upsert applied), or pass recordId",
+        { workflow: wf.name ?? id, webhook: trigger.webhook ?? "" },
+      );
     // A sub-workflow belongs to its parent run: counted once.
     if (!opts.parent) await countRun(ctx);
     const { entry } = normalizeGraph(definition as Definition);
@@ -389,6 +406,9 @@ export const runsService = {
     approved: boolean,
     path?: string,
     comment?: string,
+    // Free label of the human who decided (e.g. an agent relaying a
+    // user's answer): stored next to the actor in `by`.
+    decidedBy?: string,
   ) => {
     await requireScope(ctx, "write");
     const branch = approved ? "approved" : "rejected";
@@ -397,6 +417,7 @@ export const runsService = {
       ...("userId" in a ? { userId: a.userId } : { apiKeyId: a.apiKeyId }),
       scopes: a.scopes ?? [],
       label: await actorLabel(ctx),
+      ...(decidedBy && { decidedBy }),
     };
     const r = await resumeWaiting(
       ctx,

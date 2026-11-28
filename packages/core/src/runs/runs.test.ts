@@ -102,7 +102,10 @@ const definition = (
     { id: "hot", type: "test.echo", input: { text: echo } },
     { id: "cold", type: "test.echo", input: { text: "froid" } },
   ],
-  next: { get: { found: ["qualify"] }, qualify: { hot: ["hot"], cold: ["cold"] } },
+  next: {
+    get: { found: ["qualify"] },
+    qualify: { hot: ["hot"], cold: ["cold"] },
+  },
 });
 
 async function until<T>(fn: () => Promise<T>, ok: (v: T) => boolean) {
@@ -313,6 +316,7 @@ test("wait survives a worker restart, approve resumes, loop iterates", async () 
       approved,
       undefined,
       "checked",
+      approved ? "Jane (via agent)" : undefined,
     );
     assert.ok(decided);
     assert.equal(decided.runId, r!.id);
@@ -339,7 +343,30 @@ test("wait survives a worker restart, approve resumes, loop iterates", async () 
     const label = (out.by as { label?: unknown }).label;
     assert.ok(typeof label === "string" && label.length > 0);
     assert.deepEqual(done!.steps[0]!.input, { message: "Go ?" });
+    assert.equal(
+      (out.by as { decidedBy?: string }).decidedBy,
+      approved ? "Jane (via agent)" : undefined,
+    );
   }
+
+  // runs.start with a bare event on a webhook workflow bound to an object:
+  // refused (the mapping would be skipped), pointing to webhooks.test.
+  const hookWf = await workflowsService.create(ctx, {
+    name: "Hooked",
+    definition: {
+      trigger: {
+        type: "trigger.webhook",
+        webhook: "stripe",
+        object: "company",
+      },
+      steps: [],
+    },
+  });
+  await assert.rejects(
+    runsService.start(ctx, hookWf.id, { event: { id: "evt_1" } }),
+    (e: Error & { code?: string }) =>
+      e.code === "runs.webhookNeedsRecord" && /webhooks\.test/.test(e.message),
+  );
 
   // loop: subgraph over a list, capped by limit.
   const lp = await workflowsService.create(ctx, {
