@@ -1,0 +1,542 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Incident Alerts and Status Updates",
+  "description": "Turn every alert into a Slack alert, a Google Meet war room for SEV1 and an incident status update emailed from Gmail once a lead approves it.",
+  "databases": [
+    {
+      "slug": "incidents",
+      "name": "Incidents"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "incidents",
+      "name": "Incidents",
+      "icon": "siren",
+      "database": "incidents",
+      "fields": [
+        {
+          "key": "title",
+          "label": "Title",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "external_id",
+          "label": "Alert ID",
+          "type": "text",
+          "unique": true
+        },
+        {
+          "key": "severity",
+          "label": "Severity",
+          "type": "select",
+          "options": [
+            "sev1",
+            "sev2",
+            "sev3"
+          ]
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": [
+            "investigating",
+            "identified",
+            "monitoring",
+            "resolved"
+          ]
+        },
+        {
+          "key": "service",
+          "label": "Affected service",
+          "type": "text"
+        },
+        {
+          "key": "summary",
+          "label": "Summary",
+          "type": "text"
+        },
+        {
+          "key": "source",
+          "label": "Source",
+          "type": "select",
+          "options": [
+            "monitoring",
+            "on_call",
+            "support",
+            "manual"
+          ]
+        },
+        {
+          "key": "started_at",
+          "label": "Started at",
+          "type": "date"
+        },
+        {
+          "key": "resolved_at",
+          "label": "Resolved at",
+          "type": "date"
+        },
+        {
+          "key": "incident_lead",
+          "label": "Incident lead email",
+          "type": "email"
+        },
+        {
+          "key": "responders",
+          "label": "Responder emails",
+          "type": "text"
+        },
+        {
+          "key": "affected_customers",
+          "label": "Affected customer emails",
+          "type": "text"
+        },
+        {
+          "key": "war_room_link",
+          "label": "War room link",
+          "type": "url"
+        },
+        {
+          "key": "customer_update",
+          "label": "Customer update",
+          "type": "text"
+        },
+        {
+          "key": "customer_notice",
+          "label": "Customer notice",
+          "type": "select",
+          "options": [
+            "pending",
+            "sent",
+            "skipped"
+          ]
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "incidents",
+      "name": "Open incidents",
+      "filter": {
+        "field": "status",
+        "op": "neq",
+        "value": "resolved"
+      },
+      "sort": [
+        {
+          "field": "started_at",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "title",
+        "severity",
+        "status",
+        "service",
+        "incident_lead",
+        "war_room_link",
+        "started_at"
+      ]
+    },
+    {
+      "object": "incidents",
+      "name": "SEV1 incidents",
+      "filter": {
+        "field": "severity",
+        "op": "eq",
+        "value": "sev1"
+      },
+      "sort": [
+        {
+          "field": "started_at",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "title",
+        "status",
+        "service",
+        "started_at",
+        "resolved_at",
+        "customer_notice"
+      ]
+    },
+    {
+      "object": "incidents",
+      "name": "Customer update pending",
+      "filter": {
+        "all": [
+          {
+            "field": "customer_notice",
+            "op": "eq",
+            "value": "pending"
+          },
+          {
+            "field": "affected_customers",
+            "op": "is_not_empty"
+          }
+        ]
+      },
+      "sort": [
+        {
+          "field": "started_at",
+          "dir": "asc"
+        }
+      ],
+      "columns": [
+        "title",
+        "severity",
+        "service",
+        "affected_customers",
+        "customer_update"
+      ]
+    },
+    {
+      "object": "incidents",
+      "name": "Incident history",
+      "sort": [
+        {
+          "field": "started_at",
+          "dir": "desc"
+        }
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "key": "incident-response",
+      "name": "Alert, open a war room and update customers for each incident",
+      "definition": {
+        "trigger": {
+          "type": "trigger.webhook",
+          "webhook": "incident-alerts",
+          "object": "$object:incidents",
+          "match": "external_id",
+          "mapping": {
+            "external_id": "id",
+            "title": "title",
+            "severity": "severity",
+            "status": "status",
+            "service": "service",
+            "summary": "summary",
+            "source": "source",
+            "started_at": "started_at",
+            "incident_lead": "incident_lead",
+            "responders": "responders",
+            "affected_customers": "affected_customers"
+          }
+        },
+        "steps": [
+          {
+            "id": "alert",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "Incident {{record.severity}}: {{record.title}} on {{record.service}} ({{record.status}}). {{record.summary}} Lead: {{record.incident_lead}}. Track it in Runbase."
+            }
+          },
+          {
+            "id": "is_sev1",
+            "type": "condition",
+            "input": {
+              "object": "$object:incidents",
+              "recordId": "{{record.id}}",
+              "condition": {
+                "all": [
+                  {
+                    "field": "severity",
+                    "op": "eq",
+                    "value": "sev1"
+                  },
+                  {
+                    "field": "war_room_link",
+                    "op": "is_empty"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "room_end",
+            "type": "date",
+            "input": {
+              "op": "add",
+              "date": "{{now}}",
+              "amount": 60,
+              "unit": "minutes"
+            }
+          },
+          {
+            "id": "war_room",
+            "type": "node.google_calendar.create_event",
+            "input": {
+              "calendarId": "primary",
+              "summary": "War room: {{record.title}}",
+              "description": "SEV1 incident on {{record.service}}.\n\n{{record.summary}}\n\nIncident lead: {{record.incident_lead}}\nResponders: {{record.responders}}\n\nKeep the incident record in Runbase up to date: status, summary and resolution time.",
+              "start": "{{now}}",
+              "end": "{{steps.room_end.output.value}}",
+              "attendees": [
+                "{{record.incident_lead}}"
+              ],
+              "addMeet": true,
+              "sendUpdates": "all"
+            }
+          },
+          {
+            "id": "save_room",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "war_room_link": "{{steps.war_room.output.meetLink}}"
+              }
+            }
+          },
+          {
+            "id": "room_alert",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "SEV1 war room is open for {{record.title}}: {{steps.war_room.output.meetLink}}"
+            }
+          },
+          {
+            "id": "has_customers",
+            "type": "condition",
+            "input": {
+              "object": "$object:incidents",
+              "recordId": "{{record.id}}",
+              "condition": {
+                "field": "affected_customers",
+                "op": "is_not_empty"
+              }
+            }
+          },
+          {
+            "id": "draft",
+            "type": "ai.run",
+            "input": {
+              "prompt": "Write a customer-facing status update email for this incident. Use only the facts in the data: the affected service, the current status and the summary. Never guess the root cause, never promise a resolution time and never mention internal names or tools. Structure: what customers may notice, what the team is doing now, and when the next update will come (say within the next hour for sev1, within the day otherwise). Plain text, calm and clear, under 150 words, no signature. The subject starts with the service name and the status.",
+              "context": "{{record}}",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "subject": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "subject",
+                  "body"
+                ]
+              }
+            }
+          },
+          {
+            "id": "save_draft",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "customer_update": "{{steps.draft.output.result.body}}",
+                "customer_notice": "pending"
+              }
+            }
+          },
+          {
+            "id": "approve",
+            "type": "human.approve",
+            "input": {
+              "message": "Send this status update to the customers affected by {{record.title}} ({{record.severity}}, {{record.service}})?\n\nRecipients: {{record.affected_customers}}\n\nSubject: {{steps.draft.output.result.subject}}\n\n{{steps.draft.output.result.body}}",
+              "timeout": "4h"
+            }
+          },
+          {
+            "id": "notify_customers",
+            "type": "node.gmail.send",
+            "input": {
+              "to": "{{record.incident_lead}}",
+              "bcc": "{{record.affected_customers}}",
+              "subject": "{{steps.draft.output.result.subject}}",
+              "text": "{{steps.draft.output.result.body}}"
+            }
+          },
+          {
+            "id": "mark_sent",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "customer_notice": "sent"
+              }
+            }
+          },
+          {
+            "id": "mark_skipped",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "customer_notice": "skipped"
+              }
+            }
+          }
+        ],
+        "next": {
+          "alert": {
+            "ok": [
+              "is_sev1"
+            ]
+          },
+          "is_sev1": {
+            "true": [
+              "room_end"
+            ],
+            "false": [
+              "has_customers"
+            ]
+          },
+          "room_end": {
+            "ok": [
+              "war_room"
+            ]
+          },
+          "war_room": {
+            "ok": [
+              "save_room"
+            ]
+          },
+          "save_room": {
+            "ok": [
+              "room_alert"
+            ]
+          },
+          "room_alert": {
+            "ok": [
+              "has_customers"
+            ]
+          },
+          "draft": {
+            "ok": [
+              "save_draft"
+            ]
+          },
+          "save_draft": {
+            "ok": [
+              "approve"
+            ]
+          },
+          "approve": {
+            "approved": [
+              "notify_customers"
+            ],
+            "rejected": [
+              "mark_skipped"
+            ],
+            "expired": [
+              "mark_skipped"
+            ]
+          },
+          "notify_customers": {
+            "ok": [
+              "mark_sent"
+            ]
+          },
+          "has_customers": {
+            "true": [
+              "draft"
+            ],
+            "false": [
+              "mark_skipped"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": [
+    "SLACK_WEBHOOK_URL"
+  ],
+  "records": [
+    {
+      "key": "i1",
+      "object": "incidents",
+      "data": {
+        "title": "Checkout API returning 502 errors",
+        "external_id": "alert-4821",
+        "severity": "sev1",
+        "status": "monitoring",
+        "service": "Checkout API",
+        "summary": "About 30% of payment requests failed for 25 minutes after a load balancer change. The change was rolled back and error rates are back to normal.",
+        "source": "monitoring",
+        "started_at": "2026-11-27T14:05:00Z",
+        "incident_lead": "nina@yourcompany.example",
+        "responders": "omar@yourcompany.example, julie@yourcompany.example",
+        "affected_customers": "ops@northwind.example, it@contoso.example",
+        "war_room_link": "https://meet.google.com/abc-defg-hij",
+        "customer_notice": "sent"
+      }
+    },
+    {
+      "key": "i2",
+      "object": "incidents",
+      "data": {
+        "title": "Delayed email notifications",
+        "external_id": "alert-4830",
+        "severity": "sev2",
+        "status": "identified",
+        "service": "Notifications",
+        "summary": "Outgoing notification emails are queued for up to 40 minutes because a worker pool is saturated.",
+        "source": "on_call",
+        "started_at": "2026-11-28T08:40:00Z",
+        "incident_lead": "omar@yourcompany.example",
+        "affected_customers": "support@fabrikam.example",
+        "customer_notice": "pending"
+      }
+    },
+    {
+      "key": "i3",
+      "object": "incidents",
+      "data": {
+        "title": "Dashboard charts loading slowly",
+        "external_id": "alert-4794",
+        "severity": "sev3",
+        "status": "resolved",
+        "service": "Analytics dashboard",
+        "summary": "Charts took 10 to 15 seconds to load for large workspaces. A missing index was added.",
+        "source": "support",
+        "started_at": "2026-11-21T10:15:00Z",
+        "resolved_at": "2026-11-21T13:00:00Z",
+        "incident_lead": "julie@yourcompany.example",
+        "customer_notice": "skipped"
+      }
+    },
+    {
+      "key": "i4",
+      "object": "incidents",
+      "data": {
+        "title": "Login failures for SSO users",
+        "external_id": "alert-4772",
+        "severity": "sev1",
+        "status": "resolved",
+        "service": "Authentication",
+        "summary": "SSO logins failed for 50 minutes after an identity provider certificate expired. The certificate was renewed.",
+        "source": "monitoring",
+        "started_at": "2026-11-14T07:20:00Z",
+        "resolved_at": "2026-11-14T08:10:00Z",
+        "incident_lead": "nina@yourcompany.example",
+        "affected_customers": "admin@tailspin.example, it@contoso.example",
+        "war_room_link": "https://meet.google.com/klm-nopq-rst",
+        "customer_notice": "sent"
+      }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "id": "client-project-tracker",
+  "slug": "client-project-tracker",
+  "name": "Client Project Tracker",
+  "categories": ["operations", "productivity"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}

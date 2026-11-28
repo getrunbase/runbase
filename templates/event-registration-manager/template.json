@@ -1,0 +1,9 @@
+{
+  "id": "event-registration-manager",
+  "slug": "event-registration-manager",
+  "name": "Event Registration Manager",
+  "categories": ["marketing",  "email"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}

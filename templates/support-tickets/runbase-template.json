@@ -2,7 +2,7 @@
   "format": "runbase-template",
   "version": 1,
   "name": "Support tickets",
-  "description": "A support ticket inbox that alerts the team in Slack for every new ticket.",
+  "description": "A simple support ticket system: log every customer request in one queue and alert your team in Slack the moment a new ticket arrives.",
   "databases": [
     {
       "slug": "support",

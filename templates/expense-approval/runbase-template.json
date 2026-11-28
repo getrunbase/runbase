@@ -1,0 +1,175 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Expense Approval",
+  "description": "Expense approval workflow: AI checks each claim against policy, Slack alerts the manager, approvals log to Google Sheets, Drive and Gmail.",
+  "databases": [{ "slug": "finance", "name": "Finance" }],
+  "objects": [
+    {
+      "slug": "expenses",
+      "name": "Expenses",
+      "icon": "receipt",
+      "database": "finance",
+      "fields": [
+        { "key": "description", "label": "Description", "type": "text", "title": true },
+        { "key": "employee", "label": "Employee", "type": "text" },
+        { "key": "email", "label": "Employee email", "type": "email" },
+        { "key": "manager_email", "label": "Manager email", "type": "email" },
+        { "key": "category", "label": "Category", "type": "select", "options": ["travel", "meals", "software", "equipment", "events", "training", "other"] },
+        { "key": "amount", "label": "Amount", "type": "number" },
+        { "key": "currency", "label": "Currency", "type": "select", "options": ["EUR", "USD", "GBP", "CHF"] },
+        { "key": "spent_on", "label": "Spent on", "type": "date" },
+        { "key": "vendor", "label": "Vendor", "type": "text" },
+        { "key": "receipt_url", "label": "Receipt link", "type": "url" },
+        { "key": "policy_check", "label": "Policy check", "type": "select", "options": ["within_policy", "out_of_policy"] },
+        { "key": "policy_note", "label": "Policy note", "type": "text" },
+        { "key": "status", "label": "Status", "type": "select", "options": ["submitted", "approved", "rejected"] },
+        { "key": "archive_link", "label": "Drive archive", "type": "url" }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "expenses",
+      "name": "Waiting for approval",
+      "filter": { "field": "status", "op": "eq", "value": "submitted" },
+      "sort": [{ "field": "spent_on", "dir": "asc" }],
+      "columns": ["description", "employee", "category", "amount", "currency", "policy_check", "policy_note"]
+    },
+    {
+      "object": "expenses",
+      "name": "Out of policy",
+      "filter": { "field": "policy_check", "op": "eq", "value": "out_of_policy" },
+      "sort": [{ "field": "spent_on", "dir": "desc" }],
+      "columns": ["description", "employee", "amount", "currency", "policy_note", "status"]
+    },
+    {
+      "object": "expenses",
+      "name": "Approved expenses",
+      "filter": { "field": "status", "op": "eq", "value": "approved" },
+      "sort": [{ "field": "spent_on", "dir": "desc" }],
+      "columns": ["description", "employee", "category", "amount", "currency", "spent_on", "archive_link"]
+    },
+    {
+      "object": "expenses",
+      "name": "All expenses",
+      "sort": [{ "field": "spent_on", "dir": "desc" }]
+    }
+  ],
+  "workflows": [
+    {
+      "key": "approve-expense",
+      "name": "Check, approve, log and archive expenses",
+      "definition": {
+        "trigger": { "type": "trigger.record_created", "object": "$object:expenses" },
+        "steps": [
+          {
+            "id": "policy",
+            "type": "ai.decide",
+            "input": {
+              "prompt": "Check this expense claim against our expense policy. Policy: meals up to 60 per person, travel in economy class only, hotels up to 180 per night, software subscriptions over 50 per month need a business reason, equipment over 500 needs prior approval, every claim needs a receipt link and must be submitted within 60 days of the spend. Answer within_policy when every rule is met, out_of_policy otherwise. Give one sentence a manager can act on, naming the rule that is broken if any.",
+              "context": "{{record}}",
+              "branches": ["within_policy", "out_of_policy"]
+            }
+          },
+          {
+            "id": "mark_ok",
+            "type": "record.update",
+            "input": { "recordId": "{{record.id}}", "data": { "policy_check": "within_policy", "policy_note": "{{steps.policy.output.reason}}" } }
+          },
+          {
+            "id": "mark_flagged",
+            "type": "record.update",
+            "input": { "recordId": "{{record.id}}", "data": { "policy_check": "out_of_policy", "policy_note": "{{steps.policy.output.reason}}" } }
+          },
+          {
+            "id": "notify",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "Expense to approve: {{record.employee}} spent {{record.amount}} {{record.currency}} on {{record.description}} ({{record.category}}, {{record.vendor}}, {{record.spent_on}}). Policy check: {{steps.policy.output.branch}}. {{steps.policy.output.reason}} Receipt: {{record.receipt_url}}. Manager: {{record.manager_email}}. Decide in Runbase."
+            }
+          },
+          {
+            "id": "approve",
+            "type": "human.approve",
+            "input": {
+              "message": "{{record.employee}} claims {{record.amount}} {{record.currency}} for {{record.description}} ({{record.category}}, {{record.vendor}}, spent on {{record.spent_on}}). AI policy check: {{steps.policy.output.branch}}. {{steps.policy.output.reason}} Receipt: {{record.receipt_url}}",
+              "timeout": "7d"
+            }
+          },
+          {
+            "id": "log",
+            "type": "node.google_sheets.append_rows",
+            "input": {
+              "spreadsheetId": "YOUR_FINANCE_SHEET_ID",
+              "range": "Expenses",
+              "rows": [
+                ["{{record.spent_on}}", "{{record.employee}}", "{{record.email}}", "{{record.category}}", "{{record.vendor}}", "{{record.description}}", "{{record.amount}}", "{{record.currency}}", "{{steps.policy.output.branch}}", "{{record.receipt_url}}"]
+              ]
+            }
+          },
+          {
+            "id": "archive",
+            "type": "node.google_drive.upload_file",
+            "input": {
+              "name": "{{record.spent_on}} {{record.employee}} {{record.vendor}} {{record.amount}} {{record.currency}}.txt",
+              "content": "Approved expense\n\nEmployee: {{record.employee}} ({{record.email}})\nManager: {{record.manager_email}}\nDescription: {{record.description}}\nCategory: {{record.category}}\nVendor: {{record.vendor}}\nAmount: {{record.amount}} {{record.currency}}\nSpent on: {{record.spent_on}}\nReceipt: {{record.receipt_url}}\nPolicy check: {{steps.policy.output.branch}}\nPolicy note: {{steps.policy.output.reason}}",
+              "mimeType": "text/plain",
+              "folderId": "YOUR_EXPENSES_FOLDER_ID"
+            }
+          },
+          {
+            "id": "save",
+            "type": "record.update",
+            "input": { "recordId": "{{record.id}}", "data": { "status": "approved", "archive_link": "{{steps.archive.output.webViewLink}}" } }
+          },
+          {
+            "id": "confirm",
+            "type": "node.gmail.send",
+            "input": {
+              "to": "{{record.email}}",
+              "cc": "{{record.manager_email}}",
+              "subject": "Expense approved: {{record.description}}",
+              "text": "Hi {{record.employee}},\n\nYour expense of {{record.amount}} {{record.currency}} for {{record.description}} is approved. It is logged in the finance sheet and will be paid back with the next reimbursement run.\n\nThanks."
+            }
+          },
+          {
+            "id": "mark_rejected",
+            "type": "record.update",
+            "input": { "recordId": "{{record.id}}", "data": { "status": "rejected" } }
+          },
+          {
+            "id": "decline",
+            "type": "node.gmail.send",
+            "input": {
+              "to": "{{record.email}}",
+              "cc": "{{record.manager_email}}",
+              "subject": "About your expense: {{record.description}}",
+              "text": "Hi {{record.employee}},\n\nYour expense of {{record.amount}} {{record.currency}} for {{record.description}} was not approved. Policy check: {{steps.policy.output.reason}}\n\nYour manager will follow up if anything can be fixed, for example a missing receipt.\n\nThanks."
+            }
+          }
+        ],
+        "next": {
+          "policy": { "within_policy": ["mark_ok"], "out_of_policy": ["mark_flagged"] },
+          "mark_ok": { "ok": ["notify"] },
+          "mark_flagged": { "ok": ["notify"] },
+          "notify": { "ok": ["approve"] },
+          "approve": { "approved": ["log"], "rejected": ["mark_rejected"] },
+          "log": { "ok": ["archive"] },
+          "archive": { "ok": ["save"] },
+          "save": { "ok": ["confirm"] },
+          "mark_rejected": { "ok": ["decline"] }
+        }
+      }
+    }
+  ],
+  "secrets": ["SLACK_WEBHOOK_URL"],
+  "records": [
+    { "key": "e1", "object": "expenses", "data": { "description": "Client dinner with Northwind team", "employee": "Maya Chen", "email": "maya@yourcompany.example", "manager_email": "sam@yourcompany.example", "category": "meals", "amount": 184, "currency": "EUR", "spent_on": "2026-11-20", "vendor": "Le Comptoir", "receipt_url": "https://example.com/receipts/e1.pdf", "policy_check": "within_policy", "policy_note": "Four guests, 46 per person, under the 60 meal limit.", "status": "submitted" } },
+    { "key": "e2", "object": "expenses", "data": { "description": "Train to Lyon for SaaS Summit", "employee": "Daniel Ortiz", "email": "daniel@yourcompany.example", "manager_email": "lea@yourcompany.example", "category": "travel", "amount": 96, "currency": "EUR", "spent_on": "2026-11-12", "vendor": "SNCF", "receipt_url": "https://example.com/receipts/e2.pdf", "policy_check": "within_policy", "policy_note": "Standard class ticket with receipt.", "status": "approved" } },
+    { "key": "e3", "object": "expenses", "data": { "description": "Annual design tool license", "employee": "Priya Nair", "email": "priya@yourcompany.example", "manager_email": "sam@yourcompany.example", "category": "software", "amount": 720, "currency": "USD", "spent_on": "2026-11-18", "vendor": "Figma", "receipt_url": "https://example.com/receipts/e3.pdf", "policy_check": "out_of_policy", "policy_note": "Over 50 per month with no business reason given.", "status": "submitted" } },
+    { "key": "e4", "object": "expenses", "data": { "description": "Noise-cancelling headset", "employee": "Tom Becker", "email": "tom@yourcompany.example", "manager_email": "lea@yourcompany.example", "category": "equipment", "amount": 349, "currency": "EUR", "spent_on": "2026-10-30", "vendor": "Amazon", "policy_check": "out_of_policy", "policy_note": "No receipt link attached.", "status": "rejected" } },
+    { "key": "e5", "object": "expenses", "data": { "description": "Conference booth rental", "employee": "Maya Chen", "email": "maya@yourcompany.example", "manager_email": "sam@yourcompany.example", "category": "events", "amount": 1200, "currency": "EUR", "spent_on": "2026-11-05", "vendor": "Growth Days Paris", "receipt_url": "https://example.com/receipts/e5.pdf", "policy_check": "within_policy", "policy_note": "Event budget pre-approved by marketing.", "status": "approved" } }
+  ]
+}

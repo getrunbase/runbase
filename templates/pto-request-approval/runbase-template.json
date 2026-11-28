@@ -1,0 +1,344 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Time-off Request Approval",
+  "description": "PTO request approval for small teams: the manager gets each leave request by Gmail, and approved time off goes to Google Calendar and Slack.",
+  "databases": [
+    {
+      "slug": "time-off",
+      "name": "Time off"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "leave_requests",
+      "name": "Leave requests",
+      "icon": "calendar-days",
+      "database": "time-off",
+      "fields": [
+        {
+          "key": "employee",
+          "label": "Employee",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "email",
+          "label": "Employee email",
+          "type": "email"
+        },
+        {
+          "key": "team",
+          "label": "Team",
+          "type": "text"
+        },
+        {
+          "key": "manager_email",
+          "label": "Manager email",
+          "type": "email"
+        },
+        {
+          "key": "leave_type",
+          "label": "Leave type",
+          "type": "select",
+          "options": [
+            "vacation",
+            "sick",
+            "parental",
+            "unpaid",
+            "other"
+          ]
+        },
+        {
+          "key": "first_day",
+          "label": "First day off",
+          "type": "date"
+        },
+        {
+          "key": "back_on",
+          "label": "Back on",
+          "type": "date"
+        },
+        {
+          "key": "working_days",
+          "label": "Working days",
+          "type": "number"
+        },
+        {
+          "key": "note",
+          "label": "Note",
+          "type": "text"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": [
+            "pending",
+            "approved",
+            "rejected"
+          ]
+        },
+        {
+          "key": "event_link",
+          "label": "Calendar link",
+          "type": "url"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "leave_requests",
+      "name": "Waiting for approval",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "pending"
+      },
+      "sort": [
+        {
+          "field": "first_day",
+          "dir": "asc"
+        }
+      ],
+      "columns": [
+        "employee",
+        "team",
+        "leave_type",
+        "first_day",
+        "back_on",
+        "working_days"
+      ]
+    },
+    {
+      "object": "leave_requests",
+      "name": "Upcoming time off",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "approved"
+      },
+      "sort": [
+        {
+          "field": "first_day",
+          "dir": "asc"
+        }
+      ],
+      "columns": [
+        "employee",
+        "team",
+        "leave_type",
+        "first_day",
+        "back_on",
+        "event_link"
+      ]
+    },
+    {
+      "object": "leave_requests",
+      "name": "All requests",
+      "sort": [
+        {
+          "field": "first_day",
+          "dir": "desc"
+        }
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "key": "approve-time-off",
+      "name": "Approve time off and share it",
+      "definition": {
+        "trigger": {
+          "type": "trigger.record_created",
+          "object": "$object:leave_requests"
+        },
+        "steps": [
+          {
+            "id": "notify_manager",
+            "type": "node.gmail.send",
+            "input": {
+              "to": "{{record.manager_email}}",
+              "subject": "Time-off request from {{record.employee}}",
+              "text": "Hi,\n\n{{record.employee}} ({{record.team}}) asks for {{record.leave_type}} leave from {{record.first_day}}, back on {{record.back_on}} ({{record.working_days}} working days).\n\nNote: {{record.note}}\n\nApprove or reject it in Runbase, in the Waiting for approval view of Leave requests. Without a decision within 7 days, the request stays pending."
+            }
+          },
+          {
+            "id": "approve",
+            "type": "human.approve",
+            "input": {
+              "message": "{{record.employee}} ({{record.team}}) asks for {{record.leave_type}} leave from {{record.first_day}}, back on {{record.back_on}} ({{record.working_days}} working days). Note: {{record.note}}. Manager: {{record.manager_email}}.",
+              "timeout": "7d"
+            }
+          },
+          {
+            "id": "event",
+            "type": "node.google_calendar.create_event",
+            "input": {
+              "calendarId": "YOUR_TEAM_CALENDAR_ID",
+              "summary": "{{record.employee}} off ({{record.leave_type}})",
+              "description": "Approved time off. Back on {{record.back_on}}.",
+              "start": "{{record.first_day}}",
+              "end": "{{record.back_on}}",
+              "sendUpdates": "none"
+            }
+          },
+          {
+            "id": "save",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "status": "approved",
+                "event_link": "{{steps.event.output.htmlLink}}"
+              }
+            }
+          },
+          {
+            "id": "confirm",
+            "type": "node.gmail.send",
+            "input": {
+              "to": "{{record.email}}",
+              "cc": "{{record.manager_email}}",
+              "subject": "Your time off is approved",
+              "text": "Hi {{record.employee}},\n\nYour {{record.leave_type}} leave from {{record.first_day}} is approved. We expect you back on {{record.back_on}}.\n\nIt is now on the team calendar: {{steps.event.output.htmlLink}}\n\nEnjoy the break."
+            }
+          },
+          {
+            "id": "announce",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "Heads-up: {{record.employee}} ({{record.team}}) is off from {{record.first_day}} and back on {{record.back_on}}. Plan handovers accordingly."
+            }
+          },
+          {
+            "id": "mark_rejected",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "status": "rejected"
+              }
+            }
+          },
+          {
+            "id": "decline",
+            "type": "node.gmail.send",
+            "input": {
+              "to": "{{record.email}}",
+              "cc": "{{record.manager_email}}",
+              "subject": "About your time-off request",
+              "text": "Hi {{record.employee}},\n\nYour {{record.leave_type}} leave request from {{record.first_day}} to {{record.back_on}} could not be approved this time. Your manager will reach out to find other dates that work.\n\nThanks for understanding."
+            }
+          }
+        ],
+        "next": {
+          "notify_manager": {
+            "ok": [
+              "approve"
+            ]
+          },
+          "approve": {
+            "approved": [
+              "event"
+            ],
+            "rejected": [
+              "mark_rejected"
+            ]
+          },
+          "event": {
+            "ok": [
+              "save"
+            ]
+          },
+          "save": {
+            "ok": [
+              "confirm"
+            ]
+          },
+          "confirm": {
+            "ok": [
+              "announce"
+            ]
+          },
+          "mark_rejected": {
+            "ok": [
+              "decline"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": [
+    "SLACK_WEBHOOK_URL"
+  ],
+  "records": [
+    {
+      "key": "l1",
+      "object": "leave_requests",
+      "data": {
+        "employee": "Maya Chen",
+        "email": "maya@yourcompany.example",
+        "team": "Growth",
+        "manager_email": "sam@yourcompany.example",
+        "leave_type": "vacation",
+        "first_day": "2026-12-21",
+        "back_on": "2027-01-04",
+        "working_days": 8,
+        "note": "Family trip, campaigns scheduled before I leave",
+        "status": "pending"
+      }
+    },
+    {
+      "key": "l2",
+      "object": "leave_requests",
+      "data": {
+        "employee": "Daniel Ortiz",
+        "email": "daniel@yourcompany.example",
+        "team": "RevOps",
+        "manager_email": "lea@yourcompany.example",
+        "leave_type": "vacation",
+        "first_day": "2026-12-08",
+        "back_on": "2026-12-11",
+        "working_days": 3,
+        "note": "",
+        "status": "approved"
+      }
+    },
+    {
+      "key": "l3",
+      "object": "leave_requests",
+      "data": {
+        "employee": "Priya Nair",
+        "email": "priya@yourcompany.example",
+        "team": "Marketing",
+        "manager_email": "sam@yourcompany.example",
+        "leave_type": "parental",
+        "first_day": "2027-02-01",
+        "back_on": "2027-05-03",
+        "working_days": 64,
+        "note": "Handover plan shared with the team",
+        "status": "approved"
+      }
+    },
+    {
+      "key": "l4",
+      "object": "leave_requests",
+      "data": {
+        "employee": "Tom Becker",
+        "email": "tom@yourcompany.example",
+        "team": "Operations",
+        "manager_email": "lea@yourcompany.example",
+        "leave_type": "unpaid",
+        "first_day": "2026-12-28",
+        "back_on": "2027-01-02",
+        "working_days": 4,
+        "note": "Quarter close week",
+        "status": "rejected"
+      }
+    }
+  ]
+}

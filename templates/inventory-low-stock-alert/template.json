@@ -1,0 +1,9 @@
+{
+  "id": "inventory-low-stock-alert",
+  "slug": "inventory-low-stock-alert",
+  "name": "Low Stock Alert",
+  "categories": ["operations", "ecommerce"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}

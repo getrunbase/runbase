@@ -1,0 +1,9 @@
+{
+  "id": "google-sheets-crm-sync",
+  "slug": "google-sheets-crm-sync",
+  "name": "Google Sheets CRM Sync",
+  "categories": ["sales", "crm"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}

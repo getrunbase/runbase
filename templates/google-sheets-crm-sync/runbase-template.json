@@ -1,0 +1,274 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Google Sheets CRM Sync",
+  "description": "Turn the sheet your sales team already edits into a Google Sheets CRM of companies, contacts and deals, synced every 15 minutes with Slack alerts.",
+  "databases": [{ "slug": "crm", "name": "CRM" }],
+  "objects": [
+    {
+      "slug": "companies",
+      "name": "Companies",
+      "icon": "building",
+      "database": "crm",
+      "fields": [
+        { "key": "name", "label": "Name", "type": "text", "title": true },
+        { "key": "domain", "label": "Domain", "type": "text", "unique": true }
+      ]
+    },
+    {
+      "slug": "contacts",
+      "name": "Contacts",
+      "icon": "user",
+      "database": "crm",
+      "fields": [
+        { "key": "name", "label": "Name", "type": "text", "title": true },
+        { "key": "email", "label": "Email", "type": "email", "unique": true },
+        { "key": "company", "label": "Company", "type": "ref", "object": "companies" }
+      ]
+    },
+    {
+      "slug": "deals",
+      "name": "Deals",
+      "icon": "handshake",
+      "database": "crm",
+      "fields": [
+        { "key": "title", "label": "Title", "type": "text", "title": true },
+        { "key": "amount", "label": "Amount", "type": "number" },
+        {
+          "key": "stage",
+          "label": "Stage",
+          "type": "select",
+          "options": ["lead", "qualified", "proposal", "won", "lost"]
+        },
+        { "key": "close_date", "label": "Close date", "type": "date" },
+        { "key": "owner", "label": "Owner", "type": "text" },
+        { "key": "company", "label": "Company", "type": "ref", "object": "companies" },
+        { "key": "contact", "label": "Contact", "type": "ref", "object": "contacts" },
+        { "key": "sheet_row", "label": "Sheet row", "type": "number" }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "deals",
+      "name": "Open pipeline",
+      "filter": {
+        "all": [{ "field": "stage", "op": "not_in", "value": ["won", "lost"] }]
+      },
+      "sort": [{ "field": "amount", "dir": "desc" }],
+      "columns": ["title", "company", "amount", "stage", "owner", "close_date"]
+    },
+    {
+      "object": "deals",
+      "name": "Upcoming closes",
+      "filter": {
+        "all": [
+          { "field": "stage", "op": "in", "value": ["qualified", "proposal"] },
+          { "field": "close_date", "op": "is_not_empty" }
+        ]
+      },
+      "sort": [{ "field": "close_date", "dir": "asc" }]
+    },
+    {
+      "object": "deals",
+      "name": "Won deals",
+      "filter": { "field": "stage", "op": "eq", "value": "won" },
+      "sort": [{ "field": "close_date", "dir": "desc" }]
+    }
+  ],
+  "functions": [
+    {
+      "name": "clean-sheet-rows",
+      "code": "const STAGES = [\"lead\", \"qualified\", \"proposal\", \"won\", \"lost\"];\nconst str = (v) => (v == null ? \"\" : String(v).trim());\n\n// Turns raw sheet rows (header keys) into clean CRM rows.\n// Rows without a valid email are skipped; `row` is the sheet line number.\nexport default ({ rows }) => {\n  const clean = [];\n  (rows || []).forEach((r, i) => {\n    const email = str(r[\"Email\"]).toLowerCase();\n    const title = str(r[\"Deal\"]);\n    if (!email.includes(\"@\") || !title) return;\n    const stage = str(r[\"Stage\"]).toLowerCase();\n    const amount = Number(str(r[\"Amount\"]).replace(/[^0-9.-]/g, \"\"));\n    const date = str(r[\"Close date\"]);\n    clean.push({\n      row: i + 2,\n      key: `sheet-${email}-${title.toLowerCase()}`,\n      title,\n      company: str(r[\"Company\"]) || email.split(\"@\")[1],\n      domain: (str(r[\"Domain\"]) || email.split(\"@\")[1]).toLowerCase(),\n      contact: str(r[\"Contact\"]) || email,\n      email,\n      amount: Number.isFinite(amount) ? amount : null,\n      stage: STAGES.includes(stage) ? stage : \"lead\",\n      close_date: /^\\d{4}-\\d{2}-\\d{2}$/.test(date) ? date : null,\n      owner: str(r[\"Owner\"]) || null,\n    });\n  });\n  return { rows: clean, skipped: (rows || []).length - clean.length };\n};\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "rows": { "type": "array" } },
+        "required": ["rows"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "rows": { "type": "array" },
+          "skipped": { "type": "number" }
+        }
+      },
+      "permissions": {}
+    },
+    {
+      "name": "sheet-writeback-values",
+      "code": "// Builds the values of the \"Runbase ID\" and \"Synced stage\" columns for\n// every sheet line, in order. Lines that were skipped keep their cells.\nexport default ({ rows, results }) => {\n  const byRow = new Map();\n  for (const r of results || []) {\n    const rec = r && r.deal && r.deal.record;\n    if (rec && rec.data && rec.data.sheet_row) byRow.set(rec.data.sheet_row, rec);\n  }\n  const values = (rows || []).map((r, i) => {\n    const rec = byRow.get(i + 2);\n    if (!rec) return [r[\"Runbase ID\"] ?? \"\", r[\"Synced stage\"] ?? \"\"];\n    return [rec.id, rec.data.stage ?? \"\"];\n  });\n  return { values: values.length ? values : [[\"\", \"\"]] };\n};\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "rows": { "type": "array" },
+          "results": { "type": "array" }
+        },
+        "required": ["rows", "results"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": { "values": { "type": "array" } }
+      },
+      "permissions": {}
+    }
+  ],
+  "workflows": [
+    {
+      "key": "sync-sheet",
+      "name": "Sync the sales sheet every 15 minutes",
+      "definition": {
+        "trigger": { "type": "trigger.schedule", "cron": "*/15 * * * *" },
+        "steps": [
+          {
+            "id": "read",
+            "type": "node.google_sheets.read_rows",
+            "input": {
+              "spreadsheetId": "{{secret.CRM_SHEET_ID}}",
+              "range": "Deals!A1:K1000",
+              "headers": true
+            }
+          },
+          {
+            "id": "clean",
+            "type": "fn.clean-sheet-rows",
+            "input": { "rows": "{{steps.read.output.rows}}" }
+          },
+          {
+            "id": "upsert",
+            "type": "loop",
+            "input": {
+              "items": "{{steps.clean.output.rows}}",
+              "limit": 1000,
+              "do": [
+                {
+                  "id": "company",
+                  "type": "record.upsert",
+                  "input": {
+                    "object": "companies",
+                    "match": "domain",
+                    "data": { "name": "{{item.company}}", "domain": "{{item.domain}}" }
+                  }
+                },
+                {
+                  "id": "contact",
+                  "type": "record.upsert",
+                  "input": {
+                    "object": "contacts",
+                    "match": "email",
+                    "data": {
+                      "name": "{{item.contact}}",
+                      "email": "{{item.email}}",
+                      "company": "{{steps.company.output.record.id}}"
+                    }
+                  }
+                },
+                {
+                  "id": "deal",
+                  "type": "record.upsert",
+                  "input": {
+                    "object": "deals",
+                    "externalId": "{{item.key}}",
+                    "data": {
+                      "title": "{{item.title}}",
+                      "amount": "{{item.amount}}",
+                      "stage": "{{item.stage}}",
+                      "close_date": "{{item.close_date}}",
+                      "owner": "{{item.owner}}",
+                      "sheet_row": "{{item.row}}",
+                      "company": "{{steps.company.output.record.id}}",
+                      "contact": "{{steps.contact.output.record.id}}"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "writeback-values",
+            "type": "fn.sheet-writeback-values",
+            "input": {
+              "rows": "{{steps.read.output.rows}}",
+              "results": "{{steps.upsert.output.results}}"
+            }
+          },
+          {
+            "id": "writeback",
+            "type": "node.google_sheets.update_rows",
+            "input": {
+              "spreadsheetId": "{{secret.CRM_SHEET_ID}}",
+              "range": "Deals!J2:K",
+              "values": "{{steps.writeback-values.output.values}}"
+            }
+          }
+        ],
+        "next": {
+          "read": { "ok": ["clean"] },
+          "clean": { "ok": ["upsert"] },
+          "upsert": { "done": ["writeback-values"] },
+          "writeback-values": { "ok": ["writeback"] }
+        }
+      }
+    },
+    {
+      "key": "new-deal-alert",
+      "name": "Announce new deals in Slack",
+      "definition": {
+        "trigger": { "type": "trigger.record_created", "object": "$object:deals" },
+        "steps": [
+          {
+            "id": "notify",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "New deal from the sales sheet: {{record.title}} ({{record.amount}}), stage {{record.stage}}, owner {{record.owner}}"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "secrets": ["CRM_SHEET_ID", "SLACK_WEBHOOK_URL"],
+  "records": [
+    { "key": "northwind", "object": "companies", "data": { "name": "Northwind", "domain": "northwind.example" } },
+    { "key": "globex", "object": "companies", "data": { "name": "Globex", "domain": "globex.example" } },
+    {
+      "key": "maria",
+      "object": "contacts",
+      "data": { "name": "Maria Chen", "email": "maria@northwind.example", "company": "$record:northwind" }
+    },
+    {
+      "key": "tom",
+      "object": "contacts",
+      "data": { "name": "Tom Okafor", "email": "tom@globex.example", "company": "$record:globex" }
+    },
+    {
+      "key": "deal-northwind",
+      "object": "deals",
+      "externalId": "sheet-maria@northwind.example-northwind team plan",
+      "data": {
+        "title": "Northwind team plan",
+        "amount": 8400,
+        "stage": "proposal",
+        "close_date": "2026-12-19",
+        "owner": "Sam",
+        "sheet_row": 2,
+        "company": "$record:northwind",
+        "contact": "$record:maria"
+      }
+    },
+    {
+      "key": "deal-globex",
+      "object": "deals",
+      "externalId": "sheet-tom@globex.example-globex pilot",
+      "data": {
+        "title": "Globex pilot",
+        "amount": 2500,
+        "stage": "qualified",
+        "owner": "Lea",
+        "sheet_row": 3,
+        "company": "$record:globex",
+        "contact": "$record:tom"
+      }
+    }
+  ]
+}

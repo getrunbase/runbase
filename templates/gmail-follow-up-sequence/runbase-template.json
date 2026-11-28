@@ -1,0 +1,371 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Gmail Follow-up Sequence",
+  "description": "Gmail follow up automation: three emails sent in one thread from your own inbox, stopping as soon as a prospect is marked as replied.",
+  "databases": [
+    {
+      "slug": "outbound",
+      "name": "Outbound"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "prospects",
+      "name": "Prospects",
+      "icon": "send",
+      "database": "outbound",
+      "fields": [
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "first_name",
+          "label": "First name",
+          "type": "text"
+        },
+        {
+          "key": "email",
+          "label": "Email",
+          "type": "email",
+          "unique": true
+        },
+        {
+          "key": "company",
+          "label": "Company",
+          "type": "text"
+        },
+        {
+          "key": "topic",
+          "label": "Topic",
+          "type": "text"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": [
+            "new",
+            "in_sequence",
+            "replied",
+            "meeting_booked",
+            "not_interested",
+            "finished"
+          ],
+          "default": "new"
+        },
+        {
+          "key": "last_step",
+          "label": "Last step sent",
+          "type": "number"
+        },
+        {
+          "key": "thread_id",
+          "label": "Gmail thread id",
+          "type": "text"
+        },
+        {
+          "key": "notes",
+          "label": "Notes",
+          "type": "text"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "prospects",
+      "name": "In sequence",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "in_sequence"
+      },
+      "sort": [
+        {
+          "field": "last_step",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "name",
+        "company",
+        "last_step",
+        "status"
+      ]
+    },
+    {
+      "object": "prospects",
+      "name": "Replied",
+      "filter": {
+        "field": "status",
+        "op": "in",
+        "value": [
+          "replied",
+          "meeting_booked"
+        ]
+      },
+      "columns": [
+        "name",
+        "company",
+        "status",
+        "notes"
+      ]
+    },
+    {
+      "object": "prospects",
+      "name": "Finished without reply",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "finished"
+      },
+      "columns": [
+        "name",
+        "company",
+        "email",
+        "notes"
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "key": "follow_up_sequence",
+      "name": "Send the Gmail follow-up sequence",
+      "definition": {
+        "trigger": {
+          "type": "trigger.record_created",
+          "object": "$object:prospects"
+        },
+        "steps": [
+          {
+            "id": "check_new",
+            "type": "condition",
+            "input": {
+              "object": "$object:prospects",
+              "recordId": "{{record.id}}",
+              "condition": {
+                "field": "status",
+                "op": "eq",
+                "value": "new"
+              }
+            }
+          },
+          {
+            "id": "send_1",
+            "type": "node.gmail.send",
+            "input": {
+              "to": "{{record.email}}",
+              "subject": "{{record.company}} and {{record.topic}}",
+              "text": "Hi {{record.first_name}},\n\nI noticed {{record.company}} is working on {{record.topic}}. We help teams like yours get there faster, without adding headcount.\n\nWould a 20-minute call next week be useful?\n\nBest,"
+            }
+          },
+          {
+            "id": "save_1",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "status": "in_sequence",
+                "thread_id": "{{steps.send_1.output.threadId}}",
+                "last_step": 1
+              }
+            }
+          },
+          {
+            "id": "wait_1",
+            "type": "wait",
+            "input": {
+              "duration": "3d"
+            }
+          },
+          {
+            "id": "check_1",
+            "type": "condition",
+            "input": {
+              "object": "$object:prospects",
+              "recordId": "{{record.id}}",
+              "condition": {
+                "field": "status",
+                "op": "eq",
+                "value": "in_sequence"
+              }
+            }
+          },
+          {
+            "id": "send_2",
+            "type": "node.gmail.send",
+            "input": {
+              "to": "{{record.email}}",
+              "subject": "Re: {{record.company}} and {{record.topic}}",
+              "text": "Hi {{record.first_name}},\n\nQuick follow-up on my note below. Happy to share how similar teams handled {{record.topic}}, even if the timing is not right for a call.\n\nBest,",
+              "threadId": "{{steps.send_1.output.threadId}}"
+            }
+          },
+          {
+            "id": "save_2",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "last_step": 2
+              }
+            }
+          },
+          {
+            "id": "wait_2",
+            "type": "wait",
+            "input": {
+              "duration": "4d"
+            }
+          },
+          {
+            "id": "check_2",
+            "type": "condition",
+            "input": {
+              "object": "$object:prospects",
+              "recordId": "{{record.id}}",
+              "condition": {
+                "field": "status",
+                "op": "eq",
+                "value": "in_sequence"
+              }
+            }
+          },
+          {
+            "id": "send_3",
+            "type": "node.gmail.send",
+            "input": {
+              "to": "{{record.email}}",
+              "subject": "Re: {{record.company}} and {{record.topic}}",
+              "text": "Hi {{record.first_name}},\n\nI will stop here so I do not clutter your inbox. If {{record.topic}} becomes a priority later, just reply to this thread.\n\nBest,",
+              "threadId": "{{steps.send_1.output.threadId}}"
+            }
+          },
+          {
+            "id": "save_3",
+            "type": "record.update",
+            "input": {
+              "recordId": "{{record.id}}",
+              "data": {
+                "status": "finished",
+                "last_step": 3
+              }
+            }
+          }
+        ],
+        "next": {
+          "check_new": {
+            "true": [
+              "send_1"
+            ]
+          },
+          "send_1": {
+            "ok": [
+              "save_1"
+            ]
+          },
+          "save_1": {
+            "ok": [
+              "wait_1"
+            ]
+          },
+          "wait_1": {
+            "done": [
+              "check_1"
+            ]
+          },
+          "check_1": {
+            "true": [
+              "send_2"
+            ]
+          },
+          "send_2": {
+            "ok": [
+              "save_2"
+            ]
+          },
+          "save_2": {
+            "ok": [
+              "wait_2"
+            ]
+          },
+          "wait_2": {
+            "done": [
+              "check_2"
+            ]
+          },
+          "check_2": {
+            "true": [
+              "send_3"
+            ]
+          },
+          "send_3": {
+            "ok": [
+              "save_3"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": [],
+  "records": [
+    {
+      "key": "p1",
+      "object": "prospects",
+      "data": {
+        "name": "Maya Chen",
+        "first_name": "Maya",
+        "email": "maya@northwind.example",
+        "company": "Northwind",
+        "topic": "lead routing",
+        "status": "in_sequence",
+        "last_step": 2
+      }
+    },
+    {
+      "key": "p2",
+      "object": "prospects",
+      "data": {
+        "name": "Tom Becker",
+        "first_name": "Tom",
+        "email": "tom@lumen.example",
+        "company": "Lumen Labs",
+        "topic": "pipeline reporting",
+        "status": "replied",
+        "last_step": 1,
+        "notes": "Asked for a call on Thursday."
+      }
+    },
+    {
+      "key": "p3",
+      "object": "prospects",
+      "data": {
+        "name": "Sara Diaz",
+        "first_name": "Sara",
+        "email": "sara@brightpath.example",
+        "company": "Brightpath",
+        "topic": "customer onboarding",
+        "status": "meeting_booked",
+        "last_step": 2
+      }
+    },
+    {
+      "key": "p4",
+      "object": "prospects",
+      "data": {
+        "name": "Leo Martin",
+        "first_name": "Leo",
+        "email": "leo@quarry.example",
+        "company": "Quarry",
+        "topic": "churn alerts",
+        "status": "finished",
+        "last_step": 3
+      }
+    }
+  ]
+}

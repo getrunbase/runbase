@@ -1,0 +1,514 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Sales Meeting Tracker",
+  "description": "A sales meeting tracker that counts booked and held demos per rep from Google Calendar, logs weekly totals to Google Sheets and posts a Slack scoreboard.",
+  "databases": [
+    {
+      "slug": "sales-meetings",
+      "name": "Sales meetings"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "meetings",
+      "name": "Meetings",
+      "icon": "calendar",
+      "database": "sales-meetings",
+      "fields": [
+        {
+          "key": "title",
+          "label": "Title",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "event_id",
+          "label": "Calendar event id",
+          "type": "text",
+          "unique": true
+        },
+        {
+          "key": "rep",
+          "label": "Rep",
+          "type": "email"
+        },
+        {
+          "key": "attendee_domain",
+          "label": "Prospect domain",
+          "type": "text"
+        },
+        {
+          "key": "start",
+          "label": "Start",
+          "type": "date"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": [
+            "booked",
+            "held",
+            "cancelled"
+          ]
+        },
+        {
+          "key": "link",
+          "label": "Calendar link",
+          "type": "url"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "meetings",
+      "name": "Upcoming meetings",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "booked"
+      },
+      "sort": [
+        {
+          "field": "start",
+          "dir": "asc"
+        }
+      ],
+      "columns": [
+        "title",
+        "rep",
+        "attendee_domain",
+        "start"
+      ]
+    },
+    {
+      "object": "meetings",
+      "name": "Held this week",
+      "filter": {
+        "all": [
+          {
+            "field": "status",
+            "op": "eq",
+            "value": "held"
+          },
+          {
+            "field": "start",
+            "op": "within",
+            "value": 7
+          }
+        ]
+      },
+      "sort": [
+        {
+          "field": "start",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "title",
+        "rep",
+        "attendee_domain",
+        "start"
+      ]
+    },
+    {
+      "object": "meetings",
+      "name": "Cancelled meetings",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "cancelled"
+      },
+      "sort": [
+        {
+          "field": "start",
+          "dir": "desc"
+        }
+      ]
+    },
+    {
+      "object": "meetings",
+      "name": "Meetings by rep",
+      "sort": [
+        {
+          "field": "rep",
+          "dir": "asc"
+        },
+        {
+          "field": "start",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "rep",
+        "title",
+        "status",
+        "start"
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "meeting-fields",
+      "code": "// Turns one Google Calendar event into a meeting row.\n// The rep is the first attendee on your own domain, the prospect domain\n// is the first attendee outside it.\nexport default ({ event, internalDomain, now }) => {\n  const own = String(internalDomain || \"\").toLowerCase();\n  const people = (event.attendees || []).map((a) => ({\n    email: String(a.email || \"\").toLowerCase(),\n    response: a.responseStatus,\n  }));\n  const domainOf = (email) => email.split(\"@\")[1] || \"\";\n  const rep = people.find((p) => domainOf(p.email) === own);\n  const guests = people.filter((p) => domainOf(p.email) !== own);\n  const declined = guests.length > 0 && guests.every((p) => p.response === \"declined\");\n  // Compare as timestamps: Google returns local offsets, now is UTC.\n  const ended = Boolean(event.end) && Date.parse(event.end) < Date.parse(now);\n  const status =\n    event.status === \"cancelled\" || declined ? \"cancelled\" : ended ? \"held\" : \"booked\";\n  return {\n    title: event.summary || \"Untitled meeting\",\n    rep: rep ? rep.email : null,\n    attendee_domain: guests[0] ? domainOf(guests[0].email) : \"\",\n    start: event.start,\n    status,\n    link: event.htmlLink || \"\",\n  };\n};",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "object"
+          },
+          "internalDomain": {
+            "type": "string"
+          },
+          "now": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "event",
+          "internalDomain",
+          "now"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "rep": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "attendee_domain": {
+            "type": "string"
+          },
+          "start": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string"
+          },
+          "link": {
+            "type": "string"
+          }
+        }
+      },
+      "permissions": {
+        "domains": [],
+        "secrets": []
+      },
+      "limits": {}
+    },
+    {
+      "name": "build-scoreboard",
+      "code": "// Counts booked, held and cancelled meetings per rep for the week and\n// builds the sheet rows and the Slack scoreboard.\nexport default ({ records, week }) => {\n  const by = {};\n  for (const r of records || []) {\n    const m = r.data || r;\n    const rep = m.rep || \"unassigned\";\n    by[rep] = by[rep] || { booked: 0, held: 0, cancelled: 0 };\n    if (m.status === \"cancelled\") by[rep].cancelled += 1;\n    else by[rep].booked += 1;\n    if (m.status === \"held\") by[rep].held += 1;\n  }\n  const reps = Object.entries(by).sort((a, b) => b[1].held - a[1].held);\n  const rows = reps.map(([rep, c]) => ({\n    Week: week,\n    Rep: rep,\n    Booked: c.booked,\n    Held: c.held,\n    Cancelled: c.cancelled,\n    \"Show rate\": c.booked ? Math.round((c.held / c.booked) * 100) + \"%\" : \"\",\n  }));\n  const lines = reps.map(\n    ([rep, c], i) => `${i + 1}. ${rep}: ${c.held} held / ${c.booked} booked (${c.cancelled} cancelled)`,\n  );\n  const text = lines.length\n    ? `Sales meeting scoreboard, week of ${week}\\n${lines.join(\"\\n\")}`\n    : `Sales meeting scoreboard, week of ${week}: no meetings tracked.`;\n  return {\n    rows: rows.length ? rows : [{ Week: week, Rep: \"none\", Booked: 0, Held: 0, Cancelled: 0, \"Show rate\": \"\" }],\n    text,\n  };\n};",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "records": {
+            "type": "array"
+          },
+          "week": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "records",
+          "week"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "permissions": {
+        "domains": [],
+        "secrets": [],
+        "records": "read"
+      },
+      "limits": {}
+    }
+  ],
+  "workflows": [
+    {
+      "key": "sync-meetings",
+      "name": "Sync sales meetings from Google Calendar",
+      "definition": {
+        "trigger": {
+          "type": "trigger.schedule",
+          "cron": "0 6 * * *"
+        },
+        "steps": [
+          {
+            "id": "since",
+            "type": "date",
+            "input": {
+              "op": "add",
+              "date": "{{now}}",
+              "amount": -14,
+              "unit": "days"
+            }
+          },
+          {
+            "id": "until",
+            "type": "date",
+            "input": {
+              "op": "add",
+              "date": "{{now}}",
+              "amount": 30,
+              "unit": "days"
+            }
+          },
+          {
+            "id": "events",
+            "type": "node.google_calendar.list_events",
+            "input": {
+              "calendarId": "primary",
+              "timeMin": "{{steps.since.output.value}}",
+              "timeMax": "{{steps.until.output.value}}",
+              "q": "demo",
+              "maxResults": 250
+            }
+          },
+          {
+            "id": "each",
+            "type": "loop",
+            "input": {
+              "items": "{{steps.events.output.events}}",
+              "limit": 250,
+              "do": [
+                {
+                  "id": "fields",
+                  "type": "fn.meeting-fields",
+                  "input": {
+                    "event": "{{item}}",
+                    "internalDomain": "yourcompany.com",
+                    "now": "{{now}}"
+                  }
+                },
+                {
+                  "id": "save",
+                  "type": "record.upsert",
+                  "input": {
+                    "object": "$object:meetings",
+                    "match": "event_id",
+                    "data": {
+                      "event_id": "{{item.id}}",
+                      "title": "{{steps.fields.output.title}}",
+                      "rep": "{{steps.fields.output.rep}}",
+                      "attendee_domain": "{{steps.fields.output.attendee_domain}}",
+                      "start": "{{steps.fields.output.start}}",
+                      "status": "{{steps.fields.output.status}}",
+                      "link": "{{steps.fields.output.link}}"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "next": {
+          "since": {
+            "ok": [
+              "until"
+            ]
+          },
+          "until": {
+            "ok": [
+              "events"
+            ]
+          },
+          "events": {
+            "ok": [
+              "each"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "key": "weekly-scoreboard",
+      "name": "Publish the weekly meeting scoreboard",
+      "definition": {
+        "trigger": {
+          "type": "trigger.schedule",
+          "cron": "0 8 * * 1"
+        },
+        "steps": [
+          {
+            "id": "week",
+            "type": "date",
+            "input": {
+              "op": "add",
+              "date": "{{now}}",
+              "amount": -7,
+              "unit": "days"
+            }
+          },
+          {
+            "id": "label",
+            "type": "date",
+            "input": {
+              "op": "format",
+              "date": "{{steps.week.output.value}}",
+              "format": "YYYY-MM-DD"
+            }
+          },
+          {
+            "id": "meetings",
+            "type": "record.search",
+            "input": {
+              "object": "$object:meetings",
+              "filter": {
+                "field": "start",
+                "op": "within",
+                "value": 7
+              },
+              "limit": 500
+            }
+          },
+          {
+            "id": "board",
+            "type": "fn.build-scoreboard",
+            "input": {
+              "records": "{{steps.meetings.output.records}}",
+              "week": "{{steps.label.output.value}}"
+            }
+          },
+          {
+            "id": "sheet",
+            "type": "node.google_sheets.append_rows",
+            "input": {
+              "spreadsheetId": "YOUR_SPREADSHEET_ID",
+              "range": "Scoreboard",
+              "rows": "{{steps.board.output.rows}}"
+            }
+          },
+          {
+            "id": "post",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "{{steps.board.output.text}}"
+            }
+          }
+        ],
+        "next": {
+          "week": {
+            "ok": [
+              "label"
+            ]
+          },
+          "label": {
+            "ok": [
+              "meetings"
+            ]
+          },
+          "meetings": {
+            "found": [
+              "board"
+            ],
+            "empty": [
+              "board"
+            ]
+          },
+          "board": {
+            "ok": [
+              "sheet"
+            ]
+          },
+          "sheet": {
+            "ok": [
+              "post"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": [
+    "SLACK_WEBHOOK_URL"
+  ],
+  "records": [
+    {
+      "key": "m1",
+      "object": "meetings",
+      "data": {
+        "title": "Demo: Northwind x Runbase",
+        "event_id": "sample-evt-001",
+        "rep": "jordan@yourcompany.com",
+        "attendee_domain": "northwind.example",
+        "start": "2026-11-24T15:00:00Z",
+        "status": "held",
+        "link": "https://calendar.google.com/"
+      }
+    },
+    {
+      "key": "m2",
+      "object": "meetings",
+      "data": {
+        "title": "Product demo - Globex",
+        "event_id": "sample-evt-002",
+        "rep": "jordan@yourcompany.com",
+        "attendee_domain": "globex.example",
+        "start": "2026-11-25T10:00:00Z",
+        "status": "cancelled",
+        "link": "https://calendar.google.com/"
+      }
+    },
+    {
+      "key": "m3",
+      "object": "meetings",
+      "data": {
+        "title": "Demo call with Initech",
+        "event_id": "sample-evt-003",
+        "rep": "sam@yourcompany.com",
+        "attendee_domain": "initech.example",
+        "start": "2026-11-26T14:30:00Z",
+        "status": "held",
+        "link": "https://calendar.google.com/"
+      }
+    },
+    {
+      "key": "m4",
+      "object": "meetings",
+      "data": {
+        "title": "Demo: Umbrella Corp follow-up",
+        "event_id": "sample-evt-004",
+        "rep": "sam@yourcompany.com",
+        "attendee_domain": "umbrella.example",
+        "start": "2026-12-02T16:00:00Z",
+        "status": "booked",
+        "link": "https://calendar.google.com/"
+      }
+    },
+    {
+      "key": "m5",
+      "object": "meetings",
+      "data": {
+        "title": "Intro demo - Hooli",
+        "event_id": "sample-evt-005",
+        "rep": "priya@yourcompany.com",
+        "attendee_domain": "hooli.example",
+        "start": "2026-12-03T09:00:00Z",
+        "status": "booked",
+        "link": "https://calendar.google.com/"
+      }
+    }
+  ]
+}

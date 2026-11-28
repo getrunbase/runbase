@@ -1,0 +1,358 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Meeting Reminder Emails",
+  "description": "Automatic meeting reminder emails: each morning, Gmail reminds external guests of tomorrow's Google Calendar meetings with the time, agenda and Meet link.",
+  "databases": [
+    {
+      "slug": "meeting-reminders",
+      "name": "Meeting reminders"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "reminders",
+      "name": "Reminders",
+      "icon": "bell",
+      "database": "meeting-reminders",
+      "fields": [
+        {
+          "key": "key",
+          "label": "Reminder key",
+          "type": "text",
+          "unique": true
+        },
+        {
+          "key": "meeting",
+          "label": "Meeting",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "attendee",
+          "label": "Attendee",
+          "type": "email"
+        },
+        {
+          "key": "start",
+          "label": "Starts at",
+          "type": "date"
+        },
+        {
+          "key": "meet_link",
+          "label": "Meet link",
+          "type": "url"
+        },
+        {
+          "key": "event_id",
+          "label": "Calendar event id",
+          "type": "text"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": [
+            "sent",
+            "attended",
+            "no-show",
+            "rescheduled"
+          ]
+        },
+        {
+          "key": "sent_at",
+          "label": "Sent at",
+          "type": "date"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "reminders",
+      "name": "All reminders",
+      "sort": [
+        {
+          "field": "start",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "meeting",
+        "attendee",
+        "start",
+        "meet_link",
+        "status"
+      ]
+    },
+    {
+      "object": "reminders",
+      "name": "No-shows",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "no-show"
+      },
+      "sort": [
+        {
+          "field": "start",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "meeting",
+        "attendee",
+        "start"
+      ]
+    },
+    {
+      "object": "reminders",
+      "name": "Sent reminders",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "sent"
+      },
+      "sort": [
+        {
+          "field": "sent_at",
+          "dir": "desc"
+        }
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "build-reminders",
+      "code": "export default (input) => {\n  const internal = String(input.internalDomain || \"\").toLowerCase().replace(/^@/, \"\");\n  const owner = String(input.ownerEmail || \"\").toLowerCase();\n  const tz = input.timezone || \"UTC\";\n  const reminders = [];\n  for (const ev of input.events || []) {\n    if (ev.status === \"cancelled\" || !ev.start) continue;\n    const when = new Date(ev.start).toLocaleString(\"en-US\", {\n      timeZone: tz, weekday: \"long\", month: \"long\", day: \"numeric\",\n      hour: \"numeric\", minute: \"2-digit\", timeZoneName: \"short\",\n    });\n    const join = ev.meetLink || ev.location || ev.htmlLink || \"see the calendar invite\";\n    for (const a of ev.attendees || []) {\n      const email = String(a.email || \"\").toLowerCase();\n      if (!email || email === owner) continue;\n      if (internal && email.endsWith(\"@\" + internal)) continue;\n      if (a.responseStatus === \"declined\") continue;\n      reminders.push({\n        key: ev.id + \":\" + email,\n        eventId: ev.id,\n        email,\n        title: ev.summary || \"Our meeting\",\n        start: ev.start,\n        when,\n        join,\n        meetLink: ev.meetLink || null,\n        agenda: ev.description || \"No agenda was added to the invite yet. Reply to this email with anything you want to cover.\",\n      });\n    }\n  }\n  return { reminders, count: reminders.length };\n};",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array"
+          },
+          "internalDomain": {
+            "type": "string"
+          },
+          "ownerEmail": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "events"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "reminders": {
+            "type": "array"
+          },
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "reminders",
+          "count"
+        ]
+      },
+      "permissions": {
+        "domains": [],
+        "secrets": []
+      },
+      "limits": {
+        "timeoutMs": 5000
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "key": "daily-reminders",
+      "name": "Email tomorrow's attendees a reminder",
+      "definition": {
+        "trigger": {
+          "type": "trigger.schedule",
+          "cron": "0 8 * * *",
+          "timezone": "Europe/Paris"
+        },
+        "steps": [
+          {
+            "id": "window_start",
+            "type": "date",
+            "input": {
+              "op": "add",
+              "date": "{{now}}",
+              "amount": 16,
+              "unit": "hours"
+            }
+          },
+          {
+            "id": "window_end",
+            "type": "date",
+            "input": {
+              "op": "add",
+              "date": "{{now}}",
+              "amount": 40,
+              "unit": "hours"
+            }
+          },
+          {
+            "id": "events",
+            "type": "node.google_calendar.list_events",
+            "input": {
+              "calendarId": "primary",
+              "timeMin": "{{steps.window_start.output.value}}",
+              "timeMax": "{{steps.window_end.output.value}}",
+              "maxResults": 100
+            }
+          },
+          {
+            "id": "build",
+            "type": "fn.build-reminders",
+            "input": {
+              "events": "{{steps.events.output.events}}",
+              "internalDomain": "yourcompany.com",
+              "ownerEmail": "you@yourcompany.com",
+              "timezone": "Europe/Paris"
+            }
+          },
+          {
+            "id": "send_all",
+            "type": "loop",
+            "input": {
+              "items": "{{steps.build.output.reminders}}",
+              "limit": 100,
+              "do": [
+                {
+                  "id": "email",
+                  "type": "node.gmail.send",
+                  "input": {
+                    "to": "{{item.email}}",
+                    "subject": "Reminder: {{item.title}} tomorrow, {{item.when}}",
+                    "text": "Hi,\n\nA quick reminder about our meeting tomorrow.\n\nMeeting: {{item.title}}\nWhen: {{item.when}}\nJoin: {{item.join}}\n\nAgenda:\n{{item.agenda}}\n\nIf the time no longer works, just reply to this email and we will find another slot.\n\nSee you tomorrow."
+                  }
+                },
+                {
+                  "id": "log",
+                  "type": "record.upsert",
+                  "input": {
+                    "object": "$object:reminders",
+                    "match": "key",
+                    "data": {
+                      "key": "{{item.key}}",
+                      "meeting": "{{item.title}}",
+                      "attendee": "{{item.email}}",
+                      "start": "{{item.start}}",
+                      "meet_link": "{{item.meetLink}}",
+                      "event_id": "{{item.eventId}}",
+                      "status": "sent",
+                      "sent_at": "{{now}}"
+                    }
+                  }
+                },
+                {
+                  "id": "track",
+                  "type": "event.emit",
+                  "input": {
+                    "type": "reminder_sent",
+                    "recordId": "{{steps.log.output.record.id}}",
+                    "payload": {
+                      "eventId": "{{item.eventId}}",
+                      "attendee": "{{item.email}}",
+                      "start": "{{item.start}}"
+                    },
+                    "idempotencyKey": "reminder:{{item.key}}"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "next": {
+          "window_start": {
+            "ok": [
+              "window_end"
+            ]
+          },
+          "window_end": {
+            "ok": [
+              "events"
+            ]
+          },
+          "events": {
+            "ok": [
+              "build"
+            ]
+          },
+          "build": {
+            "ok": [
+              "send_all"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": [],
+  "records": [
+    {
+      "key": "r1",
+      "object": "reminders",
+      "data": {
+        "key": "sample-evt-1:maria@northwind.example",
+        "meeting": "Coaching session: Q1 goals",
+        "attendee": "maria@northwind.example",
+        "start": "2026-12-01T09:30:00+01:00",
+        "meet_link": "https://meet.google.com/abc-defg-hij",
+        "event_id": "sample-evt-1",
+        "status": "sent",
+        "sent_at": "2026-11-30T08:00:00+01:00"
+      }
+    },
+    {
+      "key": "r2",
+      "object": "reminders",
+      "data": {
+        "key": "sample-evt-2:james@brightlabs.example",
+        "meeting": "Strategy review with Bright Labs",
+        "attendee": "james@brightlabs.example",
+        "start": "2026-11-28T14:00:00+01:00",
+        "meet_link": "https://meet.google.com/klm-nopq-rst",
+        "event_id": "sample-evt-2",
+        "status": "attended",
+        "sent_at": "2026-11-27T08:00:00+01:00"
+      }
+    },
+    {
+      "key": "r3",
+      "object": "reminders",
+      "data": {
+        "key": "sample-evt-3:li@acme.example",
+        "meeting": "Discovery call: Acme",
+        "attendee": "li@acme.example",
+        "start": "2026-11-27T11:00:00+01:00",
+        "meet_link": "https://meet.google.com/uvw-xyza-bcd",
+        "event_id": "sample-evt-3",
+        "status": "no-show",
+        "sent_at": "2026-11-26T08:00:00+01:00"
+      }
+    },
+    {
+      "key": "r4",
+      "object": "reminders",
+      "data": {
+        "key": "sample-evt-4:sofia@greenleaf.example",
+        "meeting": "Workshop prep with Greenleaf",
+        "attendee": "sofia@greenleaf.example",
+        "start": "2026-11-26T16:00:00+01:00",
+        "event_id": "sample-evt-4",
+        "status": "rescheduled",
+        "sent_at": "2026-11-25T08:00:00+01:00"
+      }
+    }
+  ]
+}

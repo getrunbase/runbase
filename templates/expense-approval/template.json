@@ -1,0 +1,9 @@
+{
+  "id": "expense-approval",
+  "slug": "expense-approval",
+  "name": "Expense Approval",
+  "categories": ["finance", "operations"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}

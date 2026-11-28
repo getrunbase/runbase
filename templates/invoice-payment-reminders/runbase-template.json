@@ -1,0 +1,445 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Invoice Payment Reminders",
+  "description": "Automatic invoice payment reminders from your Gmail, escalating from polite to final, with the overdue total in Slack and an aging table in Google Sheets.",
+  "databases": [
+    {
+      "slug": "finance",
+      "name": "Finance"
+    }
+  ],
+  "objects": [
+    {
+      "slug": "invoices",
+      "name": "Invoices",
+      "icon": "receipt",
+      "database": "finance",
+      "fields": [
+        {
+          "key": "number",
+          "label": "Invoice number",
+          "type": "text",
+          "title": true,
+          "unique": true
+        },
+        {
+          "key": "client_name",
+          "label": "Client",
+          "type": "text"
+        },
+        {
+          "key": "contact_first_name",
+          "label": "Contact first name",
+          "type": "text"
+        },
+        {
+          "key": "client_email",
+          "label": "Billing email",
+          "type": "email"
+        },
+        {
+          "key": "amount",
+          "label": "Amount",
+          "type": "number"
+        },
+        {
+          "key": "issue_date",
+          "label": "Issue date",
+          "type": "date"
+        },
+        {
+          "key": "due_date",
+          "label": "Due date",
+          "type": "date"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": [
+            "draft",
+            "sent",
+            "overdue",
+            "paid",
+            "disputed",
+            "written_off"
+          ]
+        },
+        {
+          "key": "payment_link",
+          "label": "Payment link",
+          "type": "url"
+        },
+        {
+          "key": "reminders_count",
+          "label": "Reminders sent",
+          "type": "number"
+        },
+        {
+          "key": "last_reminder_at",
+          "label": "Last reminder",
+          "type": "date"
+        },
+        {
+          "key": "thread_id",
+          "label": "Gmail thread id",
+          "type": "text"
+        },
+        {
+          "key": "notes",
+          "label": "Notes",
+          "type": "text"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "invoices",
+      "name": "Overdue",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "overdue"
+      },
+      "sort": [
+        {
+          "field": "due_date",
+          "dir": "asc"
+        }
+      ],
+      "columns": [
+        "number",
+        "client_name",
+        "amount",
+        "due_date",
+        "reminders_count",
+        "last_reminder_at"
+      ]
+    },
+    {
+      "object": "invoices",
+      "name": "Awaiting payment",
+      "filter": {
+        "field": "status",
+        "op": "in",
+        "value": [
+          "sent",
+          "overdue"
+        ]
+      },
+      "sort": [
+        {
+          "field": "due_date",
+          "dir": "asc"
+        }
+      ],
+      "columns": [
+        "number",
+        "client_name",
+        "amount",
+        "due_date",
+        "status"
+      ]
+    },
+    {
+      "object": "invoices",
+      "name": "Disputed",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "disputed"
+      },
+      "columns": [
+        "number",
+        "client_name",
+        "amount",
+        "notes"
+      ]
+    },
+    {
+      "object": "invoices",
+      "name": "Paid",
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "paid"
+      },
+      "sort": [
+        {
+          "field": "due_date",
+          "dir": "desc"
+        }
+      ],
+      "columns": [
+        "number",
+        "client_name",
+        "amount",
+        "due_date"
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "plan-invoice-reminders",
+      "code": "// Decides which overdue invoices get a reminder today and builds the\n// Slack summary and the aging table for Google Sheets.\nconst STAGES = [\n  { days: 1, tone: \"polite\" },\n  { days: 7, tone: \"friendly\" },\n  { days: 14, tone: \"firm\" },\n  { days: 30, tone: \"final\" },\n];\nconst DAY = 86400000;\n\nexport default (input) => {\n  const today = new Date(input.today || Date.now());\n  const sender = input.senderName || \"Accounts\";\n  const cur = input.currency || \"USD\";\n  const money = (n) =>\n    new Intl.NumberFormat(\"en-US\", { style: \"currency\", currency: cur }).format(Number(n) || 0);\n  const reminders = [];\n  const buckets = { \"1-30\": 0, \"31-60\": 0, \"61-90\": 0, \"90+\": 0 };\n  const rows = [[\"Invoice\", \"Client\", \"Amount\", \"Due date\", \"Days late\", \"Reminders sent\"]];\n  let total = 0;\n\n  for (const r of input.invoices || []) {\n    const d = r.data || r;\n    if (!d.due_date || !d.client_email) continue;\n    const late = Math.floor((today - new Date(d.due_date)) / DAY);\n    if (late < 1) continue;\n    const amount = Number(d.amount) || 0;\n    total += amount;\n    const b = late <= 30 ? \"1-30\" : late <= 60 ? \"31-60\" : late <= 90 ? \"61-90\" : \"90+\";\n    buckets[b] += amount;\n    const sent = Number(d.reminders_count) || 0;\n    rows.push([d.number || \"\", d.client_name || \"\", amount, String(d.due_date).slice(0, 10), late, sent]);\n\n    const stage = STAGES.filter((s) => late >= s.days).length;\n    if (stage <= sent) continue;\n    const tone = STAGES[stage - 1].tone;\n    const name = d.contact_first_name || d.client_name || \"there\";\n    const due = String(d.due_date).slice(0, 10);\n    const link = d.payment_link ? `\\n\\nYou can pay online here: ${d.payment_link}` : \"\";\n    const body = {\n      polite: `Hi ${name},\\n\\nA quick reminder that invoice ${d.number} for ${money(amount)} was due on ${due}. It may simply have slipped through, so I am sending it again for convenience.${link}\\n\\nIf it is already paid, please ignore this email.\\n\\nThank you,\\n${sender}`,\n      friendly: `Hi ${name},\\n\\nFollowing up on invoice ${d.number} for ${money(amount)}, now ${late} days past due (due ${due}). Could you let me know when we can expect payment?${link}\\n\\nThank you,\\n${sender}`,\n      firm: `Hi ${name},\\n\\nInvoice ${d.number} for ${money(amount)} is now ${late} days overdue. Please arrange payment this week, or reply with the expected payment date if something is blocking it on your side.${link}\\n\\nRegards,\\n${sender}`,\n      final: `Hi ${name},\\n\\nThis is a final reminder for invoice ${d.number} (${money(amount)}), due on ${due} and now ${late} days overdue. Without payment or a reply within 7 days, we will pause work and move to our formal collection process.${link}\\n\\nRegards,\\n${sender}`,\n    }[tone];\n    reminders.push({\n      recordId: r.id,\n      to: d.client_email,\n      subject: `Invoice ${d.number}: payment reminder`,\n      text: body,\n      threadId: d.thread_id || undefined,\n      stage,\n      tone,\n    });\n  }\n\n  const lines = Object.entries(buckets).map(([k, v]) => `${k} days: ${money(v)}`).join(\"\\n\");\n  const summary = `Overdue invoices: ${rows.length - 1}, total ${money(total)}\\n${lines}\\nReminders sent today: ${reminders.length}`;\n  return { reminders, summary, aging: rows, overdueCount: rows.length - 1, total };\n};\n",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "invoices": {
+            "type": "array"
+          },
+          "today": {
+            "type": "string"
+          },
+          "senderName": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "invoices"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "reminders": {
+            "type": "array"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "aging": {
+            "type": "array"
+          },
+          "overdueCount": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "reminders",
+          "summary",
+          "aging"
+        ]
+      },
+      "permissions": {
+        "domains": [],
+        "secrets": []
+      },
+      "limits": {
+        "timeoutMs": 5000
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "key": "daily-payment-reminders",
+      "name": "Chase overdue invoices every morning",
+      "definition": {
+        "trigger": {
+          "type": "trigger.schedule",
+          "cron": "0 9 * * 1-5",
+          "timezone": "Europe/Paris"
+        },
+        "steps": [
+          {
+            "id": "overdue",
+            "type": "record.search",
+            "input": {
+              "object": "$object:invoices",
+              "filter": {
+                "all": [
+                  {
+                    "field": "status",
+                    "op": "in",
+                    "value": [
+                      "sent",
+                      "overdue"
+                    ]
+                  },
+                  {
+                    "field": "due_date",
+                    "op": "before",
+                    "value": "{{now}}"
+                  }
+                ]
+              },
+              "limit": 500
+            }
+          },
+          {
+            "id": "plan",
+            "type": "fn.plan-invoice-reminders",
+            "input": {
+              "invoices": "{{steps.overdue.output.records}}",
+              "today": "{{now}}",
+              "senderName": "Your name, Your company",
+              "currency": "USD"
+            }
+          },
+          {
+            "id": "send_all",
+            "type": "loop",
+            "input": {
+              "items": "{{steps.plan.output.reminders}}",
+              "limit": 100,
+              "do": [
+                {
+                  "id": "email",
+                  "type": "node.gmail.send",
+                  "input": {
+                    "to": "{{item.to}}",
+                    "subject": "{{item.subject}}",
+                    "text": "{{item.text}}",
+                    "threadId": "{{item.threadId}}"
+                  }
+                },
+                {
+                  "id": "save",
+                  "type": "record.update",
+                  "input": {
+                    "recordId": "{{item.recordId}}",
+                    "data": {
+                      "status": "overdue",
+                      "reminders_count": "{{item.stage}}",
+                      "last_reminder_at": "{{now}}",
+                      "thread_id": "{{steps.email.output.threadId}}"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "summary",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "{{steps.plan.output.summary}}"
+            }
+          },
+          {
+            "id": "aging",
+            "type": "node.google_sheets.update_rows",
+            "input": {
+              "spreadsheetId": "YOUR_SPREADSHEET_ID",
+              "range": "Aging!A1",
+              "values": "{{steps.plan.output.aging}}"
+            }
+          }
+        ],
+        "next": {
+          "overdue": {
+            "found": [
+              "plan"
+            ]
+          },
+          "plan": {
+            "ok": [
+              "send_all"
+            ]
+          },
+          "send_all": {
+            "done": [
+              "summary"
+            ]
+          },
+          "summary": {
+            "ok": [
+              "aging"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "secrets": [
+    "SLACK_WEBHOOK_URL"
+  ],
+  "records": [
+    {
+      "key": "i1",
+      "object": "invoices",
+      "data": {
+        "number": "INV-2026-041",
+        "client_name": "Northwind Studio",
+        "contact_first_name": "Maya",
+        "client_email": "billing@northwind.example",
+        "amount": 4800,
+        "issue_date": "2026-10-01",
+        "due_date": "2026-10-31",
+        "status": "overdue",
+        "reminders_count": 3,
+        "payment_link": "https://pay.example.com/inv-2026-041"
+      }
+    },
+    {
+      "key": "i2",
+      "object": "invoices",
+      "data": {
+        "number": "INV-2026-047",
+        "client_name": "Lumen Labs",
+        "contact_first_name": "Tom",
+        "client_email": "ap@lumen.example",
+        "amount": 1250,
+        "issue_date": "2026-10-28",
+        "due_date": "2026-11-20",
+        "status": "overdue",
+        "reminders_count": 2
+      }
+    },
+    {
+      "key": "i3",
+      "object": "invoices",
+      "data": {
+        "number": "INV-2026-052",
+        "client_name": "Brightpath",
+        "contact_first_name": "Sara",
+        "client_email": "finance@brightpath.example",
+        "amount": 3200,
+        "issue_date": "2026-11-10",
+        "due_date": "2026-12-10",
+        "status": "sent",
+        "reminders_count": 0
+      }
+    },
+    {
+      "key": "i4",
+      "object": "invoices",
+      "data": {
+        "number": "INV-2026-038",
+        "client_name": "Quarry",
+        "contact_first_name": "Leo",
+        "client_email": "leo@quarry.example",
+        "amount": 2100,
+        "issue_date": "2026-09-15",
+        "due_date": "2026-10-15",
+        "status": "paid",
+        "reminders_count": 1
+      }
+    },
+    {
+      "key": "i5",
+      "object": "invoices",
+      "data": {
+        "number": "INV-2026-044",
+        "client_name": "Fieldnote",
+        "contact_first_name": "Ana",
+        "client_email": "ana@fieldnote.example",
+        "amount": 900,
+        "issue_date": "2026-10-10",
+        "due_date": "2026-11-09",
+        "status": "disputed",
+        "reminders_count": 1,
+        "notes": "Client contests hours billed in week 42."
+      }
+    }
+  ]
+}

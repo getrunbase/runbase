@@ -1,0 +1,9 @@
+{
+  "id": "invoice-archive-drive",
+  "slug": "invoice-archive-drive",
+  "name": "Invoice Archive to Google Drive",
+  "categories": ["finance", "operations"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}

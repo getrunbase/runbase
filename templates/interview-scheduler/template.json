@@ -1,0 +1,9 @@
+{
+  "id": "interview-scheduler",
+  "slug": "interview-scheduler",
+  "name": "Interview Scheduler",
+  "categories": ["hr",  "productivity"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}

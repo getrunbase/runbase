@@ -1,0 +1,9 @@
+{
+  "id": "slack-lead-alert",
+  "slug": "slack-lead-alert",
+  "name": "Slack Lead Alert with AI Scoring",
+  "categories": ["sales", "communication"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}

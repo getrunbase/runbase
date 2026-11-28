@@ -1,0 +1,98 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Slack Lead Alert with AI Scoring",
+  "description": "Scores every inbound lead with AI, posts a Slack lead alert for hot leads only and sends a nurture email from Gmail to the others.",
+  "databases": [{ "slug": "inbound", "name": "Inbound leads" }],
+  "objects": [
+    {
+      "slug": "leads",
+      "name": "Leads",
+      "icon": "flame",
+      "database": "inbound",
+      "fields": [
+        { "key": "name", "label": "Name", "type": "text", "title": true },
+        { "key": "email", "label": "Email", "type": "email", "unique": true },
+        { "key": "company", "label": "Company", "type": "text" },
+        { "key": "job_title", "label": "Job title", "type": "text" },
+        { "key": "company_size", "label": "Company size", "type": "select", "options": ["1-10", "11-50", "51-200", "201-1000", "1000+"] },
+        { "key": "source", "label": "Source", "type": "select", "options": ["website form", "demo request", "content download", "webinar", "referral", "other"] },
+        { "key": "message", "label": "Message", "type": "text" },
+        { "key": "tier", "label": "Tier", "type": "select", "options": ["hot", "warm", "cold"] },
+        { "key": "score", "label": "AI confidence", "type": "number" },
+        { "key": "score_reason", "label": "Why this tier", "type": "text" },
+        { "key": "status", "label": "Status", "type": "select", "options": ["new", "alerted", "nurturing", "contacted", "disqualified"] }
+      ]
+    }
+  ],
+  "views": [
+    { "object": "leads", "name": "Hot leads to call", "filter": { "field": "tier", "op": "eq", "value": "hot" }, "columns": ["name", "company", "job_title", "source", "score_reason", "status"] },
+    { "object": "leads", "name": "In nurture", "filter": { "field": "status", "op": "eq", "value": "nurturing" }, "columns": ["name", "email", "company", "tier", "score_reason"] },
+    { "object": "leads", "name": "All leads by tier", "sort": [{ "field": "tier", "dir": "asc" }] }
+  ],
+  "workflows": [
+    {
+      "key": "score-and-route",
+      "name": "Score new leads and alert Slack on hot ones",
+      "definition": {
+        "trigger": { "type": "trigger.record_created", "object": "$object:leads" },
+        "steps": [
+          {
+            "id": "score",
+            "type": "ai.decide",
+            "input": {
+              "prompt": "Classify this inbound lead for our SDR team. hot = clear buying intent and a good fit (demo request or explicit need, decision maker or team lead, company of 11+ people). warm = good fit but no clear intent yet. cold = poor fit, student, competitor, personal email or no real need. Give a one-sentence reason a sales rep can act on.",
+              "context": "{{record}}",
+              "branches": ["hot", "warm", "cold"]
+            }
+          },
+          {
+            "id": "mark-hot",
+            "type": "record.update",
+            "input": { "recordId": "{{record.id}}", "data": { "tier": "hot", "score": "{{steps.score.output.confidence}}", "score_reason": "{{steps.score.output.reason}}", "status": "alerted" } }
+          },
+          {
+            "id": "alert",
+            "type": "node.slack.send",
+            "input": {
+              "webhookUrl": "{{secret.SLACK_WEBHOOK_URL}}",
+              "text": "Hot lead: {{record.name}}, {{record.job_title}} at {{record.company}} ({{record.company_size}} people, via {{record.source}}). Why: {{steps.score.output.reason}} Email: {{record.email}}. Message: {{record.message}}"
+            }
+          },
+          {
+            "id": "mark-warm",
+            "type": "record.update",
+            "input": { "recordId": "{{record.id}}", "data": { "tier": "warm", "score": "{{steps.score.output.confidence}}", "score_reason": "{{steps.score.output.reason}}", "status": "nurturing" } }
+          },
+          {
+            "id": "mark-cold",
+            "type": "record.update",
+            "input": { "recordId": "{{record.id}}", "data": { "tier": "cold", "score": "{{steps.score.output.confidence}}", "score_reason": "{{steps.score.output.reason}}", "status": "nurturing" } }
+          },
+          {
+            "id": "nurture",
+            "type": "node.gmail.send",
+            "input": {
+              "to": "{{record.email}}",
+              "subject": "Thanks for reaching out, {{record.name}}",
+              "text": "Hi {{record.name}},\n\nThanks for your interest. We have received your request and will follow up with resources that match what you are working on.\n\nIf you want to talk to someone sooner, reply to this email and we will get back to you.\n\nBest,\nThe team"
+            }
+          }
+        ],
+        "next": {
+          "score": { "hot": ["mark-hot"], "warm": ["mark-warm"], "cold": ["mark-cold"] },
+          "mark-hot": { "ok": ["alert"] },
+          "mark-warm": { "ok": ["nurture"] },
+          "mark-cold": { "ok": ["nurture"] }
+        }
+      }
+    }
+  ],
+  "secrets": ["SLACK_WEBHOOK_URL"],
+  "records": [
+    { "key": "lead-1", "object": "leads", "data": { "name": "Maya Chen", "email": "maya.chen@northwind-logistics.example", "company": "Northwind Logistics", "job_title": "Head of Operations", "company_size": "201-1000", "source": "demo request", "message": "We run dispatch on three spreadsheets and want a demo this week.", "tier": "hot", "score": 0.92, "score_reason": "Demo request from an ops leader with an explicit, urgent need.", "status": "alerted" } },
+    { "key": "lead-2", "object": "leads", "data": { "name": "Tom Becker", "email": "tom@brightpixel.example", "company": "Bright Pixel Studio", "job_title": "Marketing Manager", "company_size": "11-50", "source": "content download", "message": "", "tier": "warm", "score": 0.71, "score_reason": "Good fit, but only downloaded a guide so far.", "status": "nurturing" } },
+    { "key": "lead-3", "object": "leads", "data": { "name": "Lena Ortiz", "email": "lena.ortiz@student.example", "company": "", "job_title": "Student", "company_size": "1-10", "source": "website form", "message": "Writing a thesis on sales tools.", "tier": "cold", "score": 0.88, "score_reason": "Student research request, no buying intent.", "status": "nurturing" } },
+    { "key": "lead-4", "object": "leads", "data": { "name": "Raj Patel", "email": "raj@fintrack.example", "company": "FinTrack", "job_title": "VP Revenue", "company_size": "51-200", "source": "webinar", "message": "Can your tool replace our lead routing in HubSpot?", "tier": "hot", "score": 0.84, "score_reason": "Revenue leader asking a concrete replacement question.", "status": "contacted" } }
+  ]
+}

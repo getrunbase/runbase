@@ -1,0 +1,9 @@
+{
+  "id": "invoice-payment-reminders",
+  "slug": "invoice-payment-reminders",
+  "name": "Invoice Payment Reminders",
+  "categories": ["finance", "email"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}

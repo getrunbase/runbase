@@ -1,0 +1,9 @@
+{
+  "id": "sheet-backup-drive",
+  "slug": "sheet-backup-drive",
+  "name": "Database Backup to Google Drive",
+  "categories": ["operations", "developer-tools"],
+  "authorId": "AlexRastello",
+  "createdAt": "2026-11-28",
+  "updatedAt": "2026-11-28"
+}

@@ -1,0 +1,178 @@
+{
+  "format": "runbase-template",
+  "version": 1,
+  "name": "Cold Email Campaign from Google Sheets",
+  "description": "Send a cold email campaign from Google Sheets: AI writes a personal first line per prospect, you approve, Gmail sends and the sheet logs it.",
+  "databases": [{ "slug": "outbound", "name": "Outbound" }],
+  "objects": [
+    {
+      "slug": "campaign_contacts",
+      "name": "Campaign contacts",
+      "icon": "send",
+      "database": "outbound",
+      "fields": [
+        { "key": "email", "label": "Email", "type": "email", "unique": true, "title": true },
+        { "key": "first_name", "label": "First name", "type": "text" },
+        { "key": "company", "label": "Company", "type": "text" },
+        { "key": "role", "label": "Role", "type": "text" },
+        { "key": "notes", "label": "Notes", "type": "text" },
+        { "key": "first_line", "label": "Personalized first line", "type": "text" },
+        { "key": "sheet_row", "label": "Sheet row", "type": "number" },
+        { "key": "status", "label": "Status", "type": "select", "options": ["drafted", "sent", "skipped"] },
+        { "key": "sent_at", "label": "Sent at", "type": "date" }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "object": "campaign_contacts",
+      "name": "Awaiting approval",
+      "filter": { "field": "status", "op": "eq", "value": "drafted" },
+      "sort": [{ "field": "sheet_row", "dir": "asc" }],
+      "columns": ["email", "first_name", "company", "first_line"]
+    },
+    {
+      "object": "campaign_contacts",
+      "name": "Sent",
+      "filter": { "field": "status", "op": "eq", "value": "sent" },
+      "sort": [{ "field": "sent_at", "dir": "desc" }],
+      "columns": ["email", "company", "first_line", "sent_at"]
+    }
+  ],
+  "workflows": [
+    {
+      "key": "send_campaign",
+      "name": "Send personalized emails from a Google Sheet",
+      "definition": {
+        "trigger": { "type": "trigger.manual", "object": "$object:campaign_contacts" },
+        "steps": [
+          {
+            "id": "read",
+            "type": "node.google_sheets.read_rows",
+            "input": {
+              "spreadsheetId": "YOUR_SPREADSHEET_ID",
+              "range": "Contacts!A1:G101",
+              "headers": true
+            }
+          },
+          {
+            "id": "draft",
+            "type": "loop",
+            "input": {
+              "items": "{{steps.read.output.rows}}",
+              "limit": 100,
+              "do": [
+                {
+                  "id": "row",
+                  "type": "formatter",
+                  "input": { "op": "number.math", "input": "{{index}}", "operator": "+", "operand": 2 }
+                },
+                {
+                  "id": "status",
+                  "type": "formatter",
+                  "input": { "op": "text.default", "input": "{{item.status}}", "value": "drafted" }
+                },
+                {
+                  "id": "personalize",
+                  "type": "ai.run",
+                  "input": {
+                    "prompt": "Write one opening line for a cold email to this prospect. Use their role, company and notes. Maximum 25 words, plain and specific, no flattery, no exclamation marks, no greeting.",
+                    "context": "{{item}}",
+                    "schema": {
+                      "type": "object",
+                      "properties": { "first_line": { "type": "string" } },
+                      "required": ["first_line"]
+                    }
+                  }
+                },
+                {
+                  "id": "save",
+                  "type": "record.upsert",
+                  "input": {
+                    "object": "$object:campaign_contacts",
+                    "match": "email",
+                    "data": {
+                      "email": "{{item.email}}",
+                      "first_name": "{{item.first_name}}",
+                      "company": "{{item.company}}",
+                      "role": "{{item.role}}",
+                      "notes": "{{item.notes}}",
+                      "first_line": "{{steps.personalize.output.result.first_line}}",
+                      "sheet_row": "{{steps.row.output.value}}",
+                      "status": "{{steps.status.output.value}}"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "approve",
+            "type": "human.approve",
+            "input": {
+              "message": "Review the drafted first lines in the Awaiting approval view, edit or set any contact to skipped, then approve to send the batch from Gmail.",
+              "timeout": "3d"
+            }
+          },
+          {
+            "id": "queue",
+            "type": "record.search",
+            "input": {
+              "object": "$object:campaign_contacts",
+              "filter": { "field": "status", "op": "eq", "value": "drafted" },
+              "limit": 100
+            }
+          },
+          {
+            "id": "send",
+            "type": "loop",
+            "input": {
+              "items": "{{steps.queue.output.records}}",
+              "limit": 100,
+              "do": [
+                {
+                  "id": "email",
+                  "type": "node.gmail.send",
+                  "input": {
+                    "to": "{{item.data.email}}",
+                    "subject": "Quick question for {{item.data.company}}",
+                    "text": "Hi {{item.data.first_name}},\n\n{{item.data.first_line}}\n\nWe help teams like yours [your one-line value proposition]. Would a 15-minute call next week be useful?\n\nBest,\n[Your name]"
+                  }
+                },
+                {
+                  "id": "mark",
+                  "type": "record.update",
+                  "input": {
+                    "recordId": "{{item.id}}",
+                    "data": { "status": "sent", "sent_at": "{{now}}" }
+                  }
+                },
+                {
+                  "id": "log",
+                  "type": "node.google_sheets.update_rows",
+                  "input": {
+                    "spreadsheetId": "YOUR_SPREADSHEET_ID",
+                    "range": "Contacts!F{{item.data.sheet_row}}:G{{item.data.sheet_row}}",
+                    "values": [["sent", "{{now}}"]]
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "next": {
+          "read": { "ok": ["draft"] },
+          "draft": { "done": ["approve"] },
+          "approve": { "approved": ["queue"] },
+          "queue": { "found": ["send"] }
+        }
+      }
+    }
+  ],
+  "records": [
+    { "key": "c1", "object": "campaign_contacts", "data": { "email": "maya.chen@northwind-logistics.example", "first_name": "Maya", "company": "Northwind Logistics", "role": "Head of Operations", "notes": "Opened a second warehouse in Lyon this quarter", "first_line": "Congrats on the Lyon warehouse: running two sites usually doubles the spreadsheet work overnight.", "sheet_row": 2, "status": "drafted" } },
+    { "key": "c2", "object": "campaign_contacts", "data": { "email": "tom.baker@brightlane.example", "first_name": "Tom", "company": "Brightlane", "role": "RevOps Manager", "notes": "Hiring two SDRs, job post mentions HubSpot cleanup", "first_line": "Saw you are hiring two SDRs, and that the job post mentions a HubSpot cleanup first.", "sheet_row": 3, "status": "drafted" } },
+    { "key": "c3", "object": "campaign_contacts", "data": { "email": "ines.martin@kelpstudio.example", "first_name": "Ines", "company": "Kelp Studio", "role": "Founder", "notes": "Agency, 12 people, posts about client reporting", "first_line": "Your post on client reporting eating Friday afternoons matched what we hear from most 10-person agencies.", "sheet_row": 4, "status": "sent", "sent_at": "2026-11-26T09:30:00Z" } },
+    { "key": "c4", "object": "campaign_contacts", "data": { "email": "raj.patel@fernhill.example", "first_name": "Raj", "company": "Fernhill Foods", "role": "Marketing Lead", "notes": "Competitor of an existing customer, do not contact", "first_line": "", "sheet_row": 5, "status": "skipped" } }
+  ]
+}
