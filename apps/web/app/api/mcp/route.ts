@@ -23,7 +23,9 @@ async function serve(p: McpPrincipal, req: Request) {
       appError("mcp.workspaceForbidden", "No accessible workspace"),
       403,
     );
-  return serveMcp(p, req);
+  // workspaces.use default scoped to the MCP session when the client has one.
+  const session = req.headers.get("mcp-session-id") || undefined;
+  return serveMcp(session ? { ...p, session } : p, req);
 }
 
 const oauth = requireMcpAuth(

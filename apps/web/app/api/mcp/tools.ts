@@ -153,7 +153,9 @@ export function registerTools(server: McpServer) {
         try {
           // rename/delete target the workspace `id`, possibly in another organization.
           const target = byId.has(name) ? (ref ?? input.id) : ref;
-          ctx = await resolveMcpContext(p, target, header);
+          ctx = await resolveMcpContext(p, target, header, {
+            write: isWriteTool(name),
+          });
           await rateLimit(ctx, "api");
         } catch (e) {
           return run(() => Promise.reject(e));
@@ -179,6 +181,12 @@ export function registerTools(server: McpServer) {
     );
   }
 }
+
+// Read tools keep the first-workspace fallback; any other tool is a write and
+// needs an explicit workspace when several are accessible.
+const READ_VERBS =
+  /\.(list|get|describe|search|history|logs|versions|types|funnel|export|errors|guide|examples|screenshot|saved|sql|waiting|providers|ai_budget|trash|validate|dry_run|test_step)$/;
+export const isWriteTool = (name: string) => !READ_VERBS.test(name);
 
 function defineTools(server: McpServer, ctx: TenantContext) {
   defineAccountTools(server, ctx);

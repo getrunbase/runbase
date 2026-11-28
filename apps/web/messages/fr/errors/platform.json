@@ -52,6 +52,7 @@
   "quotas.runsPerMinute": "Limite atteinte : {max} lancements de workflow par minute dans ce workspace. Réessayez dans {wait} s ou augmentez la limite dans Paramètres.",
   "workspaces.lastNotDeletable": "Dernier workspace non supprimable",
   "workspaces.noneAccessible": "Aucun workspace accessible",
+  "workspaces.workspaceRequired": "Plusieurs workspaces sont accessibles : passez `workspace` ou appelez d'abord workspaces.use ({workspaces})",
   "workspaces.ambiguousName": "Nom de workspace ambigu : {ref} (utiliser l'id)",
   "workspaces.forbidden": "Workspace inaccessible : {ref}",
   "platform.missingSecret": "{name} manquant",

@@ -58,3 +58,41 @@ test("API key: limited to its workspaces", async () => {
   // Workspace of another organization listed in the key: invisible.
   await assert.rejects(resolveMcpContext(p, foreign), /inaccessible/);
 });
+
+test("API key: workspaces.use default is per MCP session", async () => {
+  const {
+    ids: [a, b],
+    orgId,
+  } = await org(["A", "B"]);
+  const base: McpPrincipal = {
+    key: `key:${crypto.randomUUID()}`,
+    actor: { apiKeyId: crypto.randomUUID(), scopes: ["read", "write"] },
+    allowed: [a!, b!],
+    organizationId: orgId,
+  };
+  const s1 = { ...base, session: "s1" };
+  const s2 = { ...base, session: "s2" };
+  const w = { write: true };
+  // No choice yet and two workspaces: writes are refused with the list.
+  await assert.rejects(
+    resolveMcpContext(s1, undefined, undefined, w),
+    (e: Error) => e.message.includes(a!) && e.message.includes(b!),
+  );
+  // Reads still fall back to the first workspace.
+  assert.equal((await resolveMcpContext(s1)).workspaceId, a);
+  await setMcpDefault(s1, b!);
+  await setMcpDefault(s2, a!);
+  // Each session keeps its own default, even after the other one changes.
+  assert.equal(
+    (await resolveMcpContext(s1, undefined, undefined, w)).workspaceId,
+    b,
+  );
+  assert.equal(
+    (await resolveMcpContext(s2, undefined, undefined, w)).workspaceId,
+    a,
+  );
+  // A third session has no default: write refused, header accepted.
+  const s3 = { ...base, session: "s3" };
+  await assert.rejects(resolveMcpContext(s3, undefined, undefined, w));
+  assert.equal((await resolveMcpContext(s3, undefined, b, w)).workspaceId, b);
+});
