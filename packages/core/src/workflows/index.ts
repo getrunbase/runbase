@@ -1,6 +1,7 @@
 // Versioned workflows: each change of the definition creates an
 // immutable version; restoring copies an old definition into a new version.
-import { and, desc, eq, sql } from "drizzle-orm";
+import { createHash } from "node:crypto";
+import { and, asc, desc, eq, gt, sql } from "drizzle-orm";
 import { z } from "zod";
 import { requireScope } from "../api-keys";
 import { audit } from "../audit";
@@ -24,7 +25,12 @@ import {
   validateItems,
   type DryRunOptions,
 } from "./validate";
-import { AppError, appError, type ErrorItem } from "../errors/app-error";
+import {
+  AppError,
+  appError,
+  notFound,
+  type ErrorItem,
+} from "../errors/app-error";
 import { isUuid } from "../lib/uuid";
 export { normalizeGraph, targetsOf, type Graph } from "./graph";
 export { WORKFLOWS_GUIDE } from "./guide";
@@ -98,9 +104,65 @@ const inWs = (ctx: TenantContext, id: string) =>
     ? and(eq(workflows.id, id), eq(workflows.workspaceId, ctx.workspaceId))
     : sql`false`;
 
-async function load(tx: Tx, ctx: TenantContext, id: string) {
-  const [wf] = await tx.select().from(workflows).where(inWs(ctx, id));
-  return wf ?? null;
+// Workflow by id or, failing that, by name (oldest first when names repeat).
+async function load(tx: Tx, ctx: TenantContext, ref: string) {
+  if (isUuid(ref)) {
+    const [wf] = await tx.select().from(workflows).where(inWs(ctx, ref));
+    if (wf) return wf;
+  }
+  const [byName] = await tx
+    .select()
+    .from(workflows)
+    .where(
+      and(eq(workflows.workspaceId, ctx.workspaceId), eq(workflows.name, ref)),
+    )
+    .orderBy(asc(workflows.createdAt))
+    .limit(1);
+  return byName ?? null;
+}
+
+// Id of a workflow given by id or name (null: unknown).
+async function resolveId(ctx: TenantContext, ref: string) {
+  return (await withTenant(ctx, (tx) => load(tx, ctx, ref)))?.id ?? null;
+}
+
+// Stable hash of a definition (key order and editor layout ignored): a
+// dry run of a definition marks every version with the same hash tested.
+export function definitionHash(definition: Definition) {
+  const canon = (v: unknown): unknown =>
+    Array.isArray(v)
+      ? v.map(canon)
+      : v && typeof v === "object"
+        ? Object.fromEntries(
+            Object.keys(v)
+              .sort()
+              .map((k) => [k, canon((v as Record<string, unknown>)[k])]),
+          )
+        : v;
+  const rest: Partial<Definition> = { ...definition };
+  delete rest.layout;
+  return createHash("sha256")
+    .update(JSON.stringify(canon(rest)))
+    .digest("hex");
+}
+
+// Latest version saved after the live one (a staged draft), if any.
+async function pendingDraft(
+  tx: Tx,
+  wf: { id: string; currentVersion: number },
+) {
+  const [row] = await tx
+    .select()
+    .from(workflowVersions)
+    .where(
+      and(
+        eq(workflowVersions.workflowId, wf.id),
+        gt(workflowVersions.version, wf.currentVersion),
+      ),
+    )
+    .orderBy(desc(workflowVersions.version))
+    .limit(1);
+  return row ?? null;
 }
 
 // Adds a version and makes it current.
@@ -156,20 +218,9 @@ async function syncTrigger(
 // True when `v` of the workflow passed a clean dry run (audited by
 // workflowsService.dryRunWorkflow) or a succeeded test run.
 async function isTested(tx: Tx, ctx: TenantContext, id: string, v: number) {
-  const [dry] = await tx
-    .select({ id: auditLog.id })
-    .from(auditLog)
-    .where(
-      and(
-        eq(auditLog.workspaceId, ctx.workspaceId),
-        eq(auditLog.action, "workflow.dry_run"),
-        eq(auditLog.resourceType, "workflow"),
-        eq(auditLog.resourceId, id),
-        sql`(${auditLog.diff}->>'version')::int = ${v}`,
-      ),
-    )
-    .limit(1);
-  if (dry) return true;
+  const row = await version(tx, id, v);
+  const hash = row ? definitionHash(row.definition as Definition) : "";
+  if (await isHashTested(tx, ctx, id, hash, v)) return true;
   const [run] = await tx
     .select({ id: workflowRuns.id })
     .from(workflowRuns)
@@ -185,18 +236,71 @@ async function isTested(tx: Tx, ctx: TenantContext, id: string, v: number) {
   return Boolean(run);
 }
 
+// A clean dry run of version `v`, or of a definition with this hash.
+async function isHashTested(
+  tx: Tx,
+  ctx: TenantContext,
+  id: string,
+  hash: string,
+  v?: number,
+) {
+  const [dry] = await tx
+    .select({ id: auditLog.id })
+    .from(auditLog)
+    .where(
+      and(
+        eq(auditLog.workspaceId, ctx.workspaceId),
+        eq(auditLog.action, "workflow.dry_run"),
+        eq(auditLog.resourceType, "workflow"),
+        eq(auditLog.resourceId, id),
+        v === undefined
+          ? sql`${auditLog.diff}->>'hash' = ${hash}`
+          : sql`((${auditLog.diff}->>'version')::int = ${v} or ${auditLog.diff}->>'hash' = ${hash})`,
+      ),
+    )
+    .limit(1);
+  return Boolean(dry);
+}
+
+// Kind `untested`: an expected gate the agent clears itself, not an
+// incident (the MCP does not log it in the error center).
 const untested = (id: string, version: number) =>
   appError(
     "workflows.untested",
-    'Version {version} of workflow {id} has never been tested. Run workflows.dry_run { workflow: "{id}" } with no failing path, or a test run runs.start { id: "{id}", test: true } that succeeds, then activate again.',
+    'Version {version} of workflow {id} has never been tested. Run workflows.dry_run { workflow: "{id}", version: {version} } with no failing path (or a test run runs.start { id: "{id}", test: true } that succeeds), then workflows.activate { id: "{id}" } promotes it.',
     { id, version },
+    { kind: "untested" },
   );
+
+// Validation result attached to create/update: errors (blocking for
+// activation) and warnings (refs that cannot be checked before a run).
+async function validationOf(ctx: TenantContext, definition: Definition) {
+  const warnings: ErrorItem[] = [];
+  const errors = await validateItems(ctx, definition, warnings);
+  return {
+    errors: errors.map((e) => e.message),
+    warnings: warnings.map((e) => e.message),
+  };
+}
 
 export const workflowsService = {
   // Validation errors (graph, branches, inputs, conditions); [] = valid.
   validate: async (ctx: TenantContext, raw: unknown) => {
     await requireScope(ctx, "read");
     return validateDefinition(ctx, definitionSchema.parse(raw));
+  },
+  // Definition of a stored workflow (id or name): its pending draft when
+  // one is staged, otherwise its live version.
+  definitionOf: async (ctx: TenantContext, ref: string) => {
+    await requireScope(ctx, "read");
+    return withTenant(ctx, async (tx) => {
+      const wf = await load(tx, ctx, ref);
+      if (!wf) return null;
+      const v =
+        (await pendingDraft(tx, wf)) ??
+        (await version(tx, wf.id, wf.currentVersion));
+      return v!.definition as Definition;
+    });
   },
   // Same, as translatable items (code + params + English message) for the UI.
   validateItems: async (ctx: TenantContext, raw: unknown) => {
@@ -246,23 +350,31 @@ export const workflowsService = {
     );
   },
   // Workflow and definition of its current version.
-  get: async (ctx: TenantContext, id: string) => {
+  // `draftVersion`: a staged version saved after the live one, waiting
+  // for a test before activation promotes it.
+  get: async (ctx: TenantContext, ref: string) => {
     await requireScope(ctx, "read");
     return withTenant(ctx, async (tx) => {
-      const wf = await load(tx, ctx, id);
+      const wf = await load(tx, ctx, ref);
       if (!wf) return null;
-      const v = await version(tx, id, wf.currentVersion);
-      return { ...wf, definition: v!.definition as Definition };
+      const v = await version(tx, wf.id, wf.currentVersion);
+      const draft = await pendingDraft(tx, wf);
+      return {
+        ...wf,
+        definition: v!.definition as Definition,
+        ...(draft && { draftVersion: draft.version }),
+      };
     });
   },
-  versions: async (ctx: TenantContext, id: string) => {
+  versions: async (ctx: TenantContext, ref: string) => {
     await requireScope(ctx, "read");
     return withTenant(ctx, async (tx) => {
-      if (!(await load(tx, ctx, id))) return [];
+      const wf = await load(tx, ctx, ref);
+      if (!wf) return [];
       return tx
         .select()
         .from(workflowVersions)
-        .where(eq(workflowVersions.workflowId, id))
+        .where(eq(workflowVersions.workflowId, wf.id))
         .orderBy(workflowVersions.version);
     });
   },
@@ -285,23 +397,24 @@ export const workflowsService = {
       await addVersion(tx, ctx, wf!, definition);
       await audit(tx, ctx, "workflow.create", res(wf!.id), input);
       return wf!;
-    }).then((wf) => {
+    }).then(async (wf) => {
       // Product analytics (no-op without extension): identifiers only.
       void track("workflow.created", {
         organizationId: ctx.organizationId,
         workspaceId: ctx.workspaceId,
         workflowId: wf.id,
       });
-      return wf;
+      return { ...wf, ...(await validationOf(ctx, definition)) };
     });
   },
   // A new definition creates a new version.
   update: async (
     ctx: TenantContext,
-    id: string,
+    ref: string,
     patch: { name?: string; status?: WorkflowStatus; definition?: Definition },
   ) => {
     await requireScope(ctx, "write");
+    const id = (await resolveId(ctx, ref)) ?? ref;
     const definition =
       patch.definition && (await validate(ctx, patch.definition));
     // An invalid workflow cannot be activated.
@@ -330,62 +443,189 @@ export const workflowsService = {
       await audit(tx, ctx, "workflow.update", res(id), patch);
       return row!;
     });
-    if (row) await syncTrigger(ctx, row);
-    return row;
+    if (!row) return null;
+    await syncTrigger(ctx, row);
+    return definition
+      ? { ...row, ...(await validationOf(ctx, definition)) }
+      : row;
+  },
+  // Agent (MCP) update with the test gate. A workflow that is or becomes
+  // active only runs tested versions: a new untested definition for an
+  // active workflow is staged as a draft (vN+1) while vN stays live;
+  // workflows.dry_run { workflow, version } then activate promotes it.
+  // A definition whose hash passed a dry run is saved live directly.
+  updateTested: async (
+    ctx: TenantContext,
+    ref: string,
+    patch: { name?: string; status?: WorkflowStatus; definition?: Definition },
+  ) => {
+    await requireScope(ctx, "write");
+    const wf = await withTenant(ctx, (tx) => load(tx, ctx, ref));
+    if (!wf) return null;
+    const id = wf.id;
+    const staysActive =
+      patch.status === "active" ||
+      (patch.status === undefined && wf.status === "active");
+    if (patch.definition) {
+      const definition = await validate(ctx, patch.definition);
+      const hashTested = await withTenant(ctx, (tx) =>
+        isHashTested(tx, ctx, id, definitionHash(definition)),
+      );
+      if (!staysActive || hashTested)
+        return workflowsService.update(ctx, id, { ...patch, definition });
+      if (wf.status !== "active") {
+        // Not live: save it, then refuse the activation.
+        const saved = await workflowsService.update(ctx, id, {
+          name: patch.name,
+          definition,
+        });
+        throw untested(id, saved!.currentVersion);
+      }
+      // Live: stage the draft, the live version keeps running.
+      const draftVersion = await withTenant(ctx, async (tx) => {
+        const v = await addVersion(tx, ctx, wf, definition);
+        if (patch.name)
+          await tx
+            .update(workflows)
+            .set({ name: patch.name, updatedAt: new Date() })
+            .where(inWs(ctx, id));
+        await audit(tx, ctx, "workflow.stage", res(id), {
+          version: v,
+          name: patch.name,
+        });
+        return v;
+      });
+      return {
+        ...(await workflowsService.get(ctx, id))!,
+        draftVersion,
+        staged: true,
+        ...(await validationOf(ctx, definition)),
+        next: `Version ${draftVersion} is staged as a draft; version ${wf.currentVersion} stays live. Run workflows.dry_run { workflow: "${id}", version: ${draftVersion} } with no failing path, then workflows.activate { id: "${id}" } to promote it.`,
+      };
+    }
+    if (patch.status !== "active")
+      return workflowsService.update(ctx, id, patch);
+    const draft = await withTenant(ctx, (tx) => pendingDraft(tx, wf));
+    // Already active, nothing staged: nothing new goes live.
+    if (!draft && wf.status === "active")
+      return workflowsService.update(ctx, id, patch);
+    const target = draft?.version ?? wf.currentVersion;
+    if (!(await withTenant(ctx, (tx) => isTested(tx, ctx, id, target))))
+      throw untested(id, target);
+    if (!draft) return workflowsService.update(ctx, id, patch);
+    // Promote the tested draft and activate in one transaction.
+    const errors = await validateItems(ctx, draft.definition as Definition);
+    if (errors.length) throw new InvalidWorkflow(errors);
+    const row = await withTenant(ctx, async (tx) => {
+      const [row] = await tx
+        .update(workflows)
+        .set({
+          ...(patch.name && { name: patch.name }),
+          status: "active",
+          currentVersion: draft.version,
+          updatedAt: new Date(),
+        })
+        .where(inWs(ctx, id))
+        .returning();
+      await audit(tx, ctx, "workflow.promote", res(id), {
+        version: draft.version,
+      });
+      return row!;
+    });
+    await syncTrigger(ctx, row);
+    return { ...row, promoted: draft.version };
   },
   activate: (ctx: TenantContext, id: string) =>
     workflowsService.update(ctx, id, { status: "active" }),
   // Dry run of the current version of a saved workflow. A run without any
   // failing path marks that version as tested (audit `workflow.dry_run`).
+  // Target: `version`, else `definition` (tested by hash: a later update
+  // with the same definition goes live directly), else the staged draft,
+  // else the live version.
   dryRunWorkflow: async (
     ctx: TenantContext,
-    id: string,
+    ref: string,
     recordIds: string[] = [],
-    opts: DryRunOptions = {},
+    opts: DryRunOptions & { version?: number; definition?: Definition } = {},
   ) => {
-    const wf = await workflowsService.get(ctx, id);
-    if (!wf) return null;
-    const results = await workflowsService.dryRun(
-      ctx,
-      wf.definition,
-      recordIds,
-      opts,
-    );
-    const tested = results.every((r) => !r.error);
+    await requireScope(ctx, "read");
+    const found = await withTenant(ctx, async (tx) => {
+      const wf = await load(tx, ctx, ref);
+      if (!wf) return null;
+      const v = opts.version
+        ? await version(tx, wf.id, opts.version)
+        : opts.definition
+          ? null
+          : ((await pendingDraft(tx, wf)) ??
+            (await version(tx, wf.id, wf.currentVersion)));
+      return { wf, v };
+    });
+    if (!found) return null;
+    const { wf } = found;
+    if (opts.version && !found.v)
+      throw notFound(
+        "workflows.versionNotFound",
+        "Version {version} of workflow {id} does not exist. See workflows.versions.",
+        { version: opts.version, id: wf.id },
+      );
+    const definition = opts.definition
+      ? definitionSchema.parse(opts.definition)
+      : (found.v!.definition as Definition);
+    const v = found.v?.version ?? null;
+    const results = await workflowsService.dryRun(ctx, definition, recordIds, {
+      ...opts,
+      workflowId: wf.id,
+    });
+    const tested = results.every((r) => !r.error && !r.skipped);
+    const hash = definitionHash(definition);
     if (tested)
       await withTenant(ctx, (tx) =>
-        audit(tx, ctx, "workflow.dry_run", res(id), {
-          version: wf.currentVersion,
+        audit(tx, ctx, "workflow.dry_run", res(wf.id), {
+          ...(v !== null && { version: v }),
+          hash,
         }),
       );
-    return { version: wf.currentVersion, tested, results };
+    const live = v === wf.currentVersion;
+    return {
+      version: v,
+      liveVersion: wf.currentVersion,
+      tested,
+      ...(tested &&
+        !live && {
+          next:
+            v === null
+              ? `Definition tested: workflows.update { id: "${wf.id}", definition } with this same definition goes live directly.`
+              : `Version ${v} tested: workflows.activate { id: "${wf.id}" } promotes it.`,
+        }),
+      results,
+    };
   },
   // Throws `workflows.untested` unless the current version (or the new
   // definition, which would be a new untested version) passed a test.
   requireTested: async (
     ctx: TenantContext,
-    id: string,
+    ref: string,
     opts: { newDefinition?: boolean } = {},
   ) => {
     await requireScope(ctx, "read");
-    const wf = await withTenant(ctx, (tx) => load(tx, ctx, id));
+    const wf = await withTenant(ctx, (tx) => load(tx, ctx, ref));
     if (!wf) return;
-    if (opts.newDefinition) throw untested(id, wf.currentVersion + 1);
+    if (opts.newDefinition) throw untested(wf.id, wf.currentVersion + 1);
     const ok = await withTenant(ctx, (tx) =>
-      isTested(tx, ctx, id, wf.currentVersion),
+      isTested(tx, ctx, wf.id, wf.currentVersion),
     );
-    if (!ok) throw untested(id, wf.currentVersion);
+    if (!ok) throw untested(wf.id, wf.currentVersion);
   },
-  // Activation gate for AI agents (MCP): validation plus a passed test.
-  activateTested: async (ctx: TenantContext, id: string) => {
-    await workflowsService.requireTested(ctx, id);
-    return workflowsService.activate(ctx, id);
-  },
+  // Activation gate for AI agents (MCP): validation plus a passed test;
+  // promotes a tested staged draft.
+  activateTested: (ctx: TenantContext, ref: string) =>
+    workflowsService.updateTested(ctx, ref, { status: "active" }),
   deactivate: (ctx: TenantContext, id: string) =>
     workflowsService.update(ctx, id, { status: "paused" }),
   // Deletes the workflow, its versions and its runs (cascade); removes its cron.
-  remove: async (ctx: TenantContext, id: string) => {
+  remove: async (ctx: TenantContext, ref: string) => {
     await requireScope(ctx, "write");
+    const id = (await resolveId(ctx, ref)) ?? ref;
     const row = await withTenant(ctx, async (tx) => {
       const [row] = await tx.delete(workflows).where(inWs(ctx, id)).returning();
       if (row) await audit(tx, ctx, "workflow.delete", res(id));
@@ -400,8 +640,9 @@ export const workflowsService = {
     return row !== null;
   },
   // Restore = new version taking the definition of `v` (history kept).
-  restore: async (ctx: TenantContext, id: string, v: number) => {
+  restore: async (ctx: TenantContext, ref: string, v: number) => {
     await requireScope(ctx, "write");
+    const id = (await resolveId(ctx, ref)) ?? ref;
     const row = await withTenant(ctx, async (tx) => {
       const wf = await load(tx, ctx, id);
       const old = wf && (await version(tx, id, v));

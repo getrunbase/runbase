@@ -113,5 +113,11 @@
   "connections.tokenFailed": "La demande de jeton {provider} a échoué ({status}) : {body}",
   "connections.unknownProvider": "Fournisseur OAuth inconnu : {provider}",
   "connections.userOnly": "Seul un utilisateur connecté peut connecter un compte",
-  "workflows.untested": "La version {version} du workflow {id} n'a jamais été testée. Lancer workflows.dry_run { workflow: \"{id}\" } sans chemin en échec, ou une exécution de test runs.start { id: \"{id}\", test: true } réussie, puis réactiver."
+  "workflows.untested": "La version {version} du workflow {id} n'a jamais été testée. Lancer workflows.dry_run { workflow: \"{id}\", version: {version} } sans chemin en échec (ou une exécution de test runs.start { id: \"{id}\", test: true } réussie), puis workflows.activate { id: \"{id}\" } la met en production.",
+  "workflows.versionNotFound": "La version {version} du workflow {id} n'existe pas. Voir workflows.versions.",
+  "workflows.dryRunEmptyRecordRef": "`{ref}` est vide : l'enregistrement n'a pas de valeur pour ce champ",
+  "workflows.dryRunNoSample": "Le webhook {webhook} n'a aucun exemple enregistré : appeler d'abord son testPath (ou webhooks.test), ou passer `event` avec le payload du fournisseur",
+  "workflows.dryRunEventShape": "`event` ne correspond pas à l'exemple enregistré du webhook {webhook} : chemins manquants {paths}. Passer le payload brut du fournisseur (même forme que l'exemple), pas un enregistrement",
+  "workflows.dryRunNoScheduleRecords": "Aucun enregistrement {object} ne correspond au filtre de la planification : rien à exécuter. Ajouter un enregistrement correspondant (test: true) ou passer `records`",
+  "workflows.dryRunPinHint": "L'étape {step} est simulée en dry run et sa sortie est nulle : les références vers elle sont vides. Épingler une sortie d'exemple : definition.pins = { \"{step}\": { output: { ... } } }, ou utiliser une exécution de test (runs.start { test: true })"
 }

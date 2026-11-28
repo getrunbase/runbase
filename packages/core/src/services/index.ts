@@ -183,6 +183,8 @@ export const mcpTools: {
     update: "workflows.update",
     restore: "workflows.restore",
     validate: "workflows.validate",
+    definitionOf: "workflows.validate",
+    updateTested: "workflows.update",
     validateItems: "workflows.validate",
     check: "workflows.validate",
     dryRun: "workflows.dry_run",
