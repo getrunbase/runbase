@@ -141,7 +141,11 @@ export function defineIntegrationTools(server: McpServer, ctx: TenantContext) {
         "Creates or replaces a secret (encrypted). The value can never be read back.",
       inputSchema: z.object({ name: secretName, value: z.string().min(1) }),
     },
-    ({ name, value }) => run(() => secretsService.set(ctx, name, value)),
+    ({ name, value }) =>
+      run(async () => {
+        await secretsService.set(ctx, name, value);
+        return { name, updated: true };
+      }),
   );
   server.registerTool(
     "secrets.delete",

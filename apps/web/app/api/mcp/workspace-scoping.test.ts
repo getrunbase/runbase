@@ -96,3 +96,84 @@ test("workspaces.create then workspace.describe on it; trailer names both", asyn
   assert.equal(missing.isError, true);
   assert.match(missing.content[0]!.text, /inaccessible: nope/);
 });
+
+test("concurrent sessions on one principal keep their own workspace", async () => {
+  const o = await owner();
+  const [b] =
+    await sql`insert into workspaces (organization_id, name) values (${o.organizationId}, 'Bee') returning id`;
+  const a = raw(userPrincipal(o, "agent-a"));
+  const bb = raw(userPrincipal(o, "agent-b"));
+  await Promise.all([
+    a("workspaces.use", { workspace: o.workspaceId }),
+    bb("workspaces.use", { workspace: b!.id }),
+  ]);
+  const [ra, rb] = await Promise.all([
+    a("databases.create", { slug: "a", name: "A" }),
+    bb("databases.create", { slug: "b", name: "B" }),
+  ]);
+  assert.ok(!ra.isError && !rb.isError);
+  assert.ok(ra.content.at(-1)!.text.includes(o.workspaceId));
+  assert.ok(rb.content.at(-1)!.text.includes(b!.id));
+  const activeOf = async (c: typeof a) =>
+    (
+      JSON.parse((await c("workspaces.list")).content[0]!.text) as {
+        id: string;
+        active: boolean;
+      }[]
+    )
+      .filter((w) => w.active)
+      .map((w) => w.id);
+  assert.deepEqual(await activeOf(a), [o.workspaceId]);
+  assert.deepEqual(await activeOf(bb), [b!.id]);
+  // workspaces.create from agent b is not blocked by its active workspace and
+  // reports the active one like workspaces.list.
+  const c = await bb("workspaces.create", { name: "Gamma" });
+  assert.ok(!c.isError, c.content[0]?.text);
+  assert.ok(
+    c.content.at(-1)!.text.includes(`active is still "Bee" (${b!.id})`),
+  );
+  assert.deepEqual(await activeOf(a), [o.workspaceId]);
+});
+
+test("sessionless: workspaces.use does not persist, writes need `workspace`", async () => {
+  const o = await owner();
+  const [b] =
+    await sql`insert into workspaces (organization_id, name) values (${o.organizationId}, 'Bee') returning id`;
+  const call = raw(userPrincipal(o));
+  const u = JSON.parse(
+    (await call("workspaces.use", { workspace: b!.id })).content[0]!.text,
+  );
+  assert.equal(u.persisted, false);
+  assert.match(u.note, /no MCP session/);
+  const l = await call("workspaces.list");
+  const list = JSON.parse(l.content[0]!.text) as { active: boolean }[];
+  assert.ok(list.every((w) => !w.active));
+  assert.match(l.content.at(-1)!.text, /no active workspace/);
+  const w = await call("databases.create", { slug: "a", name: "A" });
+  assert.equal(w.isError, true);
+  assert.match(w.content[0]!.text, /`workspace` parameter/);
+  // A session started later inherits nothing from the sessionless call.
+  const s = raw(userPrincipal(o, "fresh"));
+  const sl = JSON.parse((await s("workspaces.list")).content[0]!.text) as {
+    id: string;
+    active: boolean;
+  }[];
+  assert.deepEqual(
+    sl.filter((x) => x.active).map((x) => x.id),
+    [o.workspaceId],
+  );
+  // workspaces.create needs no active workspace.
+  const c = await call("workspaces.create", { name: "Delta" });
+  assert.ok(!c.isError, c.content[0]?.text);
+  assert.match(c.content.at(-1)!.text, /no active workspace/);
+  // secrets.set confirms without echoing the value.
+  const sec = await call("secrets.set", {
+    name: "K",
+    value: "v",
+    workspace: b!.id,
+  });
+  assert.deepEqual(JSON.parse(sec.content[0]!.text), {
+    name: "K",
+    updated: true,
+  });
+});

@@ -8,11 +8,12 @@ import {
   accessibleWorkspaces,
   resolveMcpContext,
   setMcpDefault,
+  workspaceListHint,
   type McpPrincipal,
   type TenantContext,
 } from "@getrunbase/core/tenant";
 import { rateLimit } from "@getrunbase/core/quotas";
-import { recordError } from "@getrunbase/core/errors";
+import { appError, recordError } from "@getrunbase/core/errors";
 import { run, SILENT, type ToolConfig } from "./tools/shared";
 import { defineAccountTools } from "./tools/account";
 import { defineSchemaTools } from "./tools/schema";
@@ -146,7 +147,16 @@ function definitions() {
 // already-built definitions, filtered by the key's tools.
 export function registerTools(server: McpServer) {
   const { principal: p, header } = mcpRequest();
-  const active = (ws: { id: string }[], id: string) =>
+  // Active workspace, reported the same way by workspaces.list and
+  // workspaces.create. Without an MCP session there is no persisted default
+  // (a key-wide default would be shared by every client of the key): only
+  // the x-workspace-id header counts, otherwise there is no active workspace.
+  const activeId = async (): Promise<string | null> => {
+    if (!p.session)
+      return header ? (await resolveMcpContext(p, header)).workspaceId : null;
+    return (await resolveMcpContext(p, undefined, header)).workspaceId;
+  };
+  const mark = (ws: { id: string }[], id: string | null) =>
     ws.map((w) => ({ ...w, active: w.id === id }));
   server.registerTool(
     "workspaces.list",
@@ -154,26 +164,47 @@ export function registerTools(server: McpServer) {
       description:
         "Lists accessible workspaces (all organizations), with the active one marked.",
     },
-    () =>
-      run(async () => {
-        const ctx = await resolveMcpContext(p, undefined, header);
-        return active(await accessibleWorkspaces(p), ctx.workspaceId);
-      }),
+    async () => {
+      const res = await run(async () =>
+        mark(await accessibleWorkspaces(p), await activeId()),
+      );
+      if (!p.session && !header && !res.isError)
+        res.content.push({ type: "text", text: `workspace: ${NO_SESSION}` });
+      return res;
+    },
   );
   server.registerTool(
     "workspaces.use",
     {
-      description: "Sets the default workspace for this client's next calls.",
+      description:
+        "Sets the default workspace for the next calls of this MCP session. Without an MCP session nothing is persisted: pass `workspace` on every call.",
       inputSchema: z.strictObject({
         workspace: z.string().describe("Workspace id or name"),
       }),
     },
     ({ workspace }) =>
       run(async () => {
+        if (!p.session) {
+          // Access check only: a sessionless default would leak to every
+          // other client of the same key.
+          const ctx = await resolveMcpContext(p, workspace);
+          const w = (await accessibleWorkspaces(p)).find(
+            (x) => x.id === ctx.workspaceId,
+          );
+          return {
+            ...w,
+            active: false,
+            persisted: false,
+            note: `Not persisted: this connection has no MCP session (Mcp-Session-Id). Pass workspace: "${ctx.workspaceId}" on every call.`,
+          };
+        }
         const ctx = await setMcpDefault(p, workspace);
-        return active(await accessibleWorkspaces(p), ctx.workspaceId).find(
-          (w) => w.active,
-        );
+        return {
+          ...mark(await accessibleWorkspaces(p), ctx.workspaceId).find(
+            (w) => w.active,
+          ),
+          persisted: true,
+        };
       }),
   );
 
@@ -191,7 +222,21 @@ export function registerTools(server: McpServer) {
         let ctx: TenantContext;
         try {
           // rename/delete target the workspace `id`, possibly in another organization.
-          const target = byId.has(name) ? (ref ?? input.id) : ref;
+          let target = byId.has(name) ? (ref ?? input.id) : ref;
+          // workspaces.create acts on an organization: it never resolves the
+          // active workspace (possibly another agent's, or one this actor
+          // cannot administer). Without `workspace`, any workspace of the
+          // single accessible organization stands for it.
+          if (name === "workspaces.create" && !target) {
+            const list = await accessibleWorkspaces(p);
+            if (new Set(list.map((w) => w.organizationId)).size > 1)
+              throw appError(
+                "workspaces.createOrgRequired",
+                "Several organizations are accessible: pass `workspace` (any workspace of the target organization) ({workspaces})",
+                { workspaces: workspaceListHint(list) },
+              );
+            target = list[0]?.id;
+          }
           ctx = await resolveMcpContext(p, target, header, {
             write: isWriteTool(name),
             account: isAccountTool(name),
@@ -214,13 +259,17 @@ export function registerTools(server: McpServer) {
           const used = label(ctx.workspaceId);
           let text = `workspace: ${used}`;
           if (name === "workspaces.create") {
+            const act = await activeId().catch(() => null);
+            const next = p.session
+              ? `Call workspaces.use { workspace: "%ID%" } to work in it.`
+              : `Pass workspace: "%ID%" on each call to work in it.`;
             // The new workspace does not become the active one.
             const created = parseJson(res.content[0]?.text) as {
               id?: string;
               name?: string;
             } | null;
             if (created?.id)
-              text = `workspace: created ${label(created.id, created.name)}; active is still ${used}. Call workspaces.use { workspace: "${created.id}" } to work in it.`;
+              text = `workspace: created ${label(created.id, created.name)}; ${act ? `active is still ${label(act)}.` : NO_SESSION} ${next.replace("%ID%", created.id)}`;
           }
           res.content.push({ type: "text", text } as { text: string });
         }
@@ -239,6 +288,9 @@ export function registerTools(server: McpServer) {
     );
   }
 }
+
+const NO_SESSION =
+  "no active workspace: this connection has no MCP session (Mcp-Session-Id), so pass `workspace` on every call.";
 
 function parseJson(text?: string): unknown {
   try {
