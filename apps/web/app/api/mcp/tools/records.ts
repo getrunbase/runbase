@@ -2,13 +2,91 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
 import type { TenantContext } from "@getrunbase/core/tenant";
-import { fieldSchema, objectsService } from "@getrunbase/core/objects";
+import {
+  fieldSchema,
+  objectsService,
+  type MigrateOp,
+} from "@getrunbase/core/objects";
 import { recordsService } from "@getrunbase/core/records";
-import { filterSchema } from "@getrunbase/core/filter";
+import { filterSchema, operatorsDoc } from "@getrunbase/core/filter";
 import { requireConfirm } from "@getrunbase/core/errors";
 import { viewsService } from "@getrunbase/core/views";
 import { filesService } from "@getrunbase/core/files";
 import { run, must, objectId, slug, data, mode, upsertItem } from "./shared";
+
+// objects.migrate operation: must accept every MigrateOp of the core
+// (parity checked by the type assertion below and records-migrate.test.ts).
+export const migrateOperation = z.discriminatedUnion("op", [
+  z.object({
+    op: z.literal("rename"),
+    field: z.string(),
+    to: z.string(),
+    label: z.string().optional(),
+  }),
+  z.object({
+    op: z.literal("change_type"),
+    field: z.string(),
+    type: z.enum([
+      "text",
+      "number",
+      "bool",
+      "date",
+      "select",
+      "multi_select",
+      "email",
+      "url",
+      "json",
+      "ref",
+      "refs",
+      "currency",
+      "percent",
+      "phone",
+      "rating",
+      "user",
+    ]),
+    options: z.array(z.string()).optional(),
+    object: z.string().optional(),
+    dropInvalid: z.boolean().optional(),
+    map: z.record(z.string(), z.unknown()).optional(),
+    caseInsensitive: z.boolean().optional(),
+  }),
+  z.object({
+    op: z.literal("update"),
+    field: z.string(),
+    label: z.string().optional(),
+    options: z.array(z.string()).optional(),
+    expression: z.string().optional(),
+    formula: z.string().optional(),
+    validation: z
+      .object({
+        pattern: z.string().nullable().optional(),
+        min: z.number().nullable().optional(),
+        max: z.number().nullable().optional(),
+        minLength: z.number().int().nullable().optional(),
+        maxLength: z.number().int().nullable().optional(),
+      })
+      .optional(),
+    dropInvalid: z.boolean().optional(),
+  }),
+  z.object({
+    op: z.literal("add"),
+    field: fieldSchema,
+    default: z.unknown().optional(),
+  }),
+  z.object({
+    op: z.literal("require"),
+    field: z.string(),
+    default: z.unknown().optional(),
+  }),
+  z.object({ op: z.literal("delete"), field: z.string() }),
+]);
+type Exact<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+// Compile error if the MCP schema and the core MigrateOp diverge.
+export const migrateParity: Exact<
+  z.infer<typeof migrateOperation>["op"],
+  MigrateOp["op"]
+> &
+  (z.infer<typeof migrateOperation> extends MigrateOp ? true : false) = true;
 
 export function defineRecordTools(server: McpServer, ctx: TenantContext) {
   // Files
@@ -60,53 +138,10 @@ export function defineRecordTools(server: McpServer, ctx: TenantContext) {
     "objects.migrate",
     {
       description:
-        "Evolves an object's schema while carrying the data over. op: rename { field, to, label? } (values copied); change_type { field, type, options?, object?, dropInvalid? } (values converted; refused if invalid values remain, unless dropInvalid empties them); add { field: definition, default? } (default written to existing records, mandatory if required); require { field, default? } (default for empty records); delete { field } (purged from records). Always call with dryRun: true first: returns { records, touched, invalid, samples }.",
+        "Evolves an object's schema while carrying the data over. op: rename { field, to, label? } (values copied); change_type { field, type, options?, object?, dropInvalid?, map?, caseInsensitive? } (values converted; map rewrites values first, e.g. { Won: 'won' }; caseInsensitive matches map keys and select options ignoring case; refused if invalid values remain, unless dropInvalid empties them); update { field, label?, options?, expression?, validation?, dropInvalid? } (field properties merged, existing values checked); add { field: definition, default? } (default written to existing records, mandatory if required); require { field, default? } (default for empty records); delete { field } (purged from records). Always call with dryRun: true first: returns { records, touched, invalid, samples }.",
       inputSchema: z.object({
         object: slug,
-        operation: z.discriminatedUnion("op", [
-          z.object({
-            op: z.literal("rename"),
-            field: z.string(),
-            to: z.string(),
-            label: z.string().optional(),
-          }),
-          z.object({
-            op: z.literal("change_type"),
-            field: z.string(),
-            type: z.enum([
-              "text",
-              "number",
-              "bool",
-              "date",
-              "select",
-              "multi_select",
-              "email",
-              "url",
-              "json",
-              "ref",
-              "refs",
-              "currency",
-              "percent",
-              "phone",
-              "rating",
-              "user",
-            ]),
-            options: z.array(z.string()).optional(),
-            object: z.string().optional(),
-            dropInvalid: z.boolean().optional(),
-          }),
-          z.object({
-            op: z.literal("add"),
-            field: fieldSchema,
-            default: z.unknown().optional(),
-          }),
-          z.object({
-            op: z.literal("require"),
-            field: z.string(),
-            default: z.unknown().optional(),
-          }),
-          z.object({ op: z.literal("delete"), field: z.string() }),
-        ]),
+        operation: migrateOperation,
         dryRun: z.boolean().optional(),
       }),
     },
@@ -123,7 +158,7 @@ export function defineRecordTools(server: McpServer, ctx: TenantContext) {
     "records.upsert",
     {
       description:
-        "Creates or updates a record, validated against the object's schema. Key: `externalId`, or `match` = key of a `unique: true` field (email, domain); without a key, always creates. `test: true`: test record (on creation), deleted by workspace.purge_test.",
+        "Creates or updates a record, validated against the object's schema. Key: `externalId`, or `match` = key of a `unique: true` field (email, domain); without a key, always creates. `test: true`: test record (on creation), deleted by workspace.purge_test. Updating an existing test record without `test: true` adopts it as live (returns promoted: true and a warning).",
       inputSchema: upsertItem.extend({ object: slug }),
     },
     ({ object, ...input }) =>
@@ -266,11 +301,17 @@ export function defineRecordTools(server: McpServer, ctx: TenantContext) {
   server.registerTool(
     "records.update",
     {
-      description: "Updates a record by id (merge by default, or replace).",
-      inputSchema: z.object({ id: z.string(), data, mode }),
+      description:
+        "Updates a record by id (merge by default, or replace). Updating a test record without `test: true` adopts it as live data (returns promoted: true and a warning): workspace.purge_test no longer deletes it. Pass `test: true` to keep it purgeable.",
+      inputSchema: z.object({
+        id: z.string(),
+        data,
+        mode,
+        test: z.boolean().optional(),
+      }),
     },
-    ({ id, data, mode }) =>
-      run(() => recordsService.update(ctx, id, data, mode)),
+    ({ id, data, mode, test }) =>
+      run(() => recordsService.update(ctx, id, data, mode, { test })),
   );
   server.registerTool(
     "records.delete",
@@ -356,13 +397,15 @@ export function defineRecordTools(server: McpServer, ctx: TenantContext) {
     "records.update_where",
     {
       description:
-        "Updates (merge) all records of an object matching the filter (max 10000). Preview required: call with dryRun: true (returns { count }), then with expected = that count.",
+        "Updates (merge) all records of an object matching the filter (max 10000). Preview required: call with dryRun: true (returns { count }), then with expected = that count. Matched test records become live unless `test: true` (the result then reports promoted and a warning). Filter operators by type: " +
+        operatorsDoc,
       inputSchema: z.object({
         object: slug,
         filter: filterSchema,
         data,
         dryRun: z.boolean().optional(),
         expected: z.number().int().optional(),
+        test: z.boolean().optional(),
       }),
     },
     ({ object, ...input }) =>

@@ -13,7 +13,13 @@ import { parseCsv } from "./csv";
 import { objectsOf, txObjects } from "./helpers";
 import { scoped } from "./query";
 import { MAX_BULK, type Data } from "./types";
-import { publishUpsert, removeInTx, updateInTx, upsertInTx } from "./write";
+import {
+  PROMOTED_WARNING,
+  publishUpsert,
+  removeInTx,
+  updateInTx,
+  upsertInTx,
+} from "./write";
 
 // Ids of an object's records matching the filter (filter operations).
 async function matchingIds(
@@ -131,6 +137,8 @@ export const bulkOps = {
       data: Data;
       dryRun?: boolean;
       expected?: number;
+      // true: matched test records stay test data (no promotion to live).
+      test?: boolean;
     },
   ) => {
     await requireScope(ctx, "write");
@@ -139,14 +147,24 @@ export const bulkOps = {
       if (input.dryRun) return ids.length;
       checkExpected(ids.length, input.expected);
       const out = [];
-      for (const id of ids) out.push(await updateInTx(tx, ctx, id, input.data));
+      for (const id of ids)
+        out.push(
+          await updateInTx(tx, ctx, id, input.data, "merge", {
+            test: input.test,
+          }),
+        );
       return out;
     });
     if (typeof results === "number") return { dryRun: true, count: results };
     for (const r of results) await publishUpsert(ctx, {}, r);
+    const promoted = results.filter((r) => r.promoted).length;
     return {
       count: results.length,
       updated: results.filter((r) => r.changed.length).length,
+      ...(promoted && {
+        promoted,
+        warning: `${promoted} ${PROMOTED_WARNING}`,
+      }),
     };
   },
 

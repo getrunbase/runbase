@@ -2,11 +2,15 @@
 // A filter is an `all` / `any` tree of conditions { field, op, value },
 // compiled into parameterized SQL on the JSONB `data` column: keys and values
 // always go as parameters, never concatenated.
-import { appError } from "../errors/app-error";
+import { appError as baseError, type ErrorParams } from "../errors/app-error";
 import { isDeepStrictEqual } from "node:util";
 import { sql, type SQL, type AnyColumn } from "drizzle-orm";
 import { z } from "zod";
 import { records } from "../db/schema";
+
+// Every filter error is caused by the caller's filter: `invalid_input`.
+const appError = (code: string, template: string, params?: ErrorParams) =>
+  baseError(code, template, params, { kind: "invalid_input" });
 import {
   baseType,
   fieldsSchema,
@@ -91,6 +95,7 @@ export const allowed: Record<BaseType, Op[]> = {
     "gte",
     "lt",
     "lte",
+    "between",
     ...empties,
   ],
   select: ["eq", "neq", "in", "not_in", ...empties],
@@ -103,6 +108,20 @@ export const allowed: Record<BaseType, Op[]> = {
   // lookup / rollup: computed on read, not filterable in SQL.
   virtual: [],
 };
+
+// Operators per field type, for tool descriptions (agents).
+export const operatorsDoc =
+  [
+    "text/email/url/phone: " + texts.join(", "),
+    "number/currency/percent/rating: " + allowed.number.join(", "),
+    "date/datetime: " + allowed.date.join(", "),
+    "select: " + allowed.select.join(", "),
+    "multi_select: " + allowed.multi_select.join(", "),
+    "bool: " + allowed.bool.join(", "),
+    "ref: " + allowed.ref.join(", "),
+    "refs: " + allowed.refs.join(", "),
+  ].join("; ") +
+  ". between takes [low, high] (inclusive): numbers, or ISO dates for date fields. older_than/within take a number of days. regex is case-sensitive POSIX (PostgreSQL ~), not JavaScript.";
 
 function scalar(f: Field): z.ZodType {
   if (f.type === "select" || f.type === "multi_select") {
@@ -128,7 +147,10 @@ function scalar(f: Field): z.ZodType {
 
 function valueSchema(f: Field, op: Op): z.ZodType {
   if (empties.includes(op)) return z.undefined();
-  if (op === "between") return z.tuple([z.number(), z.number()]);
+  if (op === "between")
+    return baseType(f) === "date"
+      ? z.tuple([scalar(f), scalar(f)])
+      : z.tuple([z.number(), z.number()]);
   // Durations in days.
   if (op === "older_than" || op === "within")
     return z.number().int().positive();
@@ -306,7 +328,17 @@ export function validateFilter(
       throw appError(
         "filter.invalidDays",
         "{field} {op}: expected integer number of days, got {value}",
-        { field: n.field, op: n.op, value: JSON.stringify(n.value) ?? "undefined" },
+        {
+          field: n.field,
+          op: n.op,
+          value: JSON.stringify(n.value) ?? "undefined",
+        },
+      );
+    if (n.op === "regex" && !valueSchema(f, n.op).safeParse(n.value).success)
+      throw appError(
+        "filter.invalidRegex",
+        "{field} regex: invalid pattern {pattern} (POSIX syntax, as PostgreSQL ~; case-sensitive)",
+        { field: n.field, pattern: JSON.stringify(n.value) ?? "undefined" },
       );
     if (!valueSchema(f, n.op).safeParse(n.value).success)
       throw appError(
@@ -403,8 +435,8 @@ function evalCondition(f: Field, c: Condition, raw: unknown, now: Date) {
     case "lte":
       return a <= num(v);
     case "between": {
-      const [lo, hi] = v as [number, number];
-      return a >= lo && a <= hi;
+      const [lo, hi] = v as [unknown, unknown];
+      return a >= num(lo) && a <= num(hi);
     }
     case "older_than":
       return a < now.getTime() - (v as number) * DAY;
