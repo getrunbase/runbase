@@ -162,10 +162,10 @@ export function defineRunTools(server: McpServer, ctx: TenantContext) {
     "runs.waiting",
     {
       description:
-        "Lists runs paused on a human.approve block, waiting for a decision.",
+        "Lists runs paused on a human.approve block, waiting for a decision: compact [{ runId, workflowId, recordId, message, since }]. Decide with runs.decide; details with runs.get.",
       inputSchema: z.object({}),
     },
-    () => run(() => runsService.waiting(ctx)),
+    () => run(() => runsService.waitingCompact(ctx)),
   );
   server.registerTool(
     "runs.decide",

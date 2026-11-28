@@ -122,7 +122,13 @@ export function format(i: Input): unknown {
   const o = i.op as string;
   if (o.startsWith("text.") && o !== "text.default" && v == null)
     return o.startsWith("text.extract") ? null : "";
-  if ((o.startsWith("number.") || o.startsWith("date.")) && isEmpty(v))
+  // number.math fails on a null input instead (a silent null result hides an
+  // unresolved template).
+  if (
+    (o.startsWith("number.") || o.startsWith("date.")) &&
+    o !== "number.math" &&
+    isEmpty(v)
+  )
     return null;
   switch (i.op) {
     case "text.upper":
@@ -177,6 +183,21 @@ export function format(i: Input): unknown {
       return Math.round(num(i.op, v) * f) / f;
     }
     case "number.math": {
+      // A null operand usually means an unresolved template: say so.
+      for (const [side, x] of [
+        ["input", v],
+        ["operand", i.operand],
+      ] as const)
+        if (
+          x === null ||
+          x === undefined ||
+          (typeof x === "string" && !x.trim())
+        )
+          throw appError(
+            "blocks.formatterNullOperand",
+            "Formatter {op}: {side} is null (check the template it comes from)",
+            { op: i.op, side },
+          );
       const a = num(i.op, v),
         b = num(i.op, i.operand);
       if (i.operator === "/" && b === 0) return invalid(i.op, i.operand);

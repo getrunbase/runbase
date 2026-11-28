@@ -66,6 +66,7 @@
   "notes.entityNotFound": "{type} introuvable : {ref}",
   "notes.limit": "Limite de notes atteinte pour ce {type} ({max}) : modifiez ou supprimez une note existante",
   "errors.notRetryable": "Cette erreur ne peut pas être relancée",
+  "errors.deliberateStop": "L’étape {stepId} est un stop.error : une relance s’arrêterait de nouveau. Corriger la donnée ou la condition, puis appeler runs.retry_from avec stepId {upstream}",
   "files.invalidKey": "Clé de fichier invalide",
   "query.roleNotRestricted": "Requêtes SQL désactivées : le rôle runbase_query n'est pas restreint ({items}). Relancez pnpm db:migrate avec un compte superutilisateur.",
   "objects.indexQuota": "Limite d'index atteinte pour ce workspace ({max})",

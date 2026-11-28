@@ -142,6 +142,42 @@ test("invalid ingestion and failed step: listed, replayed, resolved", async () =
     done!.steps.map((s) => [s.stepId, s.error]),
     [["call", null]],
   );
+  // Resolved by the run's success, not by the retry call itself.
+  await until(
+    () => errorsService.get(ctx, wfError!.id),
+    (x) => x!.status === "resolved",
+  );
+
+  // stop.error: a replay would stop again, retry refused with a hint.
+  const stopWf = await workflowsService.create(ctx, {
+    name: "Stop",
+    definition: {
+      trigger: { type: "trigger.manual" },
+      steps: [
+        { id: "first", type: "test.flaky", input: {} },
+        { id: "halt", type: "stop.error", input: { message: "no email" } },
+      ],
+      next: { first: { ok: ["halt"] } },
+    },
+  });
+  const s = await runsService.start(ctx, stopWf.id);
+  await until(
+    () => runsService.get(ctx, s!.id),
+    (x) => x!.status === "failed",
+  );
+  const stopErr = await until(
+    () => errorsService.list(ctx, { source: "workflow", status: "open" }),
+    (l) => l.items.some((e) => e.runId === s!.id),
+  );
+  await assert.rejects(
+    errorsService.retry(ctx, stopErr.items.find((e) => e.runId === s!.id)!.id),
+    (e: Error & { code?: string }) =>
+      e.code === "errors.deliberateStop" && /retry_from.*first/.test(e.message),
+  );
+  await errorsService.resolve(
+    ctx,
+    stopErr.items.find((e) => e.runId === s!.id)!.id,
+  );
 
   await errorsService.resolve(ctx, ingestErrors.find((e) => e !== unknown)!.id);
   assert.equal(await errorsService.openCount(ctx), 0);

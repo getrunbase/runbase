@@ -214,7 +214,8 @@ export const errorsService = {
     return row?.n ?? 0;
   },
   // Replays the ingestion (stored body) or the run (failed step). Successful
-  // ingestion: error resolved. Run restarted: a new failure will create an error.
+  // ingestion: error resolved. Run restarted: the error stays open until the
+  // replayed run succeeds (afterFinish), a new failure creates a new error.
   retry: async (ctx: TenantContext, id: string) => {
     await requireScope(ctx, "write");
     const e = await errorsService.get(ctx, id);
@@ -228,8 +229,11 @@ export const errorsService = {
       );
       ok = res.ok;
       result = { status: res.status, body: res.body };
-    } else if (e.runId) ok = await retryRun(ctx, e.runId);
-    else if (triggerRef(e.payload)) {
+    } else if (e.runId) {
+      ok = await retryRun(ctx, e.runId);
+      // Resolution is deferred to the run's completion.
+      return { ok, result: { runId: e.runId, pending: ok } };
+    } else if (triggerRef(e.payload)) {
       const { eventId, workflowId } = triggerRef(e.payload)!;
       ok = await retryTrigger(ctx, eventId, workflowId);
     } else throw appError("errors.notRetryable", "Error cannot be retried");

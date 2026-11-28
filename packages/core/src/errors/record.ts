@@ -76,3 +76,20 @@ export async function resolveFanOutErrors(
       ),
   );
 }
+
+// Closes the open errors of a run once it succeeds (replay or retry_from
+// completed): errors.retry never resolves before the outcome is known.
+export async function resolveRunErrors(ctx: TenantContext, runId: string) {
+  await withTenant(ctx, (tx) =>
+    tx
+      .update(errors)
+      .set({ status: "resolved" })
+      .where(
+        and(
+          eq(errors.workspaceId, ctx.workspaceId),
+          eq(errors.status, "open"),
+          eq(errors.runId, runId),
+        ),
+      ),
+  );
+}

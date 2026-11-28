@@ -44,7 +44,10 @@ test("object, leads and events entirely through MCP", async () => {
     payload: { n: 1 },
   });
   await call("events.push", { recordId: id, type: "email.clicked" });
-  const events = await call("events.list", { recordId: id });
+  const { items: events, hasMore } = await call("events.list", {
+    recordId: id,
+  });
+  assert.equal(hasMore, false);
   assert.deepEqual(
     events
       .map((e: { type: string }) => e.type)

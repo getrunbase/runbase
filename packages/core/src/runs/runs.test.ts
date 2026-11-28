@@ -297,6 +297,11 @@ test("wait survives a worker restart, approve resumes, loop iterates", async () 
       "Go ?",
     );
     assert.ok((await runsService.waiting(ctx)).some((x) => x.id === r!.id));
+    const compact = (await runsService.waitingCompact(ctx)).find(
+      (x) => x.runId === r!.id,
+    );
+    assert.equal(compact?.message, "Go ?");
+    assert.ok(compact?.since instanceof Date);
     assert.ok(
       (await runsService.list(ctx, { status: "waiting" })).items.some(
         (x) => x.id === r!.id,
@@ -330,6 +335,10 @@ test("wait survives a worker restart, approve resumes, loop iterates", async () 
     assert.equal(out.comment, "checked");
     assert.ok(typeof out.decidedAt === "string");
     assert.ok(Array.isArray((out.by as { scopes: unknown }).scopes));
+    // Decider always labelled (user name here), rendered input kept.
+    const label = (out.by as { label?: unknown }).label;
+    assert.ok(typeof label === "string" && label.length > 0);
+    assert.deepEqual(done!.steps[0]!.input, { message: "Go ?" });
   }
 
   // loop: subgraph over a list, capped by limit.
