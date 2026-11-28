@@ -36,6 +36,7 @@
   "objects.uniqueDuplicates": "unique {field} : doublons existants ({duplicates})",
   "objects.unknownField": "Champ inconnu : {field}",
   "objects.unknownFieldSuggest": "Champ inconnu : {field}. Vouliez-vous dire {suggestion} ?",
+  "query.duplicateColumns": "Noms de colonnes en double dans le résultat : {columns}. Donnez un alias unique à chaque colonne (ex. count(*) as total, a.id as a_id).",
   "query.restrictedKey": "query.sql indisponible pour une clé limitée à certains objets",
   "query.sqlError": "Erreur SQL : {message}\n{hint}",
   "records.computedNotSortable": "{field} : champ calculé non triable",

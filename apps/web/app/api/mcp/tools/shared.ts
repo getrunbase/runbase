@@ -2,7 +2,7 @@
 import { z } from "zod";
 import { type TenantContext } from "@getrunbase/core/tenant";
 import { objectsService } from "@getrunbase/core/objects";
-import { AppError, notFound } from "@getrunbase/core/errors";
+import { AppError, appError, notFound } from "@getrunbase/core/errors";
 import { type ShotReport } from "@getrunbase/core/render";
 import { enforceLint, type LintWarning } from "@getrunbase/core/lint";
 import { lintStrict } from "@getrunbase/core/workspaces";
@@ -16,6 +16,94 @@ export function errorCode(e: unknown): string {
   return "error";
 }
 
+// SQLSTATE of a raw Postgres error, direct or wrapped by Drizzle (`cause`).
+function sqlState(e: unknown): string | undefined {
+  for (let c: unknown = e, i = 0; c && i < 4; i++) {
+    const code = (c as { code?: unknown }).code;
+    if (typeof code === "string" && /^[0-9A-Z]{5}$/.test(code)) return code;
+    c = (c as { cause?: unknown }).cause;
+  }
+  return undefined;
+}
+
+// Raw database error -> AppError with a stable code. The Postgres or Drizzle
+// message carries the SQL text and its parameters (workspace_id, values): it
+// is never echoed. Only the constraint or column name is kept.
+export function mapDbError(e: unknown): unknown {
+  if (e instanceof AppError || e instanceof z.ZodError) return e;
+  const state = sqlState(e);
+  if (!state) return e;
+  let c: unknown = e;
+  while (
+    (c as { cause?: unknown }).cause &&
+    !(c as { constraint_name?: unknown }).constraint_name &&
+    !(c as { column_name?: unknown }).column_name
+  )
+    c = (c as { cause?: unknown }).cause;
+  const meta = c as { constraint_name?: string; column_name?: string };
+  const name = String(
+    meta.constraint_name ?? meta.column_name ?? "unknown",
+  ).slice(0, 64);
+  switch (state) {
+    case "23505":
+      return appError(
+        "db.uniqueViolation",
+        "Duplicate value: a record with this unique value already exists ({name}). Use an upsert with match, or change the value.",
+        { name },
+        { kind: "conflict" },
+      );
+    case "23503":
+      return appError(
+        "db.foreignKeyViolation",
+        "Linked item missing or still referenced ({name}). Check the related ids.",
+        { name },
+        { kind: "invalid_input" },
+      );
+    case "23502":
+      return appError(
+        "db.notNullViolation",
+        "Required value missing ({name}).",
+        { name },
+        { kind: "invalid_input" },
+      );
+    case "23514":
+      return appError(
+        "db.checkViolation",
+        "Value refused by a validation rule ({name}).",
+        { name },
+        { kind: "invalid_input" },
+      );
+    case "57014":
+      return appError(
+        "db.timeout",
+        "The database call took too long and was canceled. Narrow the request (filters, limit) and retry.",
+        {},
+        { kind: "error" },
+      );
+    case "40001":
+    case "40P01":
+      return appError(
+        "db.retry",
+        "Concurrent write conflict. Retry the call.",
+        {},
+        { kind: "conflict" },
+      );
+  }
+  if (state.startsWith("22"))
+    return appError(
+      "db.invalidValue",
+      "Invalid value: an id or a field value is malformed.",
+      {},
+      { kind: "invalid_input" },
+    );
+  return appError(
+    "db.error",
+    "Database error ({state}). Retry; if it persists, report it with feedback.send.",
+    { state },
+    { kind: "error" },
+  );
+}
+
 // JSON result, or an error readable by an agent: `[code] message` (ZodError
 // detailed field by field).
 export async function run(fn: () => Promise<unknown>) {
@@ -24,7 +112,8 @@ export async function run(fn: () => Promise<unknown>) {
     return {
       content: [{ type: "text" as const, text: JSON.stringify(out ?? null) }],
     };
-  } catch (e) {
+  } catch (raw) {
+    const e = mapDbError(raw);
     const message =
       e instanceof z.ZodError
         ? `Invalid input:\n${z.prettifyError(e)}`

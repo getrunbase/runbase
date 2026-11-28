@@ -286,6 +286,14 @@ function pick(list: Ws[], ref: string) {
   return byName[0];
 }
 
+// Workspace list for an error message: at most 5, then a pointer to workspaces.list.
+export function workspaceListHint(list: { id: string; name: string }[]) {
+  const shown = list.slice(0, 5).map((w) => `${w.name} (${w.id})`);
+  if (list.length > 5)
+    shown.push(`+${list.length - 5} more, see workspaces.list`);
+  return shown.join(", ");
+}
+
 // MCP tenant context: requested workspace > client default > `fallback` (header
 // x-workspace-id) > first accessible. A requested but inaccessible workspace is
 // refused (never a silent fallback). With `write`, a principal that reaches
@@ -296,9 +304,14 @@ export async function resolveMcpContext(
   p: McpPrincipal,
   ref?: string,
   fallback?: string,
-  opts: { write?: boolean } = {},
+  opts: { write?: boolean; account?: boolean } = {},
 ): Promise<TenantContext> {
   const list = await accessibleWorkspaces(p);
+  // Account-level tools (workspaces.create, members.*) act on the organization,
+  // not on a workspace: when every accessible workspace is in one organization,
+  // the choice of workspace does not matter and is not required.
+  if (opts.account && new Set(list.map((w) => w.organizationId)).size === 1)
+    opts = { ...opts, write: false };
   let ws: Ws | undefined;
   if (ref) ws = pick(list, ref);
   else if (opts.write && list.length > 1 && !p.session) {
@@ -309,7 +322,7 @@ export async function resolveMcpContext(
       throw appError(
         "workspaces.workspaceParamRequired",
         "Several workspaces are accessible and this call has no MCP session: pass the `workspace` parameter ({workspaces})",
-        { workspaces: list.map((w) => `${w.name} (${w.id})`).join(", ") },
+        { workspaces: workspaceListHint(list) },
       );
   } else {
     const [def] = await db
@@ -322,7 +335,7 @@ export async function resolveMcpContext(
       throw appError(
         "workspaces.workspaceRequired",
         "Several workspaces are accessible: pass `workspace` or call workspaces.use first ({workspaces})",
-        { workspaces: list.map((w) => `${w.name} (${w.id})`).join(", ") },
+        { workspaces: workspaceListHint(list) },
       );
     ws ??= list[0];
   }

@@ -88,7 +88,7 @@ test("workspaces.create then workspace.describe on it; trailer names both", asyn
   const created = JSON.parse(res.content[0]!.text) as { id: string };
   assert.equal(
     res.content.at(-1)!.text,
-    `workspace: created "Fresh" (${created.id}); active is still "Default" (${o.workspaceId})`,
+    `workspace: created "Fresh" (${created.id}); active is still "Default" (${o.workspaceId}). Call workspaces.use { workspace: "${created.id}" } to work in it.`,
   );
   const d = await client(p)("workspace.describe", { workspace: created.id });
   assert.ok(d);
