@@ -299,6 +299,15 @@ export function validateFilter(
         "Invalid operator {op} for {field} ({type})",
         { op: n.op, field: n.field, type: f.type },
       );
+    if (
+      (n.op === "older_than" || n.op === "within") &&
+      !valueSchema(f, n.op).safeParse(n.value).success
+    )
+      throw appError(
+        "filter.invalidDays",
+        "{field} {op}: expected integer number of days, got {value}",
+        { field: n.field, op: n.op, value: JSON.stringify(n.value) ?? "undefined" },
+      );
     if (!valueSchema(f, n.op).safeParse(n.value).success)
       throw appError(
         "filter.incompatibleValue",

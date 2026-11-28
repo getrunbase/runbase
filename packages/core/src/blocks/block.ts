@@ -170,6 +170,8 @@ export type Block<
   // App the block belongs to (connector nodes): folder name, label and
   // optional logo as a data URL.
   app?: BlockApp;
+  // OAuth provider of a connector node: a connection to it is required.
+  oauthProvider?: string;
   // Inputs whose choices are loaded on demand (connector nodes), and the
   // loader: called with the inputs already filled in the step form.
   optionFields?: readonly string[];

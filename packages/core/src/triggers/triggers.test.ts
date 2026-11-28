@@ -280,6 +280,7 @@ test("trigger.webhook: payload -> record mapping (match), run with event", async
       "trigger.webhook: unknown webhook x",
       "trigger.mapping: unknown field zz",
       "trigger.match: name must be a unique field",
+      "trigger.match: name is not in the mapping, the record key would be empty",
     ],
   );
   const wf = await workflowsService.create(ctx, {

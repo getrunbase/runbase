@@ -43,10 +43,15 @@ type ObjectsList = BlockServices["objects"]["list"];
 // Validates a condition against the schema of the object and its relations
 // (when the workflow is saved).
 export async function validateCondition(list: ObjectsList, input: unknown) {
-  const { object, condition } = conditionRecordInput
+  const parsed = conditionRecordInput
     .pick({ object: true, condition: true })
     .parse(input);
-  const graph = schemaGraph(object, await list());
+  const rows = await list();
+  // The object may be given by uuid: the graph is keyed by slug.
+  const object =
+    rows.find((o) => o.id === parsed.object)?.slug ?? parsed.object;
+  const { condition } = parsed;
+  const graph = schemaGraph(object, rows);
   const self = graph.objects[object];
   if (!self)
     throw notFound("blocks.unknownObject", "Unknown object: {object}", {

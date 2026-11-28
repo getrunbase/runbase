@@ -19,6 +19,14 @@ import {
   functionSecretsChecks,
   functionStepChecks,
 } from "./validate-functions";
+import {
+  branchWarnings,
+  filterChecks,
+  httpDomainChecks,
+  sampleEvent,
+  templateRefChecks,
+  webhookMappingChecks,
+} from "./validate-runtime";
 
 export {
   dryRun,
@@ -131,9 +139,15 @@ export async function validateItems(
         { object: trigger.data.object },
       ),
     );
+  // Webhook sample: first event of the last received payload.
+  let event: unknown;
   if (trigger.success && trigger.data.type === "trigger.webhook") {
     const t = trigger.data;
-    if (!(await webhooksService.list(ctx)).some((w) => w.name === t.webhook))
+    const hook = (await webhooksService.list(ctx)).find(
+      (w) => w.name === t.webhook,
+    );
+    event = sampleEvent(hook);
+    if (!hook)
       errors.push(
         errorItem(
           "workflows.unknownWebhook",
@@ -169,7 +183,7 @@ export async function validateItems(
           "trigger.match: {field} must be a unique field",
           { field: t.match },
         ),
-      );
+      );    webhookMappingChecks(t, event, errors, warnings);
   }
   if (trigger.success && trigger.data.type === "trigger.run_failed") {
     const w = trigger.data.workflow;
@@ -290,10 +304,11 @@ export async function validateItems(
           errors.push(
             errorItem(
               "workflows.unknownBranch",
-              "{step}: unknown branch {branch}",
+              "{step}: unknown branch {branch} (valid: {valid})",
               {
                 step: s.id,
                 branch: b,
+                valid: branches.join(", ") || "none",
               },
             ),
           );
@@ -310,6 +325,21 @@ export async function validateItems(
     }
   }
   await functionSecretsChecks(ctx, steps, errors, warnings);
+  await templateRefChecks(ctx, steps, event, errors, warnings);
+  await filterChecks(
+    ctx,
+    trigger.success ? trigger.data : undefined,
+    steps,
+    errors,
+  );
+  await branchWarnings(
+    ctx,
+    steps,
+    next,
+    trigger.success && trigger.data.type === "trigger.webhook",
+    warnings,
+  );
+  await httpDomainChecks(ctx, steps, warnings);
   for (const id of Object.keys(next))
     if (!ids.has(id))
       errors.push(
