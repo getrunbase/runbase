@@ -27,6 +27,8 @@
   "objects.invalidDefault": "Valeur par défaut invalide : {error}",
   "objects.migrateInvalidValues": "{count} record(s) invalide(s) après migration (ex. {samples}) : corriger les valeurs ou passer dropInvalid",
   "objects.migrateNeedsDefault": "{count} record(s) invalide(s) après migration (ex. {samples}) : fournir une valeur par défaut (default)",
+  "objects.migrateNotFormula": "Le champ {field} n'est pas une formule : une expression ne s'applique qu'aux champs formule",
+  "objects.typeChangeHasData": "Le champ {field} contient des données dans {count} record(s) : passer du type {from} à {to} laisserait des valeurs invalides. Utiliser objects.migrate avec l'op change_type (dryRun d'abord), ou passer force: true",
   "objects.notFound": "Objet introuvable",
   "objects.notIndexable": "{field} : champ non indexable",
   "objects.refTargetNotFound": "Champ « {field} » : objet cible « {object} » introuvable",
