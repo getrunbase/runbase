@@ -32,21 +32,13 @@
           "key": "segment",
           "label": "Segment",
           "type": "select",
-          "options": [
-            "smb",
-            "mid_market",
-            "enterprise"
-          ]
+          "options": ["smb", "mid_market", "enterprise"]
         },
         {
           "key": "health",
           "label": "Health",
           "type": "select",
-          "options": [
-            "healthy",
-            "at_risk",
-            "churn_risk"
-          ]
+          "options": ["healthy", "at_risk", "churn_risk"]
         },
         {
           "key": "notes",
@@ -112,12 +104,7 @@
           "key": "status",
           "label": "Status",
           "type": "select",
-          "options": [
-            "active",
-            "renewal_in_progress",
-            "renewed",
-            "churned"
-          ]
+          "options": ["active", "renewal_in_progress", "renewed", "churned"]
         },
         {
           "key": "owner_name",
@@ -174,10 +161,7 @@
       "filter": {
         "field": "status",
         "op": "in",
-        "value": [
-          "active",
-          "renewal_in_progress"
-        ]
+        "value": ["active", "renewal_in_progress"]
       },
       "sort": [
         {
@@ -231,12 +215,7 @@
           "dir": "desc"
         }
       ],
-      "columns": [
-        "name",
-        "account_name",
-        "annual_value",
-        "end_date"
-      ]
+      "columns": ["name", "account_name", "annual_value", "end_date"]
     },
     {
       "object": "contracts",
@@ -260,23 +239,15 @@
       "filter": {
         "field": "health",
         "op": "in",
-        "value": [
-          "at_risk",
-          "churn_risk"
-        ]
+        "value": ["at_risk", "churn_risk"]
       },
-      "columns": [
-        "name",
-        "segment",
-        "health",
-        "notes"
-      ]
+      "columns": ["name", "segment", "health", "notes"]
     }
   ],
   "functions": [
     {
       "name": "build-renewal-event",
-      "code": "// Builds the Google Calendar event for a contract renewal date.\n// The event is all-day on the end date. ok is false when the contract\n// has no end date, so the workflow skips the event.\nexport default (input) => {\n  const d = input.contract || {};\n  const end = String(d.end_date || \"\").slice(0, 10);\n  if (!end) return { ok: false, summary: \"\", start: \"\", end: \"\", description: \"\" };\n  const next = new Date(end + \"T00:00:00Z\");\n  next.setUTCDate(next.getUTCDate() + 1);\n  const value = d.annual_value ? ` (${d.annual_value} ${d.currency || \"USD\"} per year)` : \"\";\n  return {\n    ok: true,\n    summary: `Renewal: ${d.account_name || d.name}${value}`,\n    start: end,\n    end: next.toISOString().slice(0, 10),\n    description: `Contract ${d.name} ends on ${end}.\\nOwner: ${d.owner_name || \"unassigned\"}\\nCustomer contact: ${d.customer_email || \"none\"}\\nAuto-renew: ${d.auto_renew ? \"yes\" : \"no\"}`,\n  };\n};\n",
+      "code": "// Builds the Google Calendar event for a contract renewal date.\n// The event is all-day on the end date. hasDate is false when the contract\n// has no end date, so the workflow skips the event.\nexport default (input) => {\n  const d = input.contract || {};\n  const end = String(d.end_date || \"\").slice(0, 10);\n  if (!end) return { hasDate: false, summary: \"\", start: \"\", end: \"\", description: \"\" };\n  const next = new Date(end + \"T00:00:00Z\");\n  next.setUTCDate(next.getUTCDate() + 1);\n  const value = d.annual_value ? ` (${d.annual_value} ${d.currency || \"USD\"} per year)` : \"\";\n  return {\n    hasDate: true,\n    summary: `Renewal: ${d.account_name || d.name}${value}`,\n    start: end,\n    end: next.toISOString().slice(0, 10),\n    description: `Contract ${d.name} ends on ${end}.\\nOwner: ${d.owner_name || \"unassigned\"}\\nCustomer contact: ${d.customer_email || \"none\"}\\nAuto-renew: ${d.auto_renew ? \"yes\" : \"no\"}`,\n  };\n};\n",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -284,14 +255,12 @@
             "type": "object"
           }
         },
-        "required": [
-          "contract"
-        ]
+        "required": ["contract"]
       },
       "outputSchema": {
         "type": "object",
         "properties": {
-          "ok": {
+          "hasDate": {
             "type": "boolean"
           },
           "summary": {
@@ -307,9 +276,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "ok"
-        ]
+        "required": ["hasDate"]
       },
       "permissions": {
         "domains": [],
@@ -335,9 +302,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "contracts"
-        ]
+        "required": ["contracts"]
       },
       "outputSchema": {
         "type": "object",
@@ -352,9 +317,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "reminders"
-        ]
+        "required": ["reminders"]
       },
       "permissions": {
         "domains": [],
@@ -386,7 +349,7 @@
             "id": "has_date",
             "type": "condition",
             "input": {
-              "left": "{{steps.build.output.ok}}",
+              "left": "{{steps.build.output.hasDate}}",
               "op": "eq",
               "right": true
             }
@@ -400,9 +363,7 @@
               "description": "{{steps.build.output.description}}",
               "start": "{{steps.build.output.start}}",
               "end": "{{steps.build.output.end}}",
-              "attendees": [
-                "{{record.owner_email}}"
-              ],
+              "attendees": ["{{record.owner_email}}"],
               "sendUpdates": "none"
             }
           },
@@ -419,19 +380,13 @@
         ],
         "next": {
           "build": {
-            "ok": [
-              "has_date"
-            ]
+            "ok": ["has_date"]
           },
           "has_date": {
-            "true": [
-              "event"
-            ]
+            "true": ["event"]
           },
           "event": {
-            "ok": [
-              "save"
-            ]
+            "ok": ["save"]
           }
         }
       }
@@ -454,10 +409,7 @@
               "filter": {
                 "field": "status",
                 "op": "in",
-                "value": [
-                  "active",
-                  "renewal_in_progress"
-                ]
+                "value": ["active", "renewal_in_progress"]
               },
               "limit": 500
             }
@@ -522,27 +474,19 @@
         ],
         "next": {
           "upcoming": {
-            "found": [
-              "plan"
-            ]
+            "found": ["plan"]
           },
           "plan": {
-            "ok": [
-              "each"
-            ]
+            "ok": ["each"]
           },
           "each": {
-            "done": [
-              "emails"
-            ]
+            "done": ["emails"]
           }
         }
       }
     }
   ],
-  "secrets": [
-    "SLACK_WEBHOOK_URL"
-  ],
+  "secrets": ["SLACK_WEBHOOK_URL"],
   "records": [
     {
       "key": "a1",

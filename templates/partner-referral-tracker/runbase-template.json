@@ -61,11 +61,7 @@
           "key": "status",
           "label": "Status",
           "type": "select",
-          "options": [
-            "active",
-            "paused",
-            "ended"
-          ]
+          "options": ["active", "paused", "ended"]
         },
         {
           "key": "joined_on",
@@ -112,12 +108,7 @@
           "key": "status",
           "label": "Status",
           "type": "select",
-          "options": [
-            "new",
-            "qualified",
-            "won",
-            "lost"
-          ],
+          "options": ["new", "qualified", "won", "lost"],
           "default": "new"
         },
         {
@@ -135,6 +126,11 @@
           "key": "notes",
           "label": "Notes",
           "type": "text"
+        },
+        {
+          "key": "created_at",
+          "label": "Created",
+          "type": "created_at"
         }
       ]
     }
@@ -154,13 +150,7 @@
           "dir": "desc"
         }
       ],
-      "columns": [
-        "lead_name",
-        "lead_email",
-        "company",
-        "partner",
-        "created_at"
-      ]
+      "columns": ["lead_name", "lead_email", "company", "partner", "created_at"]
     },
     {
       "object": "referrals",
@@ -168,10 +158,7 @@
       "filter": {
         "field": "status",
         "op": "in",
-        "value": [
-          "new",
-          "qualified"
-        ]
+        "value": ["new", "qualified"]
       },
       "sort": [
         {
@@ -179,13 +166,7 @@
           "dir": "desc"
         }
       ],
-      "columns": [
-        "lead_name",
-        "company",
-        "partner",
-        "status",
-        "deal_value"
-      ]
+      "columns": ["lead_name", "company", "partner", "status", "deal_value"]
     },
     {
       "object": "referrals",
@@ -210,13 +191,7 @@
           "dir": "desc"
         }
       ],
-      "columns": [
-        "lead_name",
-        "company",
-        "partner",
-        "deal_value",
-        "won_on"
-      ]
+      "columns": ["lead_name", "company", "partner", "deal_value", "won_on"]
     },
     {
       "object": "referrals",
@@ -225,12 +200,7 @@
         "field": "partner",
         "op": "is_empty"
       },
-      "columns": [
-        "lead_name",
-        "lead_email",
-        "partner_code",
-        "created_at"
-      ]
+      "columns": ["lead_name", "lead_email", "partner_code", "created_at"]
     },
     {
       "object": "partners",
@@ -279,11 +249,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "partners",
-          "referrals",
-          "today"
-        ]
+        "required": ["partners", "referrals", "today"]
       },
       "outputSchema": {
         "type": "object",
@@ -304,13 +270,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "month",
-          "rows",
-          "statements",
-          "summary",
-          "total"
-        ]
+        "required": ["month", "rows", "statements", "summary", "total"]
       },
       "permissions": {
         "domains": [],
@@ -392,22 +352,14 @@
         ],
         "next": {
           "find_partner": {
-            "found": [
-              "link"
-            ],
-            "empty": [
-              "alert_unmatched"
-            ]
+            "found": ["link"],
+            "empty": ["alert_unmatched"]
           },
           "link": {
-            "ok": [
-              "alert_sales"
-            ]
+            "ok": ["alert_sales"]
           },
           "alert_sales": {
-            "ok": [
-              "thank_partner"
-            ]
+            "ok": ["thank_partner"]
           }
         }
       }
@@ -430,10 +382,7 @@
               "filter": {
                 "field": "status",
                 "op": "in",
-                "value": [
-                  "active",
-                  "paused"
-                ]
+                "value": ["active", "paused"]
               },
               "limit": 500
             }
@@ -512,41 +461,26 @@
         ],
         "next": {
           "partners": {
-            "found": [
-              "won"
-            ]
+            "found": ["won"]
           },
           "won": {
-            "found": [
-              "compute"
-            ],
-            "empty": [
-              "compute"
-            ]
+            "found": ["compute"],
+            "empty": ["compute"]
           },
           "compute": {
-            "ok": [
-              "sheet"
-            ]
+            "ok": ["sheet"]
           },
           "sheet": {
-            "ok": [
-              "statements"
-            ]
+            "ok": ["statements"]
           },
           "statements": {
-            "done": [
-              "summary"
-            ]
+            "done": ["summary"]
           }
         }
       }
     }
   ],
-  "secrets": [
-    "SLACK_WEBHOOK_URL",
-    "COMMISSIONS_SPREADSHEET_ID"
-  ],
+  "secrets": ["SLACK_WEBHOOK_URL", "COMMISSIONS_SPREADSHEET_ID"],
   "records": [
     {
       "key": "partner-lumen",

@@ -67,12 +67,7 @@
           "key": "status",
           "label": "Status",
           "type": "select",
-          "options": [
-            "pending",
-            "awaiting approval",
-            "sent",
-            "skipped"
-          ],
+          "options": ["pending", "awaiting approval", "sent", "skipped"],
           "default": "pending"
         },
         {
@@ -103,12 +98,7 @@
           "dir": "asc"
         }
       ],
-      "columns": [
-        "meeting",
-        "attendees",
-        "ended_at",
-        "subject"
-      ]
+      "columns": ["meeting", "attendees", "ended_at", "subject"]
     },
     {
       "object": "follow-ups",
@@ -124,12 +114,7 @@
           "dir": "desc"
         }
       ],
-      "columns": [
-        "meeting",
-        "attendees",
-        "sent_at",
-        "next_steps"
-      ]
+      "columns": ["meeting", "attendees", "sent_at", "next_steps"]
     },
     {
       "object": "follow-ups",
@@ -145,11 +130,7 @@
           "dir": "desc"
         }
       ],
-      "columns": [
-        "meeting",
-        "attendees",
-        "ended_at"
-      ]
+      "columns": ["meeting", "attendees", "ended_at"]
     }
   ],
   "functions": [
@@ -178,11 +159,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "events",
-          "since",
-          "until"
-        ]
+        "required": ["events", "since", "until"]
       },
       "outputSchema": {
         "type": "object",
@@ -194,10 +171,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "meetings",
-          "count"
-        ]
+        "required": ["meetings", "count"]
       },
       "permissions": {
         "domains": [],
@@ -290,24 +264,16 @@
         ],
         "next": {
           "since": {
-            "ok": [
-              "lookback"
-            ]
+            "ok": ["lookback"]
           },
           "lookback": {
-            "ok": [
-              "events"
-            ]
+            "ok": ["events"]
           },
           "events": {
-            "ok": [
-              "pick"
-            ]
+            "ok": ["pick"]
           },
           "pick": {
-            "ok": [
-              "save_all"
-            ]
+            "ok": ["save_all"]
           }
         }
       }
@@ -340,11 +306,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "subject",
-                  "body",
-                  "next_steps"
-                ]
+                "required": ["subject", "body", "next_steps"]
               }
             }
           },
@@ -403,30 +365,18 @@
         ],
         "next": {
           "draft": {
-            "ok": [
-              "save_draft"
-            ]
+            "ok": ["save_draft"]
           },
           "save_draft": {
-            "ok": [
-              "approve"
-            ]
+            "ok": ["approve"]
           },
           "approve": {
-            "approved": [
-              "send"
-            ],
-            "rejected": [
-              "mark_skipped"
-            ],
-            "expired": [
-              "mark_skipped"
-            ]
+            "approved": ["send"],
+            "rejected": ["mark_skipped"],
+            "expired": ["mark_skipped"]
           },
           "send": {
-            "ok": [
-              "mark_sent"
-            ]
+            "ok": ["mark_sent"]
           }
         }
       }
@@ -441,8 +391,8 @@
         "event_id": "sample-evt-101",
         "meeting": "Discovery call: Northwind",
         "attendees": "maria@northwind.example, tom@northwind.example",
-        "start": "2026-11-27T10:00:00+01:00",
-        "ended_at": "2026-11-27T10:45:00+01:00",
+        "start": "2026-11-27T09:00:00Z",
+        "ended_at": "2026-11-27T09:45:00Z",
         "notes": "Team of 25 in RevOps. Pain: pipeline data spread across 3 spreadsheets. Want a pilot in January. Maria to share current pipeline export. We send pricing for 25 seats by Friday.",
         "subject": "Recap of our call and next steps",
         "draft": "Hi Maria, hi Tom,\n\nThanks for your time today. A quick recap:\n- Your RevOps team (25 people) tracks pipeline across 3 spreadsheets\n- The goal is one source of truth before the January planning\n- You would like a pilot starting in January\n\nNext steps:\n- Maria: share the current pipeline export\n- Us: send pricing for 25 seats by Friday\n\nDoes a 30-minute kickoff in the week of January 5 work for you?",
@@ -457,14 +407,14 @@
         "event_id": "sample-evt-102",
         "meeting": "Demo: Bright Labs",
         "attendees": "james@brightlabs.example",
-        "start": "2026-11-26T15:00:00+01:00",
-        "ended_at": "2026-11-26T15:30:00+01:00",
+        "start": "2026-11-26T14:00:00Z",
+        "ended_at": "2026-11-26T14:30:00Z",
         "notes": "Liked the approval flow. Needs SSO. Security review with IT next week.",
         "subject": "Thanks for the demo, James",
         "draft": "Hi James,\n\nThanks for joining the demo...",
         "next_steps": "James books the security review with IT. We send the SSO documentation.",
         "status": "sent",
-        "sent_at": "2026-11-26T16:05:00+01:00",
+        "sent_at": "2026-11-26T15:05:00Z",
         "thread_id": "sample-thread-102"
       }
     },
@@ -475,14 +425,14 @@
         "event_id": "sample-evt-103",
         "meeting": "Renewal review: Greenleaf",
         "attendees": "sofia@greenleaf.example",
-        "start": "2026-11-25T11:00:00+01:00",
-        "ended_at": "2026-11-25T11:30:00+01:00",
+        "start": "2026-11-25T10:00:00Z",
+        "ended_at": "2026-11-25T10:30:00Z",
         "notes": "Renewal agreed in principle, legal reviews the new terms.",
         "subject": "Next steps for your renewal",
         "draft": "Hi Sofia,\n\nThanks for the review today...",
         "next_steps": "Sofia sends terms to legal. We hold the current price until December 15.",
         "status": "sent",
-        "sent_at": "2026-11-25T12:10:00+01:00",
+        "sent_at": "2026-11-25T11:10:00Z",
         "thread_id": "sample-thread-103"
       }
     },
@@ -493,8 +443,8 @@
         "event_id": "sample-evt-104",
         "meeting": "Quick sync: Acme",
         "attendees": "li@acme.example",
-        "start": "2026-11-24T09:00:00+01:00",
-        "ended_at": "2026-11-24T09:15:00+01:00",
+        "start": "2026-11-24T08:00:00Z",
+        "ended_at": "2026-11-24T08:15:00Z",
         "notes": "",
         "subject": "Thanks for the quick sync",
         "draft": "Hi Li,\n\nThanks for the quick sync this morning...",

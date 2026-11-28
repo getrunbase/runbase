@@ -161,11 +161,14 @@ export const catalogService = {
 
   async listConnectors(query: { category?: string } = {}) {
     const { connectors } = await catalog();
-    return connectors
-      .filter((c) => !query.category || c.categories.includes(query.category))
-      .sort((a, b) => a.slug.localeCompare(b.slug))
-      // The long description stays on the detail endpoint.
-      .map((c) => ({ ...c, readme: undefined }));
+    return (
+      connectors
+        .filter((c) => !query.category || c.categories.includes(query.category))
+        .sort((a, b) => a.slug.localeCompare(b.slug))
+        // The long description stays on the detail endpoint.
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dropped key
+        .map(({ readme: _readme, ...c }) => c)
+    );
   },
 
   async getConnector(slug: string) {

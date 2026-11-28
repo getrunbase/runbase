@@ -3,7 +3,12 @@
   "version": 1,
   "name": "Employee Onboarding Checklist",
   "description": "Employee onboarding automation: each new hire gets a Gmail welcome, first-week Google Calendar invites, a Drive welcome doc, a checklist and a Slack intro.",
-  "databases": [{ "slug": "people-ops", "name": "People ops" }],
+  "databases": [
+    {
+      "slug": "people-ops",
+      "name": "People ops"
+    }
+  ],
   "objects": [
     {
       "slug": "employees",
@@ -11,21 +16,94 @@
       "icon": "user-plus",
       "database": "people-ops",
       "fields": [
-        { "key": "name", "label": "Name", "type": "text", "title": true },
-        { "key": "personal_email", "label": "Personal email", "type": "email", "unique": true },
-        { "key": "work_email", "label": "Work email", "type": "email" },
-        { "key": "role", "label": "Role", "type": "text" },
-        { "key": "team", "label": "Team", "type": "select", "options": ["engineering", "sales", "marketing", "operations", "customer-success", "finance"] },
-        { "key": "manager_name", "label": "Manager", "type": "text" },
-        { "key": "manager_email", "label": "Manager email", "type": "email" },
-        { "key": "buddy_name", "label": "Onboarding buddy", "type": "text" },
-        { "key": "start_date", "label": "Start date", "type": "date" },
-        { "key": "review_date", "label": "First-week review date", "type": "date" },
-        { "key": "time_zone", "label": "Time zone", "type": "text", "default": "Europe/Paris" },
-        { "key": "location", "label": "Location", "type": "select", "options": ["office", "remote", "hybrid"] },
-        { "key": "status", "label": "Onboarding status", "type": "select", "options": ["pre-boarding", "onboarding", "completed"] },
-        { "key": "welcome_doc_id", "label": "Welcome doc ID", "type": "text" },
-        { "key": "fun_fact", "label": "Fun fact for the intro", "type": "text" }
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "personal_email",
+          "label": "Personal email",
+          "type": "email",
+          "unique": true
+        },
+        {
+          "key": "work_email",
+          "label": "Work email",
+          "type": "email"
+        },
+        {
+          "key": "role",
+          "label": "Role",
+          "type": "text"
+        },
+        {
+          "key": "team",
+          "label": "Team",
+          "type": "select",
+          "options": [
+            "engineering",
+            "sales",
+            "marketing",
+            "operations",
+            "customer-success",
+            "finance"
+          ]
+        },
+        {
+          "key": "manager_name",
+          "label": "Manager",
+          "type": "text"
+        },
+        {
+          "key": "manager_email",
+          "label": "Manager email",
+          "type": "email"
+        },
+        {
+          "key": "buddy_name",
+          "label": "Onboarding buddy",
+          "type": "text"
+        },
+        {
+          "key": "start_date",
+          "label": "Start date",
+          "type": "date"
+        },
+        {
+          "key": "review_date",
+          "label": "First-week review date",
+          "type": "date"
+        },
+        {
+          "key": "time_zone",
+          "label": "Time zone",
+          "type": "text",
+          "default": "Europe/Paris"
+        },
+        {
+          "key": "location",
+          "label": "Location",
+          "type": "select",
+          "options": ["office", "remote", "hybrid"]
+        },
+        {
+          "key": "status",
+          "label": "Onboarding status",
+          "type": "select",
+          "options": ["pre-boarding", "onboarding", "completed"]
+        },
+        {
+          "key": "welcome_doc_id",
+          "label": "Welcome doc ID",
+          "type": "text"
+        },
+        {
+          "key": "fun_fact",
+          "label": "Fun fact for the intro",
+          "type": "text"
+        }
       ]
     },
     {
@@ -34,11 +112,35 @@
       "icon": "list-checks",
       "database": "people-ops",
       "fields": [
-        { "key": "title", "label": "Task", "type": "text", "title": true },
-        { "key": "employee", "label": "Employee", "type": "ref", "object": "employees" },
-        { "key": "owner", "label": "Owner", "type": "select", "options": ["people-ops", "it", "manager", "new-hire"] },
-        { "key": "due_date", "label": "Due date", "type": "date" },
-        { "key": "status", "label": "Status", "type": "select", "options": ["todo", "done"] }
+        {
+          "key": "title",
+          "label": "Task",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "employee",
+          "label": "Employee",
+          "type": "ref",
+          "object": "employees"
+        },
+        {
+          "key": "owner",
+          "label": "Owner",
+          "type": "select",
+          "options": ["people-ops", "it", "manager", "new-hire"]
+        },
+        {
+          "key": "due_date",
+          "label": "Due date",
+          "type": "date"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": ["todo", "done"]
+        }
       ]
     }
   ],
@@ -46,28 +148,71 @@
     {
       "object": "employees",
       "name": "Starting soon",
-      "filter": { "field": "status", "op": "eq", "value": "pre-boarding" },
-      "sort": [{ "field": "start_date", "dir": "asc" }],
-      "columns": ["name", "role", "team", "manager_name", "start_date", "location"]
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "pre-boarding"
+      },
+      "sort": [
+        {
+          "field": "start_date",
+          "dir": "asc"
+        }
+      ],
+      "columns": [
+        "name",
+        "role",
+        "team",
+        "manager_name",
+        "start_date",
+        "location"
+      ]
     },
     {
       "object": "employees",
       "name": "Currently onboarding",
-      "filter": { "field": "status", "op": "eq", "value": "onboarding" },
-      "sort": [{ "field": "start_date", "dir": "desc" }]
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "onboarding"
+      },
+      "sort": [
+        {
+          "field": "start_date",
+          "dir": "desc"
+        }
+      ]
     },
     {
       "object": "onboarding_tasks",
       "name": "Open tasks",
-      "filter": { "field": "status", "op": "eq", "value": "todo" },
-      "sort": [{ "field": "due_date", "dir": "asc" }],
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "todo"
+      },
+      "sort": [
+        {
+          "field": "due_date",
+          "dir": "asc"
+        }
+      ],
       "columns": ["title", "employee", "owner", "due_date"]
     },
     {
       "object": "onboarding_tasks",
       "name": "IT setup",
-      "filter": { "field": "owner", "op": "eq", "value": "it" },
-      "sort": [{ "field": "due_date", "dir": "asc" }]
+      "filter": {
+        "field": "owner",
+        "op": "eq",
+        "value": "it"
+      },
+      "sort": [
+        {
+          "field": "due_date",
+          "dir": "asc"
+        }
+      ]
     }
   ],
   "workflows": [
@@ -101,7 +246,10 @@
               "start": "{{record.start_date}}T09:30:00",
               "end": "{{record.start_date}}T11:00:00",
               "timeZone": "{{record.time_zone}}",
-              "attendees": ["{{record.work_email}}", "{{record.manager_email}}"],
+              "attendees": [
+                "{{record.work_email}}",
+                "{{record.manager_email}}"
+              ],
               "addMeet": true,
               "sendUpdates": "all"
             }
@@ -116,7 +264,10 @@
               "start": "{{record.start_date}}T14:00:00",
               "end": "{{record.start_date}}T14:45:00",
               "timeZone": "{{record.time_zone}}",
-              "attendees": ["{{record.work_email}}", "{{record.manager_email}}"],
+              "attendees": [
+                "{{record.work_email}}",
+                "{{record.manager_email}}"
+              ],
               "addMeet": true,
               "sendUpdates": "all"
             }
@@ -131,7 +282,10 @@
               "start": "{{record.review_date}}T16:00:00",
               "end": "{{record.review_date}}T16:30:00",
               "timeZone": "{{record.time_zone}}",
-              "attendees": ["{{record.work_email}}", "{{record.manager_email}}"],
+              "attendees": [
+                "{{record.work_email}}",
+                "{{record.manager_email}}"
+              ],
               "addMeet": true,
               "sendUpdates": "all"
             }
@@ -161,7 +315,13 @@
             "type": "record.create",
             "input": {
               "object": "$object:onboarding_tasks",
-              "data": { "title": "Create accounts and ship laptop for {{record.name}}", "employee": "{{record.id}}", "owner": "it", "due_date": "{{record.start_date}}", "status": "todo" }
+              "data": {
+                "title": "Create accounts and ship laptop for {{record.name}}",
+                "employee": "{{record.id}}",
+                "owner": "it",
+                "due_date": "{{record.start_date}}",
+                "status": "todo"
+              }
             }
           },
           {
@@ -169,7 +329,13 @@
             "type": "record.create",
             "input": {
               "object": "$object:onboarding_tasks",
-              "data": { "title": "Collect signed contract and payroll details from {{record.name}}", "employee": "{{record.id}}", "owner": "people-ops", "due_date": "{{record.start_date}}", "status": "todo" }
+              "data": {
+                "title": "Collect signed contract and payroll details from {{record.name}}",
+                "employee": "{{record.id}}",
+                "owner": "people-ops",
+                "due_date": "{{record.start_date}}",
+                "status": "todo"
+              }
             }
           },
           {
@@ -177,7 +343,13 @@
             "type": "record.create",
             "input": {
               "object": "$object:onboarding_tasks",
-              "data": { "title": "Share 30-day plan with {{record.name}}", "employee": "{{record.id}}", "owner": "manager", "due_date": "{{record.review_date}}", "status": "todo" }
+              "data": {
+                "title": "Share 30-day plan with {{record.name}}",
+                "employee": "{{record.id}}",
+                "owner": "manager",
+                "due_date": "{{record.review_date}}",
+                "status": "todo"
+              }
             }
           },
           {
@@ -188,17 +360,133 @@
               "text": "Please welcome {{record.name}}, who joins as {{record.role}} on the {{record.team}} team on {{record.start_date}}. Manager: {{record.manager_name}}, buddy: {{record.buddy_name}}. Fun fact: {{record.fun_fact}}"
             }
           }
-        ]
+        ],
+        "next": {
+          "welcome": {
+            "ok": ["day_one"]
+          },
+          "day_one": {
+            "ok": ["one_on_one"]
+          },
+          "one_on_one": {
+            "ok": ["week_review"]
+          },
+          "week_review": {
+            "ok": ["welcome_doc"]
+          },
+          "welcome_doc": {
+            "ok": ["save"]
+          },
+          "save": {
+            "ok": ["task_it"]
+          },
+          "task_it": {
+            "ok": ["task_paperwork"]
+          },
+          "task_paperwork": {
+            "ok": ["task_plan"]
+          },
+          "task_plan": {
+            "ok": ["intro"]
+          }
+        }
       }
     }
   ],
   "secrets": ["SLACK_WEBHOOK_URL"],
   "records": [
-    { "key": "e1", "object": "employees", "data": { "name": "Jordan Lee", "personal_email": "jordan.lee@mail.example", "work_email": "jordan@yourcompany.example", "role": "Account Executive", "team": "sales", "manager_name": "Sam Rivera", "manager_email": "sam@yourcompany.example", "buddy_name": "Lea Martin", "start_date": "2026-12-07", "review_date": "2026-12-11", "time_zone": "Europe/Paris", "location": "hybrid", "status": "pre-boarding", "fun_fact": "Ran the Paris marathon twice" } },
-    { "key": "e2", "object": "employees", "data": { "name": "Aisha Bello", "personal_email": "aisha.bello@mail.example", "work_email": "aisha@yourcompany.example", "role": "Growth Marketer", "team": "marketing", "manager_name": "Nora Klein", "manager_email": "nora@yourcompany.example", "buddy_name": "Tom Becker", "start_date": "2026-11-23", "review_date": "2026-11-27", "time_zone": "Europe/London", "location": "remote", "status": "onboarding", "fun_fact": "Bakes sourdough every weekend" } },
-    { "key": "e3", "object": "employees", "data": { "name": "Marco Rossi", "personal_email": "marco.rossi@mail.example", "work_email": "marco@yourcompany.example", "role": "Ops Analyst", "team": "operations", "manager_name": "Sam Rivera", "manager_email": "sam@yourcompany.example", "buddy_name": "Aisha Bello", "start_date": "2026-11-02", "review_date": "2026-11-06", "time_zone": "Europe/Rome", "location": "office", "status": "completed", "fun_fact": "Speaks four languages" } },
-    { "key": "t1", "object": "onboarding_tasks", "data": { "title": "Create accounts and ship laptop for Jordan Lee", "employee": "$record:e1", "owner": "it", "due_date": "2026-12-07", "status": "todo" } },
-    { "key": "t2", "object": "onboarding_tasks", "data": { "title": "Collect signed contract and payroll details from Jordan Lee", "employee": "$record:e1", "owner": "people-ops", "due_date": "2026-12-07", "status": "done" } },
-    { "key": "t3", "object": "onboarding_tasks", "data": { "title": "Share 30-day plan with Aisha Bello", "employee": "$record:e2", "owner": "manager", "due_date": "2026-11-27", "status": "todo" } }
+    {
+      "key": "e1",
+      "object": "employees",
+      "data": {
+        "name": "Jordan Lee",
+        "personal_email": "jordan.lee@mail.example",
+        "work_email": "jordan@yourcompany.example",
+        "role": "Account Executive",
+        "team": "sales",
+        "manager_name": "Sam Rivera",
+        "manager_email": "sam@yourcompany.example",
+        "buddy_name": "Lea Martin",
+        "start_date": "2026-12-07",
+        "review_date": "2026-12-11",
+        "time_zone": "Europe/Paris",
+        "location": "hybrid",
+        "status": "pre-boarding",
+        "fun_fact": "Ran the Paris marathon twice"
+      }
+    },
+    {
+      "key": "e2",
+      "object": "employees",
+      "data": {
+        "name": "Aisha Bello",
+        "personal_email": "aisha.bello@mail.example",
+        "work_email": "aisha@yourcompany.example",
+        "role": "Growth Marketer",
+        "team": "marketing",
+        "manager_name": "Nora Klein",
+        "manager_email": "nora@yourcompany.example",
+        "buddy_name": "Tom Becker",
+        "start_date": "2026-11-23",
+        "review_date": "2026-11-27",
+        "time_zone": "Europe/London",
+        "location": "remote",
+        "status": "onboarding",
+        "fun_fact": "Bakes sourdough every weekend"
+      }
+    },
+    {
+      "key": "e3",
+      "object": "employees",
+      "data": {
+        "name": "Marco Rossi",
+        "personal_email": "marco.rossi@mail.example",
+        "work_email": "marco@yourcompany.example",
+        "role": "Ops Analyst",
+        "team": "operations",
+        "manager_name": "Sam Rivera",
+        "manager_email": "sam@yourcompany.example",
+        "buddy_name": "Aisha Bello",
+        "start_date": "2026-11-02",
+        "review_date": "2026-11-06",
+        "time_zone": "Europe/Rome",
+        "location": "office",
+        "status": "completed",
+        "fun_fact": "Speaks four languages"
+      }
+    },
+    {
+      "key": "t1",
+      "object": "onboarding_tasks",
+      "data": {
+        "title": "Create accounts and ship laptop for Jordan Lee",
+        "employee": "$record:e1",
+        "owner": "it",
+        "due_date": "2026-12-07",
+        "status": "todo"
+      }
+    },
+    {
+      "key": "t2",
+      "object": "onboarding_tasks",
+      "data": {
+        "title": "Collect signed contract and payroll details from Jordan Lee",
+        "employee": "$record:e1",
+        "owner": "people-ops",
+        "due_date": "2026-12-07",
+        "status": "done"
+      }
+    },
+    {
+      "key": "t3",
+      "object": "onboarding_tasks",
+      "data": {
+        "title": "Share 30-day plan with Aisha Bello",
+        "employee": "$record:e2",
+        "owner": "manager",
+        "due_date": "2026-11-27",
+        "status": "todo"
+      }
+    }
   ]
 }

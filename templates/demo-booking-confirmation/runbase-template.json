@@ -3,7 +3,12 @@
   "version": 1,
   "name": "Demo Booking with Calendar Invite",
   "description": "Send a demo booking confirmation email from Gmail with a Google Calendar invite and Meet link for every form request, plus a Slack alert.",
-  "databases": [{ "slug": "sales-demos", "name": "Sales demos" }],
+  "databases": [
+    {
+      "slug": "sales-demos",
+      "name": "Sales demos"
+    }
+  ],
   "objects": [
     {
       "slug": "demo_requests",
@@ -11,20 +16,80 @@
       "icon": "calendar-check",
       "database": "sales-demos",
       "fields": [
-        { "key": "request_id", "label": "Request ID", "type": "text", "unique": true },
-        { "key": "name", "label": "Name", "type": "text", "title": true },
-        { "key": "email", "label": "Email", "type": "email" },
-        { "key": "company", "label": "Company", "type": "text" },
-        { "key": "team_size", "label": "Team size", "type": "select", "options": ["1-10", "11-50", "51-200", "201+"] },
-        { "key": "message", "label": "What they want to see", "type": "text" },
-        { "key": "slot_start", "label": "Slot start", "type": "date" },
-        { "key": "slot_end", "label": "Slot end", "type": "date" },
-        { "key": "time_zone", "label": "Time zone", "type": "text" },
-        { "key": "owner", "label": "Owner email", "type": "email" },
-        { "key": "status", "label": "Status", "type": "select", "options": ["requested", "booked", "done", "no_show", "cancelled"] },
-        { "key": "event_id", "label": "Calendar event ID", "type": "text" },
-        { "key": "event_link", "label": "Calendar link", "type": "url" },
-        { "key": "meet_link", "label": "Meet link", "type": "url" }
+        {
+          "key": "request_id",
+          "label": "Request ID",
+          "type": "text",
+          "unique": true
+        },
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "email",
+          "label": "Email",
+          "type": "email"
+        },
+        {
+          "key": "company",
+          "label": "Company",
+          "type": "text"
+        },
+        {
+          "key": "team_size",
+          "label": "Team size",
+          "type": "select",
+          "options": ["1-10", "11-50", "51-200", "201+"]
+        },
+        {
+          "key": "message",
+          "label": "What they want to see",
+          "type": "text"
+        },
+        {
+          "key": "slot_start",
+          "label": "Slot start",
+          "type": "date"
+        },
+        {
+          "key": "slot_end",
+          "label": "Slot end",
+          "type": "date"
+        },
+        {
+          "key": "time_zone",
+          "label": "Time zone",
+          "type": "text"
+        },
+        {
+          "key": "owner",
+          "label": "Owner email",
+          "type": "email"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": ["requested", "booked", "done", "no_show", "cancelled"]
+        },
+        {
+          "key": "event_id",
+          "label": "Calendar event ID",
+          "type": "text"
+        },
+        {
+          "key": "event_link",
+          "label": "Calendar link",
+          "type": "url"
+        },
+        {
+          "key": "meet_link",
+          "label": "Meet link",
+          "type": "url"
+        }
       ]
     }
   ],
@@ -32,20 +97,43 @@
     {
       "object": "demo_requests",
       "name": "Upcoming demos",
-      "filter": { "field": "status", "op": "eq", "value": "booked" },
-      "sort": [{ "field": "slot_start", "dir": "asc" }],
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "booked"
+      },
+      "sort": [
+        {
+          "field": "slot_start",
+          "dir": "asc"
+        }
+      ],
       "columns": ["name", "company", "slot_start", "owner", "meet_link"]
     },
     {
       "object": "demo_requests",
       "name": "Not booked yet",
-      "filter": { "field": "status", "op": "eq", "value": "requested" },
-      "sort": [{ "field": "slot_start", "dir": "asc" }]
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "requested"
+      },
+      "sort": [
+        {
+          "field": "slot_start",
+          "dir": "asc"
+        }
+      ]
     },
     {
       "object": "demo_requests",
       "name": "All requests by slot",
-      "sort": [{ "field": "slot_start", "dir": "desc" }]
+      "sort": [
+        {
+          "field": "slot_start",
+          "dir": "desc"
+        }
+      ]
     }
   ],
   "workflows": [
@@ -118,15 +206,94 @@
               "text": "New demo booked for {{record.owner}}: {{record.name}} from {{record.company}} ({{record.team_size}}) on {{record.slot_start}} (UTC). Wants to see: {{record.message}}. Meet: {{steps.event.output.meetLink}}"
             }
           }
-        ]
+        ],
+        "next": {
+          "event": {
+            "ok": ["save"]
+          },
+          "save": {
+            "ok": ["confirm"]
+          },
+          "confirm": {
+            "ok": ["notify"]
+          }
+        }
       }
     }
   ],
   "secrets": ["SLACK_WEBHOOK_URL"],
   "records": [
-    { "key": "r1", "object": "demo_requests", "externalId": "demo-1001", "data": { "request_id": "demo-1001", "name": "Maya Chen", "email": "maya@northwind.example", "company": "Northwind", "team_size": "11-50", "message": "Pipeline reporting for our RevOps team", "slot_start": "2026-12-02T14:00:00Z", "slot_end": "2026-12-02T14:30:00Z", "time_zone": "Europe/Paris", "owner": "sam@yourcompany.example", "status": "booked" } },
-    { "key": "r2", "object": "demo_requests", "externalId": "demo-1002", "data": { "request_id": "demo-1002", "name": "Daniel Ortiz", "email": "daniel@brightlane.example", "company": "Brightlane", "team_size": "51-200", "message": "Replacing our lead routing spreadsheet", "slot_start": "2026-12-03T15:00:00Z", "slot_end": "2026-12-03T15:30:00Z", "time_zone": "America/New_York", "owner": "lea@yourcompany.example", "status": "requested" } },
-    { "key": "r3", "object": "demo_requests", "externalId": "demo-1003", "data": { "request_id": "demo-1003", "name": "Priya Nair", "email": "priya@quillstack.example", "company": "Quillstack", "team_size": "1-10", "message": "Onboarding workflows for new customers", "slot_start": "2026-11-25T14:00:00Z", "slot_end": "2026-11-25T14:30:00Z", "time_zone": "Europe/London", "owner": "sam@yourcompany.example", "status": "done" } },
-    { "key": "r4", "object": "demo_requests", "externalId": "demo-1004", "data": { "request_id": "demo-1004", "name": "Tom Becker", "email": "tom@ferrovia.example", "company": "Ferrovia", "team_size": "201+", "message": "Partner portal and approvals", "slot_start": "2026-11-26T08:00:00Z", "slot_end": "2026-11-26T08:45:00Z", "time_zone": "Europe/Berlin", "owner": "lea@yourcompany.example", "status": "no_show" } }
+    {
+      "key": "r1",
+      "object": "demo_requests",
+      "externalId": "demo-1001",
+      "data": {
+        "request_id": "demo-1001",
+        "name": "Maya Chen",
+        "email": "maya@northwind.example",
+        "company": "Northwind",
+        "team_size": "11-50",
+        "message": "Pipeline reporting for our RevOps team",
+        "slot_start": "2026-12-02T14:00:00Z",
+        "slot_end": "2026-12-02T14:30:00Z",
+        "time_zone": "Europe/Paris",
+        "owner": "sam@yourcompany.example",
+        "status": "booked"
+      }
+    },
+    {
+      "key": "r2",
+      "object": "demo_requests",
+      "externalId": "demo-1002",
+      "data": {
+        "request_id": "demo-1002",
+        "name": "Daniel Ortiz",
+        "email": "daniel@brightlane.example",
+        "company": "Brightlane",
+        "team_size": "51-200",
+        "message": "Replacing our lead routing spreadsheet",
+        "slot_start": "2026-12-03T15:00:00Z",
+        "slot_end": "2026-12-03T15:30:00Z",
+        "time_zone": "America/New_York",
+        "owner": "lea@yourcompany.example",
+        "status": "requested"
+      }
+    },
+    {
+      "key": "r3",
+      "object": "demo_requests",
+      "externalId": "demo-1003",
+      "data": {
+        "request_id": "demo-1003",
+        "name": "Priya Nair",
+        "email": "priya@quillstack.example",
+        "company": "Quillstack",
+        "team_size": "1-10",
+        "message": "Onboarding workflows for new customers",
+        "slot_start": "2026-11-25T14:00:00Z",
+        "slot_end": "2026-11-25T14:30:00Z",
+        "time_zone": "Europe/London",
+        "owner": "sam@yourcompany.example",
+        "status": "done"
+      }
+    },
+    {
+      "key": "r4",
+      "object": "demo_requests",
+      "externalId": "demo-1004",
+      "data": {
+        "request_id": "demo-1004",
+        "name": "Tom Becker",
+        "email": "tom@ferrovia.example",
+        "company": "Ferrovia",
+        "team_size": "201+",
+        "message": "Partner portal and approvals",
+        "slot_start": "2026-11-26T08:00:00Z",
+        "slot_end": "2026-11-26T08:45:00Z",
+        "time_zone": "Europe/Berlin",
+        "owner": "lea@yourcompany.example",
+        "status": "no_show"
+      }
+    }
   ]
 }

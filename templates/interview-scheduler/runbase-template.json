@@ -3,7 +3,12 @@
   "version": 1,
   "name": "Interview Scheduler",
   "description": "Interview scheduling on autopilot: move a candidate to interview and get a Google Calendar invite with Meet, a Gmail confirmation and a Slack alert.",
-  "databases": [{ "slug": "hiring", "name": "Hiring" }],
+  "databases": [
+    {
+      "slug": "hiring",
+      "name": "Hiring"
+    }
+  ],
   "objects": [
     {
       "slug": "jobs",
@@ -11,10 +16,36 @@
       "icon": "briefcase",
       "database": "hiring",
       "fields": [
-        { "key": "title", "label": "Title", "type": "text", "title": true },
-        { "key": "team", "label": "Team", "type": "select", "options": ["engineering", "product", "design", "sales", "marketing", "operations"] },
-        { "key": "hiring_manager", "label": "Hiring manager email", "type": "email" },
-        { "key": "status", "label": "Status", "type": "select", "options": ["open", "on_hold", "filled"] }
+        {
+          "key": "title",
+          "label": "Title",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "team",
+          "label": "Team",
+          "type": "select",
+          "options": [
+            "engineering",
+            "product",
+            "design",
+            "sales",
+            "marketing",
+            "operations"
+          ]
+        },
+        {
+          "key": "hiring_manager",
+          "label": "Hiring manager email",
+          "type": "email"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "select",
+          "options": ["open", "on_hold", "filled"]
+        }
       ]
     },
     {
@@ -23,18 +54,79 @@
       "icon": "user-search",
       "database": "hiring",
       "fields": [
-        { "key": "name", "label": "Name", "type": "text", "title": true },
-        { "key": "email", "label": "Email", "type": "email", "unique": true },
-        { "key": "job", "label": "Job", "type": "ref", "object": "jobs" },
-        { "key": "role", "label": "Role", "type": "lookup", "through": "job", "field": "title" },
-        { "key": "stage", "label": "Stage", "type": "select", "options": ["applied", "screening", "interview", "offer", "hired", "rejected"] },
-        { "key": "interview_start", "label": "Interview start", "type": "date" },
-        { "key": "interview_end", "label": "Interview end", "type": "date" },
-        { "key": "time_zone", "label": "Time zone", "type": "text" },
-        { "key": "interviewer", "label": "Interviewer email", "type": "email" },
-        { "key": "hiring_manager", "label": "Hiring manager email", "type": "email" },
-        { "key": "meet_link", "label": "Meet link", "type": "url" },
-        { "key": "event_link", "label": "Calendar link", "type": "url" }
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "email",
+          "label": "Email",
+          "type": "email",
+          "unique": true
+        },
+        {
+          "key": "job",
+          "label": "Job",
+          "type": "ref",
+          "object": "jobs"
+        },
+        {
+          "key": "role",
+          "label": "Role",
+          "type": "lookup",
+          "through": "job",
+          "field": "title"
+        },
+        {
+          "key": "stage",
+          "label": "Stage",
+          "type": "select",
+          "options": [
+            "applied",
+            "screening",
+            "interview",
+            "offer",
+            "hired",
+            "rejected"
+          ]
+        },
+        {
+          "key": "interview_start",
+          "label": "Interview start",
+          "type": "date"
+        },
+        {
+          "key": "interview_end",
+          "label": "Interview end",
+          "type": "date"
+        },
+        {
+          "key": "time_zone",
+          "label": "Time zone",
+          "type": "text"
+        },
+        {
+          "key": "interviewer",
+          "label": "Interviewer email",
+          "type": "email"
+        },
+        {
+          "key": "hiring_manager",
+          "label": "Hiring manager email",
+          "type": "email"
+        },
+        {
+          "key": "meet_link",
+          "label": "Meet link",
+          "type": "url"
+        },
+        {
+          "key": "event_link",
+          "label": "Calendar link",
+          "type": "url"
+        }
       ]
     },
     {
@@ -43,15 +135,61 @@
       "icon": "calendar-clock",
       "database": "hiring",
       "fields": [
-        { "key": "title", "label": "Title", "type": "text", "title": true },
-        { "key": "candidate", "label": "Candidate", "type": "ref", "object": "candidates" },
-        { "key": "start", "label": "Start", "type": "date" },
-        { "key": "end", "label": "End", "type": "date" },
-        { "key": "interviewer", "label": "Interviewer email", "type": "email" },
-        { "key": "event_id", "label": "Calendar event ID", "type": "text" },
-        { "key": "meet_link", "label": "Meet link", "type": "url" },
-        { "key": "outcome", "label": "Outcome", "type": "select", "options": ["scheduled", "strong_yes", "yes", "no", "strong_no", "cancelled"] },
-        { "key": "notes", "label": "Notes", "type": "text" }
+        {
+          "key": "title",
+          "label": "Title",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "candidate",
+          "label": "Candidate",
+          "type": "ref",
+          "object": "candidates"
+        },
+        {
+          "key": "start",
+          "label": "Start",
+          "type": "date"
+        },
+        {
+          "key": "end",
+          "label": "End",
+          "type": "date"
+        },
+        {
+          "key": "interviewer",
+          "label": "Interviewer email",
+          "type": "email"
+        },
+        {
+          "key": "event_id",
+          "label": "Calendar event ID",
+          "type": "text"
+        },
+        {
+          "key": "meet_link",
+          "label": "Meet link",
+          "type": "url"
+        },
+        {
+          "key": "outcome",
+          "label": "Outcome",
+          "type": "select",
+          "options": [
+            "scheduled",
+            "strong_yes",
+            "yes",
+            "no",
+            "strong_no",
+            "cancelled"
+          ]
+        },
+        {
+          "key": "notes",
+          "label": "Notes",
+          "type": "text"
+        }
       ]
     }
   ],
@@ -59,33 +197,81 @@
     {
       "object": "candidates",
       "name": "Interview stage",
-      "filter": { "field": "stage", "op": "eq", "value": "interview" },
-      "sort": [{ "field": "interview_start", "dir": "asc" }],
+      "filter": {
+        "field": "stage",
+        "op": "eq",
+        "value": "interview"
+      },
+      "sort": [
+        {
+          "field": "interview_start",
+          "dir": "asc"
+        }
+      ],
       "columns": ["name", "role", "interview_start", "interviewer", "meet_link"]
     },
     {
       "object": "candidates",
       "name": "Active pipeline",
-      "filter": { "field": "stage", "op": "in", "value": ["applied", "screening", "interview", "offer"] },
-      "sort": [{ "field": "stage", "dir": "asc" }]
+      "filter": {
+        "field": "stage",
+        "op": "in",
+        "value": ["applied", "screening", "interview", "offer"]
+      },
+      "sort": [
+        {
+          "field": "stage",
+          "dir": "asc"
+        }
+      ]
     },
     {
       "object": "interviews",
       "name": "Upcoming interviews",
-      "filter": { "field": "outcome", "op": "eq", "value": "scheduled" },
-      "sort": [{ "field": "start", "dir": "asc" }],
+      "filter": {
+        "field": "outcome",
+        "op": "eq",
+        "value": "scheduled"
+      },
+      "sort": [
+        {
+          "field": "start",
+          "dir": "asc"
+        }
+      ],
       "columns": ["title", "start", "interviewer", "meet_link"]
     },
     {
       "object": "interviews",
       "name": "Awaiting feedback",
-      "filter": { "all": [{ "field": "outcome", "op": "eq", "value": "scheduled" }, { "field": "notes", "op": "is_empty" }] },
-      "sort": [{ "field": "start", "dir": "desc" }]
+      "filter": {
+        "all": [
+          {
+            "field": "outcome",
+            "op": "eq",
+            "value": "scheduled"
+          },
+          {
+            "field": "notes",
+            "op": "is_empty"
+          }
+        ]
+      },
+      "sort": [
+        {
+          "field": "start",
+          "dir": "desc"
+        }
+      ]
     },
     {
       "object": "jobs",
       "name": "Open jobs",
-      "filter": { "field": "status", "op": "eq", "value": "open" }
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "open"
+      }
     }
   ],
   "workflows": [
@@ -103,13 +289,23 @@
             "id": "check",
             "type": "condition",
             "input": {
-              "object": "$object:candidates",
+              "object": "candidates",
               "recordId": "{{record.id}}",
               "condition": {
                 "all": [
-                  { "field": "stage", "op": "eq", "value": "interview" },
-                  { "field": "interview_start", "op": "is_not_empty" },
-                  { "field": "interview_end", "op": "is_not_empty" }
+                  {
+                    "field": "stage",
+                    "op": "eq",
+                    "value": "interview"
+                  },
+                  {
+                    "field": "interview_start",
+                    "op": "is_not_empty"
+                  },
+                  {
+                    "field": "interview_end",
+                    "op": "is_not_empty"
+                  }
                 ]
               }
             }
@@ -124,7 +320,11 @@
               "start": "{{record.interview_start}}",
               "end": "{{record.interview_end}}",
               "timeZone": "{{record.time_zone}}",
-              "attendees": ["{{record.email}}", "{{record.interviewer}}", "{{record.hiring_manager}}"],
+              "attendees": [
+                "{{record.email}}",
+                "{{record.interviewer}}",
+                "{{record.hiring_manager}}"
+              ],
               "addMeet": true,
               "sendUpdates": "all"
             }
@@ -177,22 +377,105 @@
           }
         ],
         "next": {
-          "check": { "true": ["event"] },
-          "event": { "ok": ["log"] },
-          "log": { "ok": ["save"] },
-          "save": { "ok": ["email"] },
-          "email": { "ok": ["notify"] }
+          "check": {
+            "true": ["event"]
+          },
+          "event": {
+            "ok": ["log"]
+          },
+          "log": {
+            "ok": ["save"]
+          },
+          "save": {
+            "ok": ["email"]
+          },
+          "email": {
+            "ok": ["notify"]
+          }
         }
       }
     }
   ],
   "secrets": ["SLACK_WEBHOOK_URL"],
   "records": [
-    { "key": "j1", "object": "jobs", "data": { "title": "Senior Backend Engineer", "team": "engineering", "hiring_manager": "nora@yourcompany.example", "status": "open" } },
-    { "key": "j2", "object": "jobs", "data": { "title": "Growth Marketing Manager", "team": "marketing", "hiring_manager": "luis@yourcompany.example", "status": "open" } },
-    { "key": "c1", "object": "candidates", "externalId": "cand-1001", "data": { "name": "Amara Okafor", "email": "amara.okafor@example.com", "job": "$record:j1", "stage": "screening", "interview_start": "2026-12-03T13:00:00Z", "interview_end": "2026-12-03T14:00:00Z", "time_zone": "Europe/Paris", "interviewer": "theo@yourcompany.example", "hiring_manager": "nora@yourcompany.example" } },
-    { "key": "c2", "object": "candidates", "externalId": "cand-1002", "data": { "name": "Jonas Weber", "email": "jonas.weber@example.com", "job": "$record:j2", "stage": "applied", "time_zone": "Europe/Berlin", "interviewer": "ines@yourcompany.example", "hiring_manager": "luis@yourcompany.example" } },
-    { "key": "c3", "object": "candidates", "externalId": "cand-1003", "data": { "name": "Sofia Ramirez", "email": "sofia.ramirez@example.com", "job": "$record:j1", "stage": "interview", "interview_start": "2026-11-26T15:00:00Z", "interview_end": "2026-11-26T16:00:00Z", "time_zone": "America/New_York", "interviewer": "theo@yourcompany.example", "hiring_manager": "nora@yourcompany.example" } },
-    { "key": "i1", "object": "interviews", "data": { "title": "Sofia Ramirez - Senior Backend Engineer", "candidate": "$record:c3", "start": "2026-11-26T15:00:00Z", "end": "2026-11-26T16:00:00Z", "interviewer": "theo@yourcompany.example", "outcome": "yes", "notes": "Strong on system design, wants more ownership of the data layer." } }
+    {
+      "key": "j1",
+      "object": "jobs",
+      "data": {
+        "title": "Senior Backend Engineer",
+        "team": "engineering",
+        "hiring_manager": "nora@yourcompany.example",
+        "status": "open"
+      }
+    },
+    {
+      "key": "j2",
+      "object": "jobs",
+      "data": {
+        "title": "Growth Marketing Manager",
+        "team": "marketing",
+        "hiring_manager": "luis@yourcompany.example",
+        "status": "open"
+      }
+    },
+    {
+      "key": "c1",
+      "object": "candidates",
+      "externalId": "cand-1001",
+      "data": {
+        "name": "Amara Okafor",
+        "email": "amara.okafor@example.com",
+        "job": "$record:j1",
+        "stage": "screening",
+        "interview_start": "2026-12-03T13:00:00Z",
+        "interview_end": "2026-12-03T14:00:00Z",
+        "time_zone": "Europe/Paris",
+        "interviewer": "theo@yourcompany.example",
+        "hiring_manager": "nora@yourcompany.example"
+      }
+    },
+    {
+      "key": "c2",
+      "object": "candidates",
+      "externalId": "cand-1002",
+      "data": {
+        "name": "Jonas Weber",
+        "email": "jonas.weber@example.com",
+        "job": "$record:j2",
+        "stage": "applied",
+        "time_zone": "Europe/Berlin",
+        "interviewer": "ines@yourcompany.example",
+        "hiring_manager": "luis@yourcompany.example"
+      }
+    },
+    {
+      "key": "c3",
+      "object": "candidates",
+      "externalId": "cand-1003",
+      "data": {
+        "name": "Sofia Ramirez",
+        "email": "sofia.ramirez@example.com",
+        "job": "$record:j1",
+        "stage": "interview",
+        "interview_start": "2026-11-26T15:00:00Z",
+        "interview_end": "2026-11-26T16:00:00Z",
+        "time_zone": "America/New_York",
+        "interviewer": "theo@yourcompany.example",
+        "hiring_manager": "nora@yourcompany.example"
+      }
+    },
+    {
+      "key": "i1",
+      "object": "interviews",
+      "data": {
+        "title": "Sofia Ramirez - Senior Backend Engineer",
+        "candidate": "$record:c3",
+        "start": "2026-11-26T15:00:00Z",
+        "end": "2026-11-26T16:00:00Z",
+        "interviewer": "theo@yourcompany.example",
+        "outcome": "yes",
+        "notes": "Strong on system design, wants more ownership of the data layer."
+      }
+    }
   ]
 }

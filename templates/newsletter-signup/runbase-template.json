@@ -55,12 +55,7 @@
           "key": "status",
           "label": "Status",
           "type": "select",
-          "options": [
-            "new",
-            "onboarding",
-            "active",
-            "unsubscribed"
-          ],
+          "options": ["new", "onboarding", "active", "unsubscribed"],
           "default": "new"
         },
         {
@@ -72,6 +67,11 @@
           "key": "notes",
           "label": "Notes",
           "type": "text"
+        },
+        {
+          "key": "created_at",
+          "label": "Created",
+          "type": "created_at"
         }
       ]
     }
@@ -86,13 +86,7 @@
           "dir": "desc"
         }
       ],
-      "columns": [
-        "email",
-        "first_name",
-        "source",
-        "utm_campaign",
-        "status"
-      ]
+      "columns": ["email", "first_name", "source", "utm_campaign", "status"]
     },
     {
       "object": "subscribers",
@@ -102,11 +96,7 @@
         "op": "eq",
         "value": "onboarding"
       },
-      "columns": [
-        "email",
-        "first_name",
-        "onboarding_step"
-      ]
+      "columns": ["email", "first_name", "onboarding_step"]
     },
     {
       "object": "subscribers",
@@ -126,13 +116,7 @@
           "dir": "asc"
         }
       ],
-      "columns": [
-        "email",
-        "source",
-        "utm_source",
-        "utm_campaign",
-        "status"
-      ]
+      "columns": ["email", "source", "utm_source", "utm_campaign", "status"]
     },
     {
       "object": "subscribers",
@@ -142,11 +126,7 @@
         "op": "eq",
         "value": "unsubscribed"
       },
-      "columns": [
-        "email",
-        "first_name",
-        "notes"
-      ]
+      "columns": ["email", "first_name", "notes"]
     }
   ],
   "workflows": [
@@ -172,7 +152,7 @@
             "id": "is_new",
             "type": "condition",
             "input": {
-              "object": "$object:subscribers",
+              "object": "subscribers",
               "recordId": "{{record.id}}",
               "condition": {
                 "field": "status",
@@ -231,7 +211,7 @@
             "id": "still_onboarding_1",
             "type": "condition",
             "input": {
-              "object": "$object:subscribers",
+              "object": "subscribers",
               "recordId": "{{record.id}}",
               "condition": {
                 "field": "status",
@@ -271,7 +251,7 @@
             "id": "still_onboarding_2",
             "type": "condition",
             "input": {
-              "object": "$object:subscribers",
+              "object": "subscribers",
               "recordId": "{{record.id}}",
               "condition": {
                 "field": "status",
@@ -304,67 +284,43 @@
         ],
         "next": {
           "is_new": {
-            "true": [
-              "welcome"
-            ]
+            "true": ["welcome"]
           },
           "welcome": {
-            "ok": [
-              "mark_welcomed"
-            ]
+            "ok": ["mark_welcomed"]
           },
           "mark_welcomed": {
-            "ok": [
-              "log_sheet"
-            ]
+            "ok": ["log_sheet"]
           },
           "log_sheet": {
-            "ok": [
-              "wait_1"
-            ]
+            "ok": ["wait_1"]
           },
           "wait_1": {
-            "done": [
-              "still_onboarding_1"
-            ]
+            "done": ["still_onboarding_1"]
           },
           "still_onboarding_1": {
-            "true": [
-              "tip_1"
-            ]
+            "true": ["tip_1"]
           },
           "tip_1": {
-            "ok": [
-              "mark_tip_1"
-            ]
+            "ok": ["mark_tip_1"]
           },
           "mark_tip_1": {
-            "ok": [
-              "wait_2"
-            ]
+            "ok": ["wait_2"]
           },
           "wait_2": {
-            "done": [
-              "still_onboarding_2"
-            ]
+            "done": ["still_onboarding_2"]
           },
           "still_onboarding_2": {
-            "true": [
-              "tip_2"
-            ]
+            "true": ["tip_2"]
           },
           "tip_2": {
-            "ok": [
-              "mark_active"
-            ]
+            "ok": ["mark_active"]
           }
         }
       }
     }
   ],
-  "secrets": [
-    "SUBSCRIBERS_SPREADSHEET_ID"
-  ],
+  "secrets": ["SUBSCRIBERS_SPREADSHEET_ID"],
   "records": [
     {
       "key": "s1",

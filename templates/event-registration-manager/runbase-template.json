@@ -32,12 +32,7 @@
           "key": "format",
           "label": "Format",
           "type": "select",
-          "options": [
-            "webinar",
-            "meetup",
-            "workshop",
-            "conference"
-          ]
+          "options": ["webinar", "meetup", "workshop", "conference"]
         },
         {
           "key": "starts_at",
@@ -83,12 +78,7 @@
           "key": "status",
           "label": "Status",
           "type": "select",
-          "options": [
-            "draft",
-            "open",
-            "full",
-            "done"
-          ]
+          "options": ["draft", "open", "full", "done"]
         }
       ]
     },
@@ -173,10 +163,7 @@
       "filter": {
         "field": "status",
         "op": "in",
-        "value": [
-          "open",
-          "full"
-        ]
+        "value": ["open", "full"]
       },
       "sort": [
         {
@@ -184,13 +171,7 @@
           "dir": "asc"
         }
       ],
-      "columns": [
-        "title",
-        "format",
-        "starts_at",
-        "capacity",
-        "status"
-      ]
+      "columns": ["title", "format", "starts_at", "capacity", "status"]
     },
     {
       "object": "registrations",
@@ -225,12 +206,7 @@
           "dir": "asc"
         }
       ],
-      "columns": [
-        "name",
-        "email",
-        "event_id",
-        "confirmed_at"
-      ]
+      "columns": ["name", "email", "event_id", "confirmed_at"]
     },
     {
       "object": "registrations",
@@ -246,12 +222,7 @@
           "dir": "desc"
         }
       ],
-      "columns": [
-        "name",
-        "email",
-        "company",
-        "event_id"
-      ]
+      "columns": ["name", "email", "company", "event_id"]
     }
   ],
   "functions": [
@@ -268,10 +239,7 @@
             "type": "array"
           }
         },
-        "required": [
-          "events",
-          "registrations"
-        ]
+        "required": ["events", "registrations"]
       },
       "outputSchema": {
         "type": "object",
@@ -458,7 +426,7 @@
             "id": "still_registered",
             "type": "condition",
             "input": {
-              "object": "$object:registrations",
+              "object": "registrations",
               "recordId": "{{record.id}}",
               "condition": {
                 "field": "status",
@@ -490,62 +458,38 @@
         ],
         "next": {
           "find_event": {
-            "found": [
-              "find_regs"
-            ],
-            "empty": [
-              "unknown_event"
-            ]
+            "found": ["find_regs"],
+            "empty": ["unknown_event"]
           },
           "find_regs": {
-            "found": [
-              "plan"
-            ]
+            "found": ["plan"]
           },
           "plan": {
-            "ok": [
-              "invite"
-            ]
+            "ok": ["invite"]
           },
           "invite": {
-            "ok": [
-              "confirm"
-            ]
+            "ok": ["confirm"]
           },
           "confirm": {
-            "ok": [
-              "mark_confirmed"
-            ]
+            "ok": ["mark_confirmed"]
           },
           "mark_confirmed": {
-            "ok": [
-              "log_sheet"
-            ]
+            "ok": ["log_sheet"]
           },
           "log_sheet": {
-            "ok": [
-              "needs_reminder"
-            ]
+            "ok": ["needs_reminder"]
           },
           "needs_reminder": {
-            "true": [
-              "wait_day_before"
-            ]
+            "true": ["wait_day_before"]
           },
           "wait_day_before": {
-            "done": [
-              "still_registered"
-            ]
+            "done": ["still_registered"]
           },
           "still_registered": {
-            "true": [
-              "reminder"
-            ]
+            "true": ["reminder"]
           },
           "reminder": {
-            "ok": [
-              "mark_reminded"
-            ]
+            "ok": ["mark_reminded"]
           }
         }
       }
@@ -561,8 +505,8 @@
         "calendar_event_id": "sample-webinar-1210",
         "title": "Webinar: Pipeline reporting without a BI team",
         "format": "webinar",
-        "starts_at": "2026-12-10T17:00:00+01:00",
-        "ends_at": "2026-12-10T18:00:00+01:00",
+        "starts_at": "2026-12-10T16:00:00Z",
+        "ends_at": "2026-12-10T17:00:00Z",
         "timezone": "Europe/Paris",
         "join_link": "https://meet.google.com/abc-defg-hij",
         "hosts": "lea@yourcompany.example, sam@yourcompany.example",
@@ -580,8 +524,8 @@
         "calendar_event_id": "sample-meetup-0115",
         "title": "RevOps meetup Paris",
         "format": "meetup",
-        "starts_at": "2027-01-15T19:00:00+01:00",
-        "ends_at": "2027-01-15T21:30:00+01:00",
+        "starts_at": "2027-01-15T18:00:00Z",
+        "ends_at": "2027-01-15T20:30:00Z",
         "timezone": "Europe/Paris",
         "join_link": "12 rue de la Paix, 75002 Paris",
         "hosts": "lea@yourcompany.example",
@@ -604,8 +548,8 @@
         "event_id": "sample-webinar-1210",
         "source": "linkedin",
         "status": "confirmed",
-        "registered_at": "2026-11-26T10:12:00+01:00",
-        "confirmed_at": "2026-11-26T10:12:05+01:00"
+        "registered_at": "2026-11-26T09:12:00Z",
+        "confirmed_at": "2026-11-26T09:12:05Z"
       }
     },
     {
@@ -621,8 +565,8 @@
         "event_id": "sample-webinar-1210",
         "source": "newsletter",
         "status": "confirmed",
-        "registered_at": "2026-11-27T08:40:00+01:00",
-        "confirmed_at": "2026-11-27T08:40:04+01:00"
+        "registered_at": "2026-11-27T07:40:00Z",
+        "confirmed_at": "2026-11-27T07:40:04Z"
       }
     },
     {
@@ -638,7 +582,7 @@
         "event_id": "sample-meetup-0115",
         "source": "website",
         "status": "registered",
-        "registered_at": "2026-11-28T09:05:00+01:00"
+        "registered_at": "2026-11-28T08:05:00Z"
       }
     },
     {
@@ -654,7 +598,7 @@
         "event_id": "sample-webinar-1210",
         "source": "partner",
         "status": "cancelled",
-        "registered_at": "2026-11-20T15:30:00+01:00"
+        "registered_at": "2026-11-20T14:30:00Z"
       }
     }
   ]

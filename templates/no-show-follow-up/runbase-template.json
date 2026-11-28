@@ -46,21 +46,13 @@
           "key": "response",
           "label": "Invite response",
           "type": "select",
-          "options": [
-            "declined",
-            "no_reply"
-          ]
+          "options": ["declined", "no_reply"]
         },
         {
           "key": "status",
           "label": "Status",
           "type": "select",
-          "options": [
-            "no_show",
-            "follow_up_sent",
-            "rescheduled",
-            "lost"
-          ]
+          "options": ["no_show", "follow_up_sent", "rescheduled", "lost"]
         },
         {
           "key": "follow_up_sent_at",
@@ -127,13 +119,7 @@
           "dir": "desc"
         }
       ],
-      "columns": [
-        "title",
-        "attendee_email",
-        "end",
-        "response",
-        "status"
-      ]
+      "columns": ["title", "attendee_email", "end", "response", "status"]
     }
   ],
   "functions": [
@@ -147,9 +133,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "now"
-        ]
+        "required": ["now"]
       },
       "outputSchema": {
         "type": "object",
@@ -186,11 +170,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "events",
-          "start",
-          "end"
-        ]
+        "required": ["events", "start", "end"]
       },
       "outputSchema": {
         "type": "object",
@@ -294,29 +274,19 @@
         ],
         "next": {
           "window": {
-            "ok": [
-              "events"
-            ]
+            "ok": ["events"]
           },
           "events": {
-            "ok": [
-              "find"
-            ]
+            "ok": ["find"]
           },
           "find": {
-            "ok": [
-              "each"
-            ]
+            "ok": ["each"]
           }
         }
       }
     }
   ],
-  "secrets": [
-    "RESCHEDULE_URL",
-    "SLACK_WEBHOOK_URL",
-    "INTERNAL_EMAIL_DOMAIN"
-  ],
+  "secrets": ["RESCHEDULE_URL", "SLACK_WEBHOOK_URL", "INTERNAL_EMAIL_DOMAIN"],
   "records": [
     {
       "key": "m1",
@@ -326,11 +296,11 @@
         "title": "Discovery call: Northwind",
         "attendee_email": "maya@northwind.example",
         "event_id": "evt-1001",
-        "start": "2026-11-26T15:00:00+01:00",
-        "end": "2026-11-26T15:30:00+01:00",
+        "start": "2026-11-26T14:00:00Z",
+        "end": "2026-11-26T14:30:00Z",
         "response": "no_reply",
         "status": "follow_up_sent",
-        "follow_up_sent_at": "2026-11-26T16:05:00+01:00"
+        "follow_up_sent_at": "2026-11-26T15:05:00Z"
       }
     },
     {
@@ -341,11 +311,11 @@
         "title": "Demo: Brightlane",
         "attendee_email": "daniel@brightlane.example",
         "event_id": "evt-1002",
-        "start": "2026-11-25T10:00:00-05:00",
-        "end": "2026-11-25T10:45:00-05:00",
+        "start": "2026-11-25T15:00:00Z",
+        "end": "2026-11-25T15:45:00Z",
         "response": "declined",
         "status": "rescheduled",
-        "follow_up_sent_at": "2026-11-25T11:05:00-05:00",
+        "follow_up_sent_at": "2026-11-25T16:05:00Z",
         "notes": "Booked again for Dec 2"
       }
     },
@@ -357,11 +327,11 @@
         "title": "Interview: Product designer",
         "attendee_email": "ines@quillstack.example",
         "event_id": "evt-1003",
-        "start": "2026-11-24T14:00:00+00:00",
-        "end": "2026-11-24T14:45:00+00:00",
+        "start": "2026-11-24T14:00:00Z",
+        "end": "2026-11-24T14:45:00Z",
         "response": "no_reply",
         "status": "lost",
-        "follow_up_sent_at": "2026-11-24T15:05:00+00:00",
+        "follow_up_sent_at": "2026-11-24T15:05:00Z",
         "notes": "No answer after two follow-ups"
       }
     },
@@ -373,11 +343,11 @@
         "title": "Intro call: Ferrovia",
         "attendee_email": "tom@ferrovia.example",
         "event_id": "evt-1004",
-        "start": "2026-11-27T09:00:00+01:00",
-        "end": "2026-11-27T09:30:00+01:00",
+        "start": "2026-11-27T08:00:00Z",
+        "end": "2026-11-27T08:30:00Z",
         "response": "declined",
         "status": "follow_up_sent",
-        "follow_up_sent_at": "2026-11-27T10:05:00+01:00"
+        "follow_up_sent_at": "2026-11-27T09:05:00Z"
       }
     }
   ]

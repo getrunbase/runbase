@@ -52,12 +52,7 @@
           "key": "status",
           "label": "Status",
           "type": "select",
-          "options": [
-            "sent",
-            "attended",
-            "no-show",
-            "rescheduled"
-          ]
+          "options": ["sent", "attended", "no-show", "rescheduled"]
         },
         {
           "key": "sent_at",
@@ -77,13 +72,7 @@
           "dir": "desc"
         }
       ],
-      "columns": [
-        "meeting",
-        "attendee",
-        "start",
-        "meet_link",
-        "status"
-      ]
+      "columns": ["meeting", "attendee", "start", "meet_link", "status"]
     },
     {
       "object": "reminders",
@@ -99,11 +88,7 @@
           "dir": "desc"
         }
       ],
-      "columns": [
-        "meeting",
-        "attendee",
-        "start"
-      ]
+      "columns": ["meeting", "attendee", "start"]
     },
     {
       "object": "reminders",
@@ -141,9 +126,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "events"
-        ]
+        "required": ["events"]
       },
       "outputSchema": {
         "type": "object",
@@ -155,10 +138,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "reminders",
-          "count"
-        ]
+        "required": ["reminders", "count"]
       },
       "permissions": {
         "domains": [],
@@ -274,24 +254,16 @@
         ],
         "next": {
           "window_start": {
-            "ok": [
-              "window_end"
-            ]
+            "ok": ["window_end"]
           },
           "window_end": {
-            "ok": [
-              "events"
-            ]
+            "ok": ["events"]
           },
           "events": {
-            "ok": [
-              "build"
-            ]
+            "ok": ["build"]
           },
           "build": {
-            "ok": [
-              "send_all"
-            ]
+            "ok": ["send_all"]
           }
         }
       }
@@ -306,11 +278,11 @@
         "key": "sample-evt-1:maria@northwind.example",
         "meeting": "Coaching session: Q1 goals",
         "attendee": "maria@northwind.example",
-        "start": "2026-12-01T09:30:00+01:00",
+        "start": "2026-12-01T08:30:00Z",
         "meet_link": "https://meet.google.com/abc-defg-hij",
         "event_id": "sample-evt-1",
         "status": "sent",
-        "sent_at": "2026-11-30T08:00:00+01:00"
+        "sent_at": "2026-11-30T07:00:00Z"
       }
     },
     {
@@ -320,11 +292,11 @@
         "key": "sample-evt-2:james@brightlabs.example",
         "meeting": "Strategy review with Bright Labs",
         "attendee": "james@brightlabs.example",
-        "start": "2026-11-28T14:00:00+01:00",
+        "start": "2026-11-28T13:00:00Z",
         "meet_link": "https://meet.google.com/klm-nopq-rst",
         "event_id": "sample-evt-2",
         "status": "attended",
-        "sent_at": "2026-11-27T08:00:00+01:00"
+        "sent_at": "2026-11-27T07:00:00Z"
       }
     },
     {
@@ -334,11 +306,11 @@
         "key": "sample-evt-3:li@acme.example",
         "meeting": "Discovery call: Acme",
         "attendee": "li@acme.example",
-        "start": "2026-11-27T11:00:00+01:00",
+        "start": "2026-11-27T10:00:00Z",
         "meet_link": "https://meet.google.com/uvw-xyza-bcd",
         "event_id": "sample-evt-3",
         "status": "no-show",
-        "sent_at": "2026-11-26T08:00:00+01:00"
+        "sent_at": "2026-11-26T07:00:00Z"
       }
     },
     {
@@ -348,10 +320,10 @@
         "key": "sample-evt-4:sofia@greenleaf.example",
         "meeting": "Workshop prep with Greenleaf",
         "attendee": "sofia@greenleaf.example",
-        "start": "2026-11-26T16:00:00+01:00",
+        "start": "2026-11-26T15:00:00Z",
         "event_id": "sample-evt-4",
         "status": "rescheduled",
-        "sent_at": "2026-11-25T08:00:00+01:00"
+        "sent_at": "2026-11-25T07:00:00Z"
       }
     }
   ]

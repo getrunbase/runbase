@@ -32,22 +32,13 @@
           "key": "severity",
           "label": "Severity",
           "type": "select",
-          "options": [
-            "sev1",
-            "sev2",
-            "sev3"
-          ]
+          "options": ["sev1", "sev2", "sev3"]
         },
         {
           "key": "status",
           "label": "Status",
           "type": "select",
-          "options": [
-            "investigating",
-            "identified",
-            "monitoring",
-            "resolved"
-          ]
+          "options": ["investigating", "identified", "monitoring", "resolved"]
         },
         {
           "key": "service",
@@ -63,12 +54,7 @@
           "key": "source",
           "label": "Source",
           "type": "select",
-          "options": [
-            "monitoring",
-            "on_call",
-            "support",
-            "manual"
-          ]
+          "options": ["monitoring", "on_call", "support", "manual"]
         },
         {
           "key": "started_at",
@@ -109,11 +95,7 @@
           "key": "customer_notice",
           "label": "Customer notice",
           "type": "select",
-          "options": [
-            "pending",
-            "sent",
-            "skipped"
-          ]
+          "options": ["pending", "sent", "skipped"]
         }
       ]
     }
@@ -244,7 +226,7 @@
             "id": "is_sev1",
             "type": "condition",
             "input": {
-              "object": "$object:incidents",
+              "object": "incidents",
               "recordId": "{{record.id}}",
               "condition": {
                 "all": [
@@ -280,9 +262,7 @@
               "description": "SEV1 incident on {{record.service}}.\n\n{{record.summary}}\n\nIncident lead: {{record.incident_lead}}\nResponders: {{record.responders}}\n\nKeep the incident record in Runbase up to date: status, summary and resolution time.",
               "start": "{{now}}",
               "end": "{{steps.room_end.output.value}}",
-              "attendees": [
-                "{{record.incident_lead}}"
-              ],
+              "attendees": ["{{record.incident_lead}}"],
               "addMeet": true,
               "sendUpdates": "all"
             }
@@ -309,7 +289,7 @@
             "id": "has_customers",
             "type": "condition",
             "input": {
-              "object": "$object:incidents",
+              "object": "incidents",
               "recordId": "{{record.id}}",
               "condition": {
                 "field": "affected_customers",
@@ -333,10 +313,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "subject",
-                  "body"
-                ]
+                "required": ["subject", "body"]
               }
             }
           },
@@ -392,79 +369,47 @@
         ],
         "next": {
           "alert": {
-            "ok": [
-              "is_sev1"
-            ]
+            "ok": ["is_sev1"]
           },
           "is_sev1": {
-            "true": [
-              "room_end"
-            ],
-            "false": [
-              "has_customers"
-            ]
+            "true": ["room_end"],
+            "false": ["has_customers"]
           },
           "room_end": {
-            "ok": [
-              "war_room"
-            ]
+            "ok": ["war_room"]
           },
           "war_room": {
-            "ok": [
-              "save_room"
-            ]
+            "ok": ["save_room"]
           },
           "save_room": {
-            "ok": [
-              "room_alert"
-            ]
+            "ok": ["room_alert"]
           },
           "room_alert": {
-            "ok": [
-              "has_customers"
-            ]
+            "ok": ["has_customers"]
           },
           "draft": {
-            "ok": [
-              "save_draft"
-            ]
+            "ok": ["save_draft"]
           },
           "save_draft": {
-            "ok": [
-              "approve"
-            ]
+            "ok": ["approve"]
           },
           "approve": {
-            "approved": [
-              "notify_customers"
-            ],
-            "rejected": [
-              "mark_skipped"
-            ],
-            "expired": [
-              "mark_skipped"
-            ]
+            "approved": ["notify_customers"],
+            "rejected": ["mark_skipped"],
+            "expired": ["mark_skipped"]
           },
           "notify_customers": {
-            "ok": [
-              "mark_sent"
-            ]
+            "ok": ["mark_sent"]
           },
           "has_customers": {
-            "true": [
-              "draft"
-            ],
-            "false": [
-              "mark_skipped"
-            ]
+            "true": ["draft"],
+            "false": ["mark_skipped"]
           }
         }
       }
     }
   ],
-  "secrets": [
-    "SLACK_WEBHOOK_URL"
-  ],
+  "secrets": ["SLACK_WEBHOOK_URL"],
   "records": [
     {
       "key": "i1",

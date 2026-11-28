@@ -3,7 +3,12 @@
   "version": 1,
   "name": "Lead Capture to Google Sheets",
   "description": "Save form submissions to Google Sheets as leads, with UTM tracking, a Slack alert and an instant thank-you email from Gmail.",
-  "databases": [{ "slug": "marketing", "name": "Marketing" }],
+  "databases": [
+    {
+      "slug": "marketing",
+      "name": "Marketing"
+    }
+  ],
   "objects": [
     {
       "slug": "leads",
@@ -11,25 +16,66 @@
       "icon": "inbox",
       "database": "marketing",
       "fields": [
-        { "key": "name", "label": "Name", "type": "text", "title": true },
-        { "key": "email", "label": "Email", "type": "email", "unique": true },
-        { "key": "company", "label": "Company", "type": "text" },
-        { "key": "message", "label": "Message", "type": "text" },
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "title": true
+        },
+        {
+          "key": "email",
+          "label": "Email",
+          "type": "email",
+          "unique": true
+        },
+        {
+          "key": "company",
+          "label": "Company",
+          "type": "text"
+        },
+        {
+          "key": "message",
+          "label": "Message",
+          "type": "text"
+        },
         {
           "key": "source",
           "label": "Source",
           "type": "select",
-          "options": ["landing-page", "pricing-page", "webinar", "ebook", "other"]
+          "options": [
+            "landing-page",
+            "pricing-page",
+            "webinar",
+            "ebook",
+            "other"
+          ]
         },
-        { "key": "utm_source", "label": "UTM source", "type": "text" },
-        { "key": "utm_medium", "label": "UTM medium", "type": "text" },
-        { "key": "utm_campaign", "label": "UTM campaign", "type": "text" },
+        {
+          "key": "utm_source",
+          "label": "UTM source",
+          "type": "text"
+        },
+        {
+          "key": "utm_medium",
+          "label": "UTM medium",
+          "type": "text"
+        },
+        {
+          "key": "utm_campaign",
+          "label": "UTM campaign",
+          "type": "text"
+        },
         {
           "key": "status",
           "label": "Status",
           "type": "select",
           "options": ["new", "contacted", "qualified", "disqualified"],
           "default": "new"
+        },
+        {
+          "key": "created_at",
+          "label": "Created",
+          "type": "created_at"
         }
       ]
     }
@@ -38,19 +84,45 @@
     {
       "object": "leads",
       "name": "New leads",
-      "filter": { "field": "status", "op": "eq", "value": "new" },
-      "sort": [{ "field": "created_at", "dir": "desc" }]
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "new"
+      },
+      "sort": [
+        {
+          "field": "created_at",
+          "dir": "desc"
+        }
+      ]
     },
     {
       "object": "leads",
       "name": "Leads by campaign",
-      "sort": [{ "field": "utm_campaign", "dir": "asc" }],
-      "columns": ["name", "email", "source", "utm_source", "utm_medium", "utm_campaign", "status"]
+      "sort": [
+        {
+          "field": "utm_campaign",
+          "dir": "asc"
+        }
+      ],
+      "columns": [
+        "name",
+        "email",
+        "source",
+        "utm_source",
+        "utm_medium",
+        "utm_campaign",
+        "status"
+      ]
     },
     {
       "object": "leads",
       "name": "Qualified leads",
-      "filter": { "field": "status", "op": "eq", "value": "qualified" }
+      "filter": {
+        "field": "status",
+        "op": "eq",
+        "value": "qualified"
+      }
     }
   ],
   "workflows": [
@@ -116,8 +188,12 @@
           }
         ],
         "next": {
-          "log_sheet": { "ok": ["announce"] },
-          "announce": { "ok": ["thank_you"] }
+          "log_sheet": {
+            "ok": ["announce"]
+          },
+          "announce": {
+            "ok": ["thank_you"]
+          }
         }
       }
     }
