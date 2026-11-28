@@ -33,10 +33,19 @@ export function defineOperationTools(server: McpServer, ctx: TenantContext) {
     "workspace.describe",
     {
       description:
-        "The whole workspace in one call: databases > objects (fields, record count), workflows (trigger, steps, status), functions (schemas, permissions, limits), webhooks, pages, secret names, SQL views readable by query.sql (name, columns, types), counters (records, events, active runs, open errors), note titles per entity (notes: id, title, stale; bodies via notes.get). Call it first to discover a workspace.",
+        "The whole workspace in one call: databases > objects (fields, record count), workflows (trigger, steps, status), functions (schemas, permissions, limits), webhooks, pages, secret names, SQL views readable by query.sql (name, columns, types), counters (records, events, active runs, open errors), note titles per entity (notes: id, title, stale; bodies via notes.get), and a generated dependency map: per workflow the objects/fields it reads and writes, functions called and external domains; `dependencies` maps each object field (`object.field`) to its writers and readers (workflow:<name>#<step>, function:<name>, page:<name>), from static analysis of workflow definitions, function code and published pages. Call it first to discover a workspace.",
       inputSchema: z.object({}),
     },
     () => run(() => overviewService.describe(ctx)),
+  );
+  server.registerTool(
+    "workspace.dependencies",
+    {
+      description:
+        "Generated dependency map (static analysis of workflow definitions, function code and published pages, no input needed). `entity`: `object.field` (e.g. leads.status) returns its writers and readers; `object` (slug) its fields and users; `workflow:<name>` its trigger, steps, objects/fields touched, functions and external domains; `function:<name>` or `page:<name>` the fields they touch. Without entity: the whole map. References: workflow:<name>#<step> (#trigger = the trigger), function:<name>, page:<name>. Keys built at runtime are not detected.",
+      inputSchema: z.object({ entity: z.string().min(1).optional() }),
+    },
+    ({ entity }) => run(() => overviewService.dependencies(ctx, entity)),
   );
   server.registerTool(
     "workspace.purge_test",

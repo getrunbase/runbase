@@ -40,6 +40,7 @@
   "members.ownerRoleLocked": "Le rôle du propriétaire ne se change pas",
   "members.unknownRole": "Rôle inconnu : {role}",
   "overview.purgeConfirm": "Purge des données de test : opération irréversible, relancer avec confirm: true.",
+  "overview.unknownEntity": "Rien trouvé pour {entity}. Utiliser objet.champ, objet, workflow:<nom>, function:<nom> ou page:<nom>.",
   "quotas.apiPerMinute": "Limite atteinte : {max} appels API par minute dans ce workspace. Réessayez dans {wait} s ou augmentez la limite dans Paramètres.",
   "quotas.exceedsLimit": "{key} : {value} dépasse la limite de votre compte ({max}). Contactez votre administrateur pour l'augmenter.",
   "quotas.limitUpgrade": "Limite atteinte : {quota} est plafonné à {max} pour votre compte. Changez de plan dans Paramètres > Plan et usage pour l'augmenter.",

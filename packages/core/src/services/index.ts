@@ -107,6 +107,7 @@ export const mcpTools: {
   overview: {
     describe: "workspace.describe",
     purgeTest: "workspace.purge_test",
+    dependencies: "workspace.dependencies",
   },
   databases: {
     list: "databases.list",
